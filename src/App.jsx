@@ -174,7 +174,7 @@ export default function App() {
     setTimeout(() => openNote(id), 50)
   }
 
-  if (!store.ready) return <div className="boot"><div className="boot-logo"><i className="boot-orb" /><span className="boot-name">Universe</span></div></div>
+  if (!store.ready) return <div className="boot" />
 
   return (
     <div className="app">

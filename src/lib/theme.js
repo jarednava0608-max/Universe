@@ -1,14 +1,14 @@
-// Modo claro / noche. La elección se guarda en este teléfono (es una preferencia de pantalla).
+// Negro o blanco. La elección se guarda en este teléfono (es una preferencia de pantalla).
 import { useEffect, useState } from 'react'
 
-const KEY = 'universe-theme' // 'auto' | 'light' | 'dark'
-const COLORS = { light: '#fbfaf7', dark: '#0a0a0a' }
+const KEY = 'universe-theme' // 'dark' | 'light'
+const COLORS = { light: '#fafafa', dark: '#09090b' }
 
 function readMode() {
   try {
-    return localStorage.getItem(KEY) || 'auto'
+    return localStorage.getItem(KEY) || 'dark'
   } catch {
-    return 'auto'
+    return 'dark'
   }
 }
 

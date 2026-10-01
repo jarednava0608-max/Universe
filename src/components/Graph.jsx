@@ -3,25 +3,25 @@ import ForceGraph2D from 'react-force-graph-2d'
 import { nodeColor, ROOT_ID } from '../lib/model.js'
 import { buildResolver, extractLinks } from '../lib/markdown.js'
 
-const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
+const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif'
 
-// Colores del mapa según el tema (variables --graph-* de styles.css).
+// Colores del mapa según el tema negro / blanco (variables --graph-* de styles.css).
 function readPalette() {
   const css = getComputedStyle(document.documentElement)
   const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback
-  const link = v('--graph-link-rgb', '17, 17, 17')
-  const hi = v('--graph-hi-rgb', '179, 38, 30')
+  const fg = v('--graph-link-rgb', '255, 255, 255')
   return {
-    bg: v('--graph-bg', '#fbfaf7'),
-    node: v('--graph-node', '#8a8780'),
-    label: v('--graph-label', '#2b2925'),
-    link: `rgba(${link},0.16)`,
-    linkDim: `rgba(${link},0.05)`,
-    linkHi: `rgba(${hi},0.7)`,
-    relText: `rgba(${link},0.45)`,
-    relTextHi: `rgba(${hi},0.95)`,
-    glow: `rgba(${link},0.18)`,
-    ring: `rgba(${hi},0.9)`,
+    bg: v('--graph-bg', '#09090b'),
+    node: v('--graph-node', '#b4b4bc'),
+    label: v('--graph-label', 'rgba(228,228,231,0.78)'),
+    focus: v('--graph-focus', '#fafafa'),
+    rootLabel: v('--graph-root-label', '#f5d27a'),
+    link: `rgba(${fg},0.13)`,
+    linkDim: `rgba(${fg},0.04)`,
+    linkHi: `rgba(${fg},0.55)`,
+    relText: `rgba(${fg},0.4)`,
+    relTextHi: `rgba(${fg},0.75)`,
+    ring: `rgba(${fg},0.85)`,
   }
 }
 
@@ -177,14 +177,10 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
             ctx.fill()
           }
 
-          // Brillo sutil alrededor de cada nodo.
           ctx.beginPath()
           ctx.arc(n.x, n.y, r, 0, 2 * Math.PI)
           ctx.fillStyle = n.isRoot ? n.color : pal.node
-          ctx.shadowColor = n.isRoot ? 'rgba(245,210,122,0.6)' : pal.glow
-          ctx.shadowBlur = n.isRoot ? 18 : focused ? 14 : 8
           ctx.fill()
-          ctx.shadowBlur = 0
 
           if (focused) {
             ctx.beginPath()
@@ -200,8 +196,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
             ctx.font = `${n.isRoot ? 600 : 500} ${fs}px ${FONT}`
             ctx.textAlign = 'center'
             ctx.textBaseline = 'top'
-            ctx.fillStyle = n.isRoot ? '#c9972e' : pal.label
-            ctx.globalAlpha = (dim ? 0.22 : 1) * (n.isRoot || focused ? 1 : 0.82)
+            ctx.fillStyle = n.isRoot ? pal.rootLabel : focused ? pal.focus : pal.label
             const label = n.title.length > 32 ? n.title.slice(0, 31) + '…' : n.title
             ctx.fillText(label, n.x, n.y + r + (focused ? 9 : 4) / scale)
           }

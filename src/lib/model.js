@@ -35,7 +35,7 @@ export const SCHEMA_VERSION = 1
 
 // Por ahora la interfaz no muestra tipos: todos los nodos son neutros y solo Jehová es dorado.
 // Los tipos y colores se conservan en los datos para poder volver a usarlos.
-export const NODE_COLOR = '#c2b8a8'
+export const NODE_COLOR = '#b4b4bc'
 
 export function nodeColor(node) {
   if (!node) return NODE_COLOR

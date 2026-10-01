@@ -34,7 +34,7 @@ export default function Menu({ stats, sync, themeMode, onThemeMode, onAccount, o
         <div className="menu-group appearance">
           <span className="appearance-label">Apariencia</span>
           <div className="seg2">
-            {[['light', 'Claro'], ['dark', 'Noche'], ['auto', 'Automático']].map(([v, l]) => (
+            {[['dark', 'Negro'], ['light', 'Blanco']].map(([v, l]) => (
               <button key={v} className={themeMode === v ? 'on' : ''} onClick={() => onThemeMode(v)}>{l}</button>
             ))}
           </div>
