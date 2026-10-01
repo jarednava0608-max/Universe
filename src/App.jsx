@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from './lib/store.js'
 import { useSync } from './lib/useSync.js'
+import { useTheme } from './lib/theme.js'
 import { getMeta, requestPersistence, setMeta } from './lib/db.js'
 import { buildExport, planImport } from './lib/importer.js'
 import { makeNode } from './lib/model.js'
@@ -19,6 +20,7 @@ import GamesTab from './games/GamesTab.jsx'
 export default function App() {
   const store = useStore()
   const sync = useSync(store)
+  const { mode, theme, setMode } = useTheme()
   const { nodes, edges } = store
   const graph = useRef()
 
@@ -182,6 +184,7 @@ export default function App() {
         nodes={nodes}
         edges={edges}
         focusId={focusId}
+        theme={theme}
         onNodeTap={openNote}
         onBackgroundTap={() => setFocusId(null)}
       />
@@ -214,10 +217,15 @@ export default function App() {
       {tab === 'juegos' && <GamesTab store={store} toast={toast} />}
 
       {tab !== 'mapa' && (
-        <button className="account-btn" aria-label="Cuenta y nube" onClick={() => setSheet('account')}>
-          <Icon d={ICONS.nube} size={20} />
-          <i className={'sync-dot ' + sync.status.state} />
-        </button>
+        <div className="top-actions">
+          <button className="account-btn" aria-label={theme === 'dark' ? 'Modo claro' : 'Modo noche'} onClick={() => setMode(theme === 'dark' ? 'light' : 'dark')}>
+            <Icon d={theme === 'dark' ? ICONS.sol : ICONS.luna} size={19} />
+          </button>
+          <button className="account-btn" aria-label="Cuenta y nube" onClick={() => setSheet('account')}>
+            <Icon d={ICONS.nube} size={20} />
+            <i className={'sync-dot ' + sync.status.state} />
+          </button>
+        </div>
       )}
 
       <TabBar tab={tab} onChange={setTab} />
@@ -240,6 +248,8 @@ export default function App() {
         <Menu
           stats={{ nodes: nodes.length, edges: edges.length, persisted, lastExport }}
           sync={sync}
+          themeMode={mode}
+          onThemeMode={setMode}
           onAccount={() => setSheet('account')}
           onNew={() => startNew()}
           onPaste={() => setSheet('paste')}

@@ -3,14 +3,31 @@ import ForceGraph2D from 'react-force-graph-2d'
 import { nodeColor, ROOT_ID } from '../lib/model.js'
 import { buildResolver, extractLinks } from '../lib/markdown.js'
 
-const BG = '#0c0a08'
-const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif'
-const LINK = 'rgba(255,236,205,0.14)'
-const LINK_DIM = 'rgba(255,236,205,0.04)'
-const LINK_HI = 'rgba(245,210,122,0.6)'
+const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
+
+// Colores del mapa según el tema (variables --graph-* de styles.css).
+function readPalette() {
+  const css = getComputedStyle(document.documentElement)
+  const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback
+  const link = v('--graph-link-rgb', '17, 17, 17')
+  const hi = v('--graph-hi-rgb', '179, 38, 30')
+  return {
+    bg: v('--graph-bg', '#fbfaf7'),
+    node: v('--graph-node', '#8a8780'),
+    label: v('--graph-label', '#2b2925'),
+    link: `rgba(${link},0.16)`,
+    linkDim: `rgba(${link},0.05)`,
+    linkHi: `rgba(${hi},0.7)`,
+    relText: `rgba(${link},0.45)`,
+    relTextHi: `rgba(${hi},0.95)`,
+    glow: `rgba(${link},0.18)`,
+    ring: `rgba(${hi},0.9)`,
+  }
+}
 
 // Vista de grafo: canvas con zoom/arrastre táctil y líneas rectas.
-const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBackgroundTap }, ref) {
+const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTap, onBackgroundTap }, ref) {
+  const pal = useMemo(readPalette, [theme])
   const fg = useRef()
   const wrap = useRef()
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
@@ -104,7 +121,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
 
   const linkEnds = (l) => [typeof l.source === 'object' ? l.source.id : l.source, typeof l.target === 'object' ? l.target.id : l.target]
   const isHi = (l) => focusId && linkEnds(l).includes(focusId)
-  const linkColor = (l) => (isHi(l) ? LINK_HI : focusId ? LINK_DIM : LINK)
+  const linkColor = (l) => (isHi(l) ? pal.linkHi : focusId ? pal.linkDim : pal.link)
 
   return (
     <div className="graph" ref={wrap}>
@@ -137,9 +154,9 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
           const x = (s.x + t.x) / 2
           const y = (s.y + t.y) / 2
           ctx.lineWidth = 3 / scale
-          ctx.strokeStyle = BG
+          ctx.strokeStyle = pal.bg
           ctx.strokeText(l.rel, x, y)
-          ctx.fillStyle = isHi(l) ? 'rgba(245,225,180,0.85)' : 'rgba(255,236,205,0.42)'
+          ctx.fillStyle = isHi(l) ? pal.relTextHi : pal.relText
           ctx.fillText(l.rel, x, y)
         }}
         nodeCanvasObject={(n, ctx, scale) => {
@@ -163,8 +180,8 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
           // Brillo sutil alrededor de cada nodo.
           ctx.beginPath()
           ctx.arc(n.x, n.y, r, 0, 2 * Math.PI)
-          ctx.fillStyle = n.color
-          ctx.shadowColor = n.isRoot ? 'rgba(245,210,122,0.6)' : 'rgba(255,236,205,0.35)'
+          ctx.fillStyle = n.isRoot ? n.color : pal.node
+          ctx.shadowColor = n.isRoot ? 'rgba(245,210,122,0.6)' : pal.glow
           ctx.shadowBlur = n.isRoot ? 18 : focused ? 14 : 8
           ctx.fill()
           ctx.shadowBlur = 0
@@ -173,7 +190,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
             ctx.beginPath()
             ctx.arc(n.x, n.y, r + 4 / scale, 0, 2 * Math.PI)
             ctx.lineWidth = 1.5 / scale
-            ctx.strokeStyle = 'rgba(245,210,122,0.9)'
+            ctx.strokeStyle = pal.ring
             ctx.stroke()
           }
 
@@ -183,7 +200,8 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
             ctx.font = `${n.isRoot ? 600 : 500} ${fs}px ${FONT}`
             ctx.textAlign = 'center'
             ctx.textBaseline = 'top'
-            ctx.fillStyle = n.isRoot ? n.color : focused ? '#f7f0e4' : 'rgba(241,235,226,0.78)'
+            ctx.fillStyle = n.isRoot ? '#c9972e' : pal.label
+            ctx.globalAlpha = (dim ? 0.22 : 1) * (n.isRoot || focused ? 1 : 0.82)
             const label = n.title.length > 32 ? n.title.slice(0, 31) + '…' : n.title
             ctx.fillText(label, n.x, n.y + r + (focused ? 9 : 4) / scale)
           }

@@ -16,7 +16,7 @@ const ICONS = {
 }
 
 // Menú: solo lo esencial.
-export default function Menu({ stats, sync, onAccount, onNew, onPaste, onExport, onImportFile, onClose }) {
+export default function Menu({ stats, sync, themeMode, onThemeMode, onAccount, onNew, onPaste, onExport, onImportFile, onClose }) {
   const file = useRef()
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -30,6 +30,14 @@ export default function Menu({ stats, sync, onAccount, onNew, onPaste, onExport,
           <MenuItem icon="nube" label="Cuenta y nube" sub={<><i className={'sync-dot ' + sync.status.state} />{describe(sync.status)}</>} onClick={onAccount} />
           <MenuItem icon="exportar" label="Exportar respaldo" onClick={onExport} />
           <MenuItem icon="importar" label="Importar respaldo" onClick={() => file.current.click()} />
+        </div>
+        <div className="menu-group appearance">
+          <span className="appearance-label">Apariencia</span>
+          <div className="seg2">
+            {[['light', 'Claro'], ['dark', 'Noche'], ['auto', 'Automático']].map(([v, l]) => (
+              <button key={v} className={themeMode === v ? 'on' : ''} onClick={() => onThemeMode(v)}>{l}</button>
+            ))}
+          </div>
         </div>
         <input ref={file} type="file" accept="application/json,.json" hidden
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onImportFile(f) }} />

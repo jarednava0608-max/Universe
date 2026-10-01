@@ -1,24 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="45%" r="75%">
-      <stop offset="0" stop-color="#231c12"/>
-      <stop offset="0.55" stop-color="#120e09"/>
-      <stop offset="1" stop-color="#0a0806"/>
-    </radialGradient>
     <radialGradient id="halo" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#f5d27a" stop-opacity="0.45"/>
-      <stop offset="0.6" stop-color="#f5d27a" stop-opacity="0.08"/>
+      <stop offset="0" stop-color="#f5d27a" stop-opacity="0.55"/>
       <stop offset="1" stop-color="#f5d27a" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="orb" cx="40%" cy="35%" r="70%">
-      <stop offset="0" stop-color="#fff1c4"/>
-      <stop offset="0.55" stop-color="#f5d27a"/>
-      <stop offset="1" stop-color="#d9a945"/>
-    </radialGradient>
   </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#f5d27a" stroke-opacity="0.12" stroke-width="2"/>
-  <g stroke="#ffecd0" stroke-opacity="0.22" stroke-width="4" stroke-linecap="round">
+  <rect width="512" height="512" fill="#fbfaf7"/>
+  <g stroke="#111" stroke-opacity="0.35" stroke-width="5" stroke-linecap="round">
     <line x1="256" y1="256" x2="132" y2="150"/>
     <line x1="256" y1="256" x2="386" y2="138"/>
     <line x1="256" y1="256" x2="148" y2="376"/>
@@ -26,12 +14,12 @@
     <line x1="132" y1="150" x2="386" y2="138"/>
     <line x1="148" y1="376" x2="380" y2="368"/>
   </g>
-  <g fill="#e9dfcf">
+  <g fill="#1a1a1a">
     <circle cx="132" cy="150" r="15"/>
     <circle cx="386" cy="138" r="12"/>
     <circle cx="148" cy="376" r="12"/>
     <circle cx="380" cy="368" r="15"/>
   </g>
-  <circle cx="256" cy="256" r="130" fill="url(#halo)"/>
-  <circle cx="256" cy="256" r="44" fill="url(#orb)"/>
+  <circle cx="256" cy="256" r="110" fill="url(#halo)"/>
+  <circle cx="256" cy="256" r="44" fill="#f5d27a" stroke="#c9972e" stroke-width="3"/>
 </svg>
