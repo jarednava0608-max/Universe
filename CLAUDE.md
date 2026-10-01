@@ -13,16 +13,18 @@ Mapa personal tipo Obsidian para el estudio bíblico de un Testigo de Jehová. C
 
 ## Etapas
 1. **Hecha**: React + Vite, datos en IndexedDB (con `navigator.storage.persist()`), exportar/importar JSON, PWA.
-2. **Pendiente**: sincronizar con Supabase. Punto de entrada: `src/lib/db.js` (`commit`, `loadAll`). Mantener IndexedDB como caché offline.
+2. **Hecha**: sincronización con Supabase (proyecto "Memoria Bíblica", `jikonxuznepdyhcjyysh`, tablas `universe_nodes` / `universe_edges` con RLS por `user_id`). Cuenta con correo + contraseña. IndexedDB sigue siendo la fuente local (funciona sin conexión).
 3. **Pendiente**: buscar solo en jw.org y wol.jw.org y crear nodos automáticamente citando la fuente (pasar por la misma vista previa de `planImport` antes de guardar).
 
 ## Estructura
 - `src/lib/model.js`: tipos de nodo, colores, orígenes, relaciones sugeridas, `makeNode` / `makeEdge`.
-- `src/lib/db.js`: IndexedDB (stores `nodes`, `edges`, `meta`).
+- `src/lib/db.js`: IndexedDB (stores `nodes`, `edges`, `meta`). Cada cambio local se anota en el outbox (`meta.outbox`) dentro de la misma transacción; los cambios que vienen de la nube usan `commit(change, { track: false })`.
+- `src/lib/sync.js`: un ciclo = bajar (`server_updated_at` > última vez) → subir outbox. Gana el `updatedAt` más reciente; los borrados viajan como lápidas (`deleted = true`). La primera vez que se vincula una cuenta se marca todo lo local como pendiente. La raíz nueva nace con `updatedAt: 0` para no pisar la de la nube.
+- `src/lib/useSync.js`: sesión de Supabase y disparadores (al abrir, al volver a la app, al reconectar, 1.5 s después de cada cambio). `src/lib/supabase.js`: cliente (clave publicable; la seguridad la da RLS).
 - `src/lib/store.js`: hook `useStore` (estado en memoria + escritura). Al renombrar un nodo se actualizan los `[[enlaces]]`.
 - `src/lib/markdown.js`: render de notas (`marked` + `DOMPurify`), enlaces `[[Título]]` / `[[Título|texto]]`, bloques `[!jw]` / `[!yo]`.
 - `src/lib/importer.js`: "Pegar conocimiento" → `planImport` (vista previa) y `CLAUDE_FORMAT` (instrucciones para Claude).
-- `src/components/`: `Graph` (react-force-graph-2d en canvas), `NoteView`, `NodeEditor`, `NodePicker`, `PasteSheet`, `Search`, `Menu`.
+- `src/components/`: `Graph` (react-force-graph-2d en canvas), `NoteView`, `NodeEditor`, `NodePicker`, `PasteSheet`, `Search`, `Menu`, `AccountSheet` (cuenta y estado de la nube).
 - `public/sw.js`: service worker (offline). Si cambian archivos sin hash en `public/`, subir `CACHE`.
 
 ## Modelo de datos
@@ -40,5 +42,5 @@ Edge = { id, source, target, rel /* MAYÚSCULAS, p. ej. ENSEÑA */, createdAt }
 
 ## Comandos
 - `npm run dev`: servidor local (con `--host` para abrirlo desde el iPhone en la misma red).
-- `npm test`: pruebas (vitest) del importador y los enlaces.
+- `npm test`: pruebas (vitest) del importador, los enlaces y la sincronización (dos teléfonos simulados con fake-indexeddb y una nube en memoria).
 - `npm run build`: compila a `dist/` (Vercel lo detecta solo; ver `vercel.json`).

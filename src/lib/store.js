@@ -6,6 +6,7 @@ import { renameLinks } from './markdown.js'
 
 export function useStore() {
   const [state, setState] = useState({ nodes: [], edges: [], ready: false, error: null })
+  const [rev, setRev] = useState(0)
   const stateRef = useRef(state)
   stateRef.current = state
 
@@ -15,7 +16,7 @@ export function useStore() {
         let { nodes, edges } = await db.loadAll()
         if (!nodes.some((n) => n.id === ROOT_ID)) {
           const root = makeRoot()
-          await db.commit({ putNodes: [root] })
+          await db.commit({ putNodes: [root] }, { track: false })
           nodes = [root, ...nodes]
         }
         setState({ nodes, edges, ready: true, error: null })
@@ -25,9 +26,9 @@ export function useStore() {
     })()
   }, [])
 
-  const apply = useCallback(async (change) => {
+  // Actualiza solo la memoria (lo que ya se guardó en IndexedDB).
+  const mergeState = useCallback((change) => {
     const { putNodes = [], putEdges = [], delNodes = [], delEdges = [], clear = false } = change
-    await db.commit(change)
     setState((s) => {
       const nodes = new Map(clear ? [] : s.nodes.map((n) => [n.id, n]))
       const edges = new Map(clear ? [] : s.edges.map((e) => [e.id, e]))
@@ -38,6 +39,16 @@ export function useStore() {
       return { ...s, nodes: [...nodes.values()], edges: [...edges.values()] }
     })
   }, [])
+
+  // Cambio local: se guarda, se anota para subir a la nube y avisa (rev) a la sincronización.
+  const apply = useCallback(
+    async (change) => {
+      await db.commit(change)
+      mergeState(change)
+      setRev((r) => r + 1)
+    },
+    [mergeState],
+  )
 
   const saveNode = useCallback(
     async (node) => {
@@ -93,5 +104,5 @@ export function useStore() {
     [apply],
   )
 
-  return { ...state, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
+  return { ...state, rev, mergeRemote: mergeState, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
 }

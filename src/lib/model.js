@@ -90,8 +90,9 @@ export function makeNode(partial = {}) {
   }
 }
 
+// La raíz nueva nace con fecha 0: si ya existe en la nube, gana la de la nube.
 export function makeRoot() {
-  return makeNode({ id: ROOT_ID, title: 'Jehová', type: 'concepto', origin: 'jw', note: '' })
+  return { ...makeNode({ id: ROOT_ID, title: 'Jehová', type: 'concepto', origin: 'jw', note: '' }), createdAt: 0, updatedAt: 0 }
 }
 
 export function makeEdge(partial) {
@@ -101,6 +102,7 @@ export function makeEdge(partial) {
     target: partial.target,
     rel: normRel(partial.rel) || 'RELACIONADO',
     createdAt: partial.createdAt || Date.now(),
+    updatedAt: partial.updatedAt || partial.createdAt || Date.now(),
   }
 }
 

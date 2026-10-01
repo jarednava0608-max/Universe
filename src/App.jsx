@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from './lib/store.js'
+import { useSync } from './lib/useSync.js'
 import { getMeta, requestPersistence, setMeta } from './lib/db.js'
 import { buildExport } from './lib/importer.js'
 import { makeNode } from './lib/model.js'
@@ -9,16 +10,18 @@ import NoteView from './components/NoteView.jsx'
 import NodeEditor from './components/NodeEditor.jsx'
 import PasteSheet from './components/PasteSheet.jsx'
 import Menu from './components/Menu.jsx'
+import AccountSheet from './components/AccountSheet.jsx'
 
 export default function App() {
   const store = useStore()
+  const sync = useSync(store)
   const { nodes, edges } = store
   const graph = useRef()
 
   const [stack, setStack] = useState([]) // notas abiertas (para volver atrás)
   const [focusId, setFocusId] = useState(null)
   const [editor, setEditor] = useState(null)
-  const [sheet, setSheet] = useState(null) // 'menu' | 'paste'
+  const [sheet, setSheet] = useState(null) // 'menu' | 'paste' | 'account'
   const [pasteText, setPasteText] = useState('')
   const [toastMsg, setToastMsg] = useState('')
   const [persisted, setPersisted] = useState(null)
@@ -180,6 +183,8 @@ export default function App() {
       {sheet === 'menu' && (
         <Menu
           stats={{ nodes: nodes.length, edges: edges.length, persisted, lastExport }}
+          sync={sync}
+          onAccount={() => setSheet('account')}
           onNew={() => startNew()}
           onPaste={() => setSheet('paste')}
           onExport={exportAll}
@@ -187,6 +192,8 @@ export default function App() {
           onClose={() => setSheet(null)}
         />
       )}
+
+      {sheet === 'account' && <AccountSheet sync={sync} onClose={() => setSheet(null)} />}
 
       {sheet === 'paste' && (
         <PasteSheet
