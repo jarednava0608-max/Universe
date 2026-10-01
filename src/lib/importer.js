@@ -45,7 +45,8 @@ export function planImport(data, state, opts = {}) {
   const rawNodes = Array.isArray(data) ? data : data?.nodes ?? data?.nodos ?? []
   const rawEdges = Array.isArray(data) ? [] : data?.edges ?? data?.conexiones ?? data?.links ?? []
   if (!Array.isArray(rawNodes) || !Array.isArray(rawEdges)) throw new Error('Se esperaba { "nodes": [...], "edges": [...] }.')
-  if (!rawNodes.length && !rawEdges.length) throw new Error('El JSON no trae nodos ni conexiones.')
+  const hasEntries = !Array.isArray(data) && data?.app === 'universe' && Array.isArray(data.entries) && data.entries.length
+  if (!rawNodes.length && !rawEdges.length && !hasEntries) throw new Error('El JSON no trae nodos ni conexiones.')
 
   const isBackup = !Array.isArray(data) && data?.app === 'universe'
   const replace = Boolean(opts.replace && isBackup)
@@ -139,6 +140,8 @@ export function planImport(data, state, opts = {}) {
     newNodes: [...created.values()],
     updatedNodes: [...updated.values()].map((after) => ({ before: existingById.get(after.id), after })),
     newEdges,
+    // Entradas de Estudio: solo vienen en un respaldo completo (se guardan tal cual).
+    entries: isBackup && Array.isArray(data.entries) ? data.entries.filter((e) => e && e.id && e.kind && e.fields) : [],
     warnings,
   }
 }
@@ -166,13 +169,14 @@ function mergeNode(prev, incoming) {
   return next
 }
 
-export function buildExport(nodes, edges) {
+export function buildExport(nodes, edges, entries = []) {
   return {
     app: 'universe',
     version: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     nodes,
     edges,
+    entries,
   }
 }
 

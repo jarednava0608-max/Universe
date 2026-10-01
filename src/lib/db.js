@@ -4,16 +4,20 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'universe'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 let dbPromise
 function db() {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(d) {
-        d.createObjectStore('nodes', { keyPath: 'id' })
-        d.createObjectStore('edges', { keyPath: 'id' })
-        d.createObjectStore('meta')
+      upgrade(d, oldVersion) {
+        if (oldVersion < 1) {
+          d.createObjectStore('nodes', { keyPath: 'id' })
+          d.createObjectStore('edges', { keyPath: 'id' })
+          d.createObjectStore('meta')
+        }
+        // v2: entradas de la pestaña Estudio (texto diario, reuniones, estudios, reflexiones).
+        if (oldVersion < 2) d.createObjectStore('entries', { keyPath: 'id' })
       },
     })
   }
@@ -22,29 +26,30 @@ function db() {
 
 export async function loadAll() {
   const d = await db()
-  const [nodes, edges] = await Promise.all([d.getAll('nodes'), d.getAll('edges')])
-  return { nodes, edges }
+  const [nodes, edges, entries] = await Promise.all([d.getAll('nodes'), d.getAll('edges'), d.getAll('entries')])
+  return { nodes, edges, entries }
 }
 
 export async function get(kind, id) {
   return (await db()).get(kind, id)
 }
 
-// Outbox: { nodes: { [id]: { t, del, v } }, edges: {...} }
+// Outbox: { nodes: { [id]: { t, del, v } }, edges: {...}, entries: {...} }
 // t = momento del cambio, del = borrado, v = versión (para no perder cambios hechos durante una subida).
 function readOutbox(raw) {
-  return { nodes: { ...(raw?.nodes ?? {}) }, edges: { ...(raw?.edges ?? {}) } }
+  return { nodes: { ...(raw?.nodes ?? {}) }, edges: { ...(raw?.edges ?? {}) }, entries: { ...(raw?.entries ?? {}) } }
 }
 const ver = () => Date.now() + Math.random()
 
 // Aplica cambios en una sola transacción: o se guarda todo o nada.
 // track=false se usa para cambios que vienen de la nube (no hay que volver a subirlos).
 export async function commit(change, { track = true } = {}) {
-  const { putNodes = [], putEdges = [], delNodes = [], delEdges = [], clear = false } = change
+  const { putNodes = [], putEdges = [], delNodes = [], delEdges = [], putEntries = [], delEntries = [], clear = false } = change
   const d = await db()
-  const tx = d.transaction(['nodes', 'edges', 'meta'], 'readwrite')
+  const tx = d.transaction(['nodes', 'edges', 'entries', 'meta'], 'readwrite')
   const ns = tx.objectStore('nodes')
   const es = tx.objectStore('edges')
+  const ens = tx.objectStore('entries')
   const ms = tx.objectStore('meta')
   const now = Date.now()
   const ob = track ? readOutbox(await ms.get('outbox')) : null
@@ -72,6 +77,14 @@ export async function commit(change, { track = true } = {}) {
   for (const id of delEdges) {
     es.delete(id)
     if (track) ob.edges[id] = { t: now, del: true, v: ver() }
+  }
+  for (const e of putEntries) {
+    ens.put(e)
+    if (track) ob.entries[e.id] = { t: e.updatedAt ?? now, del: false, v: ver() }
+  }
+  for (const id of delEntries) {
+    ens.delete(id)
+    if (track) ob.entries[id] = { t: now, del: true, v: ver() }
   }
   if (track) ms.put(ob, 'outbox')
   await tx.done
@@ -104,10 +117,11 @@ export async function dropOutbox(kind, ids) {
 // Marca todo lo local como pendiente de subir (primera vez que se vincula una cuenta).
 export async function markAllDirty() {
   const d = await db()
-  const tx = d.transaction(['nodes', 'edges', 'meta'], 'readwrite')
+  const tx = d.transaction(['nodes', 'edges', 'entries', 'meta'], 'readwrite')
   const ob = readOutbox(await tx.objectStore('meta').get('outbox'))
   for (const n of await tx.objectStore('nodes').getAll()) ob.nodes[n.id] ??= { t: n.updatedAt ?? 0, del: false, v: ver() }
   for (const e of await tx.objectStore('edges').getAll()) ob.edges[e.id] ??= { t: e.updatedAt ?? e.createdAt ?? 0, del: false, v: ver() }
+  for (const e of await tx.objectStore('entries').getAll()) ob.entries[e.id] ??= { t: e.updatedAt ?? 0, del: false, v: ver() }
   tx.objectStore('meta').put(ob, 'outbox')
   await tx.done
 }

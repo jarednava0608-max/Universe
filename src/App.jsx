@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from './lib/store.js'
 import { useSync } from './lib/useSync.js'
 import { getMeta, requestPersistence, setMeta } from './lib/db.js'
-import { buildExport } from './lib/importer.js'
+import { buildExport, planImport } from './lib/importer.js'
 import { makeNode } from './lib/model.js'
 import Graph from './components/Graph.jsx'
 import Search from './components/Search.jsx'
@@ -11,6 +11,9 @@ import NodeEditor from './components/NodeEditor.jsx'
 import PasteSheet from './components/PasteSheet.jsx'
 import Menu from './components/Menu.jsx'
 import AccountSheet from './components/AccountSheet.jsx'
+import TabBar from './components/TabBar.jsx'
+import StudyTab from './study/StudyTab.jsx'
+import GamesTab from './games/GamesTab.jsx'
 
 export default function App() {
   const store = useStore()
@@ -18,6 +21,7 @@ export default function App() {
   const { nodes, edges } = store
   const graph = useRef()
 
+  const [tab, setTab] = useState('mapa') // 'mapa' | 'estudio' | 'juegos'
   const [stack, setStack] = useState([]) // notas abiertas (para volver atrás)
   const [focusId, setFocusId] = useState(null)
   const [editor, setEditor] = useState(null)
@@ -98,7 +102,7 @@ export default function App() {
 
   async function exportAll() {
     setSheet(null)
-    const json = JSON.stringify(buildExport(nodes, edges), null, 2)
+    const json = JSON.stringify(buildExport(nodes, edges, store.entries), null, 2)
     const name = `universe-${new Date().toISOString().slice(0, 10)}.json`
     const file = new File([json], name, { type: 'application/json' })
     try {
@@ -140,10 +144,30 @@ export default function App() {
     setTimeout(() => graph.current?.fit(), 1200)
   }
 
+  // "Proponer al mapa" desde Estudio: crea el nodo (o añade la información si ya existe).
+  async function proposeToMap(node) {
+    const plan = planImport({ nodes: [{ title: node.title, note: node.note }] }, { nodes, edges })
+    const target = plan.newNodes[0] ?? plan.updatedNodes[0]?.after
+    if (!target) {
+      const same = nodes.find((n) => n.title.trim().toLowerCase() === node.title.trim().toLowerCase())
+      toast('Eso ya estaba en el mapa.')
+      return same?.id ?? null
+    }
+    await store.applyImport(plan)
+    toast(plan.newNodes.length ? 'Nodo agregado al mapa.' : 'Información añadida al nodo.')
+    return target.id
+  }
+
+  function openNodeFromStudy(id) {
+    setTab('mapa')
+    setTimeout(() => openNote(id), 50)
+  }
+
   if (!store.ready) return <div className="boot" />
 
   return (
     <div className="app">
+      <div className={'tab-map' + (tab === 'mapa' ? '' : ' tab-hidden')}>
       <Graph
         ref={graph}
         nodes={nodes}
@@ -164,6 +188,23 @@ export default function App() {
           <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </button>
+
+      </div>
+
+      {tab === 'estudio' && (
+        <StudyTab
+          entries={store.entries}
+          nodes={nodes}
+          onSaveEntry={store.saveEntry}
+          onDeleteEntry={store.deleteEntry}
+          onProposeToMap={proposeToMap}
+          onOpenNode={openNodeFromStudy}
+          toast={toast}
+        />
+      )}
+      {tab === 'juegos' && <GamesTab store={store} toast={toast} />}
+
+      <TabBar tab={tab} onChange={setTab} />
 
       {store.error && <p className="banner">{store.error}</p>}
 

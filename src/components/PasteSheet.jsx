@@ -55,7 +55,7 @@ export default function PasteSheet({ nodes, edges, initialText = '', onConfirm, 
     }
   }
 
-  const empty = plan && !plan.newNodes.length && !plan.updatedNodes.length && !plan.newEdges.length
+  const empty = plan && !plan.newNodes.length && !plan.updatedNodes.length && !plan.newEdges.length && !plan.entries?.length
 
   return (
     <div className="overlay paste">
@@ -132,6 +132,12 @@ export default function PasteSheet({ nodes, edges, initialText = '', onConfirm, 
                     </li>
                   ))}
                 </ul>
+              </section>
+            )}
+
+            {plan.entries?.length > 0 && (
+              <section>
+                <h2>Entradas de estudio · {plan.entries.length}</h2>
               </section>
             )}
 

@@ -5,7 +5,7 @@ import { makeEdge, makeRoot, ROOT_ID } from './model.js'
 import { renameLinks } from './markdown.js'
 
 export function useStore() {
-  const [state, setState] = useState({ nodes: [], edges: [], ready: false, error: null })
+  const [state, setState] = useState({ nodes: [], edges: [], entries: [], ready: false, error: null })
   const [rev, setRev] = useState(0)
   const stateRef = useRef(state)
   stateRef.current = state
@@ -13,13 +13,13 @@ export function useStore() {
   useEffect(() => {
     ;(async () => {
       try {
-        let { nodes, edges } = await db.loadAll()
+        let { nodes, edges, entries } = await db.loadAll()
         if (!nodes.some((n) => n.id === ROOT_ID)) {
           const root = makeRoot()
           await db.commit({ putNodes: [root] }, { track: false })
           nodes = [root, ...nodes]
         }
-        setState({ nodes, edges, ready: true, error: null })
+        setState({ nodes, edges, entries, ready: true, error: null })
       } catch (e) {
         setState((s) => ({ ...s, ready: true, error: 'No se pudo abrir el almacenamiento: ' + e.message }))
       }
@@ -28,15 +28,18 @@ export function useStore() {
 
   // Actualiza solo la memoria (lo que ya se guardó en IndexedDB).
   const mergeState = useCallback((change) => {
-    const { putNodes = [], putEdges = [], delNodes = [], delEdges = [], clear = false } = change
+    const { putNodes = [], putEdges = [], delNodes = [], delEdges = [], putEntries = [], delEntries = [], clear = false } = change
     setState((s) => {
       const nodes = new Map(clear ? [] : s.nodes.map((n) => [n.id, n]))
       const edges = new Map(clear ? [] : s.edges.map((e) => [e.id, e]))
+      const entries = new Map(s.entries.map((e) => [e.id, e]))
       for (const n of putNodes) nodes.set(n.id, n)
       for (const e of putEdges) edges.set(e.id, e)
       for (const id of delNodes) nodes.delete(id)
       for (const id of delEdges) edges.delete(id)
-      return { ...s, nodes: [...nodes.values()], edges: [...edges.values()] }
+      for (const e of putEntries) entries.set(e.id, e)
+      for (const id of delEntries) entries.delete(id)
+      return { ...s, nodes: [...nodes.values()], edges: [...edges.values()], entries: [...entries.values()] }
     })
   }, [])
 
@@ -100,9 +103,18 @@ export function useStore() {
         clear: plan.replace,
         putNodes: [...plan.newNodes, ...plan.updatedNodes.map((u) => u.after)],
         putEdges: plan.newEdges,
+        putEntries: plan.entries ?? [],
       }),
     [apply],
   )
 
-  return { ...state, rev, mergeRemote: mergeState, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
+  // Pestaña Estudio.
+  const saveEntry = useCallback(async (entry) => {
+    const next = { ...entry, updatedAt: Date.now() }
+    await apply({ putEntries: [next] })
+    return next
+  }, [apply])
+  const deleteEntry = useCallback((id) => apply({ delEntries: [id] }), [apply])
+
+  return { ...state, rev, mergeRemote: mergeState, saveEntry, deleteEntry, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
 }
