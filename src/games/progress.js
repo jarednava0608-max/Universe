@@ -98,5 +98,34 @@ export function mergeProgress(a = {}, b = {}) {
   for (const [k, v] of Object.entries(a.srs ?? {})) {
     if (!srs[k] || (v?.due ?? '') > (srs[k]?.due ?? '')) srs[k] = v
   }
-  return { ...b, ...a, days, srs, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0) }
+  const best = { ...(b.best ?? {}) }
+  for (const [k, v] of Object.entries(a.best ?? {})) best[k] = Math.max(v ?? 0, best[k] ?? 0)
+  return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0) }
+}
+
+// Guarda un récord solo si supera el anterior. Devuelve los campos nuevos (o los mismos).
+export function withBest(fields, key, value) {
+  const prev = fields.best?.[key] ?? 0
+  return value > prev ? { ...fields, best: { ...(fields.best ?? {}), [key]: value } } : fields
+}
+
+// Logros calculados con lo que ya hay (no se guardan aparte).
+export function achievements({ days = [], srs = {}, triviaBest = 0, best = {} } = {}, { nodes = 0, memorized = 0 } = {}) {
+  const { best: bestStreak } = streak(days)
+  const mastered = Object.values(srs).filter((s) => (s?.box ?? 0) >= 4).length
+  const list = [
+    ['racha-3', 'Constante', '3 días seguidos estudiando', bestStreak >= 3],
+    ['racha-7', 'Una semana', '7 días seguidos estudiando', bestStreak >= 7],
+    ['racha-30', 'Un mes entero', '30 días seguidos estudiando', bestStreak >= 30],
+    ['dias-50', 'Estudiante fiel', '50 días de estudio en total', days.length >= 50],
+    ['texto-1', 'Primer texto', 'Memorizaste tu primer texto', memorized >= 1],
+    ['texto-10', 'Diez de memoria', '10 textos memorizados', memorized >= 10],
+    ['nodos-10', 'Mapa en marcha', '10 ideas en tu mapa', nodes >= 10],
+    ['nodos-50', 'Gran mapa', '50 ideas en tu mapa', nodes >= 50],
+    ['trivia-100', 'Ronda perfecta', '100 % en una ronda de trivia', triviaBest >= 100],
+    ['reloj-1500', 'Rápido y certero', '1500 puntos contra reloj', (best['trivia-reloj'] ?? 0) >= 1500],
+    ['libros-100', 'Conozco los libros', '100 % en Libros de la Biblia', (best.libros ?? 0) >= 100],
+    ['dominado-25', 'Bien sembrado', '25 cosas dominadas en el repaso', mastered >= 25],
+  ]
+  return list.map(([id, title, desc, done]) => ({ id, title, desc, done }))
 }

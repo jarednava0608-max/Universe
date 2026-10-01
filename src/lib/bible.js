@@ -1,7 +1,7 @@
 // Citas bíblicas en español → enlace directo a la Biblia en wol.jw.org (Traducción del Nuevo Mundo).
 // Todo es local: solo arma la dirección; no consulta ningún servicio.
 
-const BOOKS = [
+export const BOOKS = [
   'Génesis', 'Éxodo', 'Levítico', 'Números', 'Deuteronomio', 'Josué', 'Jueces', 'Rut', '1 Samuel', '2 Samuel',
   '1 Reyes', '2 Reyes', '1 Crónicas', '2 Crónicas', 'Esdras', 'Nehemías', 'Ester', 'Job', 'Salmos', 'Proverbios',
   'Eclesiastés', 'El Cantar de los Cantares', 'Isaías', 'Jeremías', 'Lamentaciones', 'Ezequiel', 'Daniel', 'Oseas', 'Joel', 'Amós',

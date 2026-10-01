@@ -1,6 +1,7 @@
 // Lógica de los juegos (sin interfaz), para poder probarla.
 import { newId, normKey, ROOT_ID } from '../lib/model.js'
 import { plainText } from '../lib/markdown.js'
+import { BOOKS, parseRef } from '../lib/bible.js'
 
 export function shuffle(list, rnd = Math.random) {
   const a = [...list]
@@ -203,4 +204,114 @@ export function mulberry(a) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
+}
+
+// ---------- Más formas de memorizar ----------
+
+// "Iniciales": solo la primera letra de cada palabra (con su puntuación).
+export function initials(texto) {
+  return texto
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.replace(/^([«“"(¿¡]*)([\p{L}\d])[\p{L}\d'’-]*/u, '$1$2'))
+    .join(' ')
+}
+
+// "Ordenar": el texto en trozos de unas pocas palabras (máximo ~8 trozos).
+export function chunkText(texto, maxPieces = 8) {
+  const words = texto.split(/\s+/).filter(Boolean)
+  const size = Math.max(2, Math.ceil(words.length / maxPieces))
+  const out = []
+  for (let i = 0; i < words.length; i += size) out.push(words.slice(i, i + size).join(' '))
+  return out
+}
+
+// ---------- "¿Dónde está?" (adivinar la cita) ----------
+
+export function buildCiteQuestions(verses, count = 10, rnd = Math.random) {
+  const seen = new Set()
+  const pool = verses.filter((v) => {
+    const k = normKey(v.fields.cita ?? '')
+    if (!k || !parseRef(v.fields.cita) || seen.has(k)) return false
+    seen.add(k)
+    return true
+  })
+  if (pool.length < 4) return []
+  return shuffle(pool, rnd).slice(0, count).map((v) => {
+    const opts = shuffle([v, ...shuffle(pool.filter((o) => o !== v), rnd).slice(0, 3)], rnd)
+    return { prompt: clipText(v.fields.texto, 260), options: opts.map((o) => o.fields.cita), answer: opts.indexOf(v), key: 'cita:' + v.id }
+  })
+}
+
+// ---------- Libros de la Biblia ----------
+
+export const SECTIONS = [
+  { name: 'Pentateuco', from: 1, to: 5 },
+  { name: 'Históricos', from: 6, to: 17 },
+  { name: 'Poéticos', from: 18, to: 22 },
+  { name: 'Proféticos', from: 23, to: 39 },
+  { name: 'Evangelios y Hechos', from: 40, to: 44 },
+  { name: 'Cartas', from: 45, to: 65 },
+  { name: 'Apocalipsis', from: 66, to: 66 },
+]
+export const sectionOf = (n) => SECTIONS.find((s) => n >= s.from && n <= s.to).name
+
+// Preguntas variadas: qué libro va después, cuál va antes y en qué sección está.
+export function buildBookQuestions(count = 10, rnd = Math.random) {
+  const out = []
+  const used = new Set()
+  while (out.length < count) {
+    const type = Math.floor(rnd() * 3)
+    const n = 2 + Math.floor(rnd() * 64) // 2..65: siempre tiene anterior y siguiente
+    const key = type + ':' + n
+    if (used.has(key)) continue
+    used.add(key)
+    const book = BOOKS[n - 1]
+    if (type === 2) {
+      const right = sectionOf(n)
+      const opts = shuffle([right, ...shuffle(SECTIONS.map((s) => s.name).filter((s) => s !== right), rnd).slice(0, 3)], rnd)
+      out.push({ prompt: `¿En qué sección está ${book}?`, options: opts, answer: opts.indexOf(right), explain: `${book} es el libro ${n} de 66.` })
+    } else {
+      const target = type === 0 ? n + 1 : n - 1
+      // Distractores cercanos (lo difícil es lo que está alrededor).
+      const near = [n - 3, n - 2, n + 2, n + 3, type === 0 ? n - 1 : n + 1].filter((x) => x >= 1 && x <= 66 && x !== target && x !== n)
+      const opts = shuffle([target, ...shuffle(near, rnd).slice(0, 3)], rnd)
+      out.push({
+        prompt: type === 0 ? `¿Qué libro va después de ${book}?` : `¿Qué libro va antes de ${book}?`,
+        options: opts.map((x) => BOOKS[x - 1]),
+        answer: opts.indexOf(target),
+        explain: type === 0 ? `${book} (${n}) → ${BOOKS[target - 1]} (${target})` : `${BOOKS[target - 1]} (${target}) → ${book} (${n})`,
+      })
+    }
+  }
+  return out
+}
+
+// Ordenar: unos libros seguidos (desordenados en pantalla).
+export function bookRun(size = 6, rnd = Math.random) {
+  const start = 1 + Math.floor(rnd() * (66 - size + 1))
+  return BOOKS.slice(start - 1, start - 1 + size)
+}
+
+// ---------- Contra reloj ----------
+
+// Puntos por respuesta correcta: 100 base + hasta 100 por rapidez.
+export function timedPoints(msLeft, msTotal) {
+  return 100 + Math.round(100 * Math.max(0, Math.min(1, msLeft / msTotal)))
+}
+
+// ---------- Repasar hoy ----------
+
+// Mezcla lo que toca hoy (tarjetas, textos y preguntas) en una sola sesión, alternando tipos.
+export function dailyMix({ cards = [], verses = [], trivia = [] }, srs, isDueFn, limit = 20) {
+  const lists = [
+    cards.filter((c) => isDueFn(srs['c:' + c.id])).map((c) => ({ type: 'card', key: 'c:' + c.id, item: c })),
+    verses.filter((v) => isDueFn(srs['v:' + v.id])).map((v) => ({ type: 'verse', key: 'v:' + v.id, item: v })),
+    trivia.filter((t) => isDueFn(srs['q:' + t.id])).map((t) => ({ type: 'trivia', key: 'q:' + t.id, item: t })),
+  ].map((l) => l.sort((a, b) => (srs[a.key]?.due ?? '').localeCompare(srs[b.key]?.due ?? '')))
+  const out = []
+  while (out.length < limit && lists.some((l) => l.length)) {
+    for (const l of lists) if (l.length && out.length < limit) out.push(l.shift())
+  }
+  return out
 }

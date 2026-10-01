@@ -1,11 +1,23 @@
 import { useMemo, useState } from 'react'
-import { clozeWords, makeVerse, parseVerses, verseSources, VERSES_FORMAT } from './logic.js'
-import { GameScreen, PasteJson, Empty } from './ui.jsx'
+import { chunkText, clozeWords, initials, makeVerse, parseVerses, verseSources, VERSES_FORMAT } from './logic.js'
+import { GameScreen, PasteJson, Empty, OrderPuzzle } from './ui.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
 import { byPriority, isDue, review } from './progress.js'
 
 const LEVELS = ['Fácil', 'Medio', 'Difícil', 'De memoria']
+const MODES = [['hide', 'Ocultar'], ['initials', 'Iniciales'], ['order', 'Ordenar']]
+
+// Guarda el resultado de practicar un texto: sube o baja de nivel y agenda el próximo repaso.
+// Los textos del diario se copian a "mis textos" la primera vez que se practican.
+export async function saveVerseResult(store, verse, knewIt, nivel = verse.fields.nivel ?? 0) {
+  const lvl = knewIt ? Math.min(nivel + 1, 3) : Math.max(nivel - 1, 0)
+  const saved = verse.fromDaily ? { ...makeVerse(verse.fields), fields: { ...verse.fields, nivel: lvl } } : { ...verse, fields: { ...verse.fields, nivel: lvl } }
+  const stored = await store.saveEntry(saved)
+  const key = 'v:' + stored.id
+  await store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [key]: review(f.srs?.[key], knewIt) } }))
+  return { stored, lvl }
+}
 
 // Memorizar textos: cada nivel oculta más palabras. Toca una palabra oculta para verla.
 export default function Memorize({ store, toast, onExit }) {
@@ -77,51 +89,95 @@ function Dots({ n }) {
 }
 
 function Practice({ verse, store, onSaved, onBack }) {
+  const [mode, setMode] = useState('hide')
   const [nivel, setNivel] = useState(Math.min(verse.fields.nivel ?? 0, 3))
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6))
   const [shown, setShown] = useState(() => new Set())
+  const [peek, setPeek] = useState(false)
+  const [ordered, setOrdered] = useState(null) // errores al terminar de ordenar
   const words = useMemo(() => clozeWords(verse.fields.texto, nivel, seed), [verse.fields.texto, nivel, seed])
+  const pieces = useMemo(() => chunkText(verse.fields.texto), [verse.fields.texto])
   const hiddenLeft = words.filter((w, i) => w.hidden && !shown.has(i)).length
 
-  async function next(knewIt) {
-    const lvl = knewIt ? Math.min(nivel + 1, 3) : Math.max(nivel - 1, 0)
-    // Los textos del diario se copian a "mis textos" la primera vez que se practican.
-    const saved = verse.fromDaily ? { ...makeVerse(verse.fields), fields: { ...verse.fields, nivel: lvl } } : { ...verse, fields: { ...verse.fields, nivel: lvl } }
-    const stored = await store.saveEntry(saved)
-    const key = 'v:' + stored.id
-    await store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [key]: review(f.srs?.[key], knewIt) } }))
-    if (verse.fromDaily) onSaved(stored)
-    setNivel(lvl)
+  function reset() {
     setSeed(Math.floor(Math.random() * 1e6))
     setShown(new Set())
+    setPeek(false)
+    setOrdered(null)
   }
+
+  async function next(knewIt) {
+    const { stored, lvl } = await saveVerseResult(store, verse, knewIt, nivel)
+    if (verse.fromDaily) onSaved(stored)
+    setNivel(lvl)
+    reset()
+  }
+
+  const ref = verse.fields.cita && <p className="verse-ref">{findRefs(verse.fields.cita).length ? <RefLink refText={findRefs(verse.fields.cita)[0]} /> : verse.fields.cita}</p>
+  const answer = (
+    <div className="two-btn">
+      <button className="secondary" onClick={() => next(false)}>Repasar</button>
+      <button className="primary" onClick={() => next(true)}>Lo sé</button>
+    </div>
+  )
 
   return (
     <GameScreen title={verse.fields.cita || 'Texto'} onExit={onBack}>
-      <div className="level-tabs">
-        {LEVELS.map((l, i) => (
-          <button key={l} className={i === nivel ? 'on' : ''} onClick={() => { setNivel(i); setShown(new Set()) }}>{l}</button>
+      <div className="seg-modes">
+        {MODES.map(([m, l]) => (
+          <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); reset() }}>{l}</button>
         ))}
       </div>
-      <p className="verse">
-        {words.map((w, i) => (
-          <span key={i}>
-            {w.pre}
-            {w.hidden && !shown.has(i) ? (
-              <button className="blank" style={{ width: `${Math.max(2, w.word.length) * 0.62}em` }} onClick={() => setShown((s) => new Set(s).add(i))} aria-label="Ver palabra" />
-            ) : (
-              <span className={w.hidden ? 'revealed' : ''}>{w.word}</span>
-            )}
-            {w.post}{' '}
-          </span>
-        ))}
-      </p>
-      {verse.fields.cita && <p className="verse-ref">{findRefs(verse.fields.cita).length ? <RefLink refText={findRefs(verse.fields.cita)[0]} /> : verse.fields.cita}</p>}
-      <p className="hint center">{hiddenLeft ? 'Dilo de memoria. Toca un espacio para ver la palabra.' : '¿Lo dijiste completo?'}</p>
-      <div className="two-btn">
-        <button className="secondary" onClick={() => next(false)}>Repasar</button>
-        <button className="primary" onClick={() => next(true)}>Lo sé</button>
-      </div>
+
+      {mode === 'hide' && (
+        <>
+          <div className="level-tabs">
+            {LEVELS.map((l, i) => (
+              <button key={l} className={i === nivel ? 'on' : ''} onClick={() => { setNivel(i); setShown(new Set()) }}>{l}</button>
+            ))}
+          </div>
+          <p className="verse">
+            {words.map((w, i) => (
+              <span key={i}>
+                {w.pre}
+                {w.hidden && !shown.has(i) ? (
+                  <button className="blank" style={{ width: `${Math.max(2, w.word.length) * 0.62}em` }} onClick={() => setShown((s) => new Set(s).add(i))} aria-label="Ver palabra" />
+                ) : (
+                  <span className={w.hidden ? 'revealed' : ''}>{w.word}</span>
+                )}
+                {w.post}{' '}
+              </span>
+            ))}
+          </p>
+          {ref}
+          <p className="hint center">{hiddenLeft ? 'Dilo de memoria. Toca un espacio para ver la palabra.' : '¿Lo dijiste completo?'}</p>
+          {answer}
+        </>
+      )}
+
+      {mode === 'initials' && (
+        <>
+          <button className="verse initials" onClick={() => setPeek((p) => !p)}>
+            {peek ? verse.fields.texto : initials(verse.fields.texto)}
+          </button>
+          {ref}
+          <p className="hint center">{peek ? 'Toca el texto para volver a las iniciales.' : 'Solo ves la primera letra de cada palabra. Dilo completo; toca el texto si te atoras.'}</p>
+          {answer}
+        </>
+      )}
+
+      {mode === 'order' && (
+        <>
+          <OrderPuzzle key={seed} pieces={pieces} onDone={setOrdered} hint="Toca los trozos del texto en orden." />
+          {ordered != null && (
+            <>
+              <p className={'order-result ' + (ordered ? 'bad' : 'ok')}>{ordered ? `Listo, con ${ordered} ${ordered === 1 ? 'error' : 'errores'}.` : '¡Perfecto, sin errores!'}</p>
+              {ref}
+              {answer}
+            </>
+          )}
+        </>
+      )}
     </GameScreen>
   )
 }

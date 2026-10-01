@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
-import { buildCards, buildGuessQuestions, buildPairs } from './logic.js'
-import { GameScreen, Quiz, Empty } from './ui.jsx'
+import { useMemo, useRef, useState } from 'react'
+import { buildCards, buildCiteQuestions, buildGuessQuestions, buildPairs, verseSources } from './logic.js'
+import { GameScreen, Quiz, Empty, ModeCard, Confetti } from './ui.jsx'
 import { byPriority, dueCount, isDue, nextDue, review } from './progress.js'
 import { formatDate } from '../study/kinds.js'
 
@@ -12,6 +12,7 @@ export default function StudyGames({ store, onExit }) {
   if (mode === 'guess') return <Guess nodes={store.nodes} onExit={exit} />
   if (mode === 'pairs') return <Pairs nodes={store.nodes} onExit={exit} />
   if (mode === 'cards') return <Cards store={store} onExit={exit} />
+  if (mode === 'cite') return <Cite entries={store.entries} onExit={exit} />
 
   return (
     <GameScreen title="Con lo que estudio" onExit={onExit}>
@@ -20,30 +21,39 @@ export default function StudyGames({ store, onExit }) {
         <ModeCard title="¿Qué es?" desc="Lee una definición y elige qué nodo es." onClick={() => setMode('guess')} />
         <ModeCard title="Parejas" desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
         <ModeCard title="Tarjetas" desc="Repasa: ve el título y recuerda lo que significa." onClick={() => setMode('cards')} />
+        <ModeCard title="¿Dónde está?" desc="Lee un texto bíblico y elige su cita." onClick={() => setMode('cite')} />
       </div>
     </GameScreen>
   )
 }
 
-function ModeCard({ title, desc, onClick }) {
-  return (
-    <button className="mode-card" onClick={onClick}>
-      <span className="mode-title">{title}</span>
-      <span className="mode-desc">{desc}</span>
-    </button>
-  )
-}
 
 const needMore = 'Necesitas al menos 4 nodos con definición en tu mapa para este juego.'
 
 function Guess({ nodes, onExit }) {
   const [round, setRound] = useState(() => buildGuessQuestions(nodes))
+  const [nonce, setNonce] = useState(0)
   return (
     <GameScreen title="¿Qué es?" onExit={onExit}>
       {round.length ? (
-        <Quiz key={round.map((q) => q.nodeId).join()} questions={round} onDone={onExit} onAgain={() => setRound(buildGuessQuestions(nodes))} />
+        <Quiz key={nonce} questions={round} onDone={onExit} onAgain={() => { setRound(buildGuessQuestions(nodes)); setNonce((x) => x + 1) }} />
       ) : (
         <Empty>{needMore}</Empty>
+      )}
+    </GameScreen>
+  )
+}
+
+function Cite({ entries, onExit }) {
+  const verses = useMemo(() => verseSources(entries), [entries])
+  const [round, setRound] = useState(() => buildCiteQuestions(verses))
+  const [nonce, setNonce] = useState(0)
+  return (
+    <GameScreen title="¿Dónde está?" onExit={onExit}>
+      {round.length ? (
+        <Quiz key={nonce} questions={round} onDone={onExit} onAgain={() => { setRound(buildCiteQuestions(verses)); setNonce((x) => x + 1) }} />
+      ) : (
+        <Empty>Necesitas al menos 4 textos con su cita (en Memorizar textos o en tu Texto diario) para este juego.</Empty>
       )}
     </GameScreen>
   )
@@ -55,6 +65,8 @@ function Pairs({ nodes, onExit }) {
   const [done, setDone] = useState(() => new Set())
   const [miss, setMiss] = useState(null)
   const [errors, setErrors] = useState(0)
+  const startRef = useRef(Date.now())
+  const [secs, setSecs] = useState(0)
 
   if (!board) return <GameScreen title="Parejas" onExit={onExit}><Empty>Necesitas al menos 3 nodos con definición en tu mapa para este juego.</Empty></GameScreen>
 
@@ -62,8 +74,10 @@ function Pairs({ nodes, onExit }) {
   function pickRight(id) {
     if (!left || done.has(id)) return
     if (left === id) {
-      setDone((d) => new Set(d).add(id))
+      const next = new Set(done).add(id)
+      setDone(next)
       setLeft(null)
+      if (next.size === board.left.length) setSecs(Math.round((Date.now() - startRef.current) / 1000))
     } else {
       setMiss(id)
       setErrors((e) => e + 1)
@@ -75,15 +89,17 @@ function Pairs({ nodes, onExit }) {
     setDone(new Set())
     setLeft(null)
     setErrors(0)
+    startRef.current = Date.now()
   }
 
   return (
     <GameScreen title="Parejas" onExit={onExit}>
       {finished ? (
         <div className="result-card">
+          {errors === 0 && <Confetti />}
           <p className="result-big">{errors === 0 ? '¡Perfecto!' : '¡Listo!'}</p>
-          <p className="result-msg">{errors === 0 ? 'Sin errores.' : `${errors} ${errors === 1 ? 'error' : 'errores'}.`}</p>
-          <button className="primary" onClick={again}>Jugar otra vez</button>
+          <p className="result-msg">{errors === 0 ? 'Sin errores' : `${errors} ${errors === 1 ? 'error' : 'errores'}`} · {secs} segundos.</p>
+          <button className="primary" onClick={again}>Otra ronda</button>
           <button className="secondary" onClick={onExit}>Salir</button>
         </div>
       ) : (
@@ -148,6 +164,7 @@ function Cards({ store, onExit }) {
         </div>
       ) : !card ? (
         <div className="result-card">
+          <Confetti />
           <p className="result-big">¡Listo!</p>
           <p className="result-msg">Repasaste {known} {known === 1 ? 'tarjeta' : 'tarjetas'}. Las que fallaste volverán pronto.</p>
           <button className="secondary" onClick={onExit}>Salir</button>

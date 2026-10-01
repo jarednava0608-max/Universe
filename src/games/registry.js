@@ -6,6 +6,7 @@ import MemoriaBiblica from './MemoriaBiblica.jsx'
 import Trivia from './Trivia.jsx'
 import Memorize from './Memorize.jsx'
 import StudyGames from './StudyGames.jsx'
+import Books from './Books.jsx'
 
 export const GAMES = [
   {
@@ -36,5 +37,12 @@ export const GAMES = [
     desc: 'Juegos con tus nodos y notas',
     icon: 'M12 12m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0M5 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M19 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M6.5 6.5l3.7 3.7M17.3 7.2l-3.4 3.2',
     Component: StudyGames,
+  },
+  {
+    id: 'libros',
+    title: 'Libros de la Biblia',
+    desc: 'Los 66 libros en orden y por sección',
+    icon: 'M4 5a2 2 0 0 1 2-2h3v18H6a2 2 0 0 1-2-2zM9 3h4v18H9zM14.5 4.2l3.4-.9 3 16.4-3.4.9z',
+    Component: Books,
   },
 ]

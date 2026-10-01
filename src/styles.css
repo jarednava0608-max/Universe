@@ -521,7 +521,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .quiz { display: flex; flex-direction: column; }
 .progress { height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
 .progress span { display: block; height: 100%; background: var(--btn); border-radius: 2px; transition: width 0.3s var(--ease); }
-.quiz-count { margin: 12px 0 0; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.quiz-count { margin: 0; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .quiz-prompt { font-family: var(--font-display); font-size: 21px; line-height: 1.4; font-weight: 600; letter-spacing: -0.015em; margin: 10px 0 20px; }
 .options { display: grid; gap: 8px; }
 .option {
@@ -531,8 +531,9 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 }
 .option:active:not(:disabled) { background: var(--surface-2); }
 .option:disabled { opacity: 1; }
-.option.right { border-color: rgba(134, 239, 172, 0.6); background: rgba(134, 239, 172, 0.1); }
-.option.wrong { border-color: rgba(248, 113, 113, 0.6); background: rgba(248, 113, 113, 0.1); }
+.option.right { border-color: rgba(134, 239, 172, 0.6); background: rgba(134, 239, 172, 0.1); animation: pop 0.35s var(--ease); }
+.option.wrong { border-color: rgba(248, 113, 113, 0.6); background: rgba(248, 113, 113, 0.1); animation: shake 0.35s; }
+@keyframes pop { 40% { transform: scale(1.03); } }
 .option.dim { opacity: 0.45; }
 .feedback { margin-top: 18px; animation: fade 0.2s; }
 .feedback .ok, .feedback .bad { font-weight: 600; margin: 0 0 6px; }
@@ -550,7 +551,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .mode-list { display: grid; gap: 10px; }
 .mode-card { display: grid; gap: 4px; padding: 16px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
 .mode-card:active { background: var(--surface-2); }
-.mode-title { font-size: 17px; font-weight: 600; }
+.mode-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 17px; font-weight: 600; }
 .mode-desc { font-size: 14px; color: var(--text-2); }
 
 .pairs { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; }
@@ -641,3 +642,68 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .appearance { padding: 12px 14px; }
 .appearance-label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
 .appearance .seg2 { background: var(--bg-raise); }
+
+/* ---------- Juegos: piezas nuevas ---------- */
+.quiz-meta { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; min-height: 22px; }
+.quiz-run { font-size: 12px; font-weight: 600; color: #fb923c; background: rgba(251, 146, 60, 0.12); padding: 2px 8px; border-radius: 999px; animation: pop 0.35s var(--ease); }
+.quiz-points { margin-left: auto; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.review-kind { margin-left: auto; font-size: 12px; color: var(--text-3); }
+.timer { height: 6px; margin-top: 10px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.timer span { display: block; height: 100%; background: var(--ok); transition: width 0.1s linear, background 0.3s; }
+.timer.low span { background: var(--danger); }
+.quiz-prompt { animation: fade 0.25s; }
+
+.missed { margin-top: 22px; text-align: left; display: grid; gap: 8px; }
+.missed-title { margin: 0 0 2px; font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
+.missed-item { padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.missed-q { margin: 0 0 4px; font-size: 14.5px; color: var(--text-2); line-height: 1.4; }
+.missed-a { margin: 0; font-weight: 600; color: var(--ok); }
+
+.result-card { position: relative; }
+.result-card.compact { padding: 18px 0 0; }
+.confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 40; }
+.confetti i { position: absolute; top: -12px; border-radius: 2px; animation-name: confetti-fall; animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); animation-fill-mode: forwards; }
+@keyframes confetti-fall { to { top: 105%; transform: translateX(30px) rotate(540deg); opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
+
+.seg-modes { display: flex; padding: 3px; margin-bottom: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
+.seg-modes button { flex: 1; min-height: 38px; border-radius: 8px; font-size: 14.5px; font-weight: 500; color: var(--text-2); }
+.seg-modes button.on { background: var(--btn); color: var(--btn-ink); }
+.verse.initials { display: block; width: 100%; text-align: left; padding: 0; letter-spacing: 0.02em; word-spacing: 0.12em; }
+
+.order { display: flex; flex-direction: column; }
+.order-built { min-height: 120px; font-family: var(--font-display); font-size: 20px; line-height: 1.6; margin: 4px 0 8px; padding: 14px; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 14px; }
+.order-word { animation: fade 0.2s; }
+.order-caret { display: inline-block; width: 2px; height: 1.1em; vertical-align: -0.2em; background: var(--text-3); animation: pulse 1s infinite; }
+.order-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 6px; }
+.order-chip { min-height: var(--tap); padding: 8px 14px; font-size: 15.5px; line-height: 1.3; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 12px; transition: opacity 0.2s, transform 0.15s; }
+.order-chip:active:not(:disabled) { transform: scale(0.96); }
+.order-chip.used { opacity: 0; pointer-events: none; }
+.order-chip.miss { border-color: var(--danger); animation: shake 0.35s; }
+.order-result { text-align: center; font-weight: 600; margin: 16px 0 6px; }
+.order-result.ok { color: var(--ok); }
+.order-result.bad { color: var(--text-2); }
+
+.q-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.q-item { display: flex; align-items: center; gap: 10px; padding: 12px 6px 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.q-text { font-size: 15px; line-height: 1.4; }
+.q-del { flex: none; width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--text-3); border-radius: 10px; }
+.q-del:active { background: var(--surface-2); color: var(--danger); }
+
+.book-section { margin-bottom: 18px; }
+.book-section-title { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
+.book-list { margin: 0; padding: 10px 14px 10px 40px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; columns: 2; column-gap: 24px; }
+.book-list li { padding: 3px 0; font-size: 15px; break-inside: avoid; }
+.book-list li::marker { color: var(--text-3); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.progress-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 14px; }
+.progress-actions .primary, .progress-actions .secondary { margin-top: 0; }
+.medals-btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; font-variant-numeric: tabular-nums; }
+.sheet-title { margin: 4px 4px 14px; font-size: 17px; font-weight: 600; }
+.medal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 60vh; overflow-y: auto; }
+.medal { display: grid; gap: 3px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; opacity: 0.55; }
+.medal.done { opacity: 1; border-color: rgba(245, 210, 122, 0.35); }
+.medal-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(var(--fg-rgb), 0.06); color: var(--text-3); margin-bottom: 4px; }
+.medal.done .medal-icon { background: rgba(245, 210, 122, 0.14); color: var(--gold-text); }
+.medal-title { font-size: 14.5px; font-weight: 600; }
+.medal-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.35; }
