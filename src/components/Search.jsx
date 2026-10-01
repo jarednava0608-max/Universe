@@ -1,0 +1,90 @@
+import { useMemo, useState } from 'react'
+import { nodeColor, normKey } from '../lib/model.js'
+import { plainText } from '../lib/markdown.js'
+
+// Barra de búsqueda minimalista: busca en títulos y en el texto de las notas.
+export default function Search({ nodes, onPick, onMenu }) {
+  const [q, setQ] = useState('')
+  const [focused, setFocused] = useState(false)
+
+  const index = useMemo(
+    () => nodes.map((n) => {
+      const text = plainText(n.note) + ' ' + n.sources.map((s) => s.label).join(' ')
+      return { node: n, title: normKey(n.title), text, textKey: normKey(text) }
+    }),
+    [nodes],
+  )
+
+  const results = useMemo(() => {
+    const words = normKey(q).split(' ').filter(Boolean)
+    if (!words.length) return []
+    const out = []
+    for (const it of index) {
+      if (!words.every((w) => it.title.includes(w) || it.textKey.includes(w))) continue
+      const inTitle = words.every((w) => it.title.includes(w))
+      const score = (it.title === words.join(' ') ? 0 : it.title.startsWith(words[0]) ? 1 : inTitle ? 2 : 3)
+      out.push({ ...it, score, snippet: snippet(it.text, it.textKey, words) })
+    }
+    return out.sort((a, b) => a.score - b.score || a.node.title.localeCompare(b.node.title, 'es')).slice(0, 50)
+  }, [index, q])
+
+  const open = focused && q.trim()
+
+  return (
+    <>
+      <div className="topbar">
+        <div className="search">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="M20 20l-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            placeholder="Buscar"
+            value={q}
+            enterKeyHint="search"
+            autoCorrect="off"
+            onChange={(e) => setQ(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setTimeout(() => setFocused(false), 150)}
+          />
+          {q && <button className="clear" aria-label="Borrar" onMouseDown={(e) => e.preventDefault()} onClick={() => setQ('')}>×</button>}
+        </div>
+        <button className="icon-btn" aria-label="Menú" onClick={onMenu}>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+      {open && (
+        <div className="search-results">
+          {results.length === 0 ? (
+            <p className="hint pad">Sin resultados.</p>
+          ) : (
+            <ul className="results">
+              {results.map(({ node, snippet }) => (
+                <li key={node.id}>
+                  <button className="result" onMouseDown={(e) => e.preventDefault()} onClick={() => { onPick(node.id); setQ(''); document.activeElement?.blur() }}>
+                    <span className="dot" style={{ background: nodeColor(node) }} />
+                    <span className="result-main">
+                      <span className="result-title">{node.title}</span>
+                      {snippet && <span className="snippet">{snippet}</span>}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
+
+function snippet(text, key, words) {
+  // normKey conserva la longitud del texto salvo espacios repetidos; plainText ya los colapsó.
+  const pos = Math.min(...words.map((w) => key.indexOf(w)).filter((i) => i >= 0))
+  if (!isFinite(pos)) return text.slice(0, 90)
+  const start = Math.max(0, pos - 35)
+  return (start > 0 ? '…' : '') + text.slice(start, start + 110).trim() + (start + 110 < text.length ? '…' : '')
+}
