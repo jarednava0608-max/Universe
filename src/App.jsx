@@ -69,9 +69,9 @@ export default function App() {
     if (currentId) setFocusId(currentId)
   }, [currentId])
 
-  function startNew(partial = {}, initialConnections = []) {
+  function startNew(partial = {}) {
     setSheet(null)
-    setEditor({ node: makeNode({ origin: 'propio', ...partial, title: partial.title ?? '' }), isNew: true, initialConnections })
+    setEditor({ node: makeNode({ origin: 'propio', ...partial, title: partial.title ?? '' }), isNew: true })
   }
 
   async function saveEditor(node, { removed, added }) {
@@ -94,10 +94,6 @@ export default function App() {
     await store.deleteNode(editor.node.id)
     setEditor(null)
     toast('Nodo eliminado.')
-  }
-
-  async function quickCreate(title) {
-    return store.saveNode(makeNode({ title, origin: 'propio' }))
   }
 
   async function exportAll() {
@@ -159,6 +155,10 @@ export default function App() {
 
       <Search nodes={nodes} onPick={openNote} onMenu={() => setSheet('menu')} />
 
+      {nodes.length === 1 && !current && (
+        <p className="welcome">Toca <b>Jehová</b> para escribir su definición,<br />o <b>+</b> para agregar tu primera idea.</p>
+      )}
+
       <button className="fab" aria-label="Nuevo nodo" onClick={() => startNew()}>
         <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
           <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -211,12 +211,10 @@ export default function App() {
           node={editor.node}
           isNew={editor.isNew}
           nodes={nodes}
-          edges={edges}
-          initialConnections={editor.initialConnections}
+
           onSave={saveEditor}
           onCancel={() => setEditor(null)}
           onDelete={deleteFromEditor}
-          onQuickCreate={quickCreate}
         />
       )}
 

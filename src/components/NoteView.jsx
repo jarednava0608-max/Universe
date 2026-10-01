@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react'
 import { ROOT_ID } from '../lib/model.js'
 import { buildResolver, renderNote } from '../lib/markdown.js'
 
-// Nota a pantalla completa: solo el título y la definición.
+// Nota a pantalla completa: solo el título y la definición (las fuentes se guardan pero no se muestran).
 // Se cierra deslizando hacia la derecha; "Editar" va al final del texto.
 export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit, onCreateFromLink }) {
   const panel = useRef()
@@ -63,26 +63,6 @@ export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit,
           <div className="md" onClick={onContentClick} dangerouslySetInnerHTML={{ __html: html }} />
         ) : (
           <p className="empty">Aún no hay definición.</p>
-        )}
-
-        {node.sources.length > 0 && (
-          <section className="sources">
-            <h2>Fuentes</h2>
-            <ol>
-              {node.sources.map((s, i) => (
-                <li key={i}>
-                  {s.url ? (
-                    <a href={s.url} target="_blank" rel="noopener noreferrer">
-                      {s.label}
-                      <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    </a>
-                  ) : (
-                    s.label
-                  )}
-                </li>
-              ))}
-            </ol>
-          </section>
         )}
 
         <footer className="note-footer">

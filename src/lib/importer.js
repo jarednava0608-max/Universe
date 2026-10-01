@@ -92,7 +92,6 @@ export function planImport(data, state, opts = {}) {
       const next = mergeNode(prev, incoming)
       if (next !== prev) updated.set(match.id, next)
     } else {
-      if (!incoming.origin) warnings.push(`"${title}" no indica origen; se marcó como mixto.`)
       const node = makeNode({ ...incoming, origin: incoming.origin ?? 'mixto', createdAt: raw.createdAt, updatedAt: raw.updatedAt })
       created.set(node.id, node)
     }
@@ -184,13 +183,7 @@ export const CLAUDE_FORMAT = `Genera un JSON para importar a mi mapa de conocimi
   "nodes": [
     {
       "title": "Título corto y único",
-      "type": "concepto | texto | pregunta | ejemplo | publicacion",
-      "origin": "jw | propio | mixto",
-      "note": "Nota en markdown. Enlaza otros nodos con [[Título]]. Separa lo que dicen las publicaciones de mi razonamiento con bloques '> [!jw]' y '> [!yo]'.",
-      "sources": [
-        { "label": "Juan 17:3", "url": "https://wol.jw.org/..." },
-        { "label": "La Atalaya 15/1/2020 p. 8" }
-      ]
+      "note": "La definición, en texto claro. Puedes enlazar otros nodos escribiendo [[Título]]."
     }
   ],
   "edges": [
@@ -199,8 +192,7 @@ export const CLAUDE_FORMAT = `Genera un JSON para importar a mi mapa de conocimi
 }
 
 Reglas:
-- "origin": "jw" solo si la información viene de publicaciones de jw.org o wol.jw.org; "propio" si es razonamiento mío; "mixto" si hay de ambos.
-- Usa solo fuentes de jw.org y wol.jw.org.
-- Las conexiones usan los títulos exactos. El nodo raíz se llama "Jehová".
-- Relaciones en MAYÚSCULAS, por ejemplo: ENSEÑA, REQUIERE, DEMOSTRÓ, EXPLICA, RESPONDE, CITA, EJEMPLO DE, PARTE DE, CONTRASTA CON, LLEVA A.
+- Basado en las publicaciones de jw.org y wol.jw.org.
+- Las conexiones usan los títulos exactos. El nodo principal se llama "Jehová".
+- Relaciones en MAYÚSCULAS, por ejemplo: ENSEÑA, REQUIERE, DEMOSTRÓ, EXPLICA, RESPONDE, PARTE DE, LLEVA A.
 - Si un nodo ya existe con ese título, se le añade la información nueva sin borrar la anterior.`

@@ -54,10 +54,10 @@ describe('planImport', () => {
     expect(plan.warnings[0]).toMatch(/Nada/)
   })
 
-  it('marca como mixto el origen que falta y lo avisa', () => {
-    const plan = planImport({ nodes: [{ title: 'Sin origen' }] }, base())
-    expect(plan.newNodes[0].origin).toBe('mixto')
-    expect(plan.warnings[0]).toMatch(/origen/)
+  it('acepta nodos sin tipo ni origen (formato simple)', () => {
+    const plan = planImport({ nodes: [{ title: 'Sin origen', note: 'Definición' }] }, base())
+    expect(plan.newNodes[0]).toMatchObject({ title: 'Sin origen', note: 'Definición', type: 'concepto' })
+    expect(plan.warnings).toEqual([])
   })
 
   it('restaura un respaldo completo en modo reemplazo', () => {
@@ -77,5 +77,13 @@ describe('enlaces [[ ]]', () => {
     const text = 'Ver [[Fe]] y [[fe|la fe]] y [[Amor]]'
     expect(extractLinks(text)).toEqual(['Fe', 'fe', 'Amor'])
     expect(renameLinks(text, 'Fe', 'Fe verdadera')).toBe('Ver [[Fe verdadera]] y [[Fe verdadera|la fe]] y [[Amor]]')
+  })
+})
+
+import { unwrapCallouts } from './markdown.js'
+describe('bloques antiguos [!jw] / [!yo]', () => {
+  it('se muestran como texto normal', () => {
+    const t = 'Intro\n\n> [!jw]\n> Dice JW\n> sigue\n\n> [!yo] Pienso yo\n\nFin'
+    expect(unwrapCallouts(t)).toBe('Intro\n\nDice JW\nsigue\n\nPienso yo\n\nFin')
   })
 })

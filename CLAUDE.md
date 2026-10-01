@@ -4,10 +4,10 @@ Mapa personal tipo Obsidian para el estudio bíblico de un Testigo de Jehová. C
 
 ## Principios (no romper)
 - **Primero iPhone**: respetar notch y barra inferior (`env(safe-area-inset-*)`), áreas táctiles ≥ 44px, inputs con `font-size: 16px` (evita el zoom de iOS), gestos fluidos.
-- **Simple ante todo** (pedido del usuario): por ahora la interfaz NO muestra tipo de nodo, origen ni la palabra "raíz". Al tocar un nodo solo se ve el título y la definición (más sus fuentes, si tiene). Los campos `type` y `origin` se conservan en los datos y en el formato de importación para poder volver a mostrarlos más adelante, pero no los muestres sin que el usuario lo pida.
-- **Distinguir qué dice JW y qué pienso yo** dentro del texto con los bloques `> [!jw]` y `> [!yo]` (botones "JW dice" / "Yo pienso" en el editor).
-- **Fuentes solo de jw.org / wol.jw.org** (textos bíblicos y publicaciones).
-- **Nota estilo Obsidian**: título grande y la definición con scroll, sin botones ni pastillas encima. Se cierra deslizando a la derecha; al final solo hay "Editar" y "Cerrar", discretos.
+- **Simple ante todo** (pedido del usuario): un nodo es solo **título + definición**. La interfaz NO muestra tipo, origen, fuentes, la palabra "raíz" ni etiquetas "JW / mi razonamiento", y el editor no tiene secciones de fuentes ni conexiones. Los campos `type`, `origin`, `sources` y las conexiones importadas se conservan en los datos (y en el formato de importación) por si el usuario los pide después; no los vuelvas a mostrar sin que lo pida.
+- **Conectar ideas** = enlazar otro nodo dentro del texto con `[[Título]]` (botón "Enlazar otro nodo" en el editor). Esos enlaces se dibujan en el mapa como líneas normales (sin flecha). Las conexiones con relación (`ENSEÑA`…) solo llegan por "Pegar conocimiento".
+- Los bloques antiguos `> [!jw]` / `> [!yo]` se muestran como texto normal y se limpian al editar (`unwrapCallouts` en `markdown.js`).
+- **Nota estilo Obsidian**: título grande y la definición con scroll, sin botones ni pastillas encima. Se cierra deslizando a la derecha; al final solo hay "Editar" y "Cerrar", discretos. Con el mapa vacío (solo Jehová) se muestra un mensaje de bienvenida.
 - **Grafo**: líneas RECTAS (nunca curvas), zoom y arrastre con los dedos. Todos los nodos son gris neutro; Jehová (`id: "jehova"`) está fijo en el centro, es el ÚNICO dorado (`#f5d27a`, con un halo suave) y no se puede borrar.
 - Diseño oscuro, moderno y elegante (fondo `#09090b`, vidrio esmerilado en barras, tipografía del sistema, botón principal blanco). Tokens de color en `:root` de `src/styles.css`. Búsqueda en barra rectangular estilo Vercel. Menú solo con lo esencial (hoja inferior con grupos e íconos).
 - Simple antes que ingenioso. Nada de funciones que el usuario no pidió.
@@ -36,7 +36,7 @@ Node = { id, title, type: 'concepto'|'texto'|'pregunta'|'ejemplo'|'publicacion',
 Edge = { id, source, target, rel /* MAYÚSCULAS, p. ej. ENSEÑA */, createdAt }
 ```
 - Los títulos son únicos (sin distinguir mayúsculas ni acentos).
-- Los `[[enlaces]]` de una nota también se dibujan en el grafo como línea punteada tenue.
+- Los `[[enlaces]]` de una nota también se dibujan en el grafo como conexión (línea recta sin flecha).
 
 ## Formato de importación
 `{ "nodes": [{ title, type, origin, note, sources }], "edges": [{ from, to, rel }] }`. `from` / `to` aceptan título o id. Si un nodo ya existe (mismo título o id), se le **añade** la nota y las fuentes nuevas sin borrar nada. Un respaldo exportado (`app: "universe"`) puede restaurarse reemplazando todo. Siempre hay vista previa y confirmación antes de guardar.

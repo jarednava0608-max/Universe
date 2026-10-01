@@ -1,4 +1,4 @@
-// Render de notas: markdown + enlaces [[Título]] + bloques > [!jw] / > [!yo].
+// Render de notas: markdown + enlaces [[Título]].
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { normKey } from './model.js'
@@ -26,8 +26,28 @@ function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 }
 
+// Los bloques antiguos "> [!jw]" / "> [!yo]" se muestran como texto normal (sin etiqueta).
+export function unwrapCallouts(text) {
+  const out = []
+  let inBlock = false
+  for (const line of String(text ?? '').split('\n')) {
+    if (/^\s*>\s*\[!(jw|yo)\]\s*$/i.test(line)) {
+      inBlock = true
+      continue
+    }
+    if (inBlock && /^\s*>/.test(line)) {
+      out.push(line.replace(/^\s*>\s?/, '').replace(/^\[!(jw|yo)\]\s*/i, ''))
+      continue
+    }
+    const inline = line.match(/^\s*>\s*\[!(jw|yo)\]\s*(.*)$/i)
+    inBlock = Boolean(inline)
+    out.push(inline ? inline[2] : line)
+  }
+  return out.join('\n')
+}
+
 export function renderNote(text, resolve) {
-  const withLinks = String(text ?? '').replace(WIKI_RE, (_, target, label) => {
+  const withLinks = unwrapCallouts(text).replace(WIKI_RE, (_, target, label) => {
     const t = target.trim()
     const id = resolve(t)
     const shown = escapeHtml((label ?? t).trim())
@@ -35,16 +55,7 @@ export function renderNote(text, resolve) {
       ? `<a class="wl" data-node="${escapeHtml(id)}">${shown}</a>`
       : `<a class="wl missing" data-missing="${escapeHtml(t)}">${shown}</a>`
   })
-  let html = marked.parse(withLinks, { breaks: true, gfm: true })
-  // Bloques para separar lo que dice JW de lo que pienso yo.
-  html = html.replace(
-    /<blockquote>\s*<p>\s*\[!(jw|yo)\]\s*(?:<br>)?/gi,
-    (_, kind) => {
-      const k = kind.toLowerCase()
-      const label = k === 'jw' ? 'Publicaciones JW' : 'Mi razonamiento'
-      return `<blockquote class="callout ${k}"><p><span class="callout-label">${label}</span>`
-    },
-  )
+  const html = marked.parse(withLinks, { breaks: true, gfm: true })
   return DOMPurify.sanitize(html, { ADD_ATTR: ['data-node', 'data-missing', 'target'] })
 }
 

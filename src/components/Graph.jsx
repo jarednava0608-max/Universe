@@ -38,7 +38,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
       bump(e.source)
       bump(e.target)
     }
-    // Los [[enlaces]] dentro de las notas también se dibujan, más tenues.
+    // Los [[enlaces]] dentro de las notas también conectan nodos (sin flecha).
     const resolve = buildResolver(nodes)
     for (const n of nodes) {
       for (const t of extractLinks(n.note)) {
@@ -118,7 +118,6 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
         linkCurvature={0}
         linkColor={linkColor}
         linkWidth={(l) => (isHi(l) ? 1.2 : 0.8)}
-        linkLineDash={(l) => (l.implicit ? [2, 3] : null)}
         linkDirectionalArrowLength={(l) => (l.implicit ? 0 : 3)}
         linkDirectionalArrowRelPos={1}
         linkDirectionalArrowColor={linkColor}
@@ -165,8 +164,8 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
 
           if (focused) {
             ctx.beginPath()
-            ctx.arc(n.x, n.y, r + 2.5, 0, 2 * Math.PI)
-            ctx.lineWidth = 1.2 / scale + 0.4
+            ctx.arc(n.x, n.y, r + 4 / scale, 0, 2 * Math.PI)
+            ctx.lineWidth = 1.5 / scale
             ctx.strokeStyle = 'rgba(255,255,255,0.85)'
             ctx.stroke()
           }
@@ -179,7 +178,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
             ctx.textBaseline = 'top'
             ctx.fillStyle = n.isRoot ? n.color : focused ? '#fafafa' : 'rgba(228,228,231,0.78)'
             const label = n.title.length > 32 ? n.title.slice(0, 31) + '…' : n.title
-            ctx.fillText(label, n.x, n.y + r + 4 / scale)
+            ctx.fillText(label, n.x, n.y + r + (focused ? 9 : 4) / scale)
           }
           ctx.globalAlpha = 1
         }}
