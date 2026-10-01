@@ -140,4 +140,20 @@ describe('sincronización', () => {
     await a.sync.syncOnce(cloud, U)
     expect(await a.db.get('entries', 't1')).toBeUndefined()
   })
+
+  it('combina la racha y los repasos de dos teléfonos', async () => {
+    const a = await device()
+    await a.db.commit({ putEntries: [{ id: 'progreso', kind: 'progreso', fields: { days: ['2026-10-01', '2026-10-02'], srs: { 'c:1': { box: 2, due: '2026-10-05' } }, triviaBest: 60 }, createdAt: 1, updatedAt: 10 }] })
+    await a.sync.syncOnce(cloud, U)
+    const b = await device()
+    await b.db.commit({ putEntries: [{ id: 'progreso', kind: 'progreso', fields: { days: ['2026-10-03'], srs: { 'c:2': { box: 1, due: '2026-10-04' } }, triviaBest: 80 }, createdAt: 1, updatedAt: 20 }] })
+    await b.sync.syncOnce(cloud, U)
+    await a.sync.syncOnce(cloud, U)
+    for (const d of [a, b]) {
+      const p = (await d.db.get('entries', 'progreso')).fields
+      expect(p.days).toEqual(['2026-10-01', '2026-10-02', '2026-10-03'])
+      expect(Object.keys(p.srs).sort()).toEqual(['c:1', 'c:2'])
+      expect(p.triviaBest).toBe(80)
+    }
+  })
 })

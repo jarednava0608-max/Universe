@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
-import { buildCards, buildGuessQuestions, buildPairs, shuffle } from './logic.js'
+import { buildCards, buildGuessQuestions, buildPairs } from './logic.js'
 import { GameScreen, Quiz, Empty } from './ui.jsx'
+import { byPriority, dueCount, isDue, nextDue, review } from './progress.js'
+import { formatDate } from '../study/kinds.js'
 
 // Juegos que usan los nodos del mapa y las notas de Estudio.
 export default function StudyGames({ store, onExit }) {
@@ -9,7 +11,7 @@ export default function StudyGames({ store, onExit }) {
 
   if (mode === 'guess') return <Guess nodes={store.nodes} onExit={exit} />
   if (mode === 'pairs') return <Pairs nodes={store.nodes} onExit={exit} />
-  if (mode === 'cards') return <Cards nodes={store.nodes} entries={store.entries} onExit={exit} />
+  if (mode === 'cards') return <Cards store={store} onExit={exit} />
 
   return (
     <GameScreen title="Con lo que estudio" onExit={onExit}>
@@ -105,33 +107,61 @@ function Pairs({ nodes, onExit }) {
   )
 }
 
-function Cards({ nodes, entries, onExit }) {
-  const all = useMemo(() => buildCards(nodes, entries), [nodes, entries])
-  const [deck, setDeck] = useState(() => shuffle(all))
+function Cards({ store, onExit }) {
+  const all = useMemo(() => buildCards(store.nodes, store.entries), [store.nodes, store.entries])
+  const srs = store.progress.srs ?? {}
+  const keys = all.map((c) => 'c:' + c.id)
+  const due = dueCount(keys, srs)
+
+  // Repaso inteligente: solo lo que toca hoy (lo que fallas vuelve pronto; lo que sabes, cada vez más espaciado).
+  const build = (everything) => {
+    const byKey = new Map(all.map((c) => ['c:' + c.id, c]))
+    const order = byPriority(keys, srs)
+    return (everything ? order : order.filter((k) => isDue(srs[k]))).map((k) => byKey.get(k))
+  }
+  const [deck, setDeck] = useState(() => build(false))
   const [i, setI] = useState(0)
   const [flip, setFlip] = useState(false)
+  const [known, setKnown] = useState(0)
   const card = deck[i]
 
+  function answer(knew) {
+    const key = 'c:' + card.id
+    store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [key]: review(f.srs?.[key], knew) } }))
+    if (knew) setKnown((n) => n + 1)
+    else setDeck((d) => [...d, card]) // vuelve al final de esta sesión
+    setFlip(false)
+    setI(i + 1)
+  }
+
+  const next = nextDue(keys, srs)
   return (
     <GameScreen title="Tarjetas" onExit={onExit}>
       {!all.length ? (
         <Empty>Agrega definiciones a tus nodos o textos diarios para repasar con tarjetas.</Empty>
+      ) : !deck.length ? (
+        <div className="result-card">
+          <p className="result-big">¡Al día!</p>
+          <p className="result-msg">No tienes tarjetas para repasar hoy.{next ? ` La próxima toca el ${formatDate(next)}.` : ''}</p>
+          <button className="primary" onClick={() => { setDeck(build(true)); setI(0) }}>Repasar todas igual</button>
+          <button className="secondary" onClick={onExit}>Salir</button>
+        </div>
       ) : !card ? (
         <div className="result-card">
-          <p className="result-big">¡Repasaste {deck.length}!</p>
-          <button className="primary" onClick={() => { setDeck(shuffle(all)); setI(0) }}>Otra vez</button>
+          <p className="result-big">¡Listo!</p>
+          <p className="result-msg">Repasaste {known} {known === 1 ? 'tarjeta' : 'tarjetas'}. Las que fallaste volverán pronto.</p>
           <button className="secondary" onClick={onExit}>Salir</button>
         </div>
       ) : (
         <>
-          <p className="quiz-count">{i + 1} de {deck.length}</p>
+          <p className="quiz-count">{i + 1} de {deck.length}{due ? ` · ${due} para hoy` : ''}</p>
           <button className={'flashcard' + (flip ? ' flipped' : '')} onClick={() => setFlip((f) => !f)}>
             {flip ? <span className="card-back">{card.back}</span> : <span className="card-front">{card.front}</span>}
             <span className="card-hint">{flip ? 'Toca para ver el título' : 'Toca para ver la respuesta'}</span>
           </button>
           <div className="two-btn">
-            <button className="secondary" onClick={() => { setDeck((d) => [...d, card]); setFlip(false); setI(i + 1) }}>Repasar después</button>
-            <button className="primary" onClick={() => { setFlip(false); setI(i + 1) }}>Me la sé</button>
+            <button className="secondary" onClick={() => answer(false)}>Repasar otra vez</button>
+            <button className="primary" onClick={() => answer(true)}>Me la sé</button>
           </div>
         </>
       )}

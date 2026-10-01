@@ -2,6 +2,7 @@
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { normKey } from './model.js'
+import { linkRefsMarkdown } from './bible.js'
 
 const WIKI_RE = /\[\[([^\]|\n]+)(?:\|([^\]\n]+))?\]\]/g
 
@@ -47,7 +48,11 @@ export function unwrapCallouts(text) {
 }
 
 export function renderNote(text, resolve) {
-  const withLinks = unwrapCallouts(text).replace(WIKI_RE, (_, target, label) => {
+  // Los [[enlaces]] se apartan para que las citas bíblicas dentro de ellos no se conviertan dos veces.
+  const wikis = []
+  const masked = unwrapCallouts(text).replace(WIKI_RE, (m) => `\u0000${wikis.push(m) - 1}\u0000`)
+  const withRefs = linkRefsMarkdown(masked).replace(/\u0000(\d+)\u0000/g, (_, i) => wikis[i])
+  const withLinks = withRefs.replace(WIKI_RE, (_, target, label) => {
     const t = target.trim()
     const id = resolve(t)
     const shown = escapeHtml((label ?? t).trim())

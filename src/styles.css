@@ -547,3 +547,33 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
   border: 1px solid var(--line); color: var(--text-2);
 }
 .account-btn .sync-dot { position: absolute; right: 7px; bottom: 8px; width: 7px; height: 7px; border: 1.5px solid var(--bg); box-sizing: content-box; }
+
+/* Citas bíblicas tocables (abren wol.jw.org) */
+.ref-link { color: var(--link); text-decoration: none; }
+.ref-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ref-chip {
+  display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 999px;
+  background: rgba(184, 196, 255, 0.08); border: 1px solid rgba(184, 196, 255, 0.22);
+  color: var(--link); font-size: 14px; font-weight: 500; text-decoration: none;
+}
+.ref-chip:active { background: rgba(184, 196, 255, 0.16); }
+.due-tag { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--ok); background: rgba(134, 239, 172, 0.1); border: 1px solid rgba(134, 239, 172, 0.25); padding: 2px 8px; border-radius: 999px; }
+.game-sub { text-align: center; color: var(--text-3); font-size: 14px; margin: -8px 0 16px; }
+
+/* ---------- Racha y progreso ---------- */
+.progress-card { padding: 16px; margin-bottom: 18px; background: linear-gradient(160deg, var(--surface-2), var(--surface) 75%); border: 1px solid var(--line); border-radius: 18px; }
+.streak { display: flex; align-items: center; gap: 12px; }
+.flame { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.05); color: var(--text-3); }
+.flame.on { color: #fb923c; background: rgba(251, 146, 60, 0.12); }
+.streak-num { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.streak-sub { margin: 2px 0 0; font-size: 13px; color: var(--text-2); }
+.week { display: flex; justify-content: space-between; margin: 16px 2px 14px; }
+.week-day { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3); font-weight: 500; }
+.week-day i { width: 26px; height: 26px; border-radius: 50%; background: var(--bg-raise); border: 1px solid var(--line-strong); }
+.week-day.done i { background: #fb923c; border-color: transparent; box-shadow: 0 0 10px rgba(251, 146, 60, 0.45); }
+.week-day.done { color: var(--text-2); }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.stats-row div { display: flex; flex-direction: column; gap: 2px; }
+.stats-row b { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.stats-row b small { font-size: 13px; color: var(--text-3); font-weight: 600; }
+.stats-row span { font-size: 12px; color: var(--text-2); line-height: 1.3; }

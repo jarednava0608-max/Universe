@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import * as db from './db.js'
 import { makeEdge, makeRoot, ROOT_ID } from './model.js'
 import { renameLinks } from './markdown.js'
+import { PROGRESS_ID, makeProgress, withDay } from '../games/progress.js'
 
 export function useStore() {
   const [state, setState] = useState({ nodes: [], edges: [], entries: [], ready: false, error: null })
@@ -44,8 +45,10 @@ export function useStore() {
   }, [])
 
   // Cambio local: se guarda, se anota para subir a la nube y avisa (rev) a la sincronización.
+  // Cualquier cambio cuenta como día de estudio (racha).
   const apply = useCallback(
-    async (change) => {
+    async (rawChange) => {
+      const change = withActivity(rawChange, stateRef.current.entries)
       await db.commit(change)
       mergeState(change)
       setRev((r) => r + 1)
@@ -118,5 +121,31 @@ export function useStore() {
   const saveEntries = useCallback((list) => apply({ putEntries: list.map((e) => ({ ...e, updatedAt: Date.now() })) }), [apply])
   const deleteEntries = useCallback((ids) => apply({ delEntries: ids }), [apply])
 
-  return { ...state, rev, mergeRemote: mergeState, saveEntry, deleteEntry, saveEntries, deleteEntries, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
+  // Progreso (racha, repaso inteligente, récords de juegos).
+  const progress = state.entries.find((e) => e.id === PROGRESS_ID) ?? makeProgress()
+  const updateProgress = useCallback(
+    (fn) => {
+      const cur = stateRef.current.entries.find((e) => e.id === PROGRESS_ID) ?? makeProgress()
+      return apply({ putEntries: [{ ...cur, fields: fn(cur.fields), createdAt: cur.createdAt || Date.now(), updatedAt: Date.now() }] })
+    },
+    [apply],
+  )
+
+  return { ...state, rev, progress: progress.fields, updateProgress, mergeRemote: mergeState, saveEntry, deleteEntry, saveEntries, deleteEntries, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
+}
+
+// Agrega el día de hoy a la racha dentro del mismo guardado (una sola vez por día).
+function withActivity(change, entries) {
+  const puts = change.putEntries ?? []
+  const i = puts.findIndex((e) => e.id === PROGRESS_ID)
+  if (i >= 0) {
+    const next = [...puts]
+    next[i] = { ...puts[i], fields: withDay(puts[i].fields) }
+    return { ...change, putEntries: next }
+  }
+  const cur = entries.find((e) => e.id === PROGRESS_ID) ?? makeProgress()
+  const fields = withDay(cur.fields)
+  if (fields === cur.fields) return change
+  const now = Date.now()
+  return { ...change, putEntries: [...puts, { ...cur, fields, createdAt: cur.createdAt || now, updatedAt: now }] }
 }

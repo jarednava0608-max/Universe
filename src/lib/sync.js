@@ -2,6 +2,7 @@
 // IndexedDB sigue siendo la fuente local; aquí solo se sube lo pendiente (outbox)
 // y se baja lo que cambió en la nube. Conflictos: gana el cambio más reciente.
 import * as db from './db.js'
+import { PROGRESS_ID, mergeProgress } from '../games/progress.js'
 
 const TABLE = { nodes: 'universe_nodes', edges: 'universe_edges', entries: 'universe_entries' }
 const KINDS = ['nodes', 'edges', 'entries']
@@ -106,6 +107,7 @@ async function pull(client, userId) {
   const change = { putNodes: [], putEdges: [], delNodes: [], delEdges: [], putEntries: [], delEntries: [] }
   const resolved = { nodes: [], edges: [], entries: [] }
   const marks = {}
+  let progressToPush = null
 
   for (const kind of KINDS) {
     const key = `lastPull:${userId}:${kind}`
@@ -119,6 +121,21 @@ async function pull(client, userId) {
       const { data, error } = await q
       if (error) throw error
       for (const row of data) {
+        // El progreso (racha y repasos) se combina en vez de pisarse entre dispositivos.
+        if (kind === 'entries' && row.id === PROGRESS_ID && !row.deleted) {
+          const local = await db.get('entries', row.id)
+          const remote = fromRow.entries(row)
+          if (!local) {
+            change.putEntries.push(remote)
+          } else {
+            const fields = mergeProgress(local.fields, remote.fields)
+            const merged = { ...local, fields, updatedAt: Math.max(local.updatedAt ?? 0, remote.updatedAt) }
+            change.putEntries.push(merged)
+            if (JSON.stringify(fields) !== JSON.stringify(remote.fields)) progressToPush = merged
+            else if (ob.entries[row.id]) resolved.entries.push(row.id)
+          }
+          continue
+        }
         const pending = ob[kind][row.id]
         const remoteT = Number(row.updated_at)
         // Si aquí hay un cambio pendiente más nuevo, se queda el local (y se subirá).
@@ -140,6 +157,8 @@ async function pull(client, userId) {
 
   const total = Object.values(change).reduce((n, list) => n + list.length, 0)
   if (total) await db.commit(change, { track: false })
+  // Si al combinar el progreso quedó algo que la nube no tiene, se sube en este mismo ciclo.
+  if (progressToPush) await db.commit({ putEntries: [{ ...progressToPush, updatedAt: Date.now() }] })
   for (const kind of KINDS) await db.dropOutbox(kind, resolved[kind])
   for (const [k, v] of Object.entries(marks)) if (v) await db.setMeta(k, v)
   return { change, total }

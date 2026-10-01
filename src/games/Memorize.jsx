@@ -1,12 +1,21 @@
 import { useMemo, useState } from 'react'
 import { clozeWords, makeVerse, parseVerses, verseSources, VERSES_FORMAT } from './logic.js'
 import { GameScreen, PasteJson, Empty } from './ui.jsx'
+import { findRefs } from '../lib/bible.js'
+import RefLink from '../components/RefLink.jsx'
+import { byPriority, isDue, review } from './progress.js'
 
 const LEVELS = ['Fácil', 'Medio', 'Difícil', 'De memoria']
 
 // Memorizar textos: cada nivel oculta más palabras. Toca una palabra oculta para verla.
 export default function Memorize({ store, toast, onExit }) {
-  const verses = useMemo(() => verseSources(store.entries), [store.entries])
+  const srs = store.progress.srs ?? {}
+  // Repaso inteligente: arriba los textos que toca repasar hoy.
+  const verses = useMemo(() => {
+    const list = verseSources(store.entries)
+    const byKey = new Map(list.map((v) => ['v:' + v.id, v]))
+    return byPriority([...byKey.keys()], srs, undefined, () => 0.5).map((k) => byKey.get(k))
+  }, [store.entries, srs])
   const [current, setCurrent] = useState(null)
   const [adding, setAdding] = useState(false)
   const [paste, setPaste] = useState(false)
@@ -25,6 +34,7 @@ export default function Memorize({ store, toast, onExit }) {
                     <span className="entry-title">{v.fields.cita || v.fields.texto.slice(0, 40)}</span>
                     <span className="entry-sub">{v.fromDaily ? 'Del texto diario' : LEVELS[v.fields.nivel ?? 0]}</span>
                   </span>
+                  {isDue(srs['v:' + v.id]) && <span className="due-tag">Hoy</span>}
                   <Dots n={v.fields.nivel ?? 0} />
                 </button>
               </li>
@@ -78,6 +88,8 @@ function Practice({ verse, store, onSaved, onBack }) {
     // Los textos del diario se copian a "mis textos" la primera vez que se practican.
     const saved = verse.fromDaily ? { ...makeVerse(verse.fields), fields: { ...verse.fields, nivel: lvl } } : { ...verse, fields: { ...verse.fields, nivel: lvl } }
     const stored = await store.saveEntry(saved)
+    const key = 'v:' + stored.id
+    await store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [key]: review(f.srs?.[key], knewIt) } }))
     if (verse.fromDaily) onSaved(stored)
     setNivel(lvl)
     setSeed(Math.floor(Math.random() * 1e6))
@@ -104,7 +116,7 @@ function Practice({ verse, store, onSaved, onBack }) {
           </span>
         ))}
       </p>
-      {verse.fields.cita && <p className="verse-ref">{verse.fields.cita}</p>}
+      {verse.fields.cita && <p className="verse-ref">{findRefs(verse.fields.cita).length ? <RefLink refText={findRefs(verse.fields.cita)[0]} /> : verse.fields.cita}</p>}
       <p className="hint center">{hiddenLeft ? 'Dilo de memoria. Toca un espacio para ver la palabra.' : '¿Lo dijiste completo?'}</p>
       <div className="two-btn">
         <button className="secondary" onClick={() => next(false)}>Repasar</button>

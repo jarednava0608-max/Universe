@@ -2,6 +2,7 @@
 // cómo se resume en un nodo del mapa). Para agregar un apartado nuevo basta con
 // añadir una entrada a KINDS.
 import { newId } from '../lib/model.js'
+import { findRefs } from '../lib/bible.js'
 
 const today = () => {
   const d = new Date()
@@ -193,24 +194,9 @@ export function proposeNode(entry) {
   return { title: clip(clean(p.title), 80), note: parts.join('\n\n') }
 }
 
-// Citas bíblicas como "Juan 17:3", "1 Juan 4:8", "Sal. 83:18", "Mateo 6:9, 10".
-const BOOK = '(?:[1-3]\\s?)?[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+\\.?'
-const REF_RE = new RegExp(`\\b${BOOK}\\s\\d{1,3}:\\d{1,3}(?:\\s?[-–,]\\s?\\d{1,3})*`, 'g')
-
+// Citas bíblicas reconocidas ("Juan 17:3", "1 Juan 4:8", "Sal. 83:18"…), sin repetir.
 export function refsIn(...texts) {
-  const out = []
-  const seen = new Set()
-  for (const t of texts) {
-    for (const m of String(t ?? '').matchAll(REF_RE)) {
-      const ref = m[0].replace(/\s+/g, ' ').trim()
-      const k = ref.toLowerCase()
-      if (!seen.has(k)) {
-        seen.add(k)
-        out.push(ref)
-      }
-    }
-  }
-  return out
+  return findRefs(...texts)
 }
 
 // ---------- utilidades ----------

@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { parseJsonLoose } from '../lib/importer.js'
+import { findRefs } from '../lib/bible.js'
+import RefLink from '../components/RefLink.jsx'
 
 // Pantalla de un juego: barra con "volver" y título.
 export function GameScreen({ title, onExit, right, children }) {
@@ -17,8 +19,9 @@ export function GameScreen({ title, onExit, right, children }) {
   )
 }
 
-// Preguntas de opción múltiple: { prompt, options, answer, explain?, ref? }
-export function Quiz({ questions, onDone, onAgain }) {
+// Preguntas de opción múltiple: { prompt, options, answer, explain?, ref?, key? }
+// onAnswer(q, acerto) se llama en cada respuesta; onFinish(aciertos, total) al terminar.
+export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish }) {
   const [i, setI] = useState(0)
   const [picked, setPicked] = useState(null)
   const [score, setScore] = useState(0)
@@ -49,6 +52,7 @@ export function Quiz({ questions, onDone, onAgain }) {
             <button key={k} className={'option' + state} disabled={answered} onClick={() => {
               setPicked(k)
               if (k === q.answer) setScore((s) => s + 1)
+              onAnswer?.(q, k === q.answer)
             }}>
               {o}
             </button>
@@ -59,8 +63,12 @@ export function Quiz({ questions, onDone, onAgain }) {
         <div className="feedback">
           <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : 'No era esa'}</p>
           {q.explain && <p className="explain">{q.explain}</p>}
-          {q.ref && <p className="ref">{q.ref}</p>}
-          <button className="primary" onClick={() => { setPicked(null); setI(i + 1) }}>
+          {q.ref && <p className="ref">{findRefs(q.ref).length ? <RefLink refText={findRefs(q.ref)[0]} /> : q.ref}</p>}
+          <button className="primary" onClick={() => {
+            if (i + 1 >= questions.length) onFinish?.(score, questions.length)
+            setPicked(null)
+            setI(i + 1)
+          }}>
             {i + 1 < questions.length ? 'Siguiente' : 'Ver resultado'}
           </button>
         </div>

@@ -3,6 +3,8 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey } from '../lib/model.js'
+import { findRefs } from '../lib/bible.js'
+import { RefChips } from '../components/RefLink.jsx'
 
 // Pestaña Estudio: 4 apartados, cada uno con su lista de entradas.
 export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, toast }) {
@@ -138,6 +140,16 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, o
         {def.fields.map((f) => (
           <Field key={f.key} field={f} value={fields[f.key]} onChange={(v) => set(f.key, v)} />
         ))}
+
+        {(() => {
+          const refs = findRefs(...Object.values(fields).flatMap((v) => (Array.isArray(v) ? v.map((p) => p.nota) : [v])))
+          return refs.length > 0 && (
+            <div className="sfield">
+              <span className="sfield-label">Textos bíblicos · toca para abrir en wol.jw.org</span>
+              <RefChips refs={refs} />
+            </div>
+          )
+        })()}
 
         <div className="action-stack">
           <button className="secondary icon-left" onClick={() => setPaste(true)}>

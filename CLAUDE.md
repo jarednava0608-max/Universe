@@ -37,6 +37,13 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`). Para agregar o ca
 - **Trivia**: preguntas que el usuario pega desde Claude (`{ "preguntas": [{ pregunta, opciones, respuesta, explicacion, cita }] }`), guardadas como entradas `kind: 'trivia'`. Rondas de 10.
 - **Memorizar textos**: 4 niveles (Fácil → De memoria) que ocultan 25/50/75/100 % de las palabras; tocar un espacio muestra la palabra; "Lo sé" sube de nivel. Textos propios (`kind: 'memoria'`, también pegables desde Claude) + los del Texto diario.
 - **Con lo que estudio**: "¿Qué es?" (definición → elegir el nodo), "Parejas" (título ↔ definición) y "Tarjetas" (nodos y textos diarios).
+- **Racha y progreso** (arriba en Juegos): días seguidos estudiando (cualquier guardado cuenta; se marca en `store.apply`), la semana, lo que toca repasar hoy, textos memorizados y mejor trivia.
+- **Repaso inteligente** (`src/games/progress.js`, tipo Leitner, intervalos 0/1/2/4/7/15/30/60 días): Tarjetas muestra solo lo que toca hoy; Trivia elige primero las preguntas falladas o vencidas; Memorizar ordena y marca "Hoy". Lo que sabes se espacia; lo que fallas vuelve hoy.
+- Todo el progreso vive en una sola entrada `id: 'progreso'` (`fields: { days, srs, triviaBest }`); al sincronizar se **combina** entre dispositivos (`mergeProgress`), no se pisa.
+
+## Textos bíblicos tocables
+- `src/lib/bible.js`: reconoce citas en español ("Juan 17:3", "1 Juan 4:8", "Sal. 83:18", abreviaturas de la TNM) y arma el enlace directo a la Biblia en wol.jw.org (`/es/wol/b/r4/lp-s/nwtsty/{libro}/{capítulo}`); si no reconoce el libro, una búsqueda en wol. Sin servicios externos.
+- Se vuelven tocables en las notas del mapa (sin tocar los `[[enlaces]]`), en el editor de Estudio (fila "Textos bíblicos"), en Trivia y en Memorizar.
 
 ## Guardado
 - Local primero: IndexedDB (`src/lib/db.js`, stores `nodes`, `edges`, `entries`, `meta`) con `navigator.storage.persist()`. Funciona sin conexión.
@@ -57,7 +64,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`). Para agregar o ca
 ```js
 Node  = { id, title, note /* markdown */, type, origin, sources, createdAt, updatedAt }
 Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
-Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' | 'trivia'|'memoria', fields: { ... }, mapNodeId?, createdAt, updatedAt }
+Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' | 'trivia'|'memoria'|'progreso', fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
 - Los títulos de nodos son únicos (sin distinguir mayúsculas ni acentos).
 
