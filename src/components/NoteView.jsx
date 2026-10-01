@@ -1,23 +1,15 @@
 import { useMemo, useRef } from 'react'
-import { NODE_TYPES, ORIGINS, nodeColor, ROOT_ID } from '../lib/model.js'
-import { buildResolver, extractLinks, renderNote } from '../lib/markdown.js'
+import { ROOT_ID } from '../lib/model.js'
+import { buildResolver, renderNote } from '../lib/markdown.js'
 
-// Nota a pantalla completa, como en Obsidian: solo título y texto.
-// Se cierra deslizando hacia la derecha. Las acciones van al final del texto.
-export default function NoteView({ node, nodes, edges, onOpen, onBack, onClose, onEdit, onNewLinked, onCreateFromLink }) {
+// Nota a pantalla completa: solo el título y la definición.
+// Se cierra deslizando hacia la derecha; "Editar" va al final del texto.
+export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit, onCreateFromLink }) {
   const panel = useRef()
   const touch = useRef(null)
 
-  const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const resolve = useMemo(() => buildResolver(nodes), [nodes])
   const html = useMemo(() => renderNote(node.note, resolve), [node.note, resolve])
-
-  const outgoing = edges.filter((e) => e.source === node.id && byId.has(e.target))
-  const incoming = edges.filter((e) => e.target === node.id && byId.has(e.source))
-  const mentions = useMemo(
-    () => nodes.filter((n) => n.id !== node.id && extractLinks(n.note).some((t) => resolve(t) === node.id)),
-    [nodes, node.id, resolve],
-  )
 
   function onContentClick(e) {
     const a = e.target.closest('a')
@@ -60,93 +52,44 @@ export default function NoteView({ node, nodes, edges, onOpen, onBack, onClose, 
     }
   }
 
-  const type = NODE_TYPES[node.type]
-  const color = nodeColor(node)
   const isRoot = node.id === ROOT_ID
 
   return (
     <div className="note" ref={panel} key={node.id} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       <article className="note-scroll">
-        <h1 className="note-title" style={isRoot ? { color } : undefined}>{node.title}</h1>
-        <p className="note-meta">
-          <span className="dot" style={{ background: color }} />
-          {isRoot ? 'Raíz' : type?.label}
-          <span className="sep">·</span>
-          <span className={'origin origin-' + node.origin}>{ORIGINS[node.origin]?.label}</span>
-        </p>
+        <h1 className={'note-title' + (isRoot ? ' root' : '')}>{node.title}</h1>
 
         {node.note.trim() ? (
           <div className="md" onClick={onContentClick} dangerouslySetInnerHTML={{ __html: html }} />
         ) : (
-          <p className="empty">Nota vacía.</p>
+          <p className="empty">Aún no hay definición.</p>
         )}
 
         {node.sources.length > 0 && (
-          <section className="note-section">
+          <section className="sources">
             <h2>Fuentes</h2>
-            <ul className="sources">
+            <ol>
               {node.sources.map((s, i) => (
                 <li key={i}>
                   {s.url ? (
-                    <a href={s.url} target="_blank" rel="noopener noreferrer">{s.label}</a>
+                    <a href={s.url} target="_blank" rel="noopener noreferrer">
+                      {s.label}
+                      <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </a>
                   ) : (
                     s.label
                   )}
                 </li>
               ))}
-            </ul>
+            </ol>
           </section>
         )}
 
-        {(outgoing.length > 0 || incoming.length > 0) && (
-          <section className="note-section">
-            <h2>Conexiones</h2>
-            <ul className="links">
-              {outgoing.map((e) => (
-                <LinkRow key={e.id} rel={e.rel} dir="→" node={byId.get(e.target)} onOpen={onOpen} />
-              ))}
-              {incoming.map((e) => (
-                <LinkRow key={e.id} rel={e.rel} dir="←" node={byId.get(e.source)} onOpen={onOpen} />
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {mentions.length > 0 && (
-          <section className="note-section">
-            <h2>Mencionado en</h2>
-            <ul className="links">
-              {mentions.map((n) => (
-                <LinkRow key={n.id} node={n} onOpen={onOpen} />
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <footer className="note-actions">
-          <button className="text-btn" onClick={onEdit}>Editar</button>
-          <button className="text-btn" onClick={onNewLinked}>Nuevo nodo conectado</button>
-          <button className="text-btn muted" onClick={onClose}>Volver al mapa</button>
+        <footer className="note-footer">
+          <button onClick={onEdit}>Editar</button>
+          <button onClick={onClose}>Cerrar</button>
         </footer>
       </article>
     </div>
-  )
-}
-
-function LinkRow({ rel, dir, node, onOpen }) {
-  return (
-    <li>
-      <button className="link-row" onClick={() => onOpen(node.id)}>
-        {rel && (
-          <span className="rel">
-            {dir === '←' ? '← ' : ''}
-            {rel}
-            {dir === '→' ? ' →' : ''}
-          </span>
-        )}
-        <span className="dot" style={{ background: nodeColor(node) }} />
-        <span className="link-title">{node.title}</span>
-      </button>
-    </li>
   )
 }

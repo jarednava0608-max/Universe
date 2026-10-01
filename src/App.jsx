@@ -139,8 +139,9 @@ export default function App() {
     if (plan.updatedNodes.length) parts.push(`${plan.updatedNodes.length} actualizados`)
     if (plan.newEdges.length) parts.push(`${plan.newEdges.length} conexiones`)
     toast('Guardado: ' + parts.join(', ') + '.')
-    const first = plan.newNodes[0] ?? plan.updatedNodes[0]?.after
-    if (first) setTimeout(() => { setFocusId(first.id); graph.current?.focus(first.id, 1.5) }, 600)
+    // Deja que el mapa se acomode y luego muestra todo.
+    setFocusId(null)
+    setTimeout(() => graph.current?.fit(), 1200)
   }
 
   if (!store.ready) return <div className="boot" />
@@ -170,12 +171,10 @@ export default function App() {
         <NoteView
           node={current}
           nodes={nodes}
-          edges={edges}
           onOpen={openNote}
           onBack={back}
           onClose={closeAll}
           onEdit={() => setEditor({ node: current, isNew: false })}
-          onNewLinked={() => startNew({}, [{ key: 'init', otherId: current.id, rel: '', dir: 'in' }])}
           onCreateFromLink={(title) => startNew({ title })}
         />
       )}

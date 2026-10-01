@@ -1,6 +1,19 @@
 import { useRef } from 'react'
-import { NODE_TYPES, ORIGINS, ROOT_COLOR } from '../lib/model.js'
 import { describe } from './AccountSheet.jsx'
+
+const Icon = ({ d }) => (
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <path d={d} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+const ICONS = {
+  nuevo: 'M12 5v14M5 12h14',
+  pegar: 'M9 4h6v3H9zM8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16M9 12h6M9 16h4',
+  exportar: 'M12 3v12M7 8l5-5 5 5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4',
+  importar: 'M12 15V3M7 10l5 5 5-5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4',
+  nube: 'M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.1 9.1 4.5 4.5 0 0 0 7 18z',
+}
 
 // Menú: solo lo esencial.
 export default function Menu({ stats, sync, onAccount, onNew, onPaste, onExport, onImportFile, onClose }) {
@@ -9,41 +22,36 @@ export default function Menu({ stats, sync, onAccount, onNew, onPaste, onExport,
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="grabber" />
-        <ul className="menu">
-          <li><button onClick={onNew}>Nuevo nodo</button></li>
-          <li><button onClick={onPaste}>Pegar conocimiento</button></li>
-          <li><button onClick={onExport}>Exportar respaldo (JSON)</button></li>
-          <li><button onClick={() => file.current.click()}>Importar archivo JSON</button></li>
-          <li>
-            <button className="menu-account" onClick={onAccount}>
-              <span>Cuenta y nube</span>
-              <span className="menu-sub"><i className={'sync-dot ' + sync.status.state} />{describe(sync.status)}</span>
-            </button>
-          </li>
-        </ul>
+        <div className="menu-group">
+          <MenuItem icon="nuevo" label="Nuevo nodo" onClick={onNew} />
+          <MenuItem icon="pegar" label="Pegar conocimiento" onClick={onPaste} />
+        </div>
+        <div className="menu-group">
+          <MenuItem icon="nube" label="Cuenta y nube" sub={<><i className={'sync-dot ' + sync.status.state} />{describe(sync.status)}</>} onClick={onAccount} />
+          <MenuItem icon="exportar" label="Exportar respaldo" onClick={onExport} />
+          <MenuItem icon="importar" label="Importar respaldo" onClick={() => file.current.click()} />
+        </div>
         <input ref={file} type="file" accept="application/json,.json" hidden
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onImportFile(f) }} />
 
-        <div className="legend">
-          <span><i className="dot" style={{ background: ROOT_COLOR }} />Jehová</span>
-          {Object.values(NODE_TYPES).map((t) => (
-            <span key={t.label}><i className="dot" style={{ background: t.color }} />{t.label}</span>
-          ))}
-        </div>
-        <div className="legend">
-          <span><i className="glyph jw" />{ORIGINS.jw.label}</span>
-          <span><i className="glyph propio" />{ORIGINS.propio.label}</span>
-          <span><i className="glyph mixto" />{ORIGINS.mixto.label}</span>
-        </div>
-
         <p className="stats">
-          {stats.nodes} nodos · {stats.edges} conexiones
-          <br />
-          Almacenamiento persistente: {stats.persisted === true ? 'sí' : stats.persisted === false ? 'no (exporta seguido)' : 'desconocido'}
-          <br />
-          Último respaldo: {stats.lastExport ? new Date(stats.lastExport).toLocaleDateString('es') : 'nunca'}
+          {stats.nodes} {stats.nodes === 1 ? 'nodo' : 'nodos'} · {stats.edges} {stats.edges === 1 ? 'conexión' : 'conexiones'}
+          {' · '}Último respaldo: {stats.lastExport ? new Date(stats.lastExport).toLocaleDateString('es') : 'nunca'}
         </p>
       </div>
     </div>
+  )
+}
+
+function MenuItem({ icon, label, sub, onClick }) {
+  return (
+    <button className="menu-item" onClick={onClick}>
+      <span className="menu-icon"><Icon d={ICONS[icon]} /></span>
+      <span className="menu-text">
+        <span>{label}</span>
+        {sub && <span className="menu-sub">{sub}</span>}
+      </span>
+      <svg className="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </button>
   )
 }

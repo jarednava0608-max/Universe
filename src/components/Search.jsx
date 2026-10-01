@@ -40,7 +40,7 @@ export default function Search({ nodes, onPick, onMenu }) {
           </svg>
           <input
             type="search"
-            placeholder="Buscar"
+            placeholder="Buscar en tu mapa"
             value={q}
             enterKeyHint="search"
             autoCorrect="off"

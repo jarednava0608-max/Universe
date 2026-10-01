@@ -16,12 +16,12 @@ export default function NodePicker({ nodes, excludeId, title = 'Elegir nodo', on
   return (
     <div className="overlay picker">
       <header className="bar">
-        <button className="text-btn muted" onClick={onCancel}>Cancelar</button>
+        <button className="bar-btn" onClick={onCancel}>Cancelar</button>
         <span className="bar-title">{title}</span>
         <span className="bar-spacer" />
       </header>
       <div className="picker-body">
-        <input className="input" autoFocus placeholder="Buscar nodo…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input search-input" autoFocus placeholder="Buscar nodo…" value={q} onChange={(e) => setQ(e.target.value)} />
         <ul className="results">
           {q.trim() && !exact && onCreate && (
             <li>

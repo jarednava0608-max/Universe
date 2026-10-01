@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react'
-import { NODE_TYPES, ORIGINS, ROOT_ID, SUGGESTED_RELATIONS, nodeColor, normKey, normRel, isJwUrl } from '../lib/model.js'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { ROOT_ID, SUGGESTED_RELATIONS, normKey, normRel, isJwUrl } from '../lib/model.js'
 import NodePicker from './NodePicker.jsx'
 
-// Crear / editar un nodo: datos, nota, fuentes y conexiones.
+// Crear / editar un nodo: título, definición, fuentes y conexiones.
+// (Tipo y origen se conservan en los datos pero por ahora no se muestran.)
 export default function NodeEditor({ node, isNew, nodes, edges, initialConnections = [], onSave, onCancel, onDelete, onQuickCreate }) {
   const [draft, setDraft] = useState(() => ({ ...node, sources: node.sources.map((s) => ({ ...s })) }))
   const [removed, setRemoved] = useState(() => new Set())
@@ -15,6 +16,14 @@ export default function NodeEditor({ node, isNew, nodes, edges, initialConnectio
   const existing = edges.filter((e) => e.source === node.id || e.target === node.id)
   const isRoot = node.id === ROOT_ID
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }))
+
+  // El cuadro de texto crece con el contenido (se escribe como en una hoja).
+  useLayoutEffect(() => {
+    const ta = noteRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = ta.scrollHeight + 'px'
+  }, [draft.note])
 
   function insert(text) {
     const ta = noteRef.current
@@ -37,7 +46,7 @@ export default function NodeEditor({ node, isNew, nodes, edges, initialConnectio
 
   function save() {
     const title = draft.title.trim()
-    if (!title) return setError('El título no puede estar vacío.')
+    if (!title) return setError('Escribe un título.')
     const clash = nodes.find((n) => n.id !== node.id && normKey(n.title) === normKey(title))
     if (clash) return setError(`Ya existe un nodo llamado «${clash.title}».`)
     const sources = draft.sources
@@ -49,85 +58,66 @@ export default function NodeEditor({ node, isNew, nodes, edges, initialConnectio
     onSave({ ...draft, title, sources }, { removed: [...removed], added })
   }
 
-  async function pickConnect(id) {
+  function pickConnect(id) {
     setAdded((a) => [...a, { key: Math.random().toString(36), otherId: id, rel: '', dir: 'out' }])
     setPicker(null)
   }
 
+  const updateSource = (i, patch) => set({ sources: draft.sources.map((x, j) => (j === i ? { ...x, ...patch } : x)) })
+
   return (
     <div className="overlay editor">
       <header className="bar">
-        <button className="text-btn muted" onClick={onCancel}>Cancelar</button>
+        <button className="bar-btn" onClick={onCancel}>Cancelar</button>
         <span className="bar-title">{isNew ? 'Nuevo nodo' : 'Editar'}</span>
-        <button className="text-btn strong" onClick={save}>Guardar</button>
+        <button className="bar-btn strong" onClick={save}>Guardar</button>
       </header>
 
       <div className="editor-body">
         {error && <p className="error">{error}</p>}
 
-        <label className="field">
-          <span>Título</span>
-          <input className="input big" value={draft.title} placeholder="Ej. El Reino de Dios" onChange={(e) => set({ title: e.target.value })} />
-        </label>
+        <input
+          className="title-input"
+          value={draft.title}
+          placeholder="Título"
+          autoFocus={isNew && !draft.title}
+          onChange={(e) => set({ title: e.target.value })}
+        />
 
-        {!isRoot && (
-          <div className="field">
-            <span>Tipo</span>
-            <div className="seg">
-              {Object.entries(NODE_TYPES).map(([k, t]) => (
-                <button key={k} className={draft.type === k ? 'on' : ''} onClick={() => set({ type: k })}>
-                  <span className="dot" style={{ background: t.color }} />
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="field">
-          <span>Origen</span>
-          <div className="seg">
-            {Object.entries(ORIGINS).map(([k, o]) => (
-              <button key={k} className={draft.origin === k ? 'on' : ''} onClick={() => set({ origin: k })}>
-                {o.label}
-              </button>
-            ))}
-          </div>
+        <div className="tools">
+          <button onClick={() => setPicker('link')}>
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            Enlazar
+          </button>
+          <button onClick={() => insertBlock('jw')}><i className="tool-dot jw" />JW dice</button>
+          <button onClick={() => insertBlock('yo')}><i className="tool-dot yo" />Yo pienso</button>
         </div>
 
-        <div className="field">
-          <span>Nota</span>
-          <div className="tools">
-            <button onClick={() => setPicker('link')}>[[ Enlazar</button>
-            <button onClick={() => insertBlock('jw')}>&gt; JW dice</button>
-            <button onClick={() => insertBlock('yo')}>&gt; Yo pienso</button>
-          </div>
-          <textarea
-            ref={noteRef}
-            className="input note-input"
-            value={draft.note}
-            placeholder={'Escribe en markdown.\n[[Título]] enlaza otro nodo.\n> [!jw] para lo que dicen las publicaciones.\n> [!yo] para tu razonamiento.'}
-            onChange={(e) => set({ note: e.target.value })}
-          />
-        </div>
+        <textarea
+          ref={noteRef}
+          className="body-input"
+          value={draft.note}
+          placeholder="Escribe la definición…"
+          onChange={(e) => set({ note: e.target.value })}
+        />
 
-        <div className="field">
-          <span>Fuentes</span>
+        <section className="group">
+          <h3>Fuentes</h3>
           {draft.sources.map((s, i) => (
-            <div className="source-row" key={i}>
-              <input className="input" placeholder="Juan 17:3 · La Atalaya 1/2020" value={s.label}
-                onChange={(e) => set({ sources: draft.sources.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) })} />
-              <input className="input" placeholder="https://wol.jw.org/…" inputMode="url" autoCapitalize="off" value={s.url ?? ''}
-                onChange={(e) => set({ sources: draft.sources.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })} />
+            <div className="source-card" key={i}>
+              <input className="input" placeholder="Juan 17:3 · La Atalaya 1/2020" value={s.label} onChange={(e) => updateSource(i, { label: e.target.value })} />
+              <input className="input" placeholder="https://wol.jw.org/…" inputMode="url" autoCapitalize="off" autoCorrect="off" value={s.url ?? ''} onChange={(e) => updateSource(i, { url: e.target.value })} />
               {s.url && /^https?:/.test(s.url) && !isJwUrl(s.url) && <p className="hint warn">No es de jw.org ni wol.jw.org.</p>}
-              <button className="text-btn danger small" onClick={() => set({ sources: draft.sources.filter((_, j) => j !== i) })}>Quitar fuente</button>
+              <button className="link-btn danger" onClick={() => set({ sources: draft.sources.filter((_, j) => j !== i) })}>Quitar</button>
             </div>
           ))}
-          <button className="ghost" onClick={() => set({ sources: [...draft.sources, { label: '', url: '' }] })}>+ Añadir fuente</button>
-        </div>
+          <button className="add-btn" onClick={() => set({ sources: [...draft.sources, { label: '', url: '' }] })}>
+            <span>+</span> Añadir fuente
+          </button>
+        </section>
 
-        <div className="field">
-          <span>Conexiones</span>
+        <section className="group">
+          <h3>Conexiones</h3>
           <datalist id="rels">
             {SUGGESTED_RELATIONS.map((r) => <option key={r} value={r} />)}
           </datalist>
@@ -139,8 +129,8 @@ export default function NodeEditor({ node, isNew, nodes, edges, initialConnectio
               const gone = removed.has(e.id)
               return (
                 <li key={e.id} className={gone ? 'gone' : ''}>
-                  <ConnLabel out={out} rel={e.rel} self={draft.title} other={other} />
-                  <button className="text-btn small danger" onClick={() => setRemoved((r) => { const n = new Set(r); gone ? n.delete(e.id) : n.add(e.id); return n })}>
+                  <ConnLabel out={out} rel={e.rel} self={draft.title || 'Este nodo'} other={other} />
+                  <button className="link-btn danger" onClick={() => setRemoved((r) => { const n = new Set(r); gone ? n.delete(e.id) : n.add(e.id); return n })}>
                     {gone ? 'Deshacer' : 'Quitar'}
                   </button>
                 </li>
@@ -154,22 +144,24 @@ export default function NodeEditor({ node, isNew, nodes, edges, initialConnectio
                 <li key={c.key} className="new-conn">
                   <div className="conn-edit">
                     <button className="dir" onClick={() => update({ dir: c.dir === 'out' ? 'in' : 'out' })}>
-                      {c.dir === 'out' ? 'Este nodo →' : 'Este nodo ←'}
+                      {c.dir === 'out' ? 'Este →' : 'Este ←'}
                     </button>
                     <input className="input" list="rels" placeholder="ENSEÑA" autoCapitalize="characters" value={c.rel}
                       onChange={(e) => update({ rel: e.target.value })} onBlur={(e) => update({ rel: normRel(e.target.value) })} />
                   </div>
                   <ConnLabel out={c.dir === 'out'} rel={normRel(c.rel) || 'RELACIONADO'} self={draft.title || 'Este nodo'} other={other} />
-                  <button className="text-btn small danger" onClick={() => setAdded((a) => a.filter((x) => x.key !== c.key))}>Quitar</button>
+                  <button className="link-btn danger" onClick={() => setAdded((a) => a.filter((x) => x.key !== c.key))}>Quitar</button>
                 </li>
               )
             })}
           </ul>
-          <button className="ghost" onClick={() => setPicker('connect')}>+ Conectar con otro nodo</button>
-        </div>
+          <button className="add-btn" onClick={() => setPicker('connect')}>
+            <span>+</span> Conectar con otro nodo
+          </button>
+        </section>
 
         {!isNew && !isRoot && (
-          <button className="ghost danger" onClick={() => confirm(`¿Eliminar «${node.title}» y sus conexiones?`) && onDelete()}>
+          <button className="delete-btn" onClick={() => confirm(`¿Eliminar «${node.title}» y sus conexiones?`) && onDelete()}>
             Eliminar nodo
           </button>
         )}
@@ -179,7 +171,7 @@ export default function NodeEditor({ node, isNew, nodes, edges, initialConnectio
         <NodePicker
           nodes={nodes}
           excludeId={node.id}
-          title={picker === 'link' ? 'Enlazar en la nota' : 'Conectar con'}
+          title={picker === 'link' ? 'Enlazar' : 'Conectar con'}
           onCancel={() => setPicker(null)}
           onPick={(id) => {
             if (picker === 'link') {
@@ -203,10 +195,9 @@ export default function NodeEditor({ node, isNew, nodes, edges, initialConnectio
 }
 
 function ConnLabel({ out, rel, self, other }) {
-  const a = <span className="conn-node"><span className="dot" style={{ background: nodeColor(other) }} />{other.title}</span>
   return (
     <p className="conn-label">
-      {out ? <>{self} <b>{rel}</b> → {a}</> : <>{a} <b>{rel}</b> → {self}</>}
+      {out ? <>{self} <b>{rel}</b> {other.title}</> : <>{other.title} <b>{rel}</b> {self}</>}
     </p>
   )
 }

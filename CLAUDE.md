@@ -4,20 +4,21 @@ Mapa personal tipo Obsidian para el estudio bíblico de un Testigo de Jehová. C
 
 ## Principios (no romper)
 - **Primero iPhone**: respetar notch y barra inferior (`env(safe-area-inset-*)`), áreas táctiles ≥ 44px, inputs con `font-size: 16px` (evita el zoom de iOS), gestos fluidos.
-- **Distinguir siempre qué dice JW y qué pienso yo**: cada nodo tiene `origin` (`jw` | `propio` | `mixto`) y dentro de la nota se usan los bloques `> [!jw]` y `> [!yo]`. En el grafo: JW = círculo relleno, propio = anillo, mixto = medio relleno.
+- **Simple ante todo** (pedido del usuario): por ahora la interfaz NO muestra tipo de nodo, origen ni la palabra "raíz". Al tocar un nodo solo se ve el título y la definición (más sus fuentes, si tiene). Los campos `type` y `origin` se conservan en los datos y en el formato de importación para poder volver a mostrarlos más adelante, pero no los muestres sin que el usuario lo pida.
+- **Distinguir qué dice JW y qué pienso yo** dentro del texto con los bloques `> [!jw]` y `> [!yo]` (botones "JW dice" / "Yo pienso" en el editor).
 - **Fuentes solo de jw.org / wol.jw.org** (textos bíblicos y publicaciones).
-- **Nota estilo Obsidian**: título grande y texto con scroll, sin botones ni pastillas encima. Se cierra deslizando a la derecha; las acciones van al final del texto.
-- **Grafo**: líneas RECTAS (nunca curvas), zoom y arrastre con los dedos. Jehová es el nodo raíz (`id: "jehova"`), fijo en el centro, y el ÚNICO dorado (`#f5d27a`). No se puede borrar.
-- Diseño oscuro, minimalista, tipografía del sistema. Búsqueda en barra rectangular estilo Vercel. Menú solo con lo esencial.
+- **Nota estilo Obsidian**: título grande y la definición con scroll, sin botones ni pastillas encima. Se cierra deslizando a la derecha; al final solo hay "Editar" y "Cerrar", discretos.
+- **Grafo**: líneas RECTAS (nunca curvas), zoom y arrastre con los dedos. Todos los nodos son gris neutro; Jehová (`id: "jehova"`) está fijo en el centro, es el ÚNICO dorado (`#f5d27a`, con un halo suave) y no se puede borrar.
+- Diseño oscuro, moderno y elegante (fondo `#09090b`, vidrio esmerilado en barras, tipografía del sistema, botón principal blanco). Tokens de color en `:root` de `src/styles.css`. Búsqueda en barra rectangular estilo Vercel. Menú solo con lo esencial (hoja inferior con grupos e íconos).
 - Simple antes que ingenioso. Nada de funciones que el usuario no pidió.
 
 ## Etapas
 1. **Hecha**: React + Vite, datos en IndexedDB (con `navigator.storage.persist()`), exportar/importar JSON, PWA.
 2. **Hecha**: sincronización con Supabase (proyecto "Memoria Bíblica", `jikonxuznepdyhcjyysh`, tablas `universe_nodes` / `universe_edges` con RLS por `user_id`). Cuenta con correo + contraseña. IndexedDB sigue siendo la fuente local (funciona sin conexión).
-3. **Pendiente**: buscar solo en jw.org y wol.jw.org y crear nodos automáticamente citando la fuente (pasar por la misma vista previa de `planImport` antes de guardar).
+3. **Descartada por ahora**: crear nodos automáticamente desde jw.org requiere una API de IA de pago y el usuario no quiere ese gasto. Él agrega los nodos a mano o pegando el JSON que le genera Claude en el chat ("Pegar conocimiento").
 
 ## Estructura
-- `src/lib/model.js`: tipos de nodo, colores, orígenes, relaciones sugeridas, `makeNode` / `makeEdge`.
+- `src/lib/model.js`: tipos de nodo, orígenes, relaciones sugeridas, `nodeColor` (neutro / dorado), `makeNode` / `makeEdge`.
 - `src/lib/db.js`: IndexedDB (stores `nodes`, `edges`, `meta`). Cada cambio local se anota en el outbox (`meta.outbox`) dentro de la misma transacción; los cambios que vienen de la nube usan `commit(change, { track: false })`.
 - `src/lib/sync.js`: un ciclo = bajar (`server_updated_at` > última vez) → subir outbox. Gana el `updatedAt` más reciente; los borrados viajan como lápidas (`deleted = true`). La primera vez que se vincula una cuenta se marca todo lo local como pendiente. La raíz nueva nace con `updatedAt: 0` para no pisar la de la nube.
 - `src/lib/useSync.js`: sesión de Supabase y disparadores (al abrir, al volver a la app, al reconectar, 1.5 s después de cada cambio). `src/lib/supabase.js`: cliente (clave publicable; la seguridad la da RLS).

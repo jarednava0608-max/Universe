@@ -33,10 +33,13 @@ export const SUGGESTED_RELATIONS = [
 
 export const SCHEMA_VERSION = 1
 
+// Por ahora la interfaz no muestra tipos: todos los nodos son neutros y solo Jehová es dorado.
+// Los tipos y colores se conservan en los datos para poder volver a usarlos.
+export const NODE_COLOR = '#b4b4bc'
+
 export function nodeColor(node) {
-  if (!node) return '#888'
-  if (node.id === ROOT_ID) return ROOT_COLOR
-  return NODE_TYPES[node.type]?.color ?? NODE_TYPES.concepto.color
+  if (!node) return NODE_COLOR
+  return node.id === ROOT_ID ? ROOT_COLOR : NODE_COLOR
 }
 
 export function newId() {

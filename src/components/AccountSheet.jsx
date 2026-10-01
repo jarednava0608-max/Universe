@@ -23,7 +23,7 @@ export default function AccountSheet({ sync, onClose }) {
   return (
     <div className="overlay">
       <header className="bar">
-        <button className="text-btn muted" onClick={onClose}>Cerrar</button>
+        <button className="bar-btn" onClick={onClose}>Cerrar</button>
         <span className="bar-title">Cuenta y nube</span>
         <span className="bar-spacer" />
       </header>
@@ -40,8 +40,8 @@ export default function AccountSheet({ sync, onClose }) {
             <p className="hint">
               Tus nodos se guardan en el teléfono y se copian a la nube automáticamente. Si entras con esta cuenta en otro dispositivo, verás el mismo mapa.
             </p>
-            <button className="ghost" disabled={status.state === 'syncing'} onClick={sync.syncNow}>Sincronizar ahora</button>
-            <button className="ghost danger" onClick={() => confirm('¿Cerrar sesión? Tus datos se quedan en este teléfono y en la nube.') && sync.signOut()}>
+            <button className="secondary" disabled={status.state === 'syncing'} onClick={sync.syncNow}>Sincronizar ahora</button>
+            <button className="delete-btn" onClick={() => confirm('¿Cerrar sesión? Tus datos se quedan en este teléfono y en la nube.') && sync.signOut()}>
               Cerrar sesión
             </button>
           </>
@@ -61,7 +61,7 @@ export default function AccountSheet({ sync, onClose }) {
               <input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </label>
             <button className="primary" disabled={busy} onClick={() => go('in')}>Entrar</button>
-            <button className="ghost" disabled={busy} onClick={() => go('up')}>Crear cuenta</button>
+            <button className="secondary" disabled={busy} onClick={() => go('up')}>Crear cuenta</button>
           </>
         )}
       </div>

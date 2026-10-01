@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CLAUDE_FORMAT, parseJsonLoose, planImport } from '../lib/importer.js'
-import { ORIGINS, nodeColor } from '../lib/model.js'
+import { nodeColor } from '../lib/model.js'
 
 // "Pegar conocimiento": pegar JSON → vista previa → confirmar.
 export default function PasteSheet({ nodes, edges, initialText = '', onConfirm, onClose, toast }) {
@@ -60,12 +60,12 @@ export default function PasteSheet({ nodes, edges, initialText = '', onConfirm, 
   return (
     <div className="overlay paste">
       <header className="bar">
-        <button className="text-btn muted" onClick={plan ? () => setPlan(null) : onClose}>{plan ? 'Atrás' : 'Cerrar'}</button>
+        <button className="bar-btn" onClick={plan ? () => setPlan(null) : onClose}>{plan ? 'Atrás' : 'Cerrar'}</button>
         <span className="bar-title">Pegar conocimiento</span>
         {plan ? (
-          <button className="text-btn strong" disabled={empty || saving} onClick={confirm}>Guardar</button>
+          <button className="bar-btn strong" disabled={empty || saving} onClick={confirm}>Guardar</button>
         ) : (
-          <button className="text-btn strong" disabled={!text.trim()} onClick={() => preview()}>Revisar</button>
+          <button className="bar-btn strong" disabled={!text.trim()} onClick={() => preview()}>Revisar</button>
         )}
       </header>
 
@@ -77,9 +77,9 @@ export default function PasteSheet({ nodes, edges, initialText = '', onConfirm, 
             <p className="hint">Pega el JSON que te generó Claude. Antes de guardar verás qué se va a crear y conectar.</p>
             <textarea className="input paste-input" value={text} placeholder='{ "nodes": [...], "edges": [...] }'
               autoCapitalize="off" autoCorrect="off" spellCheck={false} onChange={(e) => setText(e.target.value)} />
-            <div className="row">
-              <button className="ghost" onClick={pasteClipboard}>Pegar del portapapeles</button>
-              <button className="ghost" onClick={copyFormat}>Copiar formato para Claude</button>
+            <div className="stack">
+              <button className="secondary" onClick={pasteClipboard}>Pegar del portapapeles</button>
+              <button className="secondary" onClick={copyFormat}>Copiar formato para Claude</button>
             </div>
           </>
         )}
@@ -102,7 +102,6 @@ export default function PasteSheet({ nodes, edges, initialText = '', onConfirm, 
                     <li key={n.id}>
                       <span className="dot" style={{ background: nodeColor(n) }} />
                       <span className="pv-title">{n.title}</span>
-                      <span className={'pv-origin origin-' + n.origin}>{ORIGINS[n.origin].short}</span>
                     </li>
                   ))}
                 </ul>
@@ -117,7 +116,6 @@ export default function PasteSheet({ nodes, edges, initialText = '', onConfirm, 
                     <li key={after.id}>
                       <span className="dot" style={{ background: nodeColor(after) }} />
                       <span className="pv-title">{after.title}</span>
-                      <span className={'pv-origin origin-' + after.origin}>{ORIGINS[after.origin].short}</span>
                     </li>
                   ))}
                 </ul>
