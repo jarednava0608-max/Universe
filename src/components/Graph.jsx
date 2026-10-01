@@ -94,8 +94,11 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
     focus(id, zoom = 2.2) {
       const n = cache.current.get(id)
       if (!n || n.x == null || !fg.current) return
-      fg.current.centerAt(n.x, n.y, 500)
-      fg.current.zoom(Math.max(zoom, fg.current.zoom()), 500)
+      // Centra el nodo en la mitad de arriba (la nota abre como hoja en la mitad de abajo).
+      const z = Math.max(zoom, fg.current.zoom())
+      const h = wrap.current?.clientHeight ?? window.innerHeight
+      fg.current.centerAt(n.x, n.y + (h * 0.22) / z, 500)
+      fg.current.zoom(z, 500)
     },
   }))
 

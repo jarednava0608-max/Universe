@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ROOT_ID } from '../lib/model.js'
 import { buildResolver, renderNote } from '../lib/markdown.js'
 import Icon, { ICONS } from './Icon.jsx'
 
-const CLOSE_AT = 110 // px que hay que arrastrar hacia abajo para cerrar
+const HALF = 0.5 // la hoja abre mostrando la mitad de la pantalla
+const SNAP = 70 // px de arrastre para cambiar de altura
 
-// Nota como hoja de iOS: solo título y texto, como Obsidian.
-// - Deslizar hacia abajo (desde arriba del texto) o tocar fuera: cerrar.
+// Nota como hoja de iOS con dos alturas (como Apple Maps): solo título y texto.
+// - Abre a la mitad. Arrastrar hacia arriba: se ve completa.
+// - Arrastrar hacia abajo: de completa a la mitad, y de la mitad se cierra. Tocar fuera también cierra.
 // - Deslizar a la derecha: volver a la nota anterior.
 // - Lápiz arriba a la derecha: editar.
 // (Las fuentes se guardan pero no se muestran.)
@@ -14,37 +16,61 @@ export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit,
   const sheet = useRef()
   const scroller = useRef()
   const backdrop = useRef()
-  const [closing, setClosing] = useState(false)
+  const [full, setFull] = useState(false)
+  const fullRef = useRef(false)
+  const closing = useRef(false)
 
   const resolve = useMemo(() => buildResolver(nodes), [nodes])
   const html = useMemo(() => renderNote(node.note, resolve), [node.note, resolve])
 
-  // Al saltar a otra nota por un enlace, vuelve arriba.
-  useEffect(() => {
-    if (scroller.current) scroller.current.scrollTop = 0
-  }, [node.id])
+  const halfOffset = () => Math.round(sheet.current.offsetHeight - window.innerHeight * HALF)
 
-  function dismiss() {
-    if (closing) return
-    setClosing(true)
-    sheet.current.style.transition = ''
-    sheet.current.style.transform = 'translateY(100%)'
-    backdrop.current.style.opacity = '0'
-    setTimeout(onClose, 220)
+  function place(y, animate = true) {
+    const el = sheet.current
+    el.style.transition = animate ? '' : 'none'
+    el.style.transform = `translateY(${y}px)`
+    const h = el.offsetHeight || 1
+    backdrop.current.style.transition = animate ? '' : 'none'
+    backdrop.current.style.opacity = String(Math.max(0, Math.min(1, 1 - y / h)) * 0.9 + 0.1)
   }
 
-  // Gestos con listeners nativos (no pasivos) para poder evitar el rebote del scroll.
+  function snapTo(isFull) {
+    fullRef.current = isFull
+    setFull(isFull)
+    place(isFull ? 0 : halfOffset())
+  }
+
+  function dismiss() {
+    if (closing.current) return
+    closing.current = true
+    place(sheet.current.offsetHeight)
+    backdrop.current.style.opacity = '0'
+    setTimeout(onClose, 230)
+  }
+
+  // Entrada: sube desde abajo hasta la mitad.
+  useLayoutEffect(() => {
+    place(sheet.current.offsetHeight, false)
+    requestAnimationFrame(() => requestAnimationFrame(() => place(halfOffset())))
+  }, [])
+
+  // Al saltar a otra nota por un enlace: arriba del texto y la hoja en su lugar.
+  useEffect(() => {
+    if (scroller.current) scroller.current.scrollTop = 0
+    if (!closing.current) place(fullRef.current ? 0 : halfOffset(), false)
+  }, [node.id])
+
+  // Gestos con listeners nativos (no pasivos) para poder evitar el scroll mientras se arrastra la hoja.
   useEffect(() => {
     const el = sheet.current
     let s = null
-    const reset = () => {
-      el.style.transition = ''
-      el.style.transform = ''
-      backdrop.current.style.opacity = ''
-    }
     const start = (e) => {
       const t = e.touches[0]
-      s = { x: t.clientX, y: t.clientY, dx: 0, dy: 0, lock: null, atTop: scroller.current.scrollTop <= 0 }
+      s = {
+        x: t.clientX, y: t.clientY, dx: 0, dy: 0, lock: null,
+        base: fullRef.current ? 0 : halfOffset(),
+        atTop: scroller.current.scrollTop <= 0,
+      }
     }
     const move = (e) => {
       if (!s) return
@@ -53,33 +79,40 @@ export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit,
       const dy = t.clientY - s.y
       if (s.lock == null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
         if (Math.abs(dx) > Math.abs(dy) * 1.4 && dx > 0) s.lock = 'x'
-        else if (dy > 0 && s.atTop && Math.abs(dy) > Math.abs(dx)) s.lock = 'down'
+        else if (!fullRef.current || (dy > 0 && s.atTop)) s.lock = 'sheet'
         else s.lock = 'scroll'
       }
-      if (s.lock === 'down') {
+      if (s.lock === 'sheet') {
         e.preventDefault()
-        s.dy = Math.max(0, dy)
-        el.style.transition = 'none'
-        el.style.transform = `translateY(${s.dy}px)`
-        backdrop.current.style.opacity = String(Math.max(0, 1 - s.dy / 400))
+        s.dy = dy
+        place(Math.max(0, s.base + dy), false)
       } else if (s.lock === 'x') {
         e.preventDefault()
         s.dx = Math.max(0, dx)
         el.style.transition = 'none'
-        el.style.transform = `translateX(${s.dx}px)`
+        el.style.transform = `translate(${s.dx}px, ${s.base}px)`
       }
     }
     const end = () => {
       if (!s) return
       const { lock, dx, dy } = s
       s = null
-      if (lock === 'down' && dy > CLOSE_AT) return dismiss()
-      if (lock === 'x' && dx > 90) {
-        el.style.transition = ''
-        el.style.transform = 'translateX(100%)'
-        return setTimeout(onBack, 180)
+      if (lock === 'x') {
+        if (dx > 90) {
+          el.style.transition = ''
+          el.style.transform = `translate(100%, ${fullRef.current ? 0 : halfOffset()}px)`
+          return setTimeout(onBack, 180)
+        }
+        return place(fullRef.current ? 0 : halfOffset())
       }
-      if (lock === 'down' || lock === 'x') reset()
+      if (lock !== 'sheet') return
+      if (fullRef.current) {
+        if (dy > halfOffset() + SNAP) return dismiss()
+        return snapTo(dy < SNAP)
+      }
+      if (dy < -SNAP) return snapTo(true)
+      if (dy > SNAP) return dismiss()
+      snapTo(false)
     }
     el.addEventListener('touchstart', start, { passive: true })
     el.addEventListener('touchmove', move, { passive: false })
@@ -92,13 +125,6 @@ export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit,
       el.removeEventListener('touchcancel', end)
     }
   })
-
-  // Al volver a otra nota (deslizar a la derecha) la hoja reaparece en su lugar.
-  useEffect(() => {
-    const el = sheet.current
-    el.style.transition = 'none'
-    el.style.transform = ''
-  }, [node.id])
 
   function onContentClick(e) {
     const a = e.target.closest('a')
@@ -115,8 +141,8 @@ export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit,
   return (
     <>
       <div className="note-backdrop" ref={backdrop} onClick={dismiss} />
-      <div className="note" ref={sheet} role="dialog" aria-label={node.title}>
-        <div className="note-grabber" />
+      <div className={'note' + (full ? ' full' : ' half')} ref={sheet} role="dialog" aria-label={node.title}>
+        <button className="note-grabber" aria-label={full ? 'Reducir' : 'Ver completa'} onClick={() => snapTo(!full)} />
         <button className="note-edit" aria-label="Editar" onClick={onEdit}>
           <Icon d={ICONS.editar} size={17} stroke={1.8} />
         </button>
