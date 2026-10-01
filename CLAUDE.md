@@ -40,7 +40,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`). Para agregar o ca
 
 ## Guardado
 - Local primero: IndexedDB (`src/lib/db.js`, stores `nodes`, `edges`, `entries`, `meta`) con `navigator.storage.persist()`. Funciona sin conexión.
-- Nube: Supabase (proyecto "Memoria Bíblica", `jikonxuznepdyhcjyysh`), inicio de sesión con correo + contraseña, RLS por `user_id`. Mientras no haya sesión, todo se queda en el teléfono.
+- Nube: Supabase plan gratis (proyecto "Memoria Bíblica", `jikonxuznepdyhcjyysh`), tablas `universe_nodes`, `universe_edges` y `universe_entries` (Estudio y juegos, `fields` en jsonb), todas con RLS por `user_id`. Inicio de sesión con correo + contraseña desde "Cuenta y nube" (menú del mapa o el botón de nube arriba a la derecha en Estudio y Juegos). Mientras no haya sesión, todo se queda en el teléfono; al entrar por primera vez se sube todo lo local.
 - Respaldo: exportar / importar JSON (`buildExport` incluye nodos, conexiones y entradas de Estudio).
 
 ## Estructura

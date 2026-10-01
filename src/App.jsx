@@ -12,6 +12,7 @@ import PasteSheet from './components/PasteSheet.jsx'
 import Menu from './components/Menu.jsx'
 import AccountSheet from './components/AccountSheet.jsx'
 import TabBar from './components/TabBar.jsx'
+import Icon, { ICONS } from './components/Icon.jsx'
 import StudyTab from './study/StudyTab.jsx'
 import GamesTab from './games/GamesTab.jsx'
 
@@ -203,6 +204,13 @@ export default function App() {
         />
       )}
       {tab === 'juegos' && <GamesTab store={store} toast={toast} />}
+
+      {tab !== 'mapa' && (
+        <button className="account-btn" aria-label="Cuenta y nube" onClick={() => setSheet('account')}>
+          <Icon d={ICONS.nube} size={20} />
+          <i className={'sync-dot ' + sync.status.state} />
+        </button>
+      )}
 
       <TabBar tab={tab} onChange={setTab} />
 

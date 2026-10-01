@@ -38,7 +38,7 @@ export default function AccountSheet({ sync, onClose }) {
             </p>
             {status.error && <p className="error">{status.error}</p>}
             <p className="hint">
-              Tus nodos se guardan en el teléfono y se copian a la nube automáticamente. Si entras con esta cuenta en otro dispositivo, verás el mismo mapa.
+              Todo tu estudio (mapa, entradas de Estudio y juegos) se guarda en el teléfono y se copia a la nube automáticamente. Si entras con esta cuenta en otro dispositivo, verás lo mismo.
             </p>
             <button className="secondary" disabled={status.state === 'syncing'} onClick={sync.syncNow}>Sincronizar ahora</button>
             <button className="delete-btn" onClick={() => confirm('¿Cerrar sesión? Tus datos se quedan en este teléfono y en la nube.') && sync.signOut()}>
@@ -48,7 +48,7 @@ export default function AccountSheet({ sync, onClose }) {
         ) : (
           <>
             <p className="hint">
-              Entra para guardar tu mapa en la nube. Así no lo pierdes si cambias de teléfono o se borran los datos de Safari.
+              Entra para guardar todo tu estudio en la nube. Mientras no entres, todo se guarda solo en este teléfono.
             </p>
             {error && <p className="error">{error}</p>}
             {msg && <p className="notice">{msg}</p>}

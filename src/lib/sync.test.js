@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { IDBFactory } from 'fake-indexeddb'
 
 function fakeCloud() {
-  const tables = { universe_nodes: new Map(), universe_edges: new Map() }
+  const tables = { universe_nodes: new Map(), universe_edges: new Map(), universe_entries: new Map() }
   let clock = Date.parse('2026-01-01T00:00:00Z')
   const tick = () => new Date((clock += 1000)).toISOString()
 
@@ -122,5 +122,22 @@ describe('sincronización', () => {
     await b.db.commit({ delNodes: [n.id] })
     await b.sync.syncOnce(cloud, U)
     expect(cloud.tables.universe_nodes.get(U + '|' + n.id).deleted).toBe(true)
+  })
+
+  it('sincroniza las entradas de Estudio y de juegos', async () => {
+    const a = await device()
+    const entry = { id: 'e1', kind: 'diario', fields: { fecha: '2026-10-01', texto: 'Juan 17:3', resumen: 'Conocer da vida' }, mapNodeId: 'n1', createdAt: 1, updatedAt: 100 }
+    await a.db.commit({ putEntries: [entry, { id: 't1', kind: 'trivia', fields: { pregunta: '¿?', opciones: ['a', 'b'], respuesta: 0 }, createdAt: 1, updatedAt: 1 }] })
+    expect(await a.sync.pendingCount()).toBe(2)
+    await a.sync.syncOnce(cloud, U)
+    expect(await a.sync.pendingCount()).toBe(0)
+
+    const b = await device()
+    await b.sync.syncOnce(cloud, U)
+    expect(await b.db.get('entries', 'e1')).toEqual(entry)
+    await b.db.commit({ delEntries: ['t1'] })
+    await b.sync.syncOnce(cloud, U)
+    await a.sync.syncOnce(cloud, U)
+    expect(await a.db.get('entries', 't1')).toBeUndefined()
   })
 })
