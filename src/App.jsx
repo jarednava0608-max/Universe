@@ -45,14 +45,22 @@ export default function App() {
 
   // El gesto de "atrás" del navegador cierra la nota actual.
   useEffect(() => {
-    const onPop = () => setStack((s) => s.slice(0, -1))
+    // history.state.depth dice cuántas notas siguen abiertas (go(-n) dispara un solo popstate).
+    const onPop = () => setStack((s) => s.slice(0, Math.min(s.length, history.state?.depth ?? 0)))
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
+  const stackRef = useRef(stack)
+  stackRef.current = stack
   const openNote = useCallback((id) => {
-    setStack((s) => (s.at(-1) === id ? s : [...s, id]))
-    history.pushState({ note: id }, '')
+    const s = stackRef.current
+    if (s.at(-1) !== id) {
+      const next = [...s, id]
+      stackRef.current = next
+      setStack(next)
+      history.pushState({ note: id, depth: next.length }, '')
+    }
     setFocusId(id)
     graph.current?.focus(id)
   }, [])

@@ -125,16 +125,35 @@ a { color: inherit; }
 .fab:active { transform: scale(0.94); }
 
 /* ---------- Nota ---------- */
-.note {
-  position: fixed; inset: 0; z-index: 10; background: var(--bg);
-  transition: transform 0.2s var(--ease);
-  animation: note-in 0.28s var(--ease);
+/* La nota es una hoja de iOS sobre el mapa. */
+.note-backdrop {
+  position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, 0.5);
+  transition: opacity 0.22s var(--ease); animation: fade 0.25s;
 }
-@keyframes note-in { from { transform: translateX(24px); opacity: 0; } }
+.note {
+  position: fixed; z-index: 11; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  min-height: 48vh; max-height: calc(100% - var(--sat) - 10px);
+  background: var(--bg); border-radius: 18px 18px 0 0;
+  border-top: 1px solid var(--line-strong);
+  box-shadow: 0 -16px 50px rgba(0, 0, 0, 0.55);
+  transition: transform 0.22s var(--ease);
+  animation: sheet-up 0.32s var(--ease);
+  overflow: hidden;
+}
+.note-grabber { position: absolute; z-index: 2; top: 7px; left: 50%; width: 36px; height: 5px; margin-left: -18px; border-radius: 3px; background: rgba(255, 255, 255, 0.18); }
+.note-edit {
+  position: absolute; z-index: 2; top: 12px; right: calc(var(--sar) + 12px);
+  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--text-3); background: transparent; transition: color 0.15s, background 0.15s;
+}
+.note-edit:active { color: var(--text); background: var(--surface-2); }
 .note-scroll {
-  height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: calc(var(--sat) + 44px) calc(var(--sar) + 24px) calc(var(--sab) + 48px) calc(var(--sal) + 24px);
+  flex: 1 1 auto; min-height: 0; width: 100%;
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: none;
+  padding: 40px calc(var(--sar) + 24px) calc(var(--sab) + 56px) calc(var(--sal) + 24px);
   max-width: 720px; margin: 0 auto;
+  animation: fade 0.2s;
 }
 .note-title {
   font-family: var(--font-display);
@@ -166,9 +185,6 @@ a { color: inherit; }
 .md blockquote { margin: 0 0 1.05em; padding: 2px 0 2px 16px; border-left: 2px solid var(--line-strong); color: var(--text-2); }
 
 
-.note-footer { display: flex; gap: 24px; margin-top: 48px; padding-top: 4px; }
-.note-footer button { min-height: var(--tap); color: var(--text-3); font-size: 15px; }
-.note-footer button:active { color: var(--text); }
 
 /* ---------- Pantallas (editor, pegar, cuenta, selector) ---------- */
 .overlay {
@@ -328,12 +344,6 @@ a { color: inherit; }
 }
 .welcome b { color: var(--text-2); font-weight: 600; }
 
-/* La nota se desvanece bajo la barra de estado al hacer scroll. */
-.note::before {
-  content: ''; position: absolute; z-index: 1; left: 0; right: 0; top: 0;
-  height: calc(var(--sat) + 28px); pointer-events: none;
-  background: linear-gradient(var(--bg) 55%, rgba(9, 9, 11, 0));
-}
 .preview h2 { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); margin: 0 0 10px; }
 
 /* ---------- Pestañas ---------- */

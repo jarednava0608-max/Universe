@@ -17,7 +17,7 @@ Tiene **3 pestañas abajo**: **Mapa**, **Estudio** y **Juegos**.
 - Mapa tipo Obsidian: cada idea es un nodo. Un nodo es solo **título + definición**. La interfaz NO muestra tipo, origen, fuentes, la palabra "raíz" ni etiquetas "JW / mi razonamiento", y el editor no tiene secciones de fuentes ni conexiones. Los campos `type`, `origin`, `sources` y las conexiones importadas se conservan en los datos por si el usuario los pide después.
 - **Conectar ideas** = enlazar otro nodo en el texto con `[[Título]]` (botón "Enlazar otro nodo"). Se dibujan como líneas rectas sin flecha. Las conexiones con relación (`ENSEÑA`…) solo llegan por "Pegar conocimiento".
 - Los bloques antiguos `> [!jw]` / `> [!yo]` se muestran como texto normal y se limpian al editar (`unwrapCallouts`).
-- **Nota estilo Obsidian**: título grande y definición con scroll, sin botones encima. Se cierra deslizando a la derecha; al final solo "Editar" y "Cerrar".
+- **Nota estilo Obsidian, como hoja de iOS**: solo título y texto, sin botones ni pastillas. La hoja mide lo que mide la nota (mín. 48 % de la pantalla) y deja ver el mapa atrás. Se cierra deslizándola hacia abajo (desde arriba del texto) o tocando fuera; deslizar a la derecha vuelve a la nota anterior. Editar = lápiz pequeño y discreto arriba a la derecha. Los `[[enlaces]]` se abren con un toque.
 - **Grafo**: líneas RECTAS (nunca curvas), zoom y arrastre con los dedos. Nodos gris neutro; Jehová (`id: "jehova"`) fijo en el centro, el ÚNICO dorado (`#f5d27a`, halo suave), no se puede borrar.
 - Menú (☰): nuevo nodo, pegar conocimiento, cuenta y nube, exportar / importar respaldo.
 
