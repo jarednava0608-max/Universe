@@ -17,7 +17,7 @@ export default function GamesTab({ store, toast }) {
         <div className="game-list">
           {GAMES.map((g) => (
             <button key={g.id} className="game-card" onClick={() => setOpen(g.id)}>
-              <span className="game-icon"><Icon d={g.icon} size={22} /></span>
+              <span className={'game-icon g-' + g.id}><Icon d={g.icon} size={22} /></span>
               <span className="entry-main">
                 <span className="game-title">{g.title}{g.soon && <em className="soon-tag">Pronto</em>}</span>
                 <span className="entry-sub">{g.desc}</span>

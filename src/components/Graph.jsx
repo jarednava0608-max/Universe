@@ -3,11 +3,11 @@ import ForceGraph2D from 'react-force-graph-2d'
 import { nodeColor, ROOT_ID } from '../lib/model.js'
 import { buildResolver, extractLinks } from '../lib/markdown.js'
 
-const BG = '#09090b'
+const BG = '#0c0a08'
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif'
-const LINK = 'rgba(255,255,255,0.13)'
-const LINK_DIM = 'rgba(255,255,255,0.04)'
-const LINK_HI = 'rgba(255,255,255,0.55)'
+const LINK = 'rgba(255,236,205,0.14)'
+const LINK_DIM = 'rgba(255,236,205,0.04)'
+const LINK_HI = 'rgba(245,210,122,0.6)'
 
 // Vista de grafo: canvas con zoom/arrastre táctil y líneas rectas.
 const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBackgroundTap }, ref) {
@@ -139,7 +139,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
           ctx.lineWidth = 3 / scale
           ctx.strokeStyle = BG
           ctx.strokeText(l.rel, x, y)
-          ctx.fillStyle = isHi(l) ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.4)'
+          ctx.fillStyle = isHi(l) ? 'rgba(245,225,180,0.85)' : 'rgba(255,236,205,0.42)'
           ctx.fillText(l.rel, x, y)
         }}
         nodeCanvasObject={(n, ctx, scale) => {
@@ -160,16 +160,20 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
             ctx.fill()
           }
 
+          // Brillo sutil alrededor de cada nodo.
           ctx.beginPath()
           ctx.arc(n.x, n.y, r, 0, 2 * Math.PI)
           ctx.fillStyle = n.color
+          ctx.shadowColor = n.isRoot ? 'rgba(245,210,122,0.6)' : 'rgba(255,236,205,0.35)'
+          ctx.shadowBlur = n.isRoot ? 18 : focused ? 14 : 8
           ctx.fill()
+          ctx.shadowBlur = 0
 
           if (focused) {
             ctx.beginPath()
             ctx.arc(n.x, n.y, r + 4 / scale, 0, 2 * Math.PI)
             ctx.lineWidth = 1.5 / scale
-            ctx.strokeStyle = 'rgba(255,255,255,0.85)'
+            ctx.strokeStyle = 'rgba(245,210,122,0.9)'
             ctx.stroke()
           }
 
@@ -179,7 +183,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, onNodeTap, onBa
             ctx.font = `${n.isRoot ? 600 : 500} ${fs}px ${FONT}`
             ctx.textAlign = 'center'
             ctx.textBaseline = 'top'
-            ctx.fillStyle = n.isRoot ? n.color : focused ? '#fafafa' : 'rgba(228,228,231,0.78)'
+            ctx.fillStyle = n.isRoot ? n.color : focused ? '#f7f0e4' : 'rgba(241,235,226,0.78)'
             const label = n.title.length > 32 ? n.title.slice(0, 31) + '…' : n.title
             ctx.fillText(label, n.x, n.y + r + (focused ? 9 : 4) / scale)
           }

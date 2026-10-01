@@ -10,7 +10,7 @@ Tiene **3 pestañas abajo**: **Mapa**, **Estudio** y **Juegos**.
 
 ## Principios de diseño (no romper)
 - **Primero iPhone**: respetar notch y barra inferior (`env(safe-area-inset-*)`), áreas táctiles ≥ 44px, inputs con `font-size: 16px` (evita el zoom de iOS), gestos fluidos. La barra de pestañas ocupa `--tabbar`; lo flotante va por encima.
-- Diseño oscuro, moderno y elegante (fondo `#09090b`, vidrio esmerilado en barras, tipografía del sistema, botón principal blanco, tarjetas con borde sutil). Tokens de color en `:root` de `src/styles.css`. Mismo diseño en las 3 pestañas.
+- Estilo **"Noche dorada"**: oscuro cálido (fondo `#0c0a08`, superficies café muy oscuro, texto marfil), títulos con serifa (`--font-serif`: New York en iPhone), detalles dorados suaves (pestaña activa, botón principal y "+" con degradado dorado, enlaces y citas en dorado claro), vidrio esmerilado en barras, tarjetas con borde y brillo sutil, íconos de color por apartado/juego. Tokens en `:root` de `src/styles.css`. Mismo diseño en las 3 pestañas. Jehová sigue siendo el único **nodo** dorado del mapa (los demás nodos marfil con brillo suave).
 - **Simple antes que ingenioso.** Nada de funciones que el usuario no pidió.
 
 ## 1) Pestaña Mapa

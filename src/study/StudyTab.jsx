@@ -28,7 +28,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           <div className="kind-grid">
             {KIND_ORDER.map((k) => (
               <button key={k} className="kind-card" onClick={() => setSection(k)}>
-                <span className="kind-icon"><Icon d={KINDS[k].icon} size={20} /></span>
+                <span className={'kind-icon k-' + k}><Icon d={KINDS[k].icon} size={20} /></span>
                 <span className="kind-label">{KINDS[k].label}</span>
                 <span className="kind-desc">{KINDS[k].desc}</span>
                 <span className="kind-count">{byKind[k].length || 'Vacío'}</span>
