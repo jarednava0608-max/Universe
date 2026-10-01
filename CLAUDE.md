@@ -33,7 +33,10 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`). Para agregar o ca
 ## 3) Pestaña Juegos
 - Menú con: **Memoria Bíblica**, **Trivia de preguntas**, **Memorizar textos** y **Juegos con lo que estudio** (usan los nodos y las notas del usuario).
 - **Memoria Bíblica** ya existe aparte (171 personajes, 8 mundos, 4 modos, línea del tiempo, mapa y repaso diario), desplegada en Vercel sin GitHub. Su espacio queda listo; el código se integra después.
-- Los juegos se registran en `src/games/registry.js`: agregar o cambiar un juego = una entrada en esa lista.
+- Los juegos se registran en `src/games/registry.js`: agregar o cambiar un juego = una entrada en esa lista (cada componente recibe `{ store, toast, onExit }`). La lógica sin interfaz va en `src/games/logic.js` (con pruebas) y las piezas comunes (`GameScreen`, `Quiz`, `PasteJson`) en `src/games/ui.jsx`.
+- **Trivia**: preguntas que el usuario pega desde Claude (`{ "preguntas": [{ pregunta, opciones, respuesta, explicacion, cita }] }`), guardadas como entradas `kind: 'trivia'`. Rondas de 10.
+- **Memorizar textos**: 4 niveles (Fácil → De memoria) que ocultan 25/50/75/100 % de las palabras; tocar un espacio muestra la palabra; "Lo sé" sube de nivel. Textos propios (`kind: 'memoria'`, también pegables desde Claude) + los del Texto diario.
+- **Con lo que estudio**: "¿Qué es?" (definición → elegir el nodo), "Parejas" (título ↔ definición) y "Tarjetas" (nodos y textos diarios).
 
 ## Guardado
 - Local primero: IndexedDB (`src/lib/db.js`, stores `nodes`, `edges`, `entries`, `meta`) con `navigator.storage.persist()`. Funciona sin conexión.
@@ -44,7 +47,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`). Para agregar o ca
 - `src/App.jsx`: pestañas, notas abiertas del mapa, hojas y avisos.
 - `src/components/`: `TabBar`, `Icon`, `Graph` (react-force-graph-2d en canvas), `NoteView`, `NodeEditor`, `NodePicker`, `PasteSheet`, `Search`, `Menu`, `AccountSheet`.
 - `src/study/`: `kinds.js` (definición de apartados, "Pegar de Claude", "Proponer al mapa", detector de citas) y `StudyTab.jsx`.
-- `src/games/`: `GamesTab.jsx` y juegos.
+- `src/games/`: `registry.js` (lista de juegos), `GamesTab.jsx`, `logic.js`, `ui.jsx`, `Trivia.jsx`, `Memorize.jsx`, `StudyGames.jsx`, `MemoriaBiblica.jsx` (espacio reservado).
 - `src/lib/model.js`: modelo de nodos y conexiones. `src/lib/store.js`: hook `useStore` (nodos, conexiones, entradas). `src/lib/markdown.js`: render y `[[enlaces]]`. `src/lib/importer.js`: "Pegar conocimiento" (`planImport` con vista previa) y respaldos.
 - `src/lib/db.js`: cada cambio local se anota en el outbox (`meta.outbox`) en la misma transacción; los cambios de la nube usan `commit(change, { track: false })`.
 - `src/lib/sync.js`: ciclo bajar (`server_updated_at` > última vez) → subir outbox; gana el `updatedAt` más reciente; borrados como lápidas (`deleted = true`). `src/lib/useSync.js`: sesión y disparadores. `src/lib/supabase.js`: cliente (clave publicable; la seguridad la da RLS).
@@ -54,7 +57,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`). Para agregar o ca
 ```js
 Node  = { id, title, note /* markdown */, type, origin, sources, createdAt, updatedAt }
 Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
-Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion', fields: { ... }, mapNodeId?, createdAt, updatedAt }
+Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' | 'trivia'|'memoria', fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
 - Los títulos de nodos son únicos (sin distinguir mayúsculas ni acentos).
 

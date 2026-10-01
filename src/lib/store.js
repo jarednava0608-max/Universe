@@ -115,6 +115,8 @@ export function useStore() {
     return next
   }, [apply])
   const deleteEntry = useCallback((id) => apply({ delEntries: [id] }), [apply])
+  const saveEntries = useCallback((list) => apply({ putEntries: list.map((e) => ({ ...e, updatedAt: Date.now() })) }), [apply])
+  const deleteEntries = useCallback((ids) => apply({ delEntries: ids }), [apply])
 
-  return { ...state, rev, mergeRemote: mergeState, saveEntry, deleteEntry, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
+  return { ...state, rev, mergeRemote: mergeState, saveEntry, deleteEntry, saveEntries, deleteEntries, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
 }

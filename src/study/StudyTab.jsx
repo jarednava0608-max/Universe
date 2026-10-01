@@ -16,7 +16,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
     return m
   }, [entries])
 
-  const recent = useMemo(() => [...entries].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5), [entries])
+  const recent = useMemo(() => entries.filter((e) => KINDS[e.kind]).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5), [entries])
 
   return (
     <div className="page">
