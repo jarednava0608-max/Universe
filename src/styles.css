@@ -933,7 +933,8 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .mb-bar.memo span { background: var(--ok); }
 
 /* ---------- Tarjetas que se deslizan ---------- */
-.swipe-wrap { overflow: hidden; margin: 0 -16px; padding: 0 16px; }
+.swipe-wrap { overflow: hidden; overflow-x: clip; overflow-y: visible; margin: 0 -16px; padding: 0 16px; }
+:root[data-theme='light'] .flashcard { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.1); }
 .flashcard.swipe { padding-top: 54px; padding-bottom: 40px; touch-action: pan-y; user-select: none; -webkit-user-select: none; transition: transform 0.25s var(--ease); }
 .swipe-tag { position: absolute; top: 16px; padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; pointer-events: none; }
 .swipe-tag.yes { left: 16px; color: var(--ok); border: 2px solid var(--ok); transform: rotate(-8deg); }
