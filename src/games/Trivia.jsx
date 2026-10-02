@@ -3,6 +3,8 @@ import { newId } from '../lib/model.js'
 import { parseTrivia, shuffle, triviaToQuestion, TRIVIA_FORMAT } from './logic.js'
 import { GameScreen, Quiz, PasteJson, Empty, ModeCard, Survival } from './ui.jsx'
 import { byPriority, dueCount, isDue, review, withBest } from './progress.js'
+import SwipeRow from '../components/SwipeRow.jsx'
+import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 
 const SECONDS = 15
 
@@ -110,21 +112,22 @@ export default function Trivia({ store, toast, onExit }) {
   )
 }
 
-// Lista de preguntas guardadas: se pueden borrar una por una o todas.
+// Lista de preguntas guardadas: se borran deslizando a la izquierda (con Deshacer) o todas juntas.
 function QuestionList({ bank, store, onBack }) {
+  const undoDel = useUndoDelete((e) => store.deleteEntry(e.id), (e) => store.saveEntry(e))
   return (
     <GameScreen title="Mis preguntas" back="Trivia" onExit={onBack}>
-      <ul className="q-list">
+      {bank.length > 0 && <p className="hint">{bank.length} {bank.length === 1 ? 'pregunta' : 'preguntas'}. Desliza una a la izquierda para borrarla.</p>}
+      <ul className="entry-list">
         {bank.map((e) => (
-          <li key={e.id} className="q-item">
-            <span className="entry-main">
-              <span className="q-text">{e.fields.pregunta}</span>
-              <span className="entry-sub">{e.fields.opciones[e.fields.respuesta]}</span>
-            </span>
-            <button className="q-del" aria-label="Borrar pregunta" onClick={() => store.deleteEntry(e.id)}>
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-            </button>
-          </li>
+          <SwipeRow key={e.id} onDelete={() => undoDel.remove(e)}>
+            <div className="entry-row q-row">
+              <span className="entry-main">
+                <span className="q-text">{e.fields.pregunta}</span>
+                <span className="entry-sub">{e.fields.opciones[e.fields.respuesta]}</span>
+              </span>
+            </div>
+          </SwipeRow>
         ))}
       </ul>
       {bank.length > 0 && (
@@ -132,6 +135,7 @@ function QuestionList({ bank, store, onBack }) {
           Borrar todas las preguntas
         </button>
       )}
+      {undoDel.pending && <UndoBar inGame text="Pregunta eliminada" onUndo={undoDel.undo} />}
     </GameScreen>
   )
 }

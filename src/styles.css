@@ -684,11 +684,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .order-result.ok { color: var(--ok); }
 .order-result.bad { color: var(--text-2); }
 
-.q-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.q-item { display: flex; align-items: center; gap: 10px; padding: 12px 6px 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 .q-text { font-size: 15px; line-height: 1.4; }
-.q-del { flex: none; width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--text-3); border-radius: 10px; }
-.q-del:active { background: var(--surface-2); color: var(--danger); }
 
 .book-section { margin-bottom: 18px; }
 .book-section-title { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -995,3 +991,4 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .options.two .option { min-height: 72px; text-align: center; font-size: 18px; font-weight: 600; }
 .undo-bar.in-game { bottom: calc(var(--sab) + 16px); }
 .empty-state .secondary { max-width: 260px; }
+.q-row .entry-sub { white-space: normal; }
