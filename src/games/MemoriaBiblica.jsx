@@ -65,7 +65,10 @@ export default function MemoriaBiblica({ store, onExit }) {
   return (
     <GameScreen title="Memoria Bíblica" onExit={onExit}>
       <div className="mb-hero">
-        <p className="mb-count"><b>{known}</b> de {CHARACTERS.length} personajes</p>
+        <p className="mb-count">
+          <b>{known}</b> de {CHARACTERS.length} personajes
+          <span className="mb-stars-total"><Stars n={1} of={1} /> {WORLDS.reduce((n, w) => n + stars(best[`mb-w${w.id}`]), 0)} de {WORLDS.length * 3}</span>
+        </p>
         <div className="mb-bar"><span style={{ width: `${(known / CHARACTERS.length) * 100}%` }} /></div>
       </div>
       <div className="mode-list">
@@ -103,10 +106,10 @@ export default function MemoriaBiblica({ store, onExit }) {
   )
 }
 
-function Stars({ n }) {
+function Stars({ n, of = 3 }) {
   return (
-    <span className="stars" aria-label={`${n} de 3 estrellas`}>
-      {[0, 1, 2].map((i) => (
+    <span className="stars" aria-label={`${n} de ${of} estrellas`}>
+      {Array.from({ length: of }, (_, i) => (
         <svg key={i} viewBox="0 0 24 24" width="12" height="12" className={i < n ? 'on' : ''} aria-hidden="true">
           <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z" />
         </svg>
