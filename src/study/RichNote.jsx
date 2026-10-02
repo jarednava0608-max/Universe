@@ -1,6 +1,6 @@
 // Editor de Notas con formato (como Notas del iPhone): títulos, negritas, colores,
 // listas, tareas, tablas, citas y líneas. Todo local (TipTap), sin servicios.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { TaskList, TaskItem } from '@tiptap/extension-list'
@@ -8,6 +8,9 @@ import { TableKit } from '@tiptap/extension-table'
 import { Highlight } from '@tiptap/extension-highlight'
 import { TextStyle, Color } from '@tiptap/extension-text-style'
 import { Placeholder } from '@tiptap/extensions'
+import { NodeLink, BibleRefs } from './noteExtensions.js'
+import NodePicker from '../components/NodePicker.jsx'
+import { refUrl } from '../lib/bible.js'
 
 // Colores que se leen bien en negro y en blanco.
 export const TEXT_COLORS = [['#ef4444', 'Rojo'], ['#f59e0b', 'Naranja'], ['#22c55e', 'Verde'], ['#3b82f6', 'Azul'], ['#a855f7', 'Morado']]
@@ -23,6 +26,7 @@ const P = {
   line: 'M4 12h16',
   undo: 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
   done: 'm5 12.5 4.5 4.5L19 7.5',
+  link: 'M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1',
 }
 
 function Svg({ d, size = 20 }) {
@@ -54,9 +58,13 @@ function useVisibleBottom() {
   return bottom
 }
 
-export default function RichNote({ html, onChange, editorRef }) {
+export default function RichNote({ html, onChange, editorRef, nodes = [], onOpenNode }) {
   const [focused, setFocused] = useState(false)
   const [panel, setPanel] = useState(false)
+  const [picker, setPicker] = useState(null) // posición donde va el enlace
+  const openPicker = useRef(null)
+  const openNodeRef = useRef(onOpenNode)
+  openNodeRef.current = onOpenNode
   const visibleBottom = useVisibleBottom()
 
   const editor = useEditor({
@@ -69,10 +77,32 @@ export default function RichNote({ html, onChange, editorRef }) {
       TextStyle,
       Color,
       Placeholder.configure({ placeholder: 'Escribe tu nota…' }),
+      NodeLink,
+      BibleRefs,
     ],
     content: html,
     shouldRerenderOnTransaction: true,
-    editorProps: { attributes: { class: 'rich', autocapitalize: 'sentences' } },
+    editorProps: {
+      attributes: { class: 'rich', autocapitalize: 'sentences' },
+      // Escribir "[[" abre la lista de nodos para enlazar uno.
+      handleTextInput(view, from, to, text) {
+        if (text !== '[' || view.state.doc.textBetween(Math.max(0, from - 1), from) !== '[') return false
+        view.dispatch(view.state.tr.delete(from - 1, to))
+        openPicker.current?.(from - 1)
+        return true
+      },
+      // Si no estás escribiendo, tocar una cita o un enlace lo abre (sin sacar el teclado).
+      handleDOMEvents: {
+        mousedown(view, e) {
+          const t = e.target.closest?.('.ref-deco, a[data-node]')
+          if (!t || view.hasFocus()) return false
+          e.preventDefault()
+          if (t.dataset.node) openNodeRef.current?.(t.dataset.node)
+          else window.open(refUrl(t.dataset.ref), '_blank', 'noopener')
+          return true
+        },
+      },
+    },
     onUpdate: ({ editor }) => onChange({ html: editor.getHTML(), texto: editor.getText({ blockSeparator: '\n' }) }),
     onFocus: () => setFocused(true),
     onBlur: () => setFocused(false),
@@ -81,6 +111,13 @@ export default function RichNote({ html, onChange, editorRef }) {
   useEffect(() => {
     if (editorRef) editorRef.current = editor
   }, [editor, editorRef])
+  openPicker.current = (pos) => setPicker(pos ?? editor?.state.selection.from ?? 0)
+
+  function insertLink(title) {
+    const at = picker
+    setPicker(null)
+    editor.chain().focus().insertContentAt(at, [{ type: 'nodeLink', attrs: { title } }, { type: 'text', text: ' ' }]).run()
+  }
 
   const run = (fn) => (e) => {
     e.preventDefault()
@@ -149,6 +186,7 @@ export default function RichNote({ html, onChange, editorRef }) {
               <Btn label="Lista de tareas" on={editor.isActive('taskList')} onTap={run((c) => c.toggleTaskList())}><Svg d={P.check} /></Btn>
               <Btn label="Lista" on={editor.isActive('bulletList')} onTap={run((c) => c.toggleBulletList())}><Svg d={P.bullet} /></Btn>
               <Btn label="Lista numerada" on={editor.isActive('orderedList')} onTap={run((c) => c.toggleOrderedList())}><Svg d={P.ordered} /></Btn>
+              <Btn label="Enlazar nodo" onTap={() => openPicker.current()}><Svg d={P.link} /></Btn>
               <Btn label="Tabla" onTap={run((c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }))}><Svg d={P.table} /></Btn>
               <Btn label="Cita" on={editor.isActive('blockquote')} onTap={run((c) => c.toggleBlockquote())}><Svg d={P.quote} /></Btn>
               <Btn label="Línea" onTap={run((c) => c.setHorizontalRule())}><Svg d={P.line} /></Btn>
@@ -157,6 +195,16 @@ export default function RichNote({ html, onChange, editorRef }) {
             </div>
           )}
         </div>
+      )}
+
+      {picker != null && (
+        <NodePicker
+          nodes={nodes}
+          title="Enlazar nodo"
+          onCancel={() => { setPicker(null); editor?.commands.focus() }}
+          onPick={(id) => insertLink(nodes.find((n) => n.id === id)?.title ?? '')}
+          onCreate={(title) => insertLink(title)}
+        />
       )}
     </>
   )

@@ -6,6 +6,7 @@ import { normKey } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
 import { RefChips } from '../components/RefLink.jsx'
 import { markdownToHtml } from '../lib/markdown.js'
+import { docToText } from './noteText.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -154,6 +155,8 @@ function filterNotes(list, query) {
 
 // Nota como en la app Notas del iPhone: título y texto, se guarda sola mientras escribes
 // y al salir. Una nota que se queda vacía se borra.
+const SHARE_ICON = 'M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1'
+
 function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onPropose, onOpenNode }) {
   const [titulo, setTitulo] = useState(entry.fields.titulo ?? '')
   // El contenido con formato vive en `html`; `texto` es la versión en texto simple (buscar, mapa, citas).
@@ -203,7 +206,28 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
     onClose()
   }
 
-  const refs = findRefs(titulo, texto)
+  // Tocar un enlace [[nodo]] abre ese nodo en el mapa (antes se guarda la nota).
+  async function openByTitle(title) {
+    const node = nodes.find((n) => normKey(n.title) === normKey(title))
+    if (!node) return toast(`«${title}» todavía no está en tu mapa.`)
+    await flush()
+    onOpenNode(node.id)
+  }
+
+  async function share() {
+    setMenu(false)
+    const text = editor.current ? docToText(editor.current.getJSON(), titulo) : [titulo, texto].filter(Boolean).join('\n\n')
+    try {
+      if (navigator.share) await navigator.share({ title: titulo || 'Nota', text })
+      else {
+        await navigator.clipboard.writeText(text)
+        toast('Nota copiada.')
+      }
+    } catch (e) {
+      if (e?.name !== 'AbortError') toast('No se pudo compartir.')
+    }
+  }
+
   const linked = entry.mapNodeId && nodes.find((n) => n.id === entry.mapNodeId)
 
   return (
@@ -228,15 +252,10 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); editor.current?.commands.focus('start') } }}
         />
         <Suspense fallback={<div className="rich-loading" />}>
-          <RichNote html={initialHtml} onChange={setContent} editorRef={editor} />
+          <RichNote html={initialHtml} onChange={setContent} editorRef={editor} nodes={nodes} onOpenNode={openByTitle} />
         </Suspense>
-        {refs.length > 0 && (
-          <div className="note-refs">
-            <RefChips refs={refs} />
-          </div>
-        )}
         {linked && (
-          <button className="link-note" onClick={() => onOpenNode(linked.id)}>En el mapa como «{linked.title}» · Ver</button>
+          <button className="link-note" onClick={async () => { await flush(); onOpenNode(linked.id) }}>En el mapa como «{linked.title}» · Ver</button>
         )}
       </div>
 
@@ -245,6 +264,9 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
           <div className="sheet" onClick={(e) => e.stopPropagation()}>
             <div className="grabber" />
             <div className="menu-group">
+              <button className="menu-item" onClick={share}>
+                <span className="menu-icon"><Icon d={SHARE_ICON} size={20} /></span><span className="menu-text"><span>Compartir</span></span>
+              </button>
               <button className="menu-item" onClick={() => { setMenu(false); setPaste(true) }}>
                 <span className="menu-icon"><Icon d={ICONS.pegar} size={20} /></span><span className="menu-text"><span>Pegar de Claude</span></span>
               </button>

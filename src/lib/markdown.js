@@ -86,7 +86,9 @@ export function renameLinks(text, oldTitle, newTitle) {
 // Markdown (o texto simple) → HTML para el editor de Notas. Las listas "- [ ]" se vuelven
 // listas de tareas. El editor descarta lo que no reconoce, así que no hace falta limpiar más.
 export function markdownToHtml(text) {
-  const src = String(text ?? '').trim()
+  const esc = (x) => x.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+  // [[Título]] → enlace a un nodo del mapa.
+  const src = String(text ?? '').trim().replace(WIKI_RE, (_, t) => `<a data-node="${esc(t.trim())}">${esc(t.trim())}</a>`)
   if (!src) return ''
   return marked
     .parse(src, { breaks: true, gfm: true })

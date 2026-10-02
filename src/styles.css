@@ -763,7 +763,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .toolbar.typing { padding-bottom: 6px; }
 .tb-bar { display: flex; justify-content: space-between; gap: 2px; overflow-x: auto; scrollbar-width: none; }
 .tb-bar::-webkit-scrollbar { display: none; }
-.tb-btn { flex: none; min-width: 38px; height: var(--tap); padding: 0 6px; border-radius: 10px; display: grid; place-items: center; color: var(--text); font-size: 15px; }
+.tb-btn { flex: none; min-width: 34px; height: var(--tap); padding: 0 4px; border-radius: 10px; display: grid; place-items: center; color: var(--text); font-size: 15px; }
 .tb-btn.wide { padding: 0 10px; }
 .tb-btn.on { background: rgba(var(--fg-rgb), 0.12); }
 .tb-btn:active { background: rgba(var(--fg-rgb), 0.16); }
@@ -784,3 +784,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .dot.square { border-radius: 6px; }
 .dot.none { border: 1.5px solid var(--text-3); background: linear-gradient(135deg, transparent 45%, var(--danger) 45%, var(--danger) 55%, transparent 55%); }
 .tb-row.colors .tb-btn.on .dot { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
+.rich a.wl { color: var(--text); font-weight: 500; text-decoration: underline; text-decoration-color: rgba(var(--link-rgb), 0.6); text-underline-offset: 3px; cursor: pointer; }
+.rich a.wl.ProseMirror-selectednode { background: rgba(var(--link-rgb), 0.15); border-radius: 4px; }
+.rich .ref-deco { color: var(--link); cursor: pointer; }
