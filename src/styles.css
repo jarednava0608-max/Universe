@@ -977,3 +977,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mb-count { display: flex; align-items: baseline; gap: 4px; }
 .mb-stars-total { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .mb-stars-total .stars svg { width: 14px; height: 14px; }
+.medal-progress { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.medal-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+.medal-bar i { display: block; height: 100%; background: var(--text-3); border-radius: 2px; }
+.medal-progress small { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }

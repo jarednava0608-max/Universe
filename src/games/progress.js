@@ -127,25 +127,28 @@ export function achievements({ days = [], srs = {}, triviaBest = 0, best = {} } 
   const { best: bestStreak } = streak(days)
   const mastered = Object.values(srs).filter((s) => (s?.box ?? 0) >= 4).length
   const characters = Object.entries(srs).filter(([k, s]) => k.startsWith('mb:') && (s?.box ?? 0) >= 1).length
+  const worldBest = Math.max(0, ...Object.keys(best).filter((k) => /^mb-w\d+$/.test(k)).map((k) => best[k]))
+  const opened = 1 + [1, 2, 3, 4, 5, 6, 7].filter((w) => (best['mb-w' + w] ?? 0) >= 70).length
+  // [id, título, descripción, lo que llevas, la meta]
   const list = [
-    ['racha-3', 'Constante', '3 días seguidos estudiando', bestStreak >= 3],
-    ['racha-7', 'Una semana', '7 días seguidos estudiando', bestStreak >= 7],
-    ['racha-30', 'Un mes entero', '30 días seguidos estudiando', bestStreak >= 30],
-    ['dias-50', 'Estudiante fiel', '50 días de estudio en total', days.length >= 50],
-    ['texto-1', 'Primer texto', 'Memorizaste tu primer texto', memorized >= 1],
-    ['texto-10', 'Diez de memoria', '10 textos memorizados', memorized >= 10],
-    ['nodos-10', 'Mapa en marcha', '10 ideas en tu mapa', nodes >= 10],
-    ['nodos-50', 'Gran mapa', '50 ideas en tu mapa', nodes >= 50],
-    ['trivia-100', 'Ronda perfecta', '100 % en una ronda de trivia', triviaBest >= 100],
-    ['reloj-1500', 'Rápido y certero', '1500 puntos contra reloj', (best['trivia-reloj'] ?? 0) >= 1500],
-    ['libros-100', 'Conozco los libros', '100 % en Libros de la Biblia', (best.libros ?? 0) >= 100],
-    ['dominado-25', 'Bien sembrado', '25 cosas dominadas en el repaso', mastered >= 25],
-    ['mb-estrellas', 'Tres estrellas', '100 % en un mundo de Memoria Bíblica', Object.keys(best).some((k) => /^mb-w\d+$/.test(k) && best[k] >= 100)],
-    ['mb-personajes', 'Medio camino', '64 personajes conocidos', characters >= 64],
-    ['mb-mundos', 'De Génesis a Hechos', 'Abriste los 8 mundos', (best['mb-w7'] ?? 0) >= 70],
-    ['reto-15', 'Contra el reloj', '15 aciertos en un reto de 60 segundos', Math.max(best['mb-reto'] ?? 0, best['libros-reto'] ?? 0) >= 15],
-    ['sin-fallar-10', 'Sin un error', '10 seguidas en Trivia Sin fallar', (best['trivia-racha'] ?? 0) >= 10],
-    ['linea-5', 'Historiador', '5 líneas del tiempo perfectas seguidas', (best['mb-linea'] ?? 0) >= 5],
+    ['racha-3', 'Constante', '3 días seguidos estudiando', bestStreak, 3],
+    ['racha-7', 'Una semana', '7 días seguidos estudiando', bestStreak, 7],
+    ['racha-30', 'Un mes entero', '30 días seguidos estudiando', bestStreak, 30],
+    ['dias-50', 'Estudiante fiel', '50 días de estudio en total', days.length, 50],
+    ['texto-1', 'Primer texto', 'Memorizaste tu primer texto', memorized, 1],
+    ['texto-10', 'Diez de memoria', '10 textos memorizados', memorized, 10],
+    ['nodos-10', 'Mapa en marcha', '10 ideas en tu mapa', nodes, 10],
+    ['nodos-50', 'Gran mapa', '50 ideas en tu mapa', nodes, 50],
+    ['trivia-100', 'Ronda perfecta', '100 % en una ronda de trivia', triviaBest, 100],
+    ['reloj-1500', 'Rápido y certero', '1500 puntos contra reloj', best['trivia-reloj'] ?? 0, 1500],
+    ['libros-100', 'Conozco los libros', '100 % en Libros de la Biblia', best.libros ?? 0, 100],
+    ['dominado-25', 'Bien sembrado', '25 cosas dominadas en el repaso', mastered, 25],
+    ['mb-estrellas', 'Tres estrellas', '100 % en un mundo de Memoria Bíblica', worldBest, 100],
+    ['mb-personajes', 'Medio camino', '64 personajes conocidos', characters, 64],
+    ['mb-mundos', 'De Génesis a Hechos', 'Abriste los 8 mundos', opened, 8],
+    ['reto-15', 'Contra el reloj', '15 aciertos en un reto de 60 segundos', Math.max(best['mb-reto'] ?? 0, best['libros-reto'] ?? 0), 15],
+    ['sin-fallar-10', 'Sin un error', '10 seguidas en Trivia Sin fallar', best['trivia-racha'] ?? 0, 10],
+    ['linea-5', 'Historiador', '5 líneas del tiempo perfectas seguidas', best['mb-linea'] ?? 0, 5],
   ]
-  return list.map(([id, title, desc, done]) => ({ id, title, desc, done }))
+  return list.map(([id, title, desc, have, need]) => ({ id, title, desc, done: have >= need, have: Math.min(have, need), need }))
 }

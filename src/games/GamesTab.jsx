@@ -153,7 +153,8 @@ function ProgressCard({ store, onReview, onMedals }) {
 // Logros: se calculan con tu progreso (no hay que hacer nada extra).
 function Medals({ store, onClose }) {
   const { memorized } = useStats(store)
-  const list = achievements(store.progress, { nodes: store.nodes.length, memorized })
+  // Primero los que ya tienes; luego los que te faltan, del más cercano al más lejano.
+  const list = achievements(store.progress, { nodes: store.nodes.length, memorized }).sort((a, b) => b.done - a.done || b.have / b.need - a.have / a.need)
   return (
     <Sheet title={`Logros · ${list.filter((m) => m.done).length} de ${list.length}`} onClose={onClose}>
         <div className="medal-grid">
@@ -166,6 +167,12 @@ function Medals({ store, onClose }) {
               </span>
               <span className="medal-title">{m.title}</span>
               <span className="medal-desc">{m.desc}</span>
+              {!m.done && (
+                <span className="medal-progress">
+                  <span className="medal-bar"><i style={{ width: `${(m.have / m.need) * 100}%` }} /></span>
+                  <small>{m.need === 100 ? `${m.have} %` : `${m.have}/${m.need}`}</small>
+                </span>
+              )}
             </div>
           ))}
         </div>
