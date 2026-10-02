@@ -32,7 +32,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`; `notes: true` usa 
 
 ## 3) Pestaña Juegos
 - Menú con: **Memoria Bíblica**, **Trivia de preguntas**, **Memorizar textos**, **Juegos con lo que estudio** (usan los nodos y las notas del usuario) y **Libros de la Biblia**.
-- **Memoria Bíblica** ya existe aparte (171 personajes, 8 mundos, 4 modos, línea del tiempo, mapa y repaso diario), desplegada en Vercel sin GitHub. Su espacio queda listo; el código se integra después.
+- **Memoria Bíblica** (hecha desde cero aquí; la versión vieja de Vercel ya no se usa): `src/games/memoria/characters.js` tiene 128 personajes en orden histórico (`n` nombre, `t` quién fue, `c` cita, `p` dos pistas en primera persona, `d` lo que hizo sin decir el nombre) agrupados en 8 mundos (`WORLDS`, de Génesis a Hechos). `logic.js` (con pruebas: cada cita se reconoce y ninguna pista dice el nombre) arma 4 modos: **¿Quién soy?** (hasta 3 pistas; 3/2/1 puntos), **¿Qué hizo?** (nombre → quién fue), **¿Dónde está?** (lo que hizo → su cita) y **Línea del tiempo** (5 personajes de mundos distintos para ordenar). **Mapa de mundos**: el siguiente se abre al sacar 70 % en cualquier modo del anterior (récord en `best['mb-w<n>']`). Cada respuesta va al repaso inteligente (clave `mb:<id>`); **Repaso de hoy** junta los personajes que tocan. Fichas de cada personaje con su cita tocable. Para agregar personajes: añadirlos en su lugar histórico en `LIST`.
 - Los juegos se registran en `src/games/registry.js`: agregar o cambiar un juego = una entrada en esa lista (cada componente recibe `{ store, toast, onExit }`). La lógica sin interfaz va en `src/games/logic.js` (con pruebas) y las piezas comunes en `src/games/ui.jsx`: `GameScreen`, `Quiz` (con `seconds` es contra reloj; racha de aciertos, lista "Para repasar" al final y confeti si sale bien), `OrderPuzzle` (tocar trozos en orden), `Confetti`, `ModeCard` y `PasteJson`.
 - **Trivia**: preguntas que el usuario pega desde Claude (`{ "preguntas": [{ pregunta, opciones, respuesta, explicacion, cita }] }`), guardadas como entradas `kind: 'trivia'`. Rondas de 10, modo **Normal** o **Contra reloj** (15 s por pregunta, 100 pts + hasta 100 por rapidez, récord en `best['trivia-reloj']`). "Ver mis preguntas" permite borrarlas una por una.
 - **Memorizar textos**: tres formas de practicar: **Ocultar** (4 niveles, Fácil → De memoria, que ocultan 25/50/75/100 % de las palabras; tocar un espacio muestra la palabra), **Iniciales** (solo la primera letra de cada palabra) y **Ordenar** (tocar los trozos del texto en orden). "Lo sé" sube de nivel (`saveVerseResult`). Textos propios (`kind: 'memoria'`, también pegables desde Claude) + los del Texto diario.
@@ -59,7 +59,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`; `notes: true` usa 
 - `src/App.jsx`: pestañas, notas abiertas del mapa, hojas y avisos.
 - `src/components/`: `TabBar`, `Icon`, `Graph` (react-force-graph-2d en canvas), `NoteView`, `NodeEditor`, `NodePicker`, `PasteSheet`, `Search`, `Menu`, `AccountSheet`.
 - `src/study/`: `kinds.js` (definición de apartados, "Pegar de Claude", "Proponer al mapa", detector de citas) y `StudyTab.jsx`.
-- `src/games/`: `registry.js` (lista de juegos), `GamesTab.jsx`, `logic.js`, `ui.jsx`, `Trivia.jsx`, `Memorize.jsx`, `StudyGames.jsx`, `Books.jsx`, `Review.jsx`, `MemoriaBiblica.jsx` (espacio reservado; el código original está en el proyecto de Vercel `memoria-biblica`, archivos `index.html` y `data.js`).
+- `src/games/`: `registry.js` (lista de juegos), `GamesTab.jsx`, `logic.js`, `ui.jsx`, `Trivia.jsx`, `Memorize.jsx`, `StudyGames.jsx`, `Books.jsx`, `Review.jsx`, `MemoriaBiblica.jsx` + `memoria/` (personajes y lógica).
 - `src/lib/model.js`: modelo de nodos y conexiones. `src/lib/store.js`: hook `useStore` (nodos, conexiones, entradas). `src/lib/markdown.js`: render y `[[enlaces]]`. `src/lib/importer.js`: "Pegar conocimiento" (`planImport` con vista previa) y respaldos.
 - `src/lib/db.js`: cada cambio local se anota en el outbox (`meta.outbox`) en la misma transacción; los cambios de la nube usan `commit(change, { track: false })`.
 - `src/lib/sync.js`: ciclo bajar (`server_updated_at` > última vez) → subir outbox; gana el `updatedAt` más reciente; borrados como lápidas (`deleted = true`). `src/lib/useSync.js`: sesión y disparadores. `src/lib/supabase.js`: cliente (clave publicable; la seguridad la da RLS).
@@ -72,6 +72,9 @@ Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
 Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'trivia'|'memoria'|'progreso' | 'biblia', fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
 - Los títulos de nodos son únicos (sin distinguir mayúsculas ni acentos).
+
+## Paquetes para el mapa
+- `src/lib/seeds.js` (`SEEDS`): nodos que el usuario pidió agregar (p. ej. "Jeremías 38 y 39" con sus personajes y lecciones). `App.jsx` los aplica una sola vez por teléfono con `planImport` (marca `seed:<id>` en meta): si el nodo ya existe solo se añade lo que falta, y si el usuario los borra no vuelven.
 
 ## Formato de "Pegar conocimiento" (mapa)
 `{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`. Si un nodo ya existe se le añade la información. Un respaldo (`app: "universe"`) puede restaurarse reemplazando todo. Siempre hay vista previa y confirmación.

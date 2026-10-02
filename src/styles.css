@@ -824,3 +824,29 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .tb-suggest { display: flex; gap: 6px; padding: 0 0 6px; margin-bottom: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .tb-suggest::-webkit-scrollbar { display: none; }
 .tb-suggest .tb-btn { flex: 1 0 auto; height: 38px; background: rgba(var(--fg-rgb), 0.07); font-weight: 500; white-space: nowrap; }
+
+/* ---------- Memoria Bíblica ---------- */
+.mb-hero { margin: 4px 0 16px; }
+.mb-count { margin: 0 0 8px; color: var(--text-2); font-size: 15px; }
+.mb-count b { color: var(--text); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-right: 4px; }
+.mb-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.mb-bar span { display: block; height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.4s var(--ease); }
+.mb-section { margin-top: 22px; }
+.mb-path { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; position: relative; }
+.mb-path::before { content: ''; position: absolute; left: 33px; top: 20px; bottom: 20px; width: 2px; background: var(--line-strong); }
+.mb-world { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 14px 10px 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.mb-world:active:not(:disabled) { background: var(--surface-2); }
+.mb-world.locked { opacity: 0.5; }
+.mb-num { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 17px; background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text); }
+.mb-world.passed .mb-num { background: rgba(245, 210, 122, 0.16); border-color: rgba(245, 210, 122, 0.5); color: var(--gold-text); }
+.mb-wname { font-size: 16.5px; font-weight: 600; }
+.mb-best { flex: none; font-size: 13px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.mb-goal { margin: -4px 0 14px; padding: 10px 12px; border-radius: 12px; background: rgba(245, 210, 122, 0.08); border: 1px solid rgba(245, 210, 122, 0.25); color: var(--text-2); font-size: 14px; }
+.mb-clues { display: grid; gap: 8px; margin: 14px 0 18px; }
+.mb-clue { margin: 0; font-family: var(--font-display); font-size: 18px; line-height: 1.45; animation: fade 0.25s; }
+.mb-clue.last { font-size: 16px; color: var(--text-2); }
+.mb-more { justify-self: start; min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 14px; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); }
+.mb-order { text-align: left; margin: 0 0 12px; padding-left: 22px; display: grid; gap: 4px; }
+.mb-order span { color: var(--text-3); font-size: 14px; }
+.mb-card { max-height: 80vh; overflow-y: auto; display: grid; gap: 10px; }
+.mb-card-t { margin: -4px 0 4px; color: var(--text-2); }

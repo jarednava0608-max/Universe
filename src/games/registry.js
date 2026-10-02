@@ -12,10 +12,9 @@ export const GAMES = [
   {
     id: 'memoria-biblica',
     title: 'Memoria Bíblica',
-    desc: '171 personajes, 8 mundos y 4 modos',
+    desc: '128 personajes, 8 mundos y 4 modos',
     icon: 'M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z',
     Component: MemoriaBiblica,
-    soon: true,
   },
   {
     id: 'trivia',

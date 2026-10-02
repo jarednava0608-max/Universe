@@ -18,8 +18,11 @@ import StudyTab from './study/StudyTab.jsx'
 import GamesTab from './games/GamesTab.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import { OPEN_REF } from './lib/verses.js'
+import { SEEDS } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
+
+let seedsRunning = false
 
 export default function App() {
   const store = useStore()
@@ -64,6 +67,25 @@ export default function App() {
       document.removeEventListener('click', onClick, true)
     }
   }, [])
+
+  // Paquetes de nodos pedidos por el usuario (src/lib/seeds.js): una sola vez por teléfono.
+  useEffect(() => {
+    if (!store.ready || seedsRunning) return
+    seedsRunning = true
+    ;(async () => {
+      for (const seed of SEEDS) {
+        if (await getMeta('seed:' + seed.id)) continue
+        try {
+          const plan = planImport(seed.data, { nodes: store.nodes, edges: store.edges })
+          if (plan.newNodes.length || plan.updatedNodes.length) await store.applyImport(plan)
+          await setMeta('seed:' + seed.id, Date.now())
+        } catch (e) {
+          console.warn('No se pudo agregar', seed.id, e)
+        }
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.ready])
 
   useEffect(() => {
     requestPersistence().then(setPersisted)

@@ -17,7 +17,7 @@ const ABBR = {
   sa: 9, sam: 9, re: 11, rey: 11, cr: 13, cro: 13, cron: 13, esd: 15, ne: 16, neh: 16, est: 17,
   job: 18, sl: 19, sal: 19, salmo: 19, pr: 20, prov: 20, ec: 21, ecl: 21, can: 22, cant: 22, cantar: 22,
   is: 23, isa: 23, jer: 24, lam: 25, eze: 26, ezeq: 26, da: 27, dan: 27, os: 28, joe: 29, am: 30,
-  abd: 31, jon: 32, miq: 33, na: 34, nah: 34, hab: 35, sof: 36, ag: 37, zac: 38, mal: 39,
+  abd: 31, jon: 32, miq: 33, na: 34, nah: 34, hab: 35, sof: 36, ag: 37, hag: 37, hageo: 37, zac: 38, mal: 39,
   mt: 40, mat: 40, mr: 41, mar: 41, mc: 41, lu: 42, luc: 42, lc: 42, jn: 43, hch: 44, hech: 44,
   ro: 45, rom: 45, co: 46, cor: 46, gal: 48, ef: 49, efe: 49, flp: 50, fil: 50, col: 51,
   te: 52, tes: 52, ti: 54, tim: 54, tit: 56, flm: 57, heb: 58, snt: 59, sant: 59, stg: 59,
