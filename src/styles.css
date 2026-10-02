@@ -510,7 +510,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .soon-tag { font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-text); background: rgba(245, 210, 122, 0.1); border: 1px solid rgba(245, 210, 122, 0.25); padding: 2px 7px; border-radius: 999px; }
 
 .overlay.game { z-index: 20; }
-.bar-btn.back { display: inline-flex; align-items: center; gap: 2px; padding-left: 2px; }
+.bar-btn.back { display: inline-flex; align-items: center; gap: 2px; padding-left: 2px; white-space: nowrap; flex: none; }
 .game-body { display: flex; flex-direction: column; }
 .game-home { display: grid; gap: 8px; padding-top: 12px; }
 .game-home .primary, .game-home .secondary { margin-top: 0; }
@@ -1001,3 +1001,4 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .search { min-width: 0; }
 .search input { min-width: 0; }
 .mb-path > li, .mode-list > *, .options > *, .result-stats > * { min-width: 0; }
+.bar-title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }

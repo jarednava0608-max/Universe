@@ -156,3 +156,10 @@ describe('Repasar hoy con personajes', () => {
     expect(mix[0].type).toBe('person')
   })
 })
+
+import { defText, buildPairs } from './logic.js'
+describe('definiciones sin subtítulos', () => {
+  it('quita los ## y deja el texto', () => {
+    expect(defText('## Lo que pasa\nEn el noveno año.\n\n## Lo que estudiamos\nValor.')).toBe('En el noveno año. Valor.')
+  })
+})

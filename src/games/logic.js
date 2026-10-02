@@ -1,6 +1,10 @@
 // Lógica de los juegos (sin interfaz), para poder probarla.
 import { newId, normKey, ROOT_ID } from '../lib/model.js'
 import { plainText } from '../lib/markdown.js'
+
+// Texto de una definición para los juegos: sin los subtítulos (## Lo que pasa…), que si no
+// quedan pegados al texto ("Lo que pasa En el noveno año…").
+export const defText = (note) => plainText(String(note ?? '').replace(/^\s*#{1,6}\s.*$/gm, ''))
 import { BOOKS, parseRef } from '../lib/bible.js'
 
 export function shuffle(list, rnd = Math.random) {
@@ -77,7 +81,7 @@ Usa solo información de la Biblia y de jw.org / wol.jw.org. Entre 10 y 20 pregu
 
 // Nodos con definición útil para jugar (sin la raíz si está vacía).
 export function playableNodes(nodes) {
-  return nodes.filter((n) => plainText(n.note).length >= 12 && n.title.trim())
+  return nodes.filter((n) => defText(n.note).length >= 12 && n.title.trim())
 }
 
 // Oculta el título dentro de la definición para no regalar la respuesta.
@@ -101,7 +105,7 @@ export function buildGuessQuestions(nodes, count = 10, rnd = Math.random) {
     const others = shuffle(pool.filter((o) => o.id !== n.id), rnd).slice(0, 3)
     const opts = shuffle([n, ...others], rnd)
     return {
-      prompt: clipText(maskTitle(plainText(n.note), n.title)),
+      prompt: clipText(maskTitle(defText(n.note), n.title)),
       options: opts.map((o) => o.title),
       answer: opts.indexOf(n),
       nodeId: n.id,
@@ -111,18 +115,18 @@ export function buildGuessQuestions(nodes, count = 10, rnd = Math.random) {
 
 // "Parejas": unir títulos con su definición corta.
 export function buildPairs(nodes, count = 4, rnd = Math.random) {
-  const pool = playableNodes(nodes).filter((n) => n.id !== ROOT_ID || plainText(n.note))
+  const pool = playableNodes(nodes).filter((n) => n.id !== ROOT_ID || defText(n.note))
   if (pool.length < 3) return null
   const chosen = shuffle(pool, rnd).slice(0, count)
   return {
     left: shuffle(chosen.map((n) => ({ id: n.id, text: n.title })), rnd),
-    right: shuffle(chosen.map((n) => ({ id: n.id, text: clipText(maskTitle(plainText(n.note), n.title), 90) })), rnd),
+    right: shuffle(chosen.map((n) => ({ id: n.id, text: clipText(maskTitle(defText(n.note), n.title), 90) })), rnd),
   }
 }
 
 // "Tarjetas": frente y reverso para repasar (nodos y textos diarios).
 export function buildCards(nodes, entries) {
-  const cards = playableNodes(nodes).map((n) => ({ id: n.id, front: n.title, back: plainText(n.note) }))
+  const cards = playableNodes(nodes).map((n) => ({ id: n.id, front: n.title, back: defText(n.note) }))
   for (const e of entries) {
     if (e.kind === 'diario' && (e.fields.resumen || e.fields.texto) && (e.fields.principio || e.fields.aplicacion)) {
       cards.push({
