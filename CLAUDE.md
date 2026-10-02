@@ -12,6 +12,7 @@ Tiene **3 pestañas abajo**: **Mapa**, **Estudio** y **Juegos**.
 - **Primero iPhone**: respetar notch y barra inferior (`env(safe-area-inset-*)`), áreas táctiles ≥ 44px, inputs con `font-size: 16px` (evita el zoom de iOS), gestos fluidos. La barra de pestañas ocupa `--tabbar`; lo flotante va por encima.
 - Diseño **original negro** (fondo `#09090b`, vidrio esmerilado en barras, tipografía del sistema, botón principal blanco, tarjetas con borde sutil) con versión **blanca** (fondo `#fafafa`, botón principal negro). Se cambia en el menú del mapa (Apariencia: Negro / Blanco) o con la luna/sol arriba a la derecha en Estudio y Juegos; se guarda en el teléfono (`src/lib/theme.js`, `data-theme` en `<html>`, negro por defecto). Todos los colores son variables en `:root` (negro) y `:root[data-theme='light']` (blanco) de `src/styles.css`; el mapa (canvas) lee las variables `--graph-*`. Jehová sigue siendo el único nodo dorado.
 - **Simple antes que ingenioso.** Nada de funciones que el usuario no pidió.
+- **Nunca emojis**: ni en la app ni en el contenido que se le propone (definiciones, nodos, notas).
 
 ## 1) Pestaña Mapa
 - Mapa tipo Obsidian: cada idea es un nodo. Un nodo es solo **título + definición**. La interfaz NO muestra tipo, origen, fuentes, la palabra "raíz" ni etiquetas "JW / mi razonamiento", y el editor no tiene secciones de fuentes ni conexiones. Los campos `type`, `origin`, `sources` y las conexiones importadas se conservan en los datos por si el usuario los pide después.
