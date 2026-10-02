@@ -3,6 +3,8 @@ import { chunkText, clozeWords, foldLetter, initials, makeVerse, parseVerses, ty
 import { GameScreen, PasteJson, Empty, OrderPuzzle } from './ui.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
+import SwipeRow from '../components/SwipeRow.jsx'
+import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import { byPriority, isDue, review } from './progress.js'
 
 const LEVELS = ['Fácil', 'Medio', 'Difícil', 'De memoria']
@@ -31,6 +33,8 @@ export default function Memorize({ store, toast, onExit }) {
   const [current, setCurrent] = useState(null)
   const [adding, setAdding] = useState(false)
   const [paste, setPaste] = useState(false)
+  // Solo tus textos se borran aquí (los del Texto diario se quitan desde Estudio).
+  const undoDel = useUndoDelete((v) => store.deleteEntry(v.id), (v) => store.saveEntry(v))
 
   if (current) return <Practice key={current.id} verse={current} store={store} onSaved={setCurrent} onBack={() => setCurrent(null)} />
 
@@ -40,8 +44,8 @@ export default function Memorize({ store, toast, onExit }) {
         <>
           <MemoHero verses={verses} srs={srs} />
           <ul className="entry-list">
-            {verses.map((v) => (
-              <li key={v.id}>
+            {verses.map((v) => {
+              const row = (
                 <button className="entry-row" onClick={() => setCurrent(v)}>
                   <span className="entry-main">
                     <span className="entry-title">{v.fields.cita || v.fields.texto.slice(0, 40)}</span>
@@ -50,8 +54,9 @@ export default function Memorize({ store, toast, onExit }) {
                   {isDue(srs['v:' + v.id]) && <span className="due-tag">Hoy</span>}
                   <Dots n={v.fields.nivel ?? 0} />
                 </button>
-              </li>
-            ))}
+              )
+              return v.fromDaily ? <li key={v.id}>{row}</li> : <SwipeRow key={v.id} onDelete={() => undoDel.remove(v)}>{row}</SwipeRow>
+            })}
           </ul>
           <button className="secondary" style={{ marginTop: 14 }} onClick={() => setPaste(true)}>Agregar textos de Claude</button>
         </>
@@ -61,6 +66,7 @@ export default function Memorize({ store, toast, onExit }) {
         </Empty>
       )}
 
+      {undoDel.pending && <UndoBar inGame text="Texto eliminado" onUndo={undoDel.undo} />}
       {adding && <AddVerse onCancel={() => setAdding(false)} onSave={async (v) => { await store.saveEntry(makeVerse(v)); setAdding(false); toast('Texto agregado.') }} />}
       {paste && (
         <PasteJson

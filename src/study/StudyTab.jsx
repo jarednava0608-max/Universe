@@ -1,5 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import PageScroll from '../components/PageScroll.jsx'
+import SwipeRow from '../components/SwipeRow.jsx'
+import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
@@ -17,19 +19,8 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
-  const [removed, setRemoved] = useState(null) // nota recién borrada deslizando (para "Deshacer")
-  const removedTimer = useRef(0)
-  async function removeEntry(e) {
-    await onDeleteEntry(e.id)
-    setRemoved(e)
-    clearTimeout(removedTimer.current)
-    removedTimer.current = setTimeout(() => setRemoved(null), 5000)
-  }
-  async function undoRemove() {
-    const e = removed
-    setRemoved(null)
-    if (e) await onSaveEntry(e)
-  }
+  // Nota borrada deslizando, con "Deshacer".
+  const undoDel = useUndoDelete((e) => onDeleteEntry(e.id), (e) => onSaveEntry(e))
 
   const byKind = useMemo(() => {
     const m = Object.fromEntries(KIND_ORDER.map((k) => [k, []]))
@@ -77,14 +68,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           {KINDS[section].notes && byKind[section].length > 0 && (
             <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
           )}
-          {removed && removed.kind === section && (
-            <div className="undo-bar">
-              <span>Nota eliminada</span>
-              <button onClick={undoRemove}>Deshacer</button>
-            </div>
-          )}
+          {undoDel.pending?.kind === section && <UndoBar text="Nota eliminada" onUndo={undoDel.undo} />}
           {byKind[section].length ? (
-            <EntryList items={KINDS[section].notes ? filterNotes(byKind[section], query) : byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={KINDS[section].notes ? removeEntry : undefined} />
+            <EntryList items={KINDS[section].notes ? filterNotes(byKind[section], query) : byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={KINDS[section].notes ? undoDel.remove : undefined} />
           ) : (
             <div className="empty-state">
               <span className={'empty-icon kind-icon k-' + section}><Icon d={KINDS[section].icon} size={26} /></span>
@@ -171,56 +157,6 @@ function EntryList({ items, onOpen, showKind, onDelete }) {
   )
 }
 
-// Fila que se desliza a la izquierda para mostrar "Eliminar" (como en la app Notas).
-const REVEAL = 88
-function SwipeRow({ children, onDelete }) {
-  const [x, setX] = useState(0)
-  const [open, setOpen] = useState(false)
-  const drag = useRef(null)
-  const close = () => { setOpen(false); setX(0) }
-  return (
-    <li className="swipe-row">
-      <button className="swipe-del" tabIndex={open ? 0 : -1} onClick={() => { close(); onDelete() }}>Eliminar</button>
-      <div
-        className="swipe-front"
-        style={{ transform: `translateX(${x}px)`, transition: drag.current?.on ? 'none' : undefined }}
-        onTouchStart={(e) => {
-          const t = e.touches[0]
-          drag.current = { x: t.clientX, y: t.clientY, base: open ? -REVEAL : 0, on: false, nx: open ? -REVEAL : 0 }
-        }}
-        onTouchMove={(e) => {
-          const d = drag.current
-          if (!d) return
-          const t = e.touches[0]
-          const dx = t.clientX - d.x
-          if (!d.on) {
-            if (Math.abs(t.clientY - d.y) > Math.abs(dx)) { drag.current = null; return }
-            if (Math.abs(dx) < 8) return
-            d.on = true
-          }
-          d.nx = Math.max(-REVEAL - 30, Math.min(0, d.base + dx))
-          setX(d.nx)
-        }}
-        onTouchEnd={() => {
-          const d = drag.current
-          drag.current = null
-          if (!d?.on) return
-          const o = d.nx < -REVEAL / 2
-          setOpen(o)
-          setX(o ? -REVEAL : 0)
-        }}
-        onClickCapture={(e) => {
-          if (!open) return
-          e.stopPropagation()
-          e.preventDefault()
-          close()
-        }}
-      >
-        {children}
-      </div>
-    </li>
-  )
-}
 
 function filterNotes(list, query) {
   const q = normKey(query)
