@@ -1,7 +1,8 @@
 // Editor de Notas con formato (como Notas del iPhone): títulos, negritas, colores,
 // listas, tareas, tablas, citas y líneas. Todo local (TipTap), sin servicios.
 import { useEffect, useRef, useState } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { createPortal } from 'react-dom'
+import { useEditor, useEditorState, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
@@ -37,35 +38,31 @@ function Svg({ d, size = 20 }) {
   )
 }
 
-// Pega la barra al borde de abajo de lo que se ve en pantalla (arriba del teclado del iPhone).
-// Se usa la parte visible (visualViewport) porque en iOS el teclado no achica la página.
-function useVisibleBottom() {
-  const [bottom, setBottom] = useState(null)
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    const update = () => setBottom(vv.offsetTop + vv.height)
-    update()
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
-    window.addEventListener('scroll', update)
-    return () => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
-      window.removeEventListener('scroll', update)
-    }
-  }, [])
-  return bottom
+// Botón de la barra: no le quita el foco al texto (si no, el teclado se cierra).
+function Btn({ label, on, onTap, children, wide }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      className={'tb-btn' + (on ? ' on' : '') + (wide ? ' wide' : '')}
+      onPointerDown={(e) => e.preventDefault()}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onTap}
+    >
+      {children}
+    </button>
+  )
 }
 
-export default function RichNote({ html, onChange, editorRef, nodes = [], onOpenNode }) {
+// Editor de la nota. El contenido no se convierte en cada letra: quien lo usa lee
+// `editorRef.current` cuando guarda. La barra va en `toolbarSlot` (abajo de la nota,
+// pegada al teclado) y solo se muestra mientras escribes.
+export default function RichNote({ html, onChange, editorRef, nodes = [], onOpenNode, toolbarSlot, onEditing }) {
   const [focused, setFocused] = useState(false)
-  const [panel, setPanel] = useState(false)
   const [picker, setPicker] = useState(null) // posición donde va el enlace
   const openPicker = useRef(null)
-  const openNodeRef = useRef(onOpenNode)
-  openNodeRef.current = onOpenNode
-  const visibleBottom = useVisibleBottom()
+  const cb = useRef({})
+  cb.current = { onChange, onOpenNode, onEditing }
 
   const editor = useEditor({
     extensions: [
@@ -81,9 +78,13 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
       BibleRefs,
     ],
     content: html,
-    shouldRerenderOnTransaction: true,
+    // Solo la barra se vuelve a dibujar (con useEditorState), no todo el editor en cada letra.
+    shouldRerenderOnTransaction: false,
     editorProps: {
       attributes: { class: 'rich', autocapitalize: 'sentences' },
+      // Deja aire alrededor del cursor para que nunca quede pegado al borde o detrás de la barra.
+      scrollMargin: { top: 24, bottom: 56, left: 0, right: 0 },
+      scrollThreshold: { top: 24, bottom: 56, left: 0, right: 0 },
       // Escribir "[[" abre la lista de nodos para enlazar uno.
       handleTextInput(view, from, to, text) {
         if (text !== '[' || view.state.doc.textBetween(Math.max(0, from - 1), from) !== '[') return false
@@ -97,15 +98,21 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
           const t = e.target.closest?.('.ref-deco, a[data-node]')
           if (!t || view.hasFocus()) return false
           e.preventDefault()
-          if (t.dataset.node) openNodeRef.current?.(t.dataset.node)
+          if (t.dataset.node) cb.current.onOpenNode?.(t.dataset.node)
           else openRef(t.dataset.ref)
           return true
         },
       },
     },
-    onUpdate: ({ editor }) => onChange({ html: editor.getHTML(), texto: editor.getText({ blockSeparator: '\n' }) }),
-    onFocus: () => setFocused(true),
-    onBlur: () => setFocused(false),
+    onUpdate: () => cb.current.onChange?.(),
+    onFocus: () => {
+      setFocused(true)
+      cb.current.onEditing?.(true)
+    },
+    onBlur: () => {
+      setFocused(false)
+      cb.current.onEditing?.(false)
+    },
   })
 
   useEffect(() => {
@@ -119,84 +126,10 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
     editor.chain().focus().insertContentAt(at, [{ type: 'nodeLink', attrs: { title } }, { type: 'text', text: ' ' }]).run()
   }
 
-  const run = (fn) => (e) => {
-    e.preventDefault()
-    fn(editor.chain().focus()).run()
-  }
-  // Botón que no le quita el foco al texto (si no, el teclado se cierra).
-  const Btn = ({ label, on, onTap, children, wide }) => (
-    <button type="button" aria-label={label} className={'tb-btn' + (on ? ' on' : '') + (wide ? ' wide' : '')} onPointerDown={(e) => e.preventDefault()} onMouseDown={(e) => e.preventDefault()} onClick={onTap}>
-      {children}
-    </button>
-  )
-  const inTable = editor?.isActive('table')
-
   return (
     <>
       <EditorContent editor={editor} />
-
-      {/* La barra siempre está visible en la nota; al escribir sube con el teclado. */}
-      {editor && (
-        <div
-          className={'toolbar' + (focused ? ' typing' : '')}
-          style={visibleBottom != null ? { top: visibleBottom, bottom: 'auto', transform: 'translateY(-100%)' } : undefined}
-        >
-          {panel && focused && !inTable && (
-            <div className="tb-panel">
-              <div className="tb-row styles">
-                <Btn label="Título" wide on={editor.isActive('heading', { level: 1 })} onTap={run((c) => c.toggleHeading({ level: 1 }))}><b className="s-h1">Título</b></Btn>
-                <Btn label="Subtítulo" wide on={editor.isActive('heading', { level: 2 })} onTap={run((c) => c.toggleHeading({ level: 2 }))}><b className="s-h2">Subtítulo</b></Btn>
-                <Btn label="Encabezado" wide on={editor.isActive('heading', { level: 3 })} onTap={run((c) => c.toggleHeading({ level: 3 }))}><b className="s-h3">Encabezado</b></Btn>
-                <Btn label="Texto normal" wide on={editor.isActive('paragraph')} onTap={run((c) => c.setParagraph())}>Cuerpo</Btn>
-              </div>
-              <div className="tb-row">
-                <Btn label="Negrita" on={editor.isActive('bold')} onTap={run((c) => c.toggleBold())}><b>B</b></Btn>
-                <Btn label="Cursiva" on={editor.isActive('italic')} onTap={run((c) => c.toggleItalic())}><i className="serif">I</i></Btn>
-                <Btn label="Subrayado" on={editor.isActive('underline')} onTap={run((c) => c.toggleUnderline())}><u>U</u></Btn>
-                <Btn label="Tachado" on={editor.isActive('strike')} onTap={run((c) => c.toggleStrike())}><s>S</s></Btn>
-              </div>
-              <div className="tb-row colors">
-                <span className="tb-label">Color</span>
-                <Btn label="Sin color" on={!editor.getAttributes('textStyle').color} onTap={run((c) => c.unsetColor())}><i className="dot none" /></Btn>
-                {TEXT_COLORS.map(([c, name]) => (
-                  <Btn key={c} label={name} on={editor.isActive('textStyle', { color: c })} onTap={run((ch) => ch.setColor(c))}><i className="dot" style={{ background: c }} /></Btn>
-                ))}
-              </div>
-              <div className="tb-row colors">
-                <span className="tb-label">Resaltar</span>
-                <Btn label="Sin resaltar" on={!editor.isActive('highlight')} onTap={run((c) => c.unsetHighlight())}><i className="dot none" /></Btn>
-                {MARK_COLORS.map(([c, name]) => (
-                  <Btn key={c} label={'Resaltar ' + name} on={editor.isActive('highlight', { color: c })} onTap={run((ch) => ch.setHighlight({ color: c }))}><i className="dot square" style={{ background: c }} /></Btn>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {inTable ? (
-            <div className="tb-bar">
-              <Btn label="Agregar fila" wide onTap={run((c) => c.addRowAfter())}>+ Fila</Btn>
-              <Btn label="Agregar columna" wide onTap={run((c) => c.addColumnAfter())}>+ Columna</Btn>
-              <Btn label="Quitar fila" wide onTap={run((c) => c.deleteRow())}>− Fila</Btn>
-              <Btn label="Quitar columna" wide onTap={run((c) => c.deleteColumn())}>− Col.</Btn>
-              <Btn label="Borrar tabla" wide onTap={run((c) => c.deleteTable())}><span className="danger-text">Borrar</span></Btn>
-            </div>
-          ) : (
-            <div className="tb-bar">
-              <Btn label="Formato" on={panel} onTap={() => { if (!editor.isFocused) editor.commands.focus(); setPanel((p) => !p) }}><Svg d={P.aa} size={22} /></Btn>
-              <Btn label="Lista de tareas" on={editor.isActive('taskList')} onTap={run((c) => c.toggleTaskList())}><Svg d={P.check} /></Btn>
-              <Btn label="Lista" on={editor.isActive('bulletList')} onTap={run((c) => c.toggleBulletList())}><Svg d={P.bullet} /></Btn>
-              <Btn label="Lista numerada" on={editor.isActive('orderedList')} onTap={run((c) => c.toggleOrderedList())}><Svg d={P.ordered} /></Btn>
-              <Btn label="Enlazar nodo" onTap={() => openPicker.current()}><Svg d={P.link} /></Btn>
-              <Btn label="Tabla" onTap={run((c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }))}><Svg d={P.table} /></Btn>
-              <Btn label="Cita" on={editor.isActive('blockquote')} onTap={run((c) => c.toggleBlockquote())}><Svg d={P.quote} /></Btn>
-              <Btn label="Línea" onTap={run((c) => c.setHorizontalRule())}><Svg d={P.line} /></Btn>
-              <Btn label="Deshacer" onTap={run((c) => c.undo())}><Svg d={P.undo} /></Btn>
-              <Btn label="Listo" on={false} onTap={() => { setPanel(false); editor.commands.blur() }}><Svg d={P.done} /></Btn>
-            </div>
-          )}
-        </div>
-      )}
-
+      {editor && focused && toolbarSlot && createPortal(<Toolbar editor={editor} onLink={() => openPicker.current()} />, toolbarSlot)}
       {picker != null && (
         <NodePicker
           nodes={nodes}
@@ -207,5 +140,95 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
         />
       )}
     </>
+  )
+}
+
+// Barra de formato. Solo se redibuja cuando cambia algo que muestra (botones activos).
+function Toolbar({ editor, onLink }) {
+  const [panel, setPanel] = useState(false)
+  const s = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({
+      table: e.isActive('table'),
+      h1: e.isActive('heading', { level: 1 }),
+      h2: e.isActive('heading', { level: 2 }),
+      h3: e.isActive('heading', { level: 3 }),
+      p: e.isActive('paragraph'),
+      bold: e.isActive('bold'),
+      italic: e.isActive('italic'),
+      underline: e.isActive('underline'),
+      strike: e.isActive('strike'),
+      color: e.getAttributes('textStyle').color ?? null,
+      mark: e.isActive('highlight') ? e.getAttributes('highlight').color ?? 'on' : null,
+      task: e.isActive('taskList'),
+      bullet: e.isActive('bulletList'),
+      ordered: e.isActive('orderedList'),
+      quote: e.isActive('blockquote'),
+    }),
+  })
+
+  // Al abrir o cerrar el panel cambia el espacio: el cursor se vuelve a poner a la vista.
+  useEffect(() => {
+    const t = setTimeout(() => editor.commands.scrollIntoView(), 30)
+    return () => clearTimeout(t)
+  }, [panel, s.table, editor])
+
+  const run = (fn) => () => fn(editor.chain().focus()).run()
+
+  if (s.table) {
+    return (
+      <div className="toolbar">
+        <div className="tb-bar">
+          <Btn label="Agregar fila" wide onTap={run((c) => c.addRowAfter())}>+ Fila</Btn>
+          <Btn label="Agregar columna" wide onTap={run((c) => c.addColumnAfter())}>+ Columna</Btn>
+          <Btn label="Quitar fila" wide onTap={run((c) => c.deleteRow())}>− Fila</Btn>
+          <Btn label="Quitar columna" wide onTap={run((c) => c.deleteColumn())}>− Col.</Btn>
+          <Btn label="Borrar tabla" wide onTap={run((c) => c.deleteTable())}><span className="danger-text">Borrar</span></Btn>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="toolbar">
+      {panel && (
+        <div className="tb-panel">
+          <div className="tb-row styles">
+            <Btn label="Título" wide on={s.h1} onTap={run((c) => c.toggleHeading({ level: 1 }))}><b className="s-h1">Título</b></Btn>
+            <Btn label="Subtítulo" wide on={s.h2} onTap={run((c) => c.toggleHeading({ level: 2 }))}><b className="s-h2">Subtítulo</b></Btn>
+            <Btn label="Encabezado" wide on={s.h3} onTap={run((c) => c.toggleHeading({ level: 3 }))}><b className="s-h3">Encabezado</b></Btn>
+            <Btn label="Texto normal" wide on={s.p} onTap={run((c) => c.setParagraph())}>Cuerpo</Btn>
+          </div>
+          <div className="tb-row marks">
+            <Btn label="Negrita" on={s.bold} onTap={run((c) => c.toggleBold())}><b>B</b></Btn>
+            <Btn label="Cursiva" on={s.italic} onTap={run((c) => c.toggleItalic())}><i className="serif">I</i></Btn>
+            <Btn label="Subrayado" on={s.underline} onTap={run((c) => c.toggleUnderline())}><u>U</u></Btn>
+            <Btn label="Tachado" on={s.strike} onTap={run((c) => c.toggleStrike())}><s>S</s></Btn>
+            <i className="tb-sep" />
+            <Btn label="Sin color" on={!s.color} onTap={run((c) => c.unsetColor())}><i className="dot none" /></Btn>
+            {TEXT_COLORS.map(([c, name]) => (
+              <Btn key={c} label={name} on={s.color === c} onTap={run((ch) => ch.setColor(c))}><i className="dot" style={{ background: c }} /></Btn>
+            ))}
+            <i className="tb-sep" />
+            <Btn label="Sin resaltar" on={!s.mark} onTap={run((c) => c.unsetHighlight())}><i className="dot square none" /></Btn>
+            {MARK_COLORS.map(([c, name]) => (
+              <Btn key={c} label={'Resaltar ' + name} on={s.mark === c} onTap={run((ch) => ch.setHighlight({ color: c }))}><i className="dot square" style={{ background: c }} /></Btn>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="tb-bar">
+        <Btn label="Formato" on={panel} onTap={() => setPanel((p) => !p)}><Svg d={P.aa} size={22} /></Btn>
+        <Btn label="Lista de tareas" on={s.task} onTap={run((c) => c.toggleTaskList())}><Svg d={P.check} /></Btn>
+        <Btn label="Lista" on={s.bullet} onTap={run((c) => c.toggleBulletList())}><Svg d={P.bullet} /></Btn>
+        <Btn label="Lista numerada" on={s.ordered} onTap={run((c) => c.toggleOrderedList())}><Svg d={P.ordered} /></Btn>
+        <Btn label="Enlazar nodo" onTap={onLink}><Svg d={P.link} /></Btn>
+        <Btn label="Tabla" onTap={run((c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }))}><Svg d={P.table} /></Btn>
+        <Btn label="Cita" on={s.quote} onTap={run((c) => c.toggleBlockquote())}><Svg d={P.quote} /></Btn>
+        <Btn label="Línea" onTap={run((c) => c.setHorizontalRule())}><Svg d={P.line} /></Btn>
+        <Btn label="Deshacer" onTap={run((c) => c.undo())}><Svg d={P.undo} /></Btn>
+        <Btn label="Listo" onTap={() => editor.commands.blur()}><Svg d={P.done} /></Btn>
+      </div>
+    </div>
   )
 }

@@ -155,39 +155,77 @@ function filterNotes(list, query) {
 
 // Nota como en la app Notas del iPhone: título y texto, se guarda sola mientras escribes
 // y al salir. Una nota que se queda vacía se borra.
+// Ajusta la nota a lo que se ve en pantalla. En iPhone el teclado no achica la página:
+// sin esto, lo último que escribes queda detrás del teclado.
+function useVisibleBox() {
+  const [box, setBox] = useState({ top: 0, height: null })
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      setBox({ top: vv.offsetTop, height: vv.height })
+      // iOS a veces desplaza la página al abrir el teclado; se regresa para que nada se mueva.
+      if (window.scrollY) window.scrollTo(0, 0)
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
+  return { ...box, style: box.height ? { top: box.top, height: box.height, bottom: 'auto' } : undefined }
+}
+
 const SHARE_ICON = 'M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1'
 
 function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onPropose, onOpenNode }) {
   const [titulo, setTitulo] = useState(entry.fields.titulo ?? '')
   // El contenido con formato vive en `html`; `texto` es la versión en texto simple (buscar, mapa, citas).
+  // No se convierte en cada letra: se lee del editor solo al guardar.
   const [initialHtml] = useState(() => entry.fields.html || markdownToHtml(noteBody(entry.fields)))
-  const [content, setContent] = useState(() => ({ html: initialHtml, texto: noteBody(entry.fields) }))
-  const texto = content.texto
+  const [version, setVersion] = useState(0) // sube con cada cambio del texto
   const [menu, setMenu] = useState(false)
   const [paste, setPaste] = useState(false)
   const [proposal, setProposal] = useState(null)
+  const [slot, setSlot] = useState(null) // lugar de la barra de formato
+  const [editing, setEditing] = useState(false)
+  const box = useVisibleBox()
   const editor = useRef()
   const saved = useRef({ titulo: entry.fields.titulo ?? '', html: initialHtml, exists: !isNew })
-  const latest = useRef({ titulo, ...content })
-  latest.current = { titulo, ...content }
+  const tituloRef = useRef(titulo)
+  tituloRef.current = titulo
 
-  const draft = () => ({ ...entry, fields: { ...entry.fields, titulo: latest.current.titulo, texto: latest.current.texto, html: latest.current.html, preguntas: '' } })
-  const empty = () => !latest.current.titulo.trim() && !latest.current.texto.trim() && !/<(table|hr)/.test(latest.current.html)
+  const read = () => {
+    const ed = editor.current
+    if (!ed) return { titulo: tituloRef.current, html: saved.current.html, texto: noteBody(entry.fields) }
+    return { titulo: tituloRef.current, html: ed.getHTML(), texto: ed.getText({ blockSeparator: '\n' }) }
+  }
+  const isEmpty = (c) => !c.titulo.trim() && !c.texto.trim() && !/<(table|hr)/.test(c.html)
+  const draft = (c = read()) => ({ ...entry, fields: { ...entry.fields, titulo: c.titulo, texto: c.texto, html: c.html, preguntas: '' } })
 
   async function flush() {
-    const cur = latest.current
+    const cur = read()
     if (cur.titulo === saved.current.titulo && cur.html === saved.current.html) return
-    if (empty()) return
+    if (isEmpty(cur)) return
     saved.current = { titulo: cur.titulo, html: cur.html, exists: true }
-    await onSave(draft())
+    await onSave(draft(cur))
   }
+
+  // Con el teclado abierto, mantiene el cursor a la vista.
+  useEffect(() => {
+    if (!editing) return
+    const t = setTimeout(() => editor.current?.commands.scrollIntoView(), 60)
+    return () => clearTimeout(t)
+  }, [box.height, editing])
 
   // Guardado automático: un momento después de dejar de escribir.
   useEffect(() => {
     const t = setTimeout(flush, 800)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [titulo, content])
+  }, [titulo, version])
 
   // Si la app se va a segundo plano, se guarda de inmediato.
   useEffect(() => {
@@ -198,7 +236,7 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
   }, [])
 
   async function close() {
-    if (empty()) {
+    if (isEmpty(read())) {
       if (saved.current.exists) await onDelete(entry.id)
     } else {
       await flush()
@@ -216,7 +254,7 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
 
   async function share() {
     setMenu(false)
-    const text = editor.current ? docToText(editor.current.getJSON(), titulo) : [titulo, texto].filter(Boolean).join('\n\n')
+    const text = editor.current ? docToText(editor.current.getJSON(), titulo) : [titulo, read().texto].filter(Boolean).join('\n\n')
     try {
       if (navigator.share) await navigator.share({ title: titulo || 'Nota', text })
       else {
@@ -231,7 +269,7 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
   const linked = entry.mapNodeId && nodes.find((n) => n.id === entry.mapNodeId)
 
   return (
-    <div className="overlay note-editor">
+    <div className={'overlay note-editor' + (editing ? ' editing' : '')} style={box.style}>
       <header className="bar">
         <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Notas</button>
         <span className="bar-spacer" />
@@ -252,12 +290,13 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); editor.current?.commands.focus('start') } }}
         />
         <Suspense fallback={<div className="rich-loading" />}>
-          <RichNote html={initialHtml} onChange={setContent} editorRef={editor} nodes={nodes} onOpenNode={openByTitle} />
+          <RichNote html={initialHtml} onChange={() => setVersion((v) => v + 1)} editorRef={editor} nodes={nodes} onOpenNode={openByTitle} toolbarSlot={slot} onEditing={setEditing} />
         </Suspense>
         {linked && (
           <button className="link-note" onClick={async () => { await flush(); onOpenNode(linked.id) }}>En el mapa como «{linked.title}» · Ver</button>
         )}
       </div>
+      <div className="toolbar-slot" ref={setSlot} />
 
       {menu && (
         <div className="sheet-backdrop" onClick={() => setMenu(false)}>
@@ -294,11 +333,12 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
           toast={toast}
           onCancel={() => setPaste(false)}
           onApply={(data) => {
-            const f = fieldsFromJson(entry.kind, data, { titulo, texto })
+            const now = read().texto
+            const f = fieldsFromJson(entry.kind, data, { titulo, texto: now })
             setTitulo(f.titulo ?? '')
-            if (f.texto !== texto && editor.current) {
+            if (f.texto !== now && editor.current) {
               editor.current.commands.setContent(markdownToHtml(f.texto))
-              setContent({ html: editor.current.getHTML(), texto: editor.current.getText({ blockSeparator: '\n' }) })
+              setVersion((v) => v + 1)
             }
             setPaste(false)
             toast('Nota llenada.')
