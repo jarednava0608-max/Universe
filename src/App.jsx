@@ -25,6 +25,8 @@ import { isPubRef } from './lib/pubs.js'
 
 let seedsRunning = false
 
+const LAST_NODE = 'universe-last-node'
+
 export default function App() {
   const store = useStore()
   const sync = useSync(store)
@@ -35,6 +37,8 @@ export default function App() {
   const [tab, setTab] = useState('mapa') // 'mapa' | 'estudio' | 'juegos'
   const [stack, setStack] = useState([]) // notas abiertas (para volver atrás)
   const [focusId, setFocusId] = useState(null)
+  // Último nodo que viste: el mapa abre ahí (preferencia de este teléfono).
+  const [startNode] = useState(() => { try { return localStorage.getItem(LAST_NODE) } catch { return null } })
   const [editor, setEditor] = useState(null)
   const [sheet, setSheet] = useState(null) // 'menu' | 'paste' | 'account'
   const [pasteText, setPasteText] = useState('')
@@ -117,6 +121,7 @@ export default function App() {
     }
     setFocusId(id)
     graph.current?.focus(id)
+    try { localStorage.setItem(LAST_NODE, id) } catch { /* sin almacenamiento */ }
   }, [])
   const back = useCallback(() => history.back(), [])
   const closeAll = useCallback(() => {
@@ -236,6 +241,7 @@ export default function App() {
         nodes={nodes}
         edges={edges}
         focusId={focusId}
+        startId={startNode}
         theme={theme}
         onNodeTap={openNote}
         onBackgroundTap={() => setFocusId(null)}

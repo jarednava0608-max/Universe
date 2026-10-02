@@ -23,6 +23,7 @@ Tiene **3 pestañas abajo**: **Mapa**, **Estudio** y **Juegos**.
 - **Grafo**: líneas RECTAS (nunca curvas), zoom y arrastre con los dedos. Nodos gris neutro; Jehová (`id: "jehova"`) fijo en el centro, el ÚNICO dorado (`#f5d27a`, halo suave), no se puede borrar.
 - Buscar: al tocar la barra sin escribir salen los nodos editados hace poco ("Recientes"). Orden: título exacto, el que empieza con lo escrito, el que tiene todas las palabras.
 - Los nombres de los nodos no se enciman: si uno choca con otro ya dibujado, se oculta hasta acercar el zoom (Jehová y el nodo abierto siempre se ven; `labelBox` en `Graph.jsx`).
+- Al abrir un nodo sus líneas se encienden poco a poco y un puntito recorre cada conexión. Doble toque en el fondo = ver todo el mapa. Al abrir la app, el mapa vuelve al último nodo que viste (`universe-last-node` en este teléfono). Los nodos creados en las últimas 24 h tienen un brillo suave (nunca dorado). Si abres un nodo antes de que el mapa termine de acomodarse, ya no se aleja solo.
 - Menú (☰): nuevo nodo, pegar conocimiento, cuenta y nube, exportar / importar respaldo.
 
 ## 2) Pestaña Estudio

@@ -22,6 +22,7 @@ function readPalette() {
     relText: `rgba(${fg},0.4)`,
     relTextHi: `rgba(${fg},0.75)`,
     ring: `rgba(${fg},0.85)`,
+    fresh: `rgba(${fg},0.08)`,
   }
 }
 
@@ -36,7 +37,7 @@ function labelBox(ctx, n, scale, focused) {
 }
 
 // Vista de grafo: canvas con zoom/arrastre táctil y líneas rectas.
-const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTap, onBackgroundTap }, ref) {
+const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme, onNodeTap, onBackgroundTap }, ref) {
   // Los colores se leen después de que el tema ya se aplicó en <html> (si se leen al dibujar,
   // todavía están los del tema anterior y los nombres quedan casi invisibles).
   const [pal, setPal] = useState(readPalette)
@@ -50,6 +51,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
   const cache = useRef(new Map()) // conserva posiciones entre renders
   const didFit = useRef(false)
   const labelBoxes = useRef([]) // nombres ya dibujados en este cuadro (para no encimarlos)
+  const lastBgTap = useRef(0)
 
   useEffect(() => {
     const el = wrap.current
@@ -90,6 +92,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
       g.title = n.title
       g.color = nodeColor(n)
       g.isRoot = n.id === ROOT_ID
+      g.fresh = !g.isRoot && Date.now() - (n.createdAt ?? 0) < 24 * 3600 * 1000 // creado en las últimas 24 h
       g.r = g.isRoot ? 8 : 3.5 + Math.min(5, Math.sqrt(degree.get(n.id) ?? 0) * 1.4)
       if (g.isRoot) {
         g.fx = 0
@@ -121,11 +124,26 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
     f.d3Force('link').distance(90)
   }, [])
 
+  // Al abrir la app, el mapa vuelve al último nodo que viste (cuando ya se acomodó un poco).
+  useEffect(() => {
+    if (!startId) return
+    const t = setTimeout(() => {
+      const n = cache.current.get(startId)
+      if (didFit.current || !n || !Number.isFinite(n.x) || !fg.current) return
+      didFit.current = true
+      fg.current.centerAt(n.x, n.y, 600)
+      fg.current.zoom(1.9, 600)
+    }, 1200)
+    return () => clearTimeout(t)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   useImperativeHandle(ref, () => ({
     fit() {
       fg.current?.zoomToFit(600, 90)
     },
     focus(id, zoom = 2.2) {
+      // Si abres un nodo antes de que el mapa termine de acomodarse, ya no se aleja solo al final.
+      didFit.current = true
       const n = cache.current.get(id)
       if (!n || n.x == null || !fg.current) return
       // Centra el nodo en la mitad de arriba (la nota abre como hoja en la mitad de abajo).
@@ -136,9 +154,27 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
     },
   }))
 
+  // Al abrir un nodo, sus líneas se encienden poco a poco (0 → 1 en ~0.5 s).
+  const hiStart = useRef(0)
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (!focusId) return
+    hiStart.current = performance.now()
+    let id
+    const step = () => {
+      setTick((t) => t + 1)
+      if (performance.now() - hiStart.current < 520) id = requestAnimationFrame(step)
+    }
+    id = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(id)
+  }, [focusId])
+  const hiK = () => Math.min(1, (performance.now() - hiStart.current) / 500)
+  const fg2 = pal.link.replace(/,[^,]*\)$/, '')
+  const linkHiNow = () => `${fg2},${(0.13 + (0.55 - 0.13) * hiK()).toFixed(3)})`
+
   const linkEnds = (l) => [typeof l.source === 'object' ? l.source.id : l.source, typeof l.target === 'object' ? l.target.id : l.target]
   const isHi = (l) => focusId && linkEnds(l).includes(focusId)
-  const linkColor = (l) => (isHi(l) ? pal.linkHi : focusId ? pal.linkDim : pal.link)
+  const linkColor = (l) => (isHi(l) ? linkHiNow() : focusId ? pal.linkDim : pal.link)
 
   return (
     <div className="graph" ref={wrap}>
@@ -154,7 +190,11 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
         d3VelocityDecay={0.35}
         linkCurvature={0}
         linkColor={linkColor}
-        linkWidth={(l) => (isHi(l) ? 1.2 : 0.8)}
+        linkWidth={(l) => (isHi(l) ? 0.8 + 0.6 * hiK() : 0.8)}
+        linkDirectionalParticles={(l) => (isHi(l) ? 1 : 0)}
+        linkDirectionalParticleWidth={2.2}
+        linkDirectionalParticleSpeed={0.006}
+        linkDirectionalParticleColor={() => pal.linkHi}
         linkDirectionalArrowLength={(l) => (l.implicit ? 0 : 3)}
         linkDirectionalArrowRelPos={1}
         linkDirectionalArrowColor={linkColor}
@@ -191,6 +231,14 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
             ctx.fillStyle = g
             ctx.beginPath()
             ctx.arc(n.x, n.y, r * 3.2, 0, 2 * Math.PI)
+            ctx.fill()
+          }
+
+          if (n.fresh) {
+            // Nodo nuevo (último día): un brillo suave alrededor, nunca dorado.
+            ctx.beginPath()
+            ctx.arc(n.x, n.y, r * 1.8, 0, 2 * Math.PI)
+            ctx.fillStyle = pal.fresh
             ctx.fill()
           }
 
@@ -240,7 +288,13 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
           }
         }}
         onNodeClick={(n) => onNodeTap(n.id)}
-        onBackgroundClick={onBackgroundTap}
+        onBackgroundClick={() => {
+          // Doble toque en el fondo: ver todo el mapa.
+          const now = Date.now()
+          if (now - lastBgTap.current < 320) fg.current?.zoomToFit(500, 90)
+          lastBgTap.current = now
+          onBackgroundTap()
+        }}
         onEngineStop={() => {
           if (didFit.current || !fg.current) return
           didFit.current = true
