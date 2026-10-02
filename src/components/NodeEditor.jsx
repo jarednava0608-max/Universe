@@ -8,7 +8,8 @@ import { unwrapCallouts } from '../lib/markdown.js'
 // (Tipo, origen, fuentes y conexiones se conservan en los datos pero no se editan aquí.)
 export default function NodeEditor({ node, isNew, nodes, onSave, onCancel, onDelete }) {
   // Las marcas antiguas [!jw] / [!yo] se limpian al editar.
-  const [draft, setDraft] = useState(() => ({ ...node, note: unwrapCallouts(node.note) }))
+  // Un nodo nuevo empieza con el título vacío (no "Sin título"), así el cursor queda listo para escribirlo.
+  const [draft, setDraft] = useState(() => ({ ...node, title: isNew && node.title === 'Sin título' ? '' : node.title, note: unwrapCallouts(node.note) }))
   const [picker, setPicker] = useState(false)
   const [error, setError] = useState('')
   const noteRef = useRef()
