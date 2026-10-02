@@ -157,6 +157,15 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
   // Al abrir un nodo, sus líneas se encienden poco a poco (0 → 1 en ~0.5 s).
   const hiStart = useRef(0)
   const [, setTick] = useState(0)
+  // El puntito que recorre las conexiones solo se ve unos segundos (si no, el mapa se redibuja
+  // todo el tiempo mientras lees la nota y gasta batería).
+  const [glow, setGlow] = useState(false)
+  useEffect(() => {
+    if (!focusId) return setGlow(false)
+    setGlow(true)
+    const t = setTimeout(() => setGlow(false), 3500)
+    return () => clearTimeout(t)
+  }, [focusId])
   useEffect(() => {
     if (!focusId) return
     hiStart.current = performance.now()
@@ -191,7 +200,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
         linkCurvature={0}
         linkColor={linkColor}
         linkWidth={(l) => (isHi(l) ? 0.8 + 0.6 * hiK() : 0.8)}
-        linkDirectionalParticles={(l) => (isHi(l) ? 1 : 0)}
+        linkDirectionalParticles={(l) => (glow && isHi(l) ? 1 : 0)}
         linkDirectionalParticleWidth={2.2}
         linkDirectionalParticleSpeed={0.006}
         linkDirectionalParticleColor={() => pal.linkHi}
