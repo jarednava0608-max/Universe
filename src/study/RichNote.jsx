@@ -33,28 +33,31 @@ function Svg({ d, size = 20 }) {
   )
 }
 
-// Sube la barra de herramientas junto con el teclado del iPhone.
-function useKeyboardOffset() {
-  const [offset, setOffset] = useState(0)
+// Pega la barra al borde de abajo de lo que se ve en pantalla (arriba del teclado del iPhone).
+// Se usa la parte visible (visualViewport) porque en iOS el teclado no achica la página.
+function useVisibleBottom() {
+  const [bottom, setBottom] = useState(null)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
-    const update = () => setOffset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop))
+    const update = () => setBottom(vv.offsetTop + vv.height)
     update()
     vv.addEventListener('resize', update)
     vv.addEventListener('scroll', update)
+    window.addEventListener('scroll', update)
     return () => {
       vv.removeEventListener('resize', update)
       vv.removeEventListener('scroll', update)
+      window.removeEventListener('scroll', update)
     }
   }, [])
-  return offset
+  return bottom
 }
 
 export default function RichNote({ html, onChange, editorRef }) {
   const [focused, setFocused] = useState(false)
   const [panel, setPanel] = useState(false)
-  const offset = useKeyboardOffset()
+  const visibleBottom = useVisibleBottom()
 
   const editor = useEditor({
     extensions: [
@@ -72,10 +75,7 @@ export default function RichNote({ html, onChange, editorRef }) {
     editorProps: { attributes: { class: 'rich', autocapitalize: 'sentences' } },
     onUpdate: ({ editor }) => onChange({ html: editor.getHTML(), texto: editor.getText({ blockSeparator: '\n' }) }),
     onFocus: () => setFocused(true),
-    onBlur: () => {
-      setFocused(false)
-      setPanel(false)
-    },
+    onBlur: () => setFocused(false),
   })
 
   useEffect(() => {
@@ -98,9 +98,13 @@ export default function RichNote({ html, onChange, editorRef }) {
     <>
       <EditorContent editor={editor} />
 
-      {editor && focused && (
-        <div className="toolbar" style={{ bottom: offset }}>
-          {panel && !inTable && (
+      {/* La barra siempre está visible en la nota; al escribir sube con el teclado. */}
+      {editor && (
+        <div
+          className={'toolbar' + (focused ? ' typing' : '')}
+          style={visibleBottom != null ? { top: visibleBottom, bottom: 'auto', transform: 'translateY(-100%)' } : undefined}
+        >
+          {panel && focused && !inTable && (
             <div className="tb-panel">
               <div className="tb-row styles">
                 <Btn label="Título" wide on={editor.isActive('heading', { level: 1 })} onTap={run((c) => c.toggleHeading({ level: 1 }))}><b className="s-h1">Título</b></Btn>
@@ -141,7 +145,7 @@ export default function RichNote({ html, onChange, editorRef }) {
             </div>
           ) : (
             <div className="tb-bar">
-              <Btn label="Formato" on={panel} onTap={() => setPanel((p) => !p)}><Svg d={P.aa} size={22} /></Btn>
+              <Btn label="Formato" on={panel} onTap={() => { if (!editor.isFocused) editor.commands.focus(); setPanel((p) => !p) }}><Svg d={P.aa} size={22} /></Btn>
               <Btn label="Lista de tareas" on={editor.isActive('taskList')} onTap={run((c) => c.toggleTaskList())}><Svg d={P.check} /></Btn>
               <Btn label="Lista" on={editor.isActive('bulletList')} onTap={run((c) => c.toggleBulletList())}><Svg d={P.bullet} /></Btn>
               <Btn label="Lista numerada" on={editor.isActive('orderedList')} onTap={run((c) => c.toggleOrderedList())}><Svg d={P.ordered} /></Btn>
@@ -149,7 +153,7 @@ export default function RichNote({ html, onChange, editorRef }) {
               <Btn label="Cita" on={editor.isActive('blockquote')} onTap={run((c) => c.toggleBlockquote())}><Svg d={P.quote} /></Btn>
               <Btn label="Línea" onTap={run((c) => c.setHorizontalRule())}><Svg d={P.line} /></Btn>
               <Btn label="Deshacer" onTap={run((c) => c.undo())}><Svg d={P.undo} /></Btn>
-              <Btn label="Listo" onTap={() => editor.commands.blur()}><Svg d={P.done} /></Btn>
+              <Btn label="Listo" on={false} onTap={() => { setPanel(false); editor.commands.blur() }}><Svg d={P.done} /></Btn>
             </div>
           )}
         </div>

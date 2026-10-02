@@ -48,3 +48,14 @@ describe('Notas con formato', async () => {
     expect(markdownToHtml('')).toBe('')
   })
 })
+
+describe('Citas solo con capítulo', async () => {
+  const { findRefs, refUrl, linkRefsMarkdown } = await import('./bible.js')
+  it('reconoce "Jeremías 38" y arma el enlace al capítulo', () => {
+    expect(findRefs('Lee Jeremías 38 y Juan 17:3 hoy')).toEqual(['Jeremías 38', 'Juan 17:3'])
+    expect(refUrl('Jeremías 38')).toBe('https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/24/38')
+    expect(refUrl('Sal. 23')).toBe('https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/19/23')
+    expect(findRefs('El 2 de Octubre 2026 en Marzo 5 Hay 3 cosas')).toEqual([])
+    expect(linkRefsMarkdown('ver Jeremías 38.')).toBe('ver [Jeremías 38](https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/24/38).')
+  })
+})

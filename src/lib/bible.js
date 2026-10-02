@@ -53,23 +53,24 @@ export function bookNumber(raw) {
 }
 
 const BOOK_RE = '(?:[1-3]\\s?)?[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+\\.?'
-// "Juan 17:3", "1 Juan 4:8", "Sal. 83:18", "Mateo 6:9, 10", "Rom. 5:12-14"
-export const REF_SOURCE = `${BOOK_RE}\\s\\d{1,3}:\\d{1,3}(?:\\s?[-–,]\\s?\\d{1,3})*`
+// "Juan 17:3", "1 Juan 4:8", "Sal. 83:18", "Mateo 6:9, 10", "Rom. 5:12-14" y solo el capítulo: "Jeremías 38"
+export const REF_SOURCE = `${BOOK_RE}\\s\\d{1,3}(?::\\d{1,3}(?:\\s?[-–,]\\s?\\d{1,3})*)?(?![\\d:])`
 
 // Separa una cita en libro, capítulo y versículo; null si el libro no existe.
 export function parseRef(ref) {
-  const m = String(ref).trim().match(/^(.+?)\s(\d{1,3}):(\d{1,3})/)
+  const m = String(ref).trim().match(/^(.+?)\s(\d{1,3})(?::(\d{1,3}))?/)
   if (!m) return null
   const book = bookNumber(m[1])
   if (!book) return null
-  return { book, chapter: Number(m[2]), verse: Number(m[3]) }
+  return { book, chapter: Number(m[2]), verse: m[3] ? Number(m[3]) : null }
 }
 
 // Dirección en wol.jw.org: el capítulo con el versículo marcado; si no reconoce el libro, una búsqueda.
 export function refUrl(ref) {
   const r = parseRef(ref)
   if (!r) return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(ref)}`
-  return `https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/${r.book}/${r.chapter}#study=discover&v=${r.book}:${r.chapter}:${r.verse}`
+  const base = `https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/${r.book}/${r.chapter}`
+  return r.verse ? `${base}#study=discover&v=${r.book}:${r.chapter}:${r.verse}` : base
 }
 
 // Todas las citas reconocidas dentro de un texto (sin repetir).
