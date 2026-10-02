@@ -94,3 +94,20 @@ export function sprintQuestion(openWorlds, rnd = Math.random) {
 
 // Estrellas de un mundo según el mejor resultado: 70 % = 1, 85 % = 2, 100 % = 3.
 export const stars = (pct = 0) => (pct >= 100 ? 3 : pct >= 85 ? 2 : pct >= PASS ? 1 : 0)
+
+// ¿Cierto o falso?: el nombre con lo que hizo él (cierto) o lo que hizo otro del mismo mundo (falso).
+export function trueFalseRound(chars, srs = {}, rnd = Math.random) {
+  return pick(chars, srs, ROUND, rnd).map((c) => {
+    const others = chars.filter((o) => o.id !== c.id && o.d !== c.d)
+    const isTrue = rnd() < 0.5 || !others.length
+    const shown = isTrue ? c : others[Math.floor(rnd() * others.length)]
+    return {
+      key: KEY(c),
+      prompt: `«${shown.d}» ¿Fue ${c.n}?`,
+      options: ['Cierto', 'Falso'],
+      answer: isTrue ? 0 : 1,
+      explain: isTrue ? c.t + '.' : `Eso lo hizo ${shown.n}. ${c.n}: ${c.d}`,
+      ref: c.c,
+    }
+  })
+}

@@ -153,7 +153,7 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
       </div>
       {seconds ? <div className={'timer' + (left < 4000 ? ' low' : '')}><span style={{ width: `${(left / (seconds * 1000)) * 100}%` }} /></div> : null}
       <p className="quiz-prompt" key={'p' + i}>{q.prompt}</p>
-      <div className="options">
+      <div className={'options' + (q.options.length === 2 ? ' two' : '')}>
         {q.options.map((o, k) => {
           const state = !answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim'
           return (
@@ -165,7 +165,7 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
       </div>
       {answered && (
         <div className="feedback">
-          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : picked === -1 ? 'Se acabó el tiempo' : 'No era esa'}</p>
+          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : picked === -1 ? 'Se acabó el tiempo' : q.options.length === 2 ? `Era ${q.options[q.answer].toLowerCase()}` : 'No era esa'}</p>
           {q.explain && <p className="explain">{q.explain}</p>}
           {q.ref && <p className="ref">{findRefs(q.ref).length ? <RefLink refText={findRefs(q.ref)[0]} /> : q.ref}</p>}
           <button className="primary" onClick={() => {
@@ -439,7 +439,7 @@ export function Survival({ questions, best: bestNow = 0, onFinish, onAgain, onDo
         <span className="quiz-points">Récord {Math.max(best, i)}</span>
       </div>
       <p className="quiz-prompt" key={'p' + i}>{q.prompt}</p>
-      <div className="options">
+      <div className={'options' + (q.options.length === 2 ? ' two' : '')}>
         {q.options.map((o, k) => (
           <button key={i + ':' + k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => choose(k)}>{o}</button>
         ))}

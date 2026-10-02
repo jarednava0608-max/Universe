@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { CHARACTERS, WORLDS } from './characters.js'
-import { unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, inWorld, KEY, sprintQuestion, stars } from './logic.js'
+import { unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, inWorld, KEY, sprintQuestion, stars, trueFalseRound } from './logic.js'
 import { parseRef } from '../../lib/bible.js'
 import { mulberry } from '../logic.js'
 
@@ -68,5 +68,19 @@ describe('reto contra reloj y estrellas', () => {
   })
   it('estrellas por porcentaje', () => {
     expect([0, 69, 70, 84, 85, 99, 100].map(stars)).toEqual([0, 0, 1, 1, 2, 2, 3])
+  })
+})
+
+describe('¿Cierto o falso?', () => {
+  it('lo cierto usa lo que hizo el personaje y lo falso lo de otro', () => {
+    const rnd = mulberry(11)
+    for (const w of WORLDS) {
+      const chars = inWorld(w.id)
+      for (const q of trueFalseRound(chars, {}, rnd)) {
+        const ch = CHARACTERS.find((c) => KEY(c) === q.key)
+        expect(q.prompt.endsWith(`¿Fue ${ch.n}?`)).toBe(true)
+        expect(q.prompt === `«${ch.d}» ¿Fue ${ch.n}?`).toBe(q.answer === 0)
+      }
+    }
   })
 })
