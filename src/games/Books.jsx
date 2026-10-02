@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { bookRun, bookSprintQuestion, buildBookQuestions, SECTIONS } from './logic.js'
+import { bookRun, bookSprintQuestion, buildBookQuestions, sectionRun, SECTIONS } from './logic.js'
 import { GameScreen, Quiz, ModeCard, OrderPuzzle, Result, Sprint } from './ui.jsx'
 import { withBest } from './progress.js'
 import { BOOKS } from '../lib/bible.js'
@@ -48,7 +48,7 @@ export default function Books({ store, onExit }) {
       <div className="mode-list">
         <ModeCard title="Preguntas" badge={best ? `Mejor ${best} %` : null} desc="¿Qué libro va antes o después? ¿En qué sección está?" onClick={() => { setRound(buildBookQuestions()); setNonce((x) => x + 1); setMode('quiz') }} />
         <ModeCard title="Reto de 60 segundos" badge={store.progress.best?.['libros-reto'] ? `Récord ${store.progress.best['libros-reto']}` : null} desc="Todas las que puedas contra reloj." onClick={() => setMode('sprint')} />
-        <ModeCard title="Ordenar" badge={store.progress.best?.['libros-orden'] ? `${store.progress.best['libros-orden']} seguidas` : null} desc="Pon en orden 6 libros seguidos." onClick={() => setMode('order')} />
+        <ModeCard title="Ordenar" badge={store.progress.best?.['libros-orden'] ? `${store.progress.best['libros-orden']} seguidas` : null} desc="6 libros seguidos o una sección completa." onClick={() => setMode('order')} />
         <ModeCard title="Ver la lista" desc="Los 66 libros por sección, para estudiarlos." onClick={() => setMode('list')} />
       </div>
     </GameScreen>
@@ -56,11 +56,14 @@ export default function Books({ store, onExit }) {
 }
 
 function OrderBooks({ best, onRecord, onExit }) {
-  const [run, setRun] = useState(() => bookRun())
+  const [kind, setKind] = useState('run') // 'run' = 6 seguidos, 'section' = una sección completa
+  const make = (k) => (k === 'section' ? sectionRun() : { name: null, books: bookRun() })
+  const [round, setRound] = useState(() => make('run'))
+  const run = round.books
   const [errors, setErrors] = useState(null)
   const [perfect, setPerfect] = useState(0) // rondas perfectas seguidas
   const [record, setRecord] = useState(false)
-  const again = () => { setRun(bookRun()); setErrors(null) }
+  const again = (k = kind) => { setRound(make(k)); setErrors(null) }
   function done(e) {
     setErrors(e)
     const n = e === 0 ? perfect + 1 : 0
@@ -70,8 +73,13 @@ function OrderBooks({ best, onRecord, onExit }) {
   }
   return (
     <GameScreen title="Ordenar" back="Libros" onExit={onExit}>
+      <div className="seg-modes small">
+        {[['run', '6 seguidos'], ['section', 'Una sección']].map(([k, l]) => (
+          <button key={k} className={kind === k ? 'on' : ''} onClick={() => { setKind(k); again(k) }}>{l}</button>
+        ))}
+      </div>
       <div className="quiz-meta tl-meta">
-        <span className="quiz-count">En el orden de la Biblia</span>
+        <span className="quiz-count">{round.name ? `${round.name} · ${run.length} libros` : 'En el orden de la Biblia'}</span>
         {perfect >= 1 && <span className="quiz-run" key={perfect}>{perfect} {perfect === 1 ? 'perfecta' : 'perfectas seguidas'}</span>}
       </div>
       <OrderPuzzle key={run.join()} pieces={run} onDone={done} hint="Toca los libros en el orden de la Biblia." />
@@ -80,7 +88,7 @@ function OrderBooks({ best, onRecord, onExit }) {
           compact
           msg={errors === 0 ? '¡Perfecto, sin errores!' : `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.`}
           record={record}
-          onAgain={again}
+          onAgain={() => again()}
           againLabel="Otra ronda"
           onDone={onExit}
         />

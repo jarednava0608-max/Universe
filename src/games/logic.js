@@ -381,3 +381,10 @@ export function buildFillQuestions(verses, count = 10, rnd = Math.random) {
   }
   return out
 }
+
+// Ordenar una sección completa (Pentateuco, Históricos…; menos Apocalipsis, que es uno solo).
+export function sectionRun(rnd = Math.random) {
+  const list = SECTIONS.filter((s) => s.to > s.from)
+  const s = list[Math.floor(rnd() * list.length)]
+  return { name: s.name, books: BOOKS.slice(s.from - 1, s.to) }
+}

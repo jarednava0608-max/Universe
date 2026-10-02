@@ -132,3 +132,18 @@ describe('bibleSources', () => {
     expect(bibleSources(entries).map((e) => e.id)).toEqual(['1', '3'])
   })
 })
+
+import { sectionRun } from './logic.js'
+describe('Ordenar una sección', () => {
+  it('da los libros de una sección completa, en orden', () => {
+    const rnd = mulberry(5)
+    for (let i = 0; i < 20; i++) {
+      const r = sectionRun(rnd)
+      expect(r.books.length).toBeGreaterThanOrEqual(5)
+      expect(r.name).not.toBe('Apocalipsis')
+      const idx = r.books.map((b) => BOOKS.indexOf(b))
+      expect(idx).toEqual([...idx].sort((a, b) => a - b))
+      expect(sectionOf(idx[0] + 1)).toBe(r.name)
+    }
+  })
+})
