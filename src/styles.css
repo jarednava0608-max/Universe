@@ -692,8 +692,10 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .book-list li { padding: 3px 0; font-size: 15px; break-inside: avoid; }
 .book-list li::marker { color: var(--text-3); font-size: 13px; font-variant-numeric: tabular-nums; }
 
-.progress-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 14px; }
+.progress-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 14px; }
 .progress-actions .primary, .progress-actions .secondary { margin-top: 0; }
+.progress-actions .primary { white-space: nowrap; padding-inline: 12px; }
+@media (max-width: 359px) { .progress-actions .primary { font-size: 15px; padding-inline: 8px; } .medals-btn { padding: 0 10px; } }
 .medals-btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; font-variant-numeric: tabular-nums; }
 .sheet-title { margin: 4px 4px 14px; font-size: 17px; font-weight: 600; }
 .medal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
