@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { suggest } from './suggest.js'
+import { suggest as raw } from './suggest.js'
+
+// Las pruebas viejas comparan solo los nombres.
+const suggest = (t, max, nodes) => {
+  const r = raw(t, max, nodes)
+  return r && { length: r.length, items: r.items.map((i) => i.label) }
+}
 
 describe('Sugerencias al escribir', () => {
   it('libros de la Biblia', () => {
@@ -20,5 +26,16 @@ describe('Sugerencias al escribir', () => {
     expect(suggest('Jeremías')).toBe(null)
     expect(suggest('hola')).toBe(null)
     expect(suggest('')).toBe(null)
+  })
+})
+
+describe('Sugerencias de nodos del mapa', () => {
+  const nodes = ['Valor', 'Reino de Dios', 'Jeremías', 'Jehová']
+  it('sugiere tus nodos desde 2 letras y primero que los libros', () => {
+    expect(raw('Jesús necesitó va', 3, nodes)).toEqual({ length: 2, items: [{ label: 'Valor', node: true }] })
+    expect(raw('el reino de', 3, nodes).items[0]).toEqual({ label: 'Reino de Dios', node: true })
+    expect(raw('jere', 3, nodes).items).toEqual([{ label: 'Jeremías', node: true }, { label: 'Jeremías', node: false }])
+    expect(raw('tener valor', 3, nodes).items).toEqual([{ label: 'Valor', node: true }])
+    expect(raw('v', 3, nodes)).toBe(null)
   })
 })

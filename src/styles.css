@@ -850,3 +850,12 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .mb-order span { color: var(--text-3); font-size: 14px; }
 .mb-card { max-height: 80vh; overflow-y: auto; display: grid; gap: 10px; }
 .mb-card-t { margin: -4px 0 4px; color: var(--text-2); }
+.tb-suggest .tb-btn { display: inline-flex; align-items: center; gap: 7px; }
+.sugg-node { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--graph-node); }
+
+/* Vista rápida de un nodo desde una nota */
+.peek-backdrop { z-index: 44; }
+.peek { max-height: 75vh; overflow-y: auto; display: grid; gap: 12px; }
+.peek-title { margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: var(--title); }
+.peek-body { font-size: 16.5px; }
+.peek .secondary { margin-top: 4px; }

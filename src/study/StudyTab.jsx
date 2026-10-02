@@ -4,6 +4,7 @@ import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeForma
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
+import NodePeek from '../components/NodePeek.jsx'
 import { markdownToHtml, plainText } from '../lib/markdown.js'
 import { docToText, docToMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
 import { findSavedVerse, findAllRefs, anyRefKey } from '../lib/verses.js'
@@ -250,9 +251,15 @@ function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onC
   }
 
   // Tocar un enlace [[nodo]] abre ese nodo en el mapa (antes se guarda la nota).
+  // Tocar un enlace [[nodo]] muestra su definición aquí mismo (con botón para abrirlo en el mapa).
+  const [peek, setPeek] = useState(null)
   async function openByTitle(title) {
     const node = nodes.find((n) => normKey(n.title) === normKey(title))
     if (!node) return toast(`«${title}» todavía no está en tu mapa.`)
+    setPeek(node)
+  }
+  async function openInMap(node) {
+    setPeek(null)
     await flush()
     onOpenNode(node.id)
   }
@@ -382,6 +389,8 @@ function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onC
         )}
       </div>
       <div className="toolbar-slot" ref={setSlot} />
+
+      {peek && <NodePeek node={peek} nodes={nodes} onOpenMap={openInMap} onClose={() => setPeek(null)} />}
 
       {menu && (
         <div className="sheet-backdrop" onClick={() => setMenu(false)}>

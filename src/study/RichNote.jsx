@@ -1,6 +1,6 @@
 // Editor de Notas con formato (como Notas del iPhone): títulos, negritas, colores,
 // listas, tareas, tablas, citas y líneas. Todo local (TipTap), sin servicios.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useEditor, useEditorState, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -62,6 +62,8 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
   const [focused, setFocused] = useState(false)
   const [picker, setPicker] = useState(null) // posición donde va el enlace
   const openPicker = useRef(null)
+  // Títulos de tus nodos para las sugerencias (Jehová primero no hace falta: se ordena por largo).
+  const titles = useMemo(() => nodes.map((n) => n.title).filter(Boolean), [nodes])
   const cb = useRef({})
   cb.current = { onChange, onOpenNode, onEditing }
 
@@ -137,7 +139,7 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
   return (
     <>
       <EditorContent editor={editor} />
-      {editor && focused && toolbarSlot && createPortal(<Toolbar editor={editor} onLink={() => openPicker.current()} />, toolbarSlot)}
+      {editor && focused && toolbarSlot && createPortal(<Toolbar editor={editor} titles={titles} onLink={() => openPicker.current()} />, toolbarSlot)}
       {picker != null && (
         <NodePicker
           nodes={nodes}
@@ -152,8 +154,10 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
 }
 
 // Barra de formato. Solo se redibuja cuando cambia algo que muestra (botones activos).
-function Toolbar({ editor, onLink }) {
+function Toolbar({ editor, titles, onLink }) {
   const [panel, setPanel] = useState(false)
+  const titlesRef = useRef(titles)
+  titlesRef.current = titles
   const s = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -172,11 +176,11 @@ function Toolbar({ editor, onLink }) {
       bullet: e.isActive('bulletList'),
       ordered: e.isActive('orderedList'),
       quote: e.isActive('blockquote'),
-      // Sugerencias de libros y publicaciones según lo que vas escribiendo.
+      // Sugerencias de tus nodos, libros y publicaciones según lo que vas escribiendo.
       sugg: (() => {
         const { $from, empty } = e.state.selection
         if (!empty || !$from.parent.isTextblock) return null
-        return suggest($from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc'))
+        return suggest($from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc'), 3, titlesRef.current)
       })(),
     }),
   })
@@ -188,15 +192,20 @@ function Toolbar({ editor, onLink }) {
   }, [panel, s.table, editor])
 
   const run = (fn) => () => fn(editor.chain().focus()).run()
-  const pick = (name) => {
+  // Un nodo se inserta como enlace; un libro o publicación, como texto.
+  const pick = (item) => {
     const at = editor.state.selection.from
-    editor.chain().focus().insertContentAt({ from: at - s.sugg.length, to: at }, name + ' ').run()
+    const content = item.node ? [{ type: 'nodeLink', attrs: { title: item.label } }, { type: 'text', text: ' ' }] : item.label + ' '
+    editor.chain().focus().insertContentAt({ from: at - s.sugg.length, to: at }, content).run()
     editor.view.pickEnd = editor.state.selection.from
   }
   const suggestions = s.sugg && (
     <div className="tb-suggest">
-      {s.sugg.items.map((name) => (
-        <Btn key={name} label={'Escribir ' + name} wide onTap={() => pick(name)}>{name}</Btn>
+      {s.sugg.items.map((item) => (
+        <Btn key={(item.node ? 'n:' : 'b:') + item.label} label={(item.node ? 'Enlazar ' : 'Escribir ') + item.label} wide onTap={() => pick(item)}>
+          {item.node && <i className="sugg-node" aria-hidden="true" />}
+          {item.label}
+        </Btn>
       ))}
     </div>
   )
