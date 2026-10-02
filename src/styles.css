@@ -801,3 +801,12 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .ref-sheet-links { display: grid; gap: 8px; margin-top: 16px; }
 .ref-sheet-links .primary, .ref-sheet-links .secondary { margin-top: 0; }
 .as-btn { display: grid; place-items: center; text-decoration: none; }
+.bar-actions { display: flex; align-items: center; }
+.tidy-btn { font-size: 15px; font-weight: 600; color: var(--text); }
+.tidy-banner {
+  position: absolute; z-index: 5; left: 50%; top: calc(var(--sat) + 56px); transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 14px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: 14px; color: var(--text-2); animation: fade 0.2s; white-space: nowrap;
+}
+.tidy-banner button { min-height: 34px; padding: 0 12px; border-radius: 999px; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; }

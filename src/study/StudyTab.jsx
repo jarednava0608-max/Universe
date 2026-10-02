@@ -6,7 +6,7 @@ import { normKey } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
 import { RefChips } from '../components/RefLink.jsx'
 import { markdownToHtml } from '../lib/markdown.js'
-import { docToText } from './noteText.js'
+import { docToText, docToMarkdown, tidyDoc, claudeTidyPrompt, capRefs } from './noteText.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -178,6 +178,7 @@ function useVisibleBox() {
   return { ...box, style: box.height ? { top: box.top, height: box.height, bottom: 'auto' } : undefined }
 }
 
+const TIDY_ICON = 'M4 6h16M4 12h10M4 18h6M17 14l1.2 2.8L21 18l-2.8 1.2L17 22l-1.2-2.8L13 18l2.8-1.2z'
 const SHARE_ICON = 'M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1'
 
 function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onPropose, onOpenNode }) {
@@ -252,6 +253,45 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
     onOpenNode(node.id)
   }
 
+  // Ordenar (local, sin IA): limpia espacios, mayúsculas y renglones vacíos, y arma listas y subtítulos.
+  const [undo, setUndo] = useState(null)
+  useEffect(() => {
+    if (!undo) return
+    const t = setTimeout(() => setUndo(null), 8000)
+    return () => clearTimeout(t)
+  }, [undo])
+
+  function tidy() {
+    const ed = editor.current
+    if (!ed) return
+    const before = { json: ed.getJSON(), titulo }
+    const after = tidyDoc(before.json)
+    const nuevoTitulo = capRefs(titulo.replace(/\s+/g, ' ').trim()).replace(/^(\p{Ll})/u, (l) => l.toUpperCase())
+    if (JSON.stringify(after) === JSON.stringify(before.json) && nuevoTitulo === titulo) return toast('La nota ya está ordenada.')
+    ed.commands.setContent(after)
+    setTitulo(nuevoTitulo)
+    setVersion((v) => v + 1)
+    setUndo(before)
+  }
+
+  function undoTidy() {
+    editor.current?.commands.setContent(undo.json)
+    setTitulo(undo.titulo)
+    setVersion((v) => v + 1)
+    setUndo(null)
+  }
+
+  async function tidyWithClaude() {
+    setMenu(false)
+    const md = editor.current ? docToMarkdown(editor.current.getJSON()) : read().texto
+    try {
+      await navigator.clipboard.writeText(claudeTidyPrompt(titulo, md))
+      toast('Copiado. Pégalo en tu chat con Claude y luego usa “Pegar de Claude”.')
+    } catch {
+      toast('No se pudo copiar.')
+    }
+  }
+
   async function share() {
     setMenu(false)
     const text = editor.current ? docToText(editor.current.getJSON(), titulo) : [titulo, read().texto].filter(Boolean).join('\n\n')
@@ -273,10 +313,20 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
       <header className="bar">
         <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Notas</button>
         <span className="bar-spacer" />
-        <button className="bar-btn more-btn" aria-label="Más opciones" onClick={() => setMenu(true)}>
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><circle cx="19" cy="12" r="1.6" fill="currentColor" /></svg>
-        </button>
+        <span className="bar-actions">
+          <button className="bar-btn tidy-btn" onPointerDown={(e) => e.preventDefault()} onClick={tidy}>Ordenar</button>
+          <button className="bar-btn more-btn" aria-label="Más opciones" onClick={() => setMenu(true)}>
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><circle cx="19" cy="12" r="1.6" fill="currentColor" /></svg>
+          </button>
+        </span>
       </header>
+
+      {undo && (
+        <div className="tidy-banner">
+          <span>Nota ordenada</span>
+          <button onPointerDown={(e) => e.preventDefault()} onClick={undoTidy}>Deshacer</button>
+        </div>
+      )}
 
       <div className="editor-body">
         <p className="note-date">{new Date(entry.updatedAt || Date.now()).toLocaleString('es', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
@@ -302,6 +352,14 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
         <div className="sheet-backdrop" onClick={() => setMenu(false)}>
           <div className="sheet" onClick={(e) => e.stopPropagation()}>
             <div className="grabber" />
+            <div className="menu-group">
+              <button className="menu-item" onClick={() => { setMenu(false); tidy() }}>
+                <span className="menu-icon"><Icon d={TIDY_ICON} size={20} /></span><span className="menu-text"><span>Ordenar nota</span><span className="menu-sub">Limpia espacios, mayúsculas y arma listas</span></span>
+              </button>
+              <button className="menu-item" onClick={tidyWithClaude}>
+                <span className="menu-icon"><Icon d={ICONS.pegar} size={20} /></span><span className="menu-text"><span>Ordenar con Claude</span><span className="menu-sub">Copia la nota con instrucciones para tu chat</span></span>
+              </button>
+            </div>
             <div className="menu-group">
               <button className="menu-item" onClick={share}>
                 <span className="menu-icon"><Icon d={SHARE_ICON} size={20} /></span><span className="menu-text"><span>Compartir</span></span>
