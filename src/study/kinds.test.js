@@ -57,3 +57,21 @@ describe('Estudio', () => {
     for (const k of KIND_ORDER) expect(claudeFormat(k)).toContain('"')
   })
 })
+
+describe('Notas', async () => {
+  const { noteBody, noteDate, KINDS, entrySortKey } = await import('./kinds.js')
+  it('junta las preguntas abiertas de las reflexiones viejas en el texto', () => {
+    expect(noteBody({ texto: 'Idea', preguntas: '¿Por qué?\n- ¿Cómo?' })).toBe('Idea\n\nPreguntas abiertas:\n- ¿Por qué?\n- ¿Cómo?')
+    expect(noteBody({ texto: 'Solo texto' })).toBe('Solo texto')
+  })
+  it('fecha corta como en Notas y orden por última edición', () => {
+    const now = new Date(2026, 9, 2, 18, 0)
+    expect(noteDate(new Date(2026, 9, 1, 9, 0).getTime(), now)).toBe('Ayer')
+    expect(noteDate(new Date(2026, 9, 2, 9, 5).getTime(), now)).toMatch(/9:05/)
+    expect(KINDS.reflexion.label).toBe('Notas')
+    const a = { kind: 'reflexion', fields: {}, createdAt: 1, updatedAt: 500 }
+    const b = { kind: 'reflexion', fields: {}, createdAt: 9, updatedAt: 100 }
+    expect(entrySortKey(a) > entrySortKey(b)).toBe(true)
+    expect(KINDS.reflexion.title({ fields: { titulo: '', texto: 'Primera línea\nResto' } })).toBe('Primera línea')
+  })
+})

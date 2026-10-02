@@ -83,23 +83,22 @@ export const KINDS = {
     }),
   },
 
+  // Notas: funcionan como la app Notas del iPhone (se guardan solas, título + texto).
+  // El id sigue siendo 'reflexion' para no perder las notas ya guardadas.
   reflexion: {
-    label: 'Mis reflexiones',
-    short: 'Reflexión',
-    desc: 'Notas libres, ideas y preguntas abiertas',
+    label: 'Notas',
+    short: 'Nota',
+    desc: 'Escribe lo que quieras; se guarda solo',
     icon: 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z',
+    notes: true,
     fields: [
       { key: 'titulo', label: 'Título', type: 'line' },
       { key: 'texto', label: 'Nota', type: 'text' },
-      { key: 'preguntas', label: 'Preguntas abiertas', type: 'text', hint: 'Una por línea' },
     ],
-    title: (e) => e.fields.titulo || firstLine(e.fields.texto) || 'Reflexión',
-    subtitle: (e) => {
-      const n = lines(e.fields.preguntas).length
-      return n ? `${n} ${n === 1 ? 'pregunta abierta' : 'preguntas abiertas'}` : formatDate(new Date(e.createdAt).toISOString().slice(0, 10))
-    },
+    title: (e) => e.fields.titulo || firstLine(e.fields.texto) || 'Nota nueva',
+    subtitle: (e) => [noteDate(e.updatedAt), firstLine(e.fields.titulo ? e.fields.texto : lines(e.fields.texto).slice(1).join(' ')) || ''].filter(Boolean).join('  '),
     toNode: (f) => ({
-      title: f.titulo || firstLine(f.texto) || 'Reflexión',
+      title: f.titulo || firstLine(f.texto) || 'Nota',
       idea: f.texto,
       preguntas: lines(f.preguntas),
       textos: refsIn(f.texto, f.preguntas),
@@ -117,8 +116,28 @@ export function makeEntry(kind) {
   return { id: newId(), kind, fields, createdAt: now, updatedAt: now }
 }
 
-// Orden en las listas: por fecha (si tiene) y luego por la última edición.
+// Notas viejas (de "Mis reflexiones") con preguntas abiertas aparte: se juntan en el texto al abrirlas.
+export function noteBody(fields) {
+  const q = lines(fields.preguntas)
+  if (!q.length) return fields.texto ?? ''
+  return [fields.texto, 'Preguntas abiertas:\n' + q.map((x) => `- ${x}`).join('\n')].filter((x) => x && x.trim()).join('\n\n')
+}
+
+// Fecha corta como en Notas: hora si es de hoy, "Ayer", o la fecha.
+export function noteDate(ms, now = new Date()) {
+  if (!ms) return ''
+  const d = new Date(ms)
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const diff = Math.round((day(now) - day(d)) / 864e5)
+  if (diff === 0) return d.toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })
+  if (diff === 1) return 'Ayer'
+  if (diff < 7 && diff > 0) return d.toLocaleDateString('es', { weekday: 'long' })
+  return d.toLocaleDateString('es', { day: 'numeric', month: 'numeric', year: '2-digit' })
+}
+
+// Orden en las listas: por fecha (si tiene) y luego por la última edición. Las notas, por la última edición.
 export function entrySortKey(e) {
+  if (KINDS[e.kind]?.notes) return String(e.updatedAt).padStart(15, '0')
   return (e.fields?.fecha || new Date(e.createdAt).toISOString().slice(0, 10)) + '|' + String(e.updatedAt).padStart(15, '0')
 }
 
@@ -128,7 +147,7 @@ const ALIASES = {
   diario: { date: 'fecha', text: 'texto', versiculo: 'texto', context: 'contexto', principle: 'principio', story: 'relato', relato_de_apoyo: 'relato', application: 'aplicacion', aplicación: 'aplicacion', summary: 'resumen', notes: 'notas', mis_notas: 'notas' },
   reunion: { type: 'tipo', date: 'fecha', title: 'titulo', título: 'titulo', idea_principal: 'idea', paragraphs: 'parrafos', párrafos: 'parrafos', notes: 'notas' },
   estudio: { title: 'titulo', título: 'titulo', idea_central: 'idea', hook: 'gancho', extracción: 'extraccion', golpe_logico: 'golpe', golpe_lógico: 'golpe', aha_extra: 'aha', summary: 'resumen' },
-  reflexion: { title: 'titulo', título: 'titulo', nota: 'texto', note: 'texto', questions: 'preguntas', preguntas_abiertas: 'preguntas' },
+  reflexion: { title: 'titulo', título: 'titulo', nota: 'texto', note: 'texto', notas: 'texto', contenido: 'texto' },
 }
 
 // Devuelve los campos del JSON pegado mezclados sobre los actuales (solo los que vienen con contenido).

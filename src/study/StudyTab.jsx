@@ -1,6 +1,6 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode } from './kinds.js'
+import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
@@ -10,6 +10,7 @@ import { RefChips } from '../components/RefLink.jsx'
 export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, toast }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
+  const [query, setQuery] = useState('')
 
   const byKind = useMemo(() => {
     const m = Object.fromEntries(KIND_ORDER.map((k) => [k, []]))
@@ -45,7 +46,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         </div>
       ) : (
         <div className="page-scroll">
-          <button className="back-link" onClick={() => setSection(null)}>
+          <button className="back-link" onClick={() => { setSection(null); setQuery('') }}>
             <Icon d={ICONS.back} size={18} stroke={2} /> Estudio
           </button>
           <div className="page-head">
@@ -54,8 +55,11 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               <Icon d={ICONS.plus} size={20} stroke={2} />
             </button>
           </div>
+          {KINDS[section].notes && byKind[section].length > 0 && (
+            <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
+          )}
           {byKind[section].length ? (
-            <EntryList items={byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} />
+            <EntryList items={KINDS[section].notes ? filterNotes(byKind[section], query) : byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} />
           ) : (
             <div className="empty-state">
               <p>Aún no hay nada aquí.</p>
@@ -65,7 +69,27 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         </div>
       )}
 
-      {editing && (
+      {editing && KINDS[editing.entry.kind].notes && (
+        <NoteEditor
+          key={editing.entry.id}
+          entry={editing.entry}
+          isNew={editing.isNew}
+          nodes={nodes}
+          toast={toast}
+          onSave={onSaveEntry}
+          onDelete={onDeleteEntry}
+          onClose={() => setEditing(null)}
+          onPropose={async (e, node) => {
+            const saved = await onSaveEntry(e)
+            const nodeId = await onProposeToMap(node)
+            if (nodeId) await onSaveEntry({ ...saved, mapNodeId: nodeId })
+            setEditing(null)
+          }}
+          onOpenNode={onOpenNode}
+        />
+      )}
+
+      {editing && !KINDS[editing.entry.kind].notes && (
         <EntryEditor
           key={editing.entry.id}
           entry={editing.entry}
@@ -117,6 +141,152 @@ function EntryList({ items, onOpen, showKind }) {
       })}
     </ul>
   )
+}
+
+function filterNotes(list, query) {
+  const q = normKey(query)
+  if (!q) return list
+  return list.filter((e) => normKey(`${e.fields.titulo} ${e.fields.texto} ${e.fields.preguntas ?? ''}`).includes(q))
+}
+
+// Nota como en la app Notas del iPhone: título y texto, se guarda sola mientras escribes
+// y al salir. Una nota que se queda vacía se borra.
+function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onPropose, onOpenNode }) {
+  const [titulo, setTitulo] = useState(entry.fields.titulo ?? '')
+  const [texto, setTexto] = useState(() => noteBody(entry.fields))
+  const [menu, setMenu] = useState(false)
+  const [paste, setPaste] = useState(false)
+  const [proposal, setProposal] = useState(null)
+  const body = useRef()
+  const saved = useRef({ titulo: entry.fields.titulo ?? '', texto: noteBody(entry.fields), exists: !isNew })
+  const latest = useRef({ titulo, texto })
+  latest.current = { titulo, texto }
+
+  const draft = () => ({ ...entry, fields: { ...entry.fields, titulo: latest.current.titulo, texto: latest.current.texto, preguntas: '' } })
+  const empty = () => !latest.current.titulo.trim() && !latest.current.texto.trim()
+
+  async function flush() {
+    const cur = latest.current
+    if (cur.titulo === saved.current.titulo && cur.texto === saved.current.texto) return
+    if (empty()) return
+    saved.current = { ...cur, exists: true }
+    await onSave(draft())
+  }
+
+  // Guardado automático: un momento después de dejar de escribir.
+  useEffect(() => {
+    const t = setTimeout(flush, 800)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [titulo, texto])
+
+  // Si la app se va a segundo plano, se guarda de inmediato.
+  useEffect(() => {
+    const onHide = () => document.visibilityState === 'hidden' && flush()
+    document.addEventListener('visibilitychange', onHide)
+    return () => document.removeEventListener('visibilitychange', onHide)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function close() {
+    if (empty()) {
+      if (saved.current.exists) await onDelete(entry.id)
+    } else {
+      await flush()
+    }
+    onClose()
+  }
+
+  const refs = findRefs(titulo, texto)
+  const linked = entry.mapNodeId && nodes.find((n) => n.id === entry.mapNodeId)
+
+  return (
+    <div className="overlay note-editor">
+      <header className="bar">
+        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Notas</button>
+        <span className="bar-spacer" />
+        <button className="bar-btn more-btn" aria-label="Más opciones" onClick={() => setMenu(true)}>
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><circle cx="19" cy="12" r="1.6" fill="currentColor" /></svg>
+        </button>
+      </header>
+
+      <div className="editor-body">
+        <p className="note-date">{new Date(entry.updatedAt || Date.now()).toLocaleString('es', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
+        <input
+          className="title-input"
+          value={titulo}
+          placeholder="Título"
+          autoFocus={isNew}
+          enterKeyHint="next"
+          onChange={(e) => setTitulo(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); body.current?.focus() } }}
+        />
+        <NoteBody inputRef={body} value={texto} onChange={setTexto} />
+        {refs.length > 0 && (
+          <div className="note-refs">
+            <RefChips refs={refs} />
+          </div>
+        )}
+        {linked && (
+          <button className="link-note" onClick={() => onOpenNode(linked.id)}>En el mapa como «{linked.title}» · Ver</button>
+        )}
+      </div>
+
+      {menu && (
+        <div className="sheet-backdrop" onClick={() => setMenu(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="grabber" />
+            <div className="menu-group">
+              <button className="menu-item" onClick={() => { setMenu(false); setPaste(true) }}>
+                <span className="menu-icon"><Icon d={ICONS.pegar} size={20} /></span><span className="menu-text"><span>Pegar de Claude</span></span>
+              </button>
+              <button className="menu-item" onClick={() => { setMenu(false); setProposal(proposeNode(draft())) }}>
+                <span className="menu-icon"><Icon d={ICONS.nodo} size={20} /></span><span className="menu-text"><span>Proponer al mapa</span></span>
+              </button>
+            </div>
+            <div className="menu-group">
+              <button className="menu-item danger" onClick={async () => {
+                if (!confirm('¿Eliminar esta nota?')) return
+                if (saved.current.exists) await onDelete(entry.id)
+                toast('Nota eliminada.')
+                onClose()
+              }}>
+                <span className="menu-text"><span>Eliminar nota</span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {paste && (
+        <PasteFields
+          kind={entry.kind}
+          toast={toast}
+          onCancel={() => setPaste(false)}
+          onApply={(data) => {
+            const f = fieldsFromJson(entry.kind, data, { titulo, texto })
+            setTitulo(f.titulo ?? '')
+            setTexto(f.texto ?? '')
+            setPaste(false)
+            toast('Nota llenada.')
+          }}
+        />
+      )}
+
+      {proposal && (
+        <ProposeSheet initial={proposal} nodes={nodes} onCancel={() => setProposal(null)} onApprove={(node) => onPropose(draft(), node)} />
+      )}
+    </div>
+  )
+}
+
+function NoteBody({ value, onChange, inputRef }) {
+  useLayoutEffect(() => {
+    const ta = inputRef.current
+    ta.style.height = 'auto'
+    ta.style.height = ta.scrollHeight + 2 + 'px'
+  }, [value, inputRef])
+  return <textarea ref={inputRef} className="body-input" value={value} placeholder="Escribe tu nota…" onChange={(e) => onChange(e.target.value)} />
 }
 
 function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, onPropose, onOpenNode }) {

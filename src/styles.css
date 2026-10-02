@@ -707,3 +707,11 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .medal.done .medal-icon { background: rgba(245, 210, 122, 0.14); color: var(--gold-text); }
 .medal-title { font-size: 14.5px; font-weight: 600; }
 .medal-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.35; }
+
+/* ---------- Notas (como la app Notas del iPhone) ---------- */
+.note-search { margin: -6px 0 14px; border-radius: 12px; }
+.note-date { margin: 0 0 6px; text-align: center; font-size: 12.5px; color: var(--text-3); }
+.note-editor .body-input { min-height: 55vh; }
+.note-refs { margin-top: 18px; }
+.more-btn { display: grid; place-items: center; width: var(--tap); padding: 0; color: var(--text); }
+.menu-item.danger { color: var(--danger); justify-content: center; }

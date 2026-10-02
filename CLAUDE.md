@@ -22,11 +22,11 @@ Tiene **3 pestañas abajo**: **Mapa**, **Estudio** y **Juegos**.
 - Menú (☰): nuevo nodo, pegar conocimiento, cuenta y nube, exportar / importar respaldo.
 
 ## 2) Pestaña Estudio
-Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`). Para agregar o cambiar un apartado basta con editar esa definición (campos, título en la lista, formato para Claude y cómo se resume al mapa).
+Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`; `notes: true` usa el editor tipo Notas). Para agregar o cambiar un apartado basta con editar esa definición (campos, título en la lista, formato para Claude y cómo se resume al mapa).
 - **Texto diario**: fecha, texto, contexto, principio bíblico, relato de apoyo, aplicación, resumen en 3-4 palabras y mis notas.
 - **Reuniones**: La Atalaya o entre semana, fecha, título, idea principal, notas por párrafo y notas generales.
 - **Preparar estudios (Método Aha)**: título, idea central, Gancho, Extracción, Golpe lógico, Aha extra (opcional) y Resumen.
-- **Mis reflexiones**: título, nota libre y preguntas abiertas (una por línea).
+- **Notas** (antes "Mis reflexiones"; el `kind` sigue siendo `'reflexion'` para no perder datos): funciona como la app Notas del iPhone. Se toca + y se escribe (título + texto, sin etiquetas); se guarda sola al dejar de escribir, al salir y si la app pasa a segundo plano; una nota vacía se borra. La lista va por última edición, con buscador y fecha corta (hora / Ayer / día). El botón ⋯ tiene "Pegar de Claude", "Proponer al mapa" y "Eliminar nota". Las reflexiones viejas con preguntas abiertas aparte se juntan en el texto al abrirlas (`noteBody`).
 - Cada entrada tiene **"Pegar de Claude"**: se pega un JSON y se llenan los campos (con alias de nombres); el usuario revisa y guarda. "Copiar formato para Claude" da la plantilla del apartado.
 - **"Proponer al mapa"** (`proposeNode`): arma un nodo solo con lo clave (título, idea principal, principio, preguntas abiertas y las citas bíblicas detectadas). Se muestra la vista previa editable; el usuario aprueba o descarta. Si el título ya existe, se le **añade** la información sin borrar nada. La entrada guarda `mapNodeId`.
 
@@ -67,7 +67,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`). Para agregar o ca
 ```js
 Node  = { id, title, note /* markdown */, type, origin, sources, createdAt, updatedAt }
 Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
-Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' | 'trivia'|'memoria'|'progreso', fields: { ... }, mapNodeId?, createdAt, updatedAt }
+Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'trivia'|'memoria'|'progreso', fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
 - Los títulos de nodos son únicos (sin distinguir mayúsculas ni acentos).
 
