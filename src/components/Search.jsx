@@ -28,7 +28,10 @@ export default function Search({ nodes, onPick, onMenu }) {
     return out.sort((a, b) => a.score - b.score || a.node.title.localeCompare(b.node.title, 'es')).slice(0, 50)
   }, [index, q])
 
-  const open = focused && q.trim()
+  // Sin escribir nada: los nodos que editaste hace poco, para llegar rápido.
+  const recent = useMemo(() => [...nodes].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)).slice(0, 8), [nodes])
+  const open = focused && (q.trim() || recent.length > 1)
+  const pick = (id) => { onPick(id); setQ(''); document.activeElement?.blur() }
 
   return (
     <>
@@ -58,13 +61,27 @@ export default function Search({ nodes, onPick, onMenu }) {
       </div>
       {open && (
         <div className="search-results">
-          {results.length === 0 ? (
+          {!q.trim() ? (
+            <>
+              <p className="results-label">Recientes</p>
+              <ul className="results">
+                {recent.map((node) => (
+                  <li key={node.id}>
+                    <button className="result" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(node.id)}>
+                      <span className="dot" style={{ background: nodeColor(node) }} />
+                      <span className="result-main"><span className="result-title">{node.title}</span></span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : results.length === 0 ? (
             <p className="hint pad">Sin resultados.</p>
           ) : (
             <ul className="results">
               {results.map(({ node, snippet }) => (
                 <li key={node.id}>
-                  <button className="result" onMouseDown={(e) => e.preventDefault()} onClick={() => { onPick(node.id); setQ(''); document.activeElement?.blur() }}>
+                  <button className="result" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(node.id)}>
                     <span className="dot" style={{ background: nodeColor(node) }} />
                     <span className="result-main">
                       <span className="result-title">{node.title}</span>
