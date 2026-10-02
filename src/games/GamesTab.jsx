@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
 import { buildCards, verseSources } from './logic.js'
@@ -16,6 +16,7 @@ export default function GamesTab({ store, toast }) {
   const [medals, setMedals] = useState(false)
   const [daily, setDaily] = useState(false)
   const game = GAMES.find((g) => g.id === open)
+  useNewMedals(store, toast)
 
   return (
     <div className="page">
@@ -86,6 +87,24 @@ function Daily({ store, onExit }) {
       />
     </GameScreen>
   )
+}
+
+// Avisa cuando ganas un logro mientras juegas (los que ya tenías al abrir Juegos no cuentan).
+function useNewMedals(store, toast) {
+  const { memorized } = useStats(store)
+  const done = achievements(store.progress, { nodes: store.nodes.length, memorized }).filter((m) => m.done)
+  const seen = useRef(null)
+  const key = done.map((m) => m.id).join()
+  useEffect(() => {
+    if (!store.ready) return
+    if (seen.current == null) {
+      seen.current = new Set(done.map((m) => m.id))
+      return
+    }
+    const fresh = done.filter((m) => !seen.current.has(m.id))
+    for (const m of fresh) seen.current.add(m.id)
+    if (fresh.length) setTimeout(() => toast(`Logro nuevo: ${fresh.map((m) => m.title).join(', ')}`), 900)
+  }, [key, store.ready]) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 const DAY_LETTERS = ['D', 'L', 'M', 'M', 'J', 'V', 'S']
