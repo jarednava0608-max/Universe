@@ -128,6 +128,7 @@ function ProgressCard({ store, onReview, onMedals }) {
     ...buildCards(store.nodes, store.entries).map((c) => 'c:' + c.id),
     ...verses.map((v) => 'v:' + v.id),
     ...store.entries.filter((e) => e.kind === 'trivia').map((e) => 'q:' + e.id),
+    ...Object.keys(srs).filter((k) => k.startsWith('mb:')), // personajes que ya viste
   ]
   const due = dueCount(keys, srs)
 

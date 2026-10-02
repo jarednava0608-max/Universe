@@ -147,3 +147,12 @@ describe('Ordenar una sección', () => {
     }
   })
 })
+
+describe('Repasar hoy con personajes', () => {
+  it('incluye solo personajes ya vistos que tocan hoy', () => {
+    const srs = { 'mb:1': { box: 0, due: '2026-10-01' }, 'mb:2': { box: 3, due: '2026-12-01' } }
+    const mix = dailyMix({ people: [{ id: 1 }, { id: 2 }, { id: 3 }] }, srs, (s) => isDue(s, '2026-10-01'))
+    expect(mix.map((m) => m.key)).toEqual(['mb:1'])
+    expect(mix[0].type).toBe('person')
+  })
+})

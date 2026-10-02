@@ -5,13 +5,15 @@ import { isDue, review } from './progress.js'
 import { saveVerseResult } from './Memorize.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
+import { CHARACTERS } from './memoria/characters.js'
+import { whoRound } from './memoria/logic.js'
 
-const LABEL = { card: 'Tarjeta', verse: 'Texto para memorizar', trivia: 'Pregunta' }
+const LABEL = { card: 'Tarjeta', verse: 'Texto para memorizar', trivia: 'Pregunta', person: 'Personaje' }
 
 // Una sola sesión con todo lo que toca hoy: tarjetas, textos y preguntas, alternados.
 export function reviewItems(store) {
   const trivia = store.entries.filter((e) => e.kind === 'trivia')
-  return dailyMix({ cards: buildCards(store.nodes, store.entries), verses: verseSources(store.entries), trivia }, store.progress.srs ?? {}, (s) => isDue(s))
+  return dailyMix({ cards: buildCards(store.nodes, store.entries), verses: verseSources(store.entries), trivia, people: CHARACTERS }, store.progress.srs ?? {}, (s) => isDue(s))
 }
 
 export default function Review({ store, onExit }) {
@@ -50,7 +52,7 @@ export default function Review({ store, onExit }) {
               {missed.map((m) => (
                 <div key={m.key} className="missed-item">
                   <p className="missed-q">{LABEL[m.type]}</p>
-                  <p className="missed-a">{m.type === 'card' ? m.item.front : m.type === 'verse' ? m.item.fields.cita || m.item.fields.texto.slice(0, 60) : m.item.fields.pregunta}</p>
+                  <p className="missed-a">{m.type === 'card' ? m.item.front : m.type === 'verse' ? m.item.fields.cita || m.item.fields.texto.slice(0, 60) : m.type === 'person' ? m.item.n : m.item.fields.pregunta}</p>
                 </div>
               ))}
             </div>
@@ -66,6 +68,7 @@ export default function Review({ store, onExit }) {
           {item.type === 'card' && <CardStep key={item.key} card={item.item} onAnswer={answer} />}
           {item.type === 'verse' && <VerseStep key={item.key} verse={item.item} onAnswer={answer} />}
           {item.type === 'trivia' && <QuestionStep key={item.key} fields={item.item.fields} onAnswer={answer} />}
+          {item.type === 'person' && <PersonStep key={item.key} ch={item.item} onAnswer={answer} />}
         </>
       )}
     </GameScreen>
@@ -106,6 +109,35 @@ function QuestionStep({ fields, onAnswer }) {
           <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : 'No era esa'}</p>
           {q.explain && <p className="explain">{q.explain}</p>}
           {q.ref && <p className="ref">{findRefs(q.ref).length ? <RefLink refText={findRefs(q.ref)[0]} /> : q.ref}</p>}
+          <button className="primary" onClick={() => onAnswer(picked === q.answer)}>Siguiente</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Personaje: sus pistas y elegir quién es (como ¿Quién soy?).
+function PersonStep({ ch, onAnswer }) {
+  const q = useMemo(() => whoRound([ch], {}, Math.random, CHARACTERS)[0], [ch])
+  const [shown, setShown] = useState(1)
+  const [picked, setPicked] = useState(null)
+  const answered = picked != null
+  return (
+    <div className="quiz">
+      <div className="mb-clues">
+        {q.clues.slice(0, answered ? 3 : shown).map((c, k) => <p key={k} className={'mb-clue' + (k === 2 ? ' last' : '')}>{k < 2 ? `«${c}»` : c}</p>)}
+        {!answered && shown < 3 && <button className="mb-more" onClick={() => setShown((s) => s + 1)}>Otra pista</button>}
+      </div>
+      <div className="options">
+        {q.options.map((o, k) => (
+          <button key={k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => setPicked(k)}>{o}</button>
+        ))}
+      </div>
+      {answered && (
+        <div className="feedback">
+          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : `Era ${ch.n}`}</p>
+          <p className="explain">{ch.t}.</p>
+          <p className="ref"><RefLink refText={ch.c} /></p>
           <button className="primary" onClick={() => onAnswer(picked === q.answer)}>Siguiente</button>
         </div>
       )}
