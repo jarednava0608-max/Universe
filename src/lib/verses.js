@@ -1,6 +1,7 @@
 // "Mi Biblia": los textos bíblicos que el usuario pega (no se descarga la Biblia completa).
 // Se guardan como entradas `kind: 'biblia'` ({ cita, texto }) y se sincronizan como las demás.
-import { parseRef, refUrl } from './bible.js'
+import { parseRef, refUrl, findRefs } from './bible.js'
+import { findPubs, isPubRef, pubUrl } from './pubs.js'
 import { newId } from './model.js'
 import { verseSources } from '../games/logic.js'
 
@@ -12,12 +13,33 @@ export function refKey(ref) {
   return spec ? `${r.book}:${r.chapter}:${spec}` : `${r.book}:${r.chapter}`
 }
 
-// Texto guardado para una cita: primero "Mi Biblia", luego Memorizar textos y el Texto diario.
+// Clave de cualquier referencia: cita bíblica o publicación ("Seamos valientes, cap. 3").
+export function anyRefKey(ref) {
+  const k = refKey(ref)
+  if (k) return k
+  return isPubRef(ref) ? 'pub:' + String(ref).toLowerCase().replace(/[«»“”"]/g, '').replace(/\s+/g, ' ').trim() : null
+}
+
+// Citas bíblicas y referencias a publicaciones de un texto.
+export function findAllRefs(...texts) {
+  return [...findRefs(...texts), ...findPubs(...texts)]
+}
+
+export const isPub = (ref) => !parseRef(ref) && isPubRef(ref)
+
+// Dónde abrir una referencia fuera de la app.
+export function anyRefUrl(ref) {
+  return isPub(ref) ? pubUrl(ref) : refUrl(ref)
+}
+
+// Texto guardado para una cita (o un párrafo de una publicación): primero lo guardado aquí,
+// luego (solo citas bíblicas) Memorizar textos y el Texto diario.
 export function findSavedVerse(entries, ref) {
-  const key = refKey(ref)
+  const key = anyRefKey(ref)
   if (!key) return null
-  const own = entries.find((e) => e.kind === 'biblia' && refKey(e.fields.cita) === key && e.fields.texto?.trim())
+  const own = entries.find((e) => e.kind === 'biblia' && anyRefKey(e.fields.cita) === key && e.fields.texto?.trim())
   if (own) return { entry: own, texto: own.fields.texto, source: 'biblia' }
+  if (key.startsWith('pub:')) return null
   const other = verseSources(entries).find((v) => v.fields.cita && refKey(v.fields.cita) === key && v.fields.texto?.trim())
   return other ? { entry: other, texto: other.fields.texto, source: other.kind === 'diario' || other.fromDaily ? 'diario' : 'memoria' } : null
 }

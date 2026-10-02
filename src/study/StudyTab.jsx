@@ -3,11 +3,10 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
-import { findRefs } from '../lib/bible.js'
 import { RefChips } from '../components/RefLink.jsx'
 import { markdownToHtml, plainText } from '../lib/markdown.js'
 import { docToText, docToMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
-import { findSavedVerse, refKey } from '../lib/verses.js'
+import { findSavedVerse, findAllRefs, anyRefKey } from '../lib/verses.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -272,8 +271,8 @@ function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onC
     const before = { json: ed.getJSON(), titulo }
     const after = enrichDoc(tidyDoc(before.json), {
       nodes: nodes.filter((n) => n.id !== ROOT_ID),
-      findRefs,
-      refKey,
+      findRefs: findAllRefs,
+      refKey: anyRefKey,
       verseText: (r) => findSavedVerse(entries, r)?.texto ?? null,
       plain: plainText,
     })
@@ -290,7 +289,7 @@ function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onC
     const items = entries
       .filter((e) => e.id !== entry.id && KINDS[e.kind])
       .map((e) => ({ id: e.id, text: Object.values(e.fields ?? {}).map((v) => (Array.isArray(v) ? v.map((x) => x?.nota ?? x).join('\n') : typeof v === 'string' ? v : '')).join('\n') }))
-    const ids = relatedIds(relatedText, items, { findRefs, refKey })
+    const ids = relatedIds(relatedText, items, { findRefs: findAllRefs, refKey: anyRefKey })
     return ids.map((id) => entries.find((e) => e.id === id))
   }, [entries, entry.id, relatedText])
 
@@ -470,10 +469,10 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, o
         ))}
 
         {(() => {
-          const refs = findRefs(...Object.values(fields).flatMap((v) => (Array.isArray(v) ? v.map((p) => p.nota) : [v])))
+          const refs = findAllRefs(...Object.values(fields).flatMap((v) => (Array.isArray(v) ? v.map((p) => p.nota) : [v])))
           return refs.length > 0 && (
             <div className="sfield">
-              <span className="sfield-label">Textos bíblicos · toca para abrir en wol.jw.org</span>
+              <span className="sfield-label">Textos y publicaciones · toca para verlos</span>
               <RefChips refs={refs} />
             </div>
           )

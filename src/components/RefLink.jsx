@@ -1,9 +1,9 @@
-import { refUrl } from '../lib/bible.js'
+import { anyRefUrl } from '../lib/verses.js'
 
-// Cita bíblica tocable: abre el versículo en wol.jw.org.
+// Cita bíblica o publicación tocable (App la abre en la hoja de la cita).
 export default function RefLink({ refText, className = 'ref-link' }) {
   return (
-    <a className={className} href={refUrl(refText)} target="_blank" rel="noopener noreferrer">
+    <a className={className} href={anyRefUrl(refText)} target="_blank" rel="noopener noreferrer">
       {refText}
     </a>
   )

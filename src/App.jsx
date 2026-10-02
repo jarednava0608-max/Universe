@@ -19,6 +19,7 @@ import GamesTab from './games/GamesTab.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import { OPEN_REF } from './lib/verses.js'
 import { parseRef } from './lib/bible.js'
+import { isPubRef } from './lib/pubs.js'
 
 export default function App() {
   const store = useStore()
@@ -48,10 +49,10 @@ export default function App() {
   useEffect(() => {
     const onOpen = (e) => setRefOpen(e.detail)
     const onClick = (e) => {
-      const a = e.target.closest?.('a[href^="https://wol.jw.org/es/wol/b/"]')
+      const a = e.target.closest?.('a[href^="https://wol.jw.org/es/wol/"]')
       if (!a || a.dataset.direct) return
       const ref = a.textContent.trim()
-      if (!parseRef(ref)) return
+      if (!parseRef(ref) && !isPubRef(ref)) return
       e.preventDefault()
       e.stopPropagation()
       setRefOpen(ref)

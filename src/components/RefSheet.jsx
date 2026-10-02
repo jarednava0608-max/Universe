@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { refUrl } from '../lib/bible.js'
-import { findSavedVerse, jwLibraryUrl, makeBibleEntry } from '../lib/verses.js'
+import { findSavedVerse, jwLibraryUrl, makeBibleEntry, isPub } from '../lib/verses.js'
+import { pubTitle, pubUrl } from '../lib/pubs.js'
 
 const SOURCE = { memoria: 'De Memorizar textos', diario: 'De tu Texto diario' }
 
 // Hoja que se abre al tocar una cita: el texto guardado (o para pegarlo una vez)
 // y botones para abrir la cita en JW Library o en wol.jw.org.
 export default function RefSheet({ refText, entries, onSave, onClose, toast }) {
+  const pub = isPub(refText)
   const saved = findSavedVerse(entries, refText)
   const [editing, setEditing] = useState(!saved)
   const [text, setText] = useState(saved?.texto ?? '')
@@ -17,7 +19,7 @@ export default function RefSheet({ refText, entries, onSave, onClose, toast }) {
     const entry = saved?.source === 'biblia' ? { ...saved.entry, fields: { ...saved.entry.fields, texto } } : makeBibleEntry(refText, texto)
     await onSave(entry)
     setEditing(false)
-    toast('Texto guardado. La próxima vez lo verás aquí.')
+    toast(pub ? 'Párrafo guardado. La próxima vez lo verás aquí.' : 'Texto guardado. La próxima vez lo verás aquí.')
   }
 
   async function paste() {
@@ -41,8 +43,14 @@ export default function RefSheet({ refText, entries, onSave, onClose, toast }) {
 
         {editing ? (
           <>
-            {!saved && <p className="hint">Aún no tienes este texto guardado. Cópialo de JW Library y pégalo aquí una vez; después lo verás sin salir de la app.</p>}
-            <textarea className="input ref-sheet-input" rows={5} value={text} placeholder="Pega aquí el texto del versículo" onChange={(e) => setText(e.target.value)} />
+            {!saved && (
+              <p className="hint">
+                {pub
+                  ? 'Aún no guardas nada de esta publicación. Copia de JW Library el párrafo que te sirvió y pégalo aquí; después lo verás sin salir de la app.'
+                  : 'Aún no tienes este texto guardado. Cópialo de JW Library y pégalo aquí una vez; después lo verás sin salir de la app.'}
+              </p>
+            )}
+            <textarea className="input ref-sheet-input" rows={5} value={text} placeholder={pub ? 'Pega aquí el párrafo' : 'Pega aquí el texto del versículo'} onChange={(e) => setText(e.target.value)} />
             <div className="two-btn">
               <button className="secondary" onClick={paste}>Pegar</button>
               <button className="primary" disabled={!text.trim()} onClick={save}>Guardar</button>
@@ -55,10 +63,16 @@ export default function RefSheet({ refText, entries, onSave, onClose, toast }) {
           </div>
         )}
 
-        <div className="ref-sheet-links">
-          <a className="primary as-btn" data-direct="1" href={jwLibraryUrl(refText)} target="_blank" rel="noopener noreferrer">Abrir en JW Library</a>
-          <a className="secondary as-btn" data-direct="1" href={refUrl(refText)} target="_blank" rel="noopener noreferrer">Abrir en wol.jw.org</a>
-        </div>
+        {pub ? (
+          <div className="ref-sheet-links">
+            <a className="primary as-btn" data-direct="1" href={pubUrl(refText)} target="_blank" rel="noopener noreferrer">Buscar «{pubTitle(refText)}» en wol.jw.org</a>
+          </div>
+        ) : (
+          <div className="ref-sheet-links">
+            <a className="primary as-btn" data-direct="1" href={jwLibraryUrl(refText)} target="_blank" rel="noopener noreferrer">Abrir en JW Library</a>
+            <a className="secondary as-btn" data-direct="1" href={refUrl(refText)} target="_blank" rel="noopener noreferrer">Abrir en wol.jw.org</a>
+          </div>
+        )}
       </div>
     </div>
   )
