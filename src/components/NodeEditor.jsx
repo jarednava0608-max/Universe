@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ROOT_ID, normKey } from '../lib/model.js'
 import NodePicker from './NodePicker.jsx'
 import { unwrapCallouts } from '../lib/markdown.js'
+import TitleArea from './TitleArea.jsx'
 
 // Crear / editar un nodo: solo título y definición.
 // Para conectar ideas se enlaza otro nodo dentro del texto con [[Título]].
@@ -57,12 +58,13 @@ export default function NodeEditor({ node, isNew, nodes, onSave, onCancel, onDel
       <div className="editor-body">
         {error && <p className="error">{error}</p>}
 
-        <input
-          className="title-input"
+        <TitleArea
           value={draft.title}
           placeholder="Título"
           autoFocus={isNew && !draft.title}
-          onChange={(e) => set({ title: e.target.value })}
+          enterKeyHint="next"
+          onEnter={() => noteRef.current?.focus()}
+          onChange={(title) => set({ title })}
         />
 
         <textarea

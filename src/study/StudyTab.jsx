@@ -11,6 +11,7 @@ import NodePeek from '../components/NodePeek.jsx'
 import { definitionText, markdownToHtml, unwrapCallouts } from '../lib/markdown.js'
 import { docToText, docToMarkdown, docToNodeMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
 import { findSavedVerse, findAllRefs, anyRefKey } from '../lib/verses.js'
+import TitleArea from '../components/TitleArea.jsx'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -251,14 +252,13 @@ function NodeNote({ node, nodes, toast, onSave, onClose, onOpenMap }) {
       </header>
       <div className="editor-body">
         <p className="note-date">Nodo del mapa</p>
-        <input
-          className="title-input"
+        <TitleArea
           value={title}
           placeholder="Título"
           readOnly={isRoot}
           enterKeyHint="next"
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); editor.current?.commands.focus('start') } }}
+          onChange={setTitle}
+          onEnter={() => editor.current?.commands.focus('start')}
         />
         <Suspense fallback={<div className="rich-loading" />}>
           <RichNote html={initialHtml} onChange={() => { dirty.current = true; setVersion((v) => v + 1) }} editorRef={editor} nodes={nodes} onOpenNode={openByTitle} toolbarSlot={slot} onEditing={setEditing} />
@@ -532,14 +532,13 @@ function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onC
 
       <div className="editor-body">
         <p className="note-date">{new Date(entry.updatedAt || Date.now()).toLocaleString('es', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
-        <input
-          className="title-input"
+        <TitleArea
           value={titulo}
           placeholder="Título"
           autoFocus={isNew}
           enterKeyHint="next"
-          onChange={(e) => setTitulo(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); editor.current?.commands.focus('start') } }}
+          onChange={setTitulo}
+          onEnter={() => editor.current?.commands.focus('start')}
         />
         <Suspense fallback={<div className="rich-loading" />}>
           <RichNote html={initialHtml} onChange={() => setVersion((v) => v + 1)} editorRef={editor} nodes={nodes} onOpenNode={openByTitle} toolbarSlot={slot} onEditing={setEditing} />
@@ -811,7 +810,7 @@ function ProposeSheet({ initial, nodes, onCancel, onApprove }) {
       <div className="editor-body">
         <p className="hint">Así quedaría el nodo. Puedes editarlo antes de aprobar.</p>
         <div className="propose-card">
-          <input className="title-input" value={title} placeholder="Título" onChange={(e) => setTitle(e.target.value)} />
+          <TitleArea value={title} placeholder="Título" enterKeyHint="done" onChange={setTitle} />
           <AutoText value={note} placeholder="Idea principal" onChange={setNote} minRows={4} />
         </div>
         {existing && <p className="notice">Ya existe «{existing.title}» en el mapa: se le añadirá esta información sin borrar lo que tiene.</p>}

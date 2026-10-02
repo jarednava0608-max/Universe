@@ -1058,3 +1058,4 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
   background: linear-gradient(160deg, rgba(var(--era-rgb), 0.14), var(--surface) 75%);
   border-color: rgba(var(--era-rgb), 0.28);
 }
+.title-wrap { resize: none; overflow: hidden; display: block; line-height: 1.2; }

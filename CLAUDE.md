@@ -68,7 +68,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`; `notes: true` usa 
 
 ## Estructura
 - `src/App.jsx`: pestañas, notas abiertas del mapa, hojas y avisos.
-- `src/components/`: `TabBar`, `Icon`, `Graph` (react-force-graph-2d en canvas), `NoteView`, `NodeEditor`, `NodePicker`, `PasteSheet`, `Search`, `Menu`, `AccountSheet`.
+- `src/components/`: `TitleArea` (título que crece en varios renglones, sin saltos; Notas, nodos, editor del mapa y Proponer al mapa), `TabBar`, `Icon`, `Graph` (react-force-graph-2d en canvas), `NoteView`, `NodeEditor`, `NodePicker`, `PasteSheet`, `Search`, `Menu`, `AccountSheet`.
 - `src/study/`: `kinds.js` (definición de apartados, "Pegar de Claude", "Proponer al mapa", detector de citas) y `StudyTab.jsx`.
 - `src/games/`: `registry.js` (lista de juegos), `GamesTab.jsx`, `logic.js`, `ui.jsx`, `Trivia.jsx`, `Memorize.jsx`, `StudyGames.jsx`, `Books.jsx`, `Review.jsx`, `MemoriaBiblica.jsx` + `memoria/` (personajes y lógica).
 - `src/lib/model.js`: modelo de nodos y conexiones. `src/lib/store.js`: hook `useStore` (nodos, conexiones, entradas). `src/lib/markdown.js`: render y `[[enlaces]]`. `src/lib/importer.js`: "Pegar conocimiento" (`planImport` con vista previa) y respaldos.
