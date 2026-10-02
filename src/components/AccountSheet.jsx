@@ -5,6 +5,7 @@ export default function AccountSheet({ sync, onClose }) {
   const { session, status } = sync
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
@@ -58,7 +59,10 @@ export default function AccountSheet({ sync, onClose }) {
             </label>
             <label className="field">
               <span>Contraseña</span>
-              <input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <span className="pass-wrap">
+                <input className="input" type={showPass ? 'text' : 'password'} autoComplete="current-password" autoCapitalize="off" autoCorrect="off" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <button type="button" className="pass-toggle" onClick={(e) => { e.preventDefault(); setShowPass((v) => !v) }}>{showPass ? 'Ocultar' : 'Mostrar'}</button>
+              </span>
             </label>
             <button className="primary" disabled={busy} onClick={() => go('in')}>Entrar</button>
             <button className="secondary" disabled={busy} onClick={() => go('up')}>Crear cuenta</button>

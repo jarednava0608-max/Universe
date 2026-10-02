@@ -993,3 +993,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .empty-state .secondary { max-width: 260px; }
 .q-row .entry-sub { white-space: normal; }
 .results-label { margin: 10px 14px 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); }
+.pass-wrap { position: relative; display: block; }
+.pass-wrap .input { padding-right: 84px; }
+.pass-toggle { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); min-height: 36px; padding: 0 10px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--link); }
