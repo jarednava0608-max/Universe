@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { buildCards, buildCiteQuestions, buildGuessQuestions, buildPairs, verseSources } from './logic.js'
-import { GameScreen, Quiz, Empty, ModeCard, Confetti } from './ui.jsx'
+import { GameScreen, Quiz, Empty, ModeCard, Confetti, SwipeCard } from './ui.jsx'
 import { byPriority, dueCount, isDue, nextDue, review } from './progress.js'
 import { formatDate } from '../study/kinds.js'
 
@@ -137,7 +137,6 @@ function Cards({ store, onExit }) {
   }
   const [deck, setDeck] = useState(() => build(false))
   const [i, setI] = useState(0)
-  const [flip, setFlip] = useState(false)
   const [known, setKnown] = useState(0)
   const card = deck[i]
 
@@ -146,7 +145,6 @@ function Cards({ store, onExit }) {
     store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [key]: review(f.srs?.[key], knew) } }))
     if (knew) setKnown((n) => n + 1)
     else setDeck((d) => [...d, card]) // vuelve al final de esta sesión
-    setFlip(false)
     setI(i + 1)
   }
 
@@ -172,14 +170,7 @@ function Cards({ store, onExit }) {
       ) : (
         <>
           <p className="quiz-count">{i + 1} de {deck.length}{due ? ` · ${due} para hoy` : ''}</p>
-          <button className={'flashcard' + (flip ? ' flipped' : '')} onClick={() => setFlip((f) => !f)}>
-            {flip ? <span className="card-back">{card.back}</span> : <span className="card-front">{card.front}</span>}
-            <span className="card-hint">{flip ? 'Toca para ver el título' : 'Toca para ver la respuesta'}</span>
-          </button>
-          <div className="two-btn">
-            <button className="secondary" onClick={() => answer(false)}>Repasar otra vez</button>
-            <button className="primary" onClick={() => answer(true)}>Me la sé</button>
-          </div>
+          <SwipeCard key={i} front={card.front} back={card.back} onAnswer={answer} />
         </>
       )}
     </GameScreen>

@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react'
-import { chunkText, clozeWords, initials, makeVerse, parseVerses, verseSources, VERSES_FORMAT } from './logic.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { chunkText, clozeWords, foldLetter, initials, makeVerse, parseVerses, typeWords, verseSources, VERSES_FORMAT } from './logic.js'
 import { GameScreen, PasteJson, Empty, OrderPuzzle } from './ui.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
 import { byPriority, isDue, review } from './progress.js'
 
 const LEVELS = ['Fácil', 'Medio', 'Difícil', 'De memoria']
-const MODES = [['hide', 'Ocultar'], ['initials', 'Iniciales'], ['order', 'Ordenar']]
+const MODES = [['hide', 'Ocultar'], ['initials', 'Iniciales'], ['type', 'Escribir'], ['order', 'Ordenar']]
 
 // Guarda el resultado de practicar un texto: sube o baja de nivel y agenda el próximo repaso.
 // Los textos del diario se copian a "mis textos" la primera vez que se practican.
@@ -38,6 +38,7 @@ export default function Memorize({ store, toast, onExit }) {
     <GameScreen title="Memorizar textos" onExit={onExit} right={<button className="bar-btn strong" onClick={() => setAdding(true)}>Agregar</button>}>
       {verses.length ? (
         <>
+          <MemoHero verses={verses} srs={srs} />
           <ul className="entry-list">
             {verses.map((v) => (
               <li key={v.id}>
@@ -166,6 +167,16 @@ function Practice({ verse, store, onSaved, onBack }) {
         </>
       )}
 
+      {mode === 'type' && (
+        <TypeLetters key={seed} texto={verse.fields.texto} footer={(pct) => (
+          <>
+            <p className={'order-result ' + (pct >= 90 ? 'ok' : 'bad')}>{pct === 100 ? '¡Perfecto, sin errores!' : `${pct} % a la primera.`}</p>
+            {ref}
+            {answer}
+          </>
+        )} />
+      )}
+
       {mode === 'order' && (
         <>
           <OrderPuzzle key={seed} pieces={pieces} onDone={setOrdered} hint="Toca los trozos del texto en orden." />
@@ -196,6 +207,100 @@ function AddVerse({ onCancel, onSave }) {
         <label className="sfield"><span className="sfield-label">Cita</span><input className="input" placeholder="Juan 17:3" value={cita} onChange={(e) => setCita(e.target.value)} /></label>
         <label className="sfield"><span className="sfield-label">Texto</span><textarea className="input" rows={6} placeholder="Escribe el texto tal como quieres memorizarlo" value={texto} onChange={(e) => setTexto(e.target.value)} /></label>
       </div>
+    </div>
+  )
+}
+
+// Escribir: teclea la primera letra de cada palabra. Si aciertas, aparece la palabra;
+// a los 3 intentos fallidos se muestra sola (cuenta como error).
+function TypeLetters({ texto, footer }) {
+  const words = useMemo(() => typeWords(texto), [texto])
+  const skip = (from) => {
+    let k = from
+    while (k < words.length && !words[k].letter) k++
+    return k
+  }
+  const [pos, setPos] = useState(() => skip(0))
+  const [wrong, setWrong] = useState(() => new Set()) // palabras que se mostraron solas o con error
+  const [tries, setTries] = useState(0)
+  const [shake, setShake] = useState(0)
+  const [focused, setFocused] = useState(false)
+  const input = useRef(null)
+  const done = pos >= words.length
+  const total = words.filter((w) => w.letter).length
+  const pct = total ? Math.round(((total - wrong.size) / total) * 100) : 100
+
+  useEffect(() => {
+    if (done) input.current?.blur()
+  }, [done])
+
+  function type(ch) {
+    if (done || !ch) return
+    const w = words[pos]
+    if (foldLetter(ch) === w.letter) {
+      setTries(0)
+      setPos(skip(pos + 1))
+    } else {
+      setShake((n) => n + 1)
+      setWrong((s) => new Set(s).add(pos))
+      if (tries + 1 >= 3) {
+        setTries(0)
+        setPos(skip(pos + 1))
+      } else setTries(tries + 1)
+    }
+  }
+
+  return (
+    <>
+      <p className="verse type-verse" onClick={() => input.current?.focus()}>
+        {words.map((w, i) => (
+          <span key={i}>
+            {i < pos || !w.letter ? (
+              <span className={wrong.has(i) ? 'type-bad' : i === pos - 1 ? 'type-new' : ''}>{w.pre}{w.word}{w.post}</span>
+            ) : (
+              <>
+                {w.pre}
+                <span key={i === pos ? 'c' + shake : 'w'} className={'type-blank' + (i === pos ? ' now' : '') + (i === pos && shake ? ' miss' : '')} style={{ width: `${Math.max(2, w.word.length) * 0.55}em` }} />
+                {w.post}
+              </>
+            )}{' '}
+          </span>
+        ))}
+      </p>
+      {!done ? (
+        <>
+          <input
+            ref={input}
+            className="type-input"
+            value=""
+            inputMode="text"
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Primera letra de la palabra"
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onChange={(e) => type(e.target.value.slice(-1))}
+          />
+          {!focused && <button className="primary" onClick={() => input.current?.focus()}>Empezar a escribir</button>}
+          <p className="hint center">Escribe la primera letra de cada palabra. {words.length - pos > 0 && `${total - words.slice(0, pos).filter((w) => w.letter).length} por escribir.`}</p>
+        </>
+      ) : (
+        footer(pct)
+      )}
+    </>
+  )
+}
+
+// Resumen arriba de la lista: cuántos textos ya sabes de memoria y cuántos tocan hoy.
+function MemoHero({ verses, srs }) {
+  const memorized = verses.filter((v) => (v.fields.nivel ?? 0) >= 3).length
+  const today = verses.filter((v) => isDue(srs['v:' + v.id])).length
+  return (
+    <div className="mb-hero">
+      <p className="mb-count"><b>{memorized}</b> de {verses.length} {verses.length === 1 ? 'texto' : 'textos'} de memoria{today ? ` · ${today} para hoy` : ''}</p>
+      <div className="mb-bar memo"><span style={{ width: `${(memorized / verses.length) * 100}%` }} /></div>
     </div>
   )
 }

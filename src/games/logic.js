@@ -318,3 +318,17 @@ export function dailyMix({ cards = [], verses = [], trivia = [] }, srs, isDueFn,
 
 // Una sola pregunta de libros (para el reto contra reloj).
 export const bookSprintQuestion = (rnd = Math.random) => buildBookQuestions(1, rnd)[0]
+
+// "Escribir": el texto palabra por palabra; para cada palabra hay que teclear su primera letra
+// (sin acentos ni mayúsculas). Lo que no tiene letras (—, números sueltos) se muestra solo.
+export const foldLetter = (ch = '') => ch.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+export function typeWords(texto) {
+  return texto
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((raw) => {
+      const m = raw.match(/^([^\p{L}\d]*)([\p{L}\d][\p{L}\d'’-]*)(.*)$/u)
+      if (!m) return { pre: raw, word: '', post: '', letter: '' }
+      return { pre: m[1], word: m[2], post: m[3], letter: foldLetter(m[2][0]) }
+    })
+}

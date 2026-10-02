@@ -409,6 +409,68 @@ export function Survival({ questions, best: bestNow = 0, onFinish, onAgain, onDo
   )
 }
 
+// Tarjeta que se voltea con un toque y se desliza como en el iPhone:
+// a la derecha = "me la sé", a la izquierda = "repasar otra vez".
+export function SwipeCard({ front, back, onAnswer }) {
+  const [flip, setFlip] = useState(false)
+  const [dx, setDx] = useState(0)
+  const [gone, setGone] = useState(0) // -1 / 1 mientras sale volando
+  const start = useRef(null)
+  const moved = useRef(0)
+
+  function down(e) {
+    start.current = { x: e.clientX, y: e.clientY }
+    moved.current = 0
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* sin captura */ }
+  }
+  function move(e) {
+    if (!start.current || gone) return
+    const x = e.clientX - start.current.x
+    if (Math.abs(x) < 6 && !moved.current) return
+    moved.current = x
+    setDx(x)
+  }
+  function up() {
+    if (!start.current) return
+    const x = moved.current
+    start.current = null
+    if (Math.abs(x) > 90) {
+      const dir = x > 0 ? 1 : -1
+      setGone(dir)
+      setTimeout(() => onAnswer(dir > 0), 220)
+    } else {
+      if (Math.abs(x) < 6) setFlip((f) => !f)
+      setDx(0)
+    }
+  }
+
+  const x = gone ? gone * 500 : dx
+  const lean = Math.max(-1, Math.min(1, dx / 120))
+  return (
+    <>
+      <div className="swipe-wrap">
+        <button
+          className={'flashcard swipe' + (flip ? ' flipped' : '') + (dx || gone ? ' dragging' : '')}
+          style={{ transform: `translateX(${x}px) rotate(${x / 22}deg)`, transition: dx && !gone ? 'none' : undefined }}
+          onPointerDown={down}
+          onPointerMove={move}
+          onPointerUp={up}
+          onPointerCancel={() => { start.current = null; setDx(0) }}
+        >
+          <span className="swipe-tag yes" style={{ opacity: Math.max(0, lean) }}>Me la sé</span>
+          <span className="swipe-tag no" style={{ opacity: Math.max(0, -lean) }}>Repasar</span>
+          {flip ? <span className="card-back">{back}</span> : <span className="card-front">{front}</span>}
+          <span className="card-hint">{flip ? 'Desliza a la derecha si te la sabías' : 'Toca para ver la respuesta'}</span>
+        </button>
+      </div>
+      <div className="two-btn">
+        <button className="secondary" onClick={() => { setGone(-1); setTimeout(() => onAnswer(false), 220) }}>Repasar otra vez</button>
+        <button className="primary" onClick={() => { setGone(1); setTimeout(() => onAnswer(true), 220) }}>Me la sé</button>
+      </div>
+    </>
+  )
+}
+
 // Ordenar: toca los trozos en el orden correcto. onDone(errores) al terminar.
 export function OrderPuzzle({ pieces, onDone, hint = 'Toca los trozos en orden.' }) {
   const [order] = useState(() => shuffle(pieces.map((_, i) => i)))

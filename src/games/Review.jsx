@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { buildCards, dailyMix, initials, triviaToQuestion, verseSources } from './logic.js'
-import { GameScreen, Confetti } from './ui.jsx'
+import { GameScreen, Confetti, SwipeCard } from './ui.jsx'
 import { isDue, review } from './progress.js'
 import { saveVerseResult } from './Memorize.jsx'
 import { findRefs } from '../lib/bible.js'
@@ -59,16 +59,7 @@ export default function Review({ store, onExit }) {
 }
 
 function CardStep({ card, onAnswer }) {
-  const [flip, setFlip] = useState(false)
-  return (
-    <>
-      <button className={'flashcard' + (flip ? ' flipped' : '')} onClick={() => setFlip((f) => !f)}>
-        {flip ? <span className="card-back">{card.back}</span> : <span className="card-front">{card.front}</span>}
-        <span className="card-hint">{flip ? 'Toca para ver el título' : 'Toca para ver la respuesta'}</span>
-      </button>
-      <TwoButtons onAnswer={onAnswer} no="Repasar otra vez" yes="Me la sé" />
-    </>
-  )
+  return <SwipeCard front={card.front} back={card.back} onAnswer={onAnswer} />
 }
 
 function VerseStep({ verse, onAnswer }) {
