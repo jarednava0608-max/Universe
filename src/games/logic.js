@@ -315,3 +315,6 @@ export function dailyMix({ cards = [], verses = [], trivia = [] }, srs, isDueFn,
   }
   return out
 }
+
+// Una sola pregunta de libros (para el reto contra reloj).
+export const bookSprintQuestion = (rnd = Math.random) => buildBookQuestions(1, rnd)[0]

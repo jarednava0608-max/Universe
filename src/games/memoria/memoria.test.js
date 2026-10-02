@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { CHARACTERS, WORLDS } from './characters.js'
-import { unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, inWorld, KEY } from './logic.js'
+import { unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, inWorld, KEY, sprintQuestion, stars } from './logic.js'
 import { parseRef } from '../../lib/bible.js'
 import { mulberry } from '../logic.js'
 
@@ -51,5 +51,22 @@ describe('Memoria Bíblica', () => {
     expect(run).toHaveLength(5)
     expect(new Set(run.map((c) => c.w)).size).toBe(5)
     expect(run.map((c) => c.order)).toEqual([...run.map((c) => c.order)].sort((a, b) => a - b))
+  })
+})
+
+describe('reto contra reloj y estrellas', () => {
+  it('las preguntas del reto solo usan mundos abiertos y tienen la respuesta entre las opciones', () => {
+    const rnd = mulberry(7)
+    for (let i = 0; i < 200; i++) {
+      const q = sprintQuestion([1, 2], rnd)
+      const ch = CHARACTERS.find((c) => KEY(c) === q.key)
+      expect([1, 2]).toContain(ch.w)
+      expect(q.options).toHaveLength(4)
+      expect(new Set(q.options).size).toBe(4)
+      expect([ch.n, ch.t]).toContain(q.options[q.answer])
+    }
+  })
+  it('estrellas por porcentaje', () => {
+    expect([0, 69, 70, 84, 85, 99, 100].map(stars)).toEqual([0, 0, 1, 1, 2, 2, 3])
   })
 })

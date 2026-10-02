@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
-import { GameScreen, Quiz, ModeCard, OrderPuzzle, Confetti } from './ui.jsx'
+import { useMemo, useRef, useState } from 'react'
+import { GameScreen, Quiz, ModeCard, OrderPuzzle, Result, Sprint, cheer, fmtTime } from './ui.jsx'
 import { CHARACTERS, WORLDS } from './memoria/characters.js'
-import { KEY, PASS, inWorld, knownIn, unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue } from './memoria/logic.js'
+import { KEY, PASS, inWorld, knownIn, unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, sprintQuestion, stars } from './memoria/logic.js'
 import { review, withBest } from './progress.js'
 import RefLink from '../components/RefLink.jsx'
 import Sheet from '../components/Sheet.jsx'
@@ -19,11 +19,11 @@ export default function MemoriaBiblica({ store, onExit }) {
 
   // Guarda cada respuesta en el repaso inteligente y el resultado del mundo.
   const answer = (ch, ok) => store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [KEY(ch)]: review(f.srs?.[KEY(ch)], ok) } }))
-  const finish = (world, pct) => world && store.updateProgress((f) => withBest(f, 'mb-w' + world, pct))
+  const finish = (world, pct, mode) => world && store.updateProgress((f) => withBest(withBest(f, 'mb-w' + world, pct), `mb-w${world}-${mode}`, pct))
 
   if (screen.name === 'world') {
     const w = WORLDS.find((x) => x.id === screen.world)
-    return <World world={w} srs={srs} best={best[`mb-w${w.id}`] ?? 0} next={WORLDS[w.id]} onBack={toMap} onMode={(mode) => go(mode, { world: w.id, back: 'world' })} />
+    return <World world={w} srs={srs} best={best[`mb-w${w.id}`] ?? 0} bests={best} next={WORLDS[w.id]} onBack={toMap} onMode={(mode) => go(mode, { world: w.id, back: 'world' })} />
   }
   if (screen.name === 'who' || screen.name === 'daily') {
     const chars = screen.name === 'daily' ? due.slice(0, 15) : inWorld(screen.world)
@@ -35,15 +35,29 @@ export default function MemoriaBiblica({ store, onExit }) {
         daily={screen.name === 'daily'}
         srs={srs}
         onAnswer={answer}
-        onFinish={(pct) => finish(screen.world, pct)}
+        onFinish={(pct) => finish(screen.world, pct, 'who')}
+        best={screen.world ? best[`mb-w${screen.world}-who`] : undefined}
         onBack={back}
       />
     )
   }
   if (screen.name === 'what' || screen.name === 'where') {
-    return <ChoiceMode kind={screen.name} world={screen.world} srs={srs} onAnswer={answer} onFinish={(pct) => finish(screen.world, pct)} onBack={() => go('world', { world: screen.world })} />
+    return <ChoiceMode kind={screen.name} world={screen.world} srs={srs} best={best[`mb-w${screen.world}-${screen.name}`] ?? 0} onAnswer={answer} onFinish={(pct) => finish(screen.world, pct, screen.name)} onBack={() => go('world', { world: screen.world })} />
   }
-  if (screen.name === 'timeline') return <Timeline open={open} onBack={toMap} />
+  if (screen.name === 'timeline') return <Timeline open={open} best={best['mb-linea'] ?? 0} onRecord={(n) => store.updateProgress((f) => withBest(f, 'mb-linea', n))} onBack={toMap} />
+  if (screen.name === 'sprint') {
+    return (
+      <GameScreen title="Reto de 60 segundos" onExit={toMap}>
+        <Sprint
+          make={() => sprintQuestion(open)}
+          best={best['mb-reto'] ?? 0}
+          intro={`Personajes de ${open.length === 1 ? 'tu primer mundo' : `tus ${open.length} mundos abiertos`}: ¿quién hizo esto?, ¿quién fue?`}
+          onFinish={(n) => store.updateProgress((f) => withBest(f, 'mb-reto', n))}
+          onExit={toMap}
+        />
+      </GameScreen>
+    )
+  }
   if (screen.name === 'people') return <People world={screen.world} srs={srs} onBack={() => go('world', { world: screen.world })} />
 
   const known = CHARACTERS.filter((c) => (srs[KEY(c)]?.box ?? 0) >= 1).length
@@ -55,7 +69,8 @@ export default function MemoriaBiblica({ store, onExit }) {
       </div>
       <div className="mode-list">
         <ModeCard title="Repaso de hoy" badge={due.length ? `${due.length}` : null} desc={due.length ? 'Los personajes que fallaste o que ya toca repasar.' : 'Al día. Juega un mundo y aquí aparecerá lo que toque repasar.'} onClick={() => due.length && go('daily')} />
-        <ModeCard title="Línea del tiempo" desc="Ordena personajes de distintas épocas." onClick={() => go('timeline')} />
+        <ModeCard title="Reto de 60 segundos" badge={best['mb-reto'] ? `Récord ${best['mb-reto']}` : null} desc="Todas las que puedas contra reloj, con los personajes de tus mundos abiertos." onClick={() => go('sprint')} />
+        <ModeCard title="Línea del tiempo" badge={best['mb-linea'] ? `${best['mb-linea']} seguidas` : null} desc="Ordena personajes de distintas épocas." onClick={() => go('timeline')} />
       </div>
       <p className="section-label mb-section">Mundos</p>
       <ol className="mb-path">
@@ -72,13 +87,30 @@ export default function MemoriaBiblica({ store, onExit }) {
                   <span className="mb-wname">{w.name}</span>
                   <span className="entry-sub">{locked ? `Saca ${PASS} % en el mundo ${w.id - 1} para abrirlo` : `${k}/${total} personajes · ${w.books}`}</span>
                 </span>
-                {!locked && b > 0 && <span className="mb-best">{b} %</span>}
+                {!locked && b > 0 && (
+                  <span className="mb-best">
+                    <Stars n={stars(b)} />
+                    {b} %
+                  </span>
+                )}
               </button>
             </li>
           )
         })}
       </ol>
     </GameScreen>
+  )
+}
+
+function Stars({ n }) {
+  return (
+    <span className="stars" aria-label={`${n} de 3 estrellas`}>
+      {[0, 1, 2].map((i) => (
+        <svg key={i} viewBox="0 0 24 24" width="12" height="12" className={i < n ? 'on' : ''} aria-hidden="true">
+          <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z" />
+        </svg>
+      ))}
+    </span>
   )
 }
 
@@ -90,24 +122,38 @@ function LockIcon() {
   )
 }
 
-function World({ world, srs, best, next, onBack, onMode }) {
+function World({ world, srs, best, bests, next, onBack, onMode }) {
   const total = inWorld(world.id).length
+  const known = knownIn(world.id, srs)
+  const mode = (m) => bests[`mb-w${world.id}-${m}`] ? `Mejor ${bests[`mb-w${world.id}-${m}`]} %` : null
   return (
     <GameScreen title={world.name} onExit={onBack}>
-      <p className="hint">{world.books} · {knownIn(world.id, srs)}/{total} personajes conocidos{best ? ` · mejor: ${best} %` : ''}</p>
+      <div className="mb-world-hero">
+        <span className="mb-num big">{world.id}</span>
+        <div className="entry-main">
+          <span className="entry-sub">{world.books}</span>
+          <span className="mb-world-stats">{known} de {total} conocidos</span>
+          <div className="mb-bar"><span style={{ width: `${(known / total) * 100}%` }} /></div>
+        </div>
+        <span className="mb-best">
+          <Stars n={stars(best)} />
+          {best > 0 && `${best} %`}
+        </span>
+      </div>
       {next && best < PASS && <p className="mb-goal">Saca {PASS} % o más en cualquier modo para abrir «{next.name}».</p>}
       <div className="mode-list">
-        <ModeCard title="¿Quién soy?" desc="Lee las pistas y adivina el personaje. Con menos pistas, más puntos." onClick={() => onMode('who')} />
-        <ModeCard title="¿Qué hizo?" desc="Ves el nombre y eliges quién fue." onClick={() => onMode('what')} />
-        <ModeCard title="¿Dónde está?" desc="Elige en qué parte de la Biblia está su historia." onClick={() => onMode('where')} />
-        <ModeCard title="Personajes" desc="Las fichas de todos los personajes de este mundo." onClick={() => onMode('people')} />
+        <ModeCard title="¿Quién soy?" badge={mode('who')} desc="Lee las pistas y adivina el personaje. Con menos pistas, más puntos." onClick={() => onMode('who')} />
+        <ModeCard title="¿Qué hizo?" badge={mode('what')} desc="Ves el nombre y eliges quién fue." onClick={() => onMode('what')} />
+        <ModeCard title="¿Dónde está?" badge={mode('where')} desc="Elige en qué parte de la Biblia está su historia." onClick={() => onMode('where')} />
+        <ModeCard title="Personajes" badge={`${known}/${total}`} desc="Las fichas de todos los personajes de este mundo." onClick={() => onMode('people')} />
       </div>
     </GameScreen>
   )
 }
 
 // ¿Quién soy?: hasta 3 pistas; 3 puntos con una pista, 2 con dos, 1 con tres.
-function WhoAmI({ title, chars, daily, srs, onAnswer, onFinish, onBack }) {
+function WhoAmI({ title, chars, daily, srs, best: bestNow, onAnswer, onFinish, onBack }) {
+  const [best, setBest] = useState(bestNow) // el récord de antes de esta ronda
   const [nonce, setNonce] = useState(0)
   // En el repaso diario las opciones salen de todos los personajes (vienen de mundos distintos).
   const round = useMemo(() => whoRound(chars, daily ? {} : srs, Math.random, daily ? CHARACTERS : undefined), [nonce]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -118,9 +164,16 @@ function WhoAmI({ title, chars, daily, srs, onAnswer, onFinish, onBack }) {
   const [earned, setEarned] = useState(0)
   const [right, setRight] = useState(0)
   const [missed, setMissed] = useState([])
+  const [run, setRun] = useState(0)
+  const [maxRun, setMaxRun] = useState(0)
+  const started = useRef(Date.now())
   const q = round[i]
 
   function again() {
+    setBest(bestNow)
+    started.current = Date.now()
+    setRun(0)
+    setMaxRun(0)
     setNonce((n) => n + 1)
     setI(0)
     setShown(1)
@@ -142,12 +195,14 @@ function WhoAmI({ title, chars, daily, srs, onAnswer, onFinish, onBack }) {
     const pct = Math.round((right / round.length) * 100)
     return (
       <GameScreen title={title} onExit={onBack}>
-        <div className="result-card">
-          {pct >= PASS && <Confetti />}
-          <p className="result-big">{points}<span> pts</span></p>
-          <p className="result-msg">{right} de {round.length} correctas ({pct} %). {pct === 100 ? '¡Perfecto!' : pct >= PASS ? '¡Muy bien!' : 'Sigue practicando.'}</p>
-          <button className="primary" onClick={again}>Jugar otra vez</button>
-          <button className="secondary" onClick={onBack}>Salir</button>
+        <Result
+          pct={pct}
+          msg={`${right} de ${round.length} correctas · ${points} ${points === 1 ? 'punto' : 'puntos'}. ${cheer(pct)}`}
+          record={best != null && pct > best && pct > 0}
+          stats={[['Tiempo', fmtTime(Math.round((Date.now() - started.current) / 1000))], ['Mejor racha', maxRun], ...(best != null ? [['Tu mejor', Math.max(best, pct) + ' %']] : [])]}
+          onAgain={again}
+          onDone={onBack}
+        >
           {missed.length > 0 && (
             <div className="missed">
               <p className="missed-title">Para repasar</p>
@@ -159,7 +214,7 @@ function WhoAmI({ title, chars, daily, srs, onAnswer, onFinish, onBack }) {
               ))}
             </div>
           )}
-        </div>
+        </Result>
       </GameScreen>
     )
   }
@@ -174,7 +229,12 @@ function WhoAmI({ title, chars, daily, srs, onAnswer, onFinish, onBack }) {
       setRight((r) => r + 1)
       setEarned(4 - shown)
       setPoints((p) => p + (4 - shown))
-    } else setMissed((m) => [...m, q.ch])
+      setRun((r) => r + 1)
+      setMaxRun((m) => Math.max(m, run + 1))
+    } else {
+      setMissed((m) => [...m, q.ch])
+      setRun(0)
+    }
     onAnswer(q.ch, ok)
   }
   function next() {
@@ -190,6 +250,7 @@ function WhoAmI({ title, chars, daily, srs, onAnswer, onFinish, onBack }) {
         <div className="progress"><span style={{ width: `${(i / round.length) * 100}%` }} /></div>
         <div className="quiz-meta">
           <span className="quiz-count">{i + 1} de {round.length}</span>
+          {run >= 2 && <span className="quiz-run" key={run}>{run} seguidas</span>}
           <span className="quiz-points">{points} pts</span>
         </div>
         <div className="mb-clues" key={i}>
@@ -219,7 +280,7 @@ function WhoAmI({ title, chars, daily, srs, onAnswer, onFinish, onBack }) {
 }
 
 // ¿Qué hizo? y ¿Dónde está?: preguntas de opción múltiple con el Quiz común.
-function ChoiceMode({ kind, world, srs, onAnswer, onFinish, onBack }) {
+function ChoiceMode({ kind, world, srs, best, onAnswer, onFinish, onBack }) {
   const build = () => (kind === 'what' ? whatRound : whereRound)(inWorld(world), srs)
   const [round, setRound] = useState(build)
   const [nonce, setNonce] = useState(0)
@@ -229,6 +290,7 @@ function ChoiceMode({ kind, world, srs, onAnswer, onFinish, onBack }) {
       <Quiz
         key={nonce}
         questions={round}
+        best={best}
         onDone={onBack}
         onAgain={() => { setRound(build()); setNonce((n) => n + 1) }}
         onAnswer={(q, ok) => onAnswer(byKey.get(q.key), ok)}
@@ -238,24 +300,41 @@ function ChoiceMode({ kind, world, srs, onAnswer, onFinish, onBack }) {
   )
 }
 
-function Timeline({ open, onBack }) {
+function Timeline({ open, best, onRecord, onBack }) {
   const [run, setRun] = useState(() => timelineRound(open))
   const [errors, setErrors] = useState(null)
+  const [perfect, setPerfect] = useState(0) // rondas perfectas seguidas
+  const [record, setRecord] = useState(false)
   const again = () => { setRun(timelineRound(open)); setErrors(null) }
   const worldName = (w) => WORLDS.find((x) => x.id === w).name
+  function done(e) {
+    setErrors(e)
+    const n = e === 0 ? perfect + 1 : 0
+    setPerfect(n)
+    setRecord(n > best)
+    if (n > best) onRecord(n)
+  }
   return (
     <GameScreen title="Línea del tiempo" onExit={onBack}>
-      <OrderPuzzle key={run.map((c) => c.id).join()} pieces={run.map((c) => c.n)} onDone={setErrors} hint="Toca los personajes del más antiguo al más reciente." />
+      <div className="quiz-meta tl-meta">
+        <span className="quiz-count">Del más antiguo al más reciente</span>
+        {perfect >= 1 && <span className="quiz-run" key={perfect}>{perfect} {perfect === 1 ? 'perfecta' : 'perfectas seguidas'}</span>}
+      </div>
+      <OrderPuzzle key={run.map((c) => c.id).join()} pieces={run.map((c) => c.n)} onDone={done} hint="Toca los personajes en el orden en que vivieron." />
       {errors != null && (
-        <div className="result-card compact">
-          {errors === 0 && <Confetti />}
-          <p className="result-msg">{errors === 0 ? '¡Perfecto, sin errores!' : `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.`}</p>
-          <ol className="mb-order">
-            {run.map((c) => <li key={c.id}><b>{c.n}</b> <span>· {worldName(c.w)}</span></li>)}
-          </ol>
-          <button className="primary" onClick={again}>Otra ronda</button>
-          <button className="secondary" onClick={onBack}>Salir</button>
-        </div>
+        <Result
+          compact
+          msg={errors === 0 ? '¡Perfecto, sin errores!' : `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.`}
+          record={record}
+          onAgain={again}
+          againLabel="Otra ronda"
+          onDone={onBack}
+          body={
+            <ol className="mb-order">
+              {run.map((c) => <li key={c.id}><b>{c.n}</b> <span>· {worldName(c.w)} · </span><RefLink refText={c.c} /></li>)}
+            </ol>
+          }
+        />
       )}
     </GameScreen>
   )
@@ -263,25 +342,48 @@ function Timeline({ open, onBack }) {
 
 function People({ world, srs, onBack }) {
   const [open, setOpen] = useState(null)
-  const chars = inWorld(world)
+  const [q, setQ] = useState('')
+  const [only, setOnly] = useState('all')
+  const fold = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const isKnown = (c) => (srs[KEY(c)]?.box ?? 0) >= 1
+  const chars = inWorld(world).filter((c) => (!q.trim() || fold(c.n + ' ' + c.t).includes(fold(q.trim()))) && (only === 'all' || (only === 'known') === isKnown(c)))
+  const idx = open ? chars.findIndex((c) => c.id === open.id) : -1
   return (
     <GameScreen title="Personajes" onExit={onBack}>
+      <input className="input mb-search" type="search" placeholder="Buscar personaje" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="seg-modes small">
+        {[['all', 'Todos'], ['known', 'Conocidos'], ['new', 'Por aprender']].map(([k, l]) => (
+          <button key={k} className={only === k ? 'on' : ''} onClick={() => setOnly(k)}>{l}</button>
+        ))}
+      </div>
+      {!chars.length && <p className="hint center">No hay personajes aquí.</p>}
       <ul className="entry-list">
         {chars.map((c) => (
           <li key={c.id}>
             <button className="entry-row" onClick={() => setOpen(c)}>
+              <span className={'mb-dot' + (isKnown(c) ? ' on' : '')} />
               <span className="entry-main">
                 <span className="entry-title">{c.n}</span>
                 <span className="entry-sub">{c.t}</span>
               </span>
-              {(srs[KEY(c)]?.box ?? 0) >= 1 && <span className="due-tag">Conocido</span>}
             </button>
           </li>
         ))}
       </ul>
       {open && (
-        <Sheet title={open.n} className="mb-card" onClose={() => setOpen(null)}>
+        <Sheet
+          title={open.n}
+          className="mb-card"
+          onClose={() => setOpen(null)}
+          footer={chars.length > 1 && idx >= 0 && (
+            <div className="two-btn">
+              <button className="secondary" disabled={idx === 0} onClick={() => setOpen(chars[idx - 1])}>Anterior</button>
+              <button className="secondary" disabled={idx === chars.length - 1} onClick={() => setOpen(chars[idx + 1])}>Siguiente</button>
+            </div>
+          )}
+        >
           <p className="mb-card-t">{open.t}</p>
+          <p className={'mb-status' + (isKnown(open) ? ' on' : '')}>{isKnown(open) ? 'Ya lo conoces' : 'Aún por aprender'}</p>
           {open.p.map((x, k) => <p key={k} className="mb-clue">«{x}»</p>)}
           <p className="mb-clue last">{open.d}</p>
           <p className="ref"><RefLink refText={open.c} /></p>
@@ -290,4 +392,3 @@ function People({ world, srs, onBack }) {
     </GameScreen>
   )
 }
-

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { newId } from '../lib/model.js'
 import { parseTrivia, shuffle, triviaToQuestion, TRIVIA_FORMAT } from './logic.js'
-import { GameScreen, Quiz, PasteJson, Empty, ModeCard } from './ui.jsx'
-import { byPriority, dueCount, review, withBest } from './progress.js'
+import { GameScreen, Quiz, PasteJson, Empty, ModeCard, Survival } from './ui.jsx'
+import { byPriority, dueCount, isDue, review, withBest } from './progress.js'
 
 const SECONDS = 15
 
@@ -11,6 +11,7 @@ export default function Trivia({ store, toast, onExit }) {
   const bank = useMemo(() => store.entries.filter((e) => e.kind === 'trivia'), [store.entries])
   const [round, setRound] = useState(null)
   const [timed, setTimed] = useState(false)
+  const [survival, setSurvival] = useState(false)
   const [nonce, setNonce] = useState(0)
   const [paste, setPaste] = useState(false)
   const [list, setList] = useState(false)
@@ -21,12 +22,30 @@ export default function Trivia({ store, toast, onExit }) {
 
   // Repaso inteligente: primero las preguntas que fallaste o que ya toca repasar.
   function start(withTimer = timed) {
+    setSurvival(false)
     setTimed(withTimer)
     setNonce((x) => x + 1)
     const byKey = new Map(bank.map((e) => ['q:' + e.id, e]))
     const pick = byPriority(keys, srs).slice(0, 10)
     setRound(shuffle(pick).map((k) => ({ ...triviaToQuestion(byKey.get(k).fields), key: k })))
   }
+  // Sin fallar: todas las preguntas revueltas hasta el primer error.
+  function startSurvival() {
+    setSurvival(true)
+    setNonce((x) => x + 1)
+    setRound(shuffle(bank).map((e) => ({ ...triviaToQuestion(e.fields), key: 'q:' + e.id })))
+  }
+  // Solo las que fallaste o que toca repasar hoy.
+  function startDue() {
+    setSurvival(false)
+    setTimed(false)
+    setNonce((x) => x + 1)
+    const byKey = new Map(bank.map((e) => ['q:' + e.id, e]))
+    const pick = byPriority(keys, srs).filter((k) => isDue(srs[k]) && srs[k]).slice(0, 10)
+    setRound(shuffle(pick).map((k) => ({ ...triviaToQuestion(byKey.get(k).fields), key: k })))
+  }
+  const failed = keys.filter((k) => srs[k] && isDue(srs[k])).length
+  const bestRun = store.progress.best?.['trivia-racha'] ?? 0
   const onAnswer = (q, ok) => store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [q.key]: review(f.srs?.[q.key], ok) } }))
   const onFinish = (score, total, points) => {
     const pct = Math.round((score / total) * 100)
@@ -40,15 +59,27 @@ export default function Trivia({ store, toast, onExit }) {
 
   return (
     <GameScreen title="Trivia" onExit={round ? () => setRound(null) : onExit}>
-      {round ? (
-        <Quiz key={nonce} questions={round} seconds={timed ? SECONDS : 0} best={bestTimed} onDone={() => setRound(null)} onAgain={() => start()} onAnswer={onAnswer} onFinish={onFinish} />
+      {round && survival ? (
+        <Survival
+          key={nonce}
+          questions={round}
+          best={bestRun}
+          onAnswer={onAnswer}
+          onFinish={(n) => store.updateProgress((f) => withBest(f, 'trivia-racha', n))}
+          onAgain={startSurvival}
+          onDone={() => setRound(null)}
+        />
+      ) : round ? (
+        <Quiz key={nonce} questions={round} seconds={timed ? SECONDS : 0} best={timed ? bestTimed : store.progress.triviaBest ?? 0} onDone={() => setRound(null)} onAgain={() => start()} onAnswer={onAnswer} onFinish={onFinish} />
       ) : bank.length ? (
         <div className="game-home">
           <p className="game-stat"><b>{bank.length}</b> {bank.length === 1 ? 'pregunta guardada' : 'preguntas guardadas'}</p>
           <p className="game-sub">{due ? `${due} para repasar hoy` : 'Al día con el repaso'}{store.progress.triviaBest ? ` · Mejor ronda: ${store.progress.triviaBest}%` : ''}</p>
           <div className="mode-list">
             <ModeCard title="Normal" desc={`${n} preguntas a tu ritmo. Primero las que fallaste.`} badge={due ? `${due} hoy` : null} onClick={() => start(false)} />
-            <ModeCard title="Contra reloj" desc={`${SECONDS} segundos por pregunta. Más rápido, más puntos.${bestTimed ? ` Récord: ${bestTimed} pts` : ''}`} onClick={() => start(true)} />
+            <ModeCard title="Contra reloj" badge={bestTimed ? `Récord ${bestTimed}` : null} desc={`${SECONDS} segundos por pregunta. Más rápido, más puntos.`} onClick={() => start(true)} />
+            {bank.length >= 3 && <ModeCard title="Sin fallar" badge={bestRun ? `Récord ${bestRun}` : null} desc="Todas tus preguntas revueltas. ¿Hasta dónde llegas sin un error?" onClick={startSurvival} />}
+            {failed > 0 && <ModeCard title="Solo las que fallé" badge={`${failed}`} desc="Las preguntas que fallaste o que ya toca repasar." onClick={startDue} />}
           </div>
           <button className="secondary" onClick={() => setPaste(true)}>Agregar preguntas de Claude</button>
           <button className="secondary" onClick={() => setList(true)}>Ver mis preguntas</button>

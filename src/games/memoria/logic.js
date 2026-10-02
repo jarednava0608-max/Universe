@@ -81,3 +81,16 @@ export function timelineRound(openWorlds, rnd = Math.random) {
 export function dailyDue(srs = {}, today) {
   return CHARACTERS.filter((c) => srs[KEY(c)] && isDue(srs[KEY(c)], today))
 }
+
+// Reto contra reloj: una pregunta rápida al azar con los personajes de los mundos abiertos
+// (qué hizo → quién es, o nombre → quién fue).
+export function sprintQuestion(openWorlds, rnd = Math.random) {
+  const pool = CHARACTERS.filter((c) => openWorlds.includes(c.w))
+  const chars = pool.length >= 4 ? pool : CHARACTERS
+  const c = chars[Math.floor(rnd() * chars.length)]
+  if (rnd() < 0.5) return { key: KEY(c), prompt: c.d, ...options(c, chars, (x) => x.n, rnd) }
+  return { key: KEY(c), prompt: `¿Quién fue ${c.n}?`, ...options(c, chars, (x) => x.t, rnd) }
+}
+
+// Estrellas de un mundo según el mejor resultado: 70 % = 1, 85 % = 2, 100 % = 3.
+export const stars = (pct = 0) => (pct >= 100 ? 3 : pct >= 85 ? 2 : pct >= PASS ? 1 : 0)
