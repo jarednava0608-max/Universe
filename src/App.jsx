@@ -16,6 +16,9 @@ import TabBar from './components/TabBar.jsx'
 import Icon, { ICONS } from './components/Icon.jsx'
 import StudyTab from './study/StudyTab.jsx'
 import GamesTab from './games/GamesTab.jsx'
+import RefSheet from './components/RefSheet.jsx'
+import { OPEN_REF } from './lib/verses.js'
+import { parseRef } from './lib/bible.js'
 
 export default function App() {
   const store = useStore()
@@ -38,6 +41,27 @@ export default function App() {
     setToastMsg(msg)
     clearTimeout(toast.t)
     toast.t = setTimeout(() => setToastMsg(''), 2600)
+  }, [])
+
+  // Tocar una cita bíblica en cualquier parte abre la hoja con el texto (en vez de salir a wol.jw.org).
+  const [refOpen, setRefOpen] = useState(null)
+  useEffect(() => {
+    const onOpen = (e) => setRefOpen(e.detail)
+    const onClick = (e) => {
+      const a = e.target.closest?.('a[href^="https://wol.jw.org/es/wol/b/"]')
+      if (!a || a.dataset.direct) return
+      const ref = a.textContent.trim()
+      if (!parseRef(ref)) return
+      e.preventDefault()
+      e.stopPropagation()
+      setRefOpen(ref)
+    }
+    window.addEventListener(OPEN_REF, onOpen)
+    document.addEventListener('click', onClick, true)
+    return () => {
+      window.removeEventListener(OPEN_REF, onOpen)
+      document.removeEventListener('click', onClick, true)
+    }
   }, [])
 
   useEffect(() => {
@@ -284,6 +308,8 @@ export default function App() {
           onDelete={deleteFromEditor}
         />
       )}
+
+      {refOpen && <RefSheet key={refOpen} refText={refOpen} entries={store.entries} onSave={store.saveEntry} onClose={() => setRefOpen(null)} toast={toast} />}
 
       {toastMsg && <div className="toast">{toastMsg}</div>}
     </div>

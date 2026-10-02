@@ -46,7 +46,8 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`; `notes: true` usa 
 
 ## Textos bíblicos tocables
 - `src/lib/bible.js`: reconoce citas en español ("Juan 17:3", "1 Juan 4:8", "Sal. 83:18", solo el capítulo como "Jeremías 38", abreviaturas de la TNM) y arma el enlace directo a la Biblia en wol.jw.org (`/es/wol/b/r4/lp-s/nwtsty/{libro}/{capítulo}`); si no reconoce el libro, una búsqueda en wol. Sin servicios externos.
-- Se vuelven tocables en las notas del mapa (sin tocar los `[[enlaces]]`), en el editor de Estudio (fila "Textos bíblicos"), en Trivia y en Memorizar.
+- Se vuelven tocables en las notas del mapa (sin tocar los `[[enlaces]]`), en el editor de Estudio (fila "Textos bíblicos"), en Notas (dentro del texto), en Trivia y en Memorizar.
+- **Mi Biblia** (`src/lib/verses.js`, `src/components/RefSheet.jsx`): tocar cualquier cita abre una hoja dentro de la app (App escucha los clics en enlaces de wol y el evento `openRef`). Muestra el texto si ya está guardado (entradas `kind: 'biblia'` `{ cita, texto }`, o los textos de Memorizar y del Texto diario; las citas se comparan con `refKey`, así "Sal. 83:18" = "Salmo 83:18"); si no, se pega una vez y se guarda. Botones "Abrir en JW Library" (`jwLibraryUrl`, enlace jw.org/finder que abre la app si está instalada) y "Abrir en wol.jw.org" (llevan `data-direct` para no volver a abrir la hoja). **No se incluye la TNM completa**: su texto es de Watch Tower y las condiciones de jw.org no permiten descargarlo ni volver a publicarlo; solo se guarda lo que el usuario pega.
 
 ## Guardado
 - Local primero: IndexedDB (`src/lib/db.js`, stores `nodes`, `edges`, `entries`, `meta`) con `navigator.storage.persist()`. Funciona sin conexión.
@@ -67,7 +68,7 @@ Cuatro apartados, definidos en `src/study/kinds.js` (`KINDS`; `notes: true` usa 
 ```js
 Node  = { id, title, note /* markdown */, type, origin, sources, createdAt, updatedAt }
 Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
-Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'trivia'|'memoria'|'progreso', fields: { ... }, mapNodeId?, createdAt, updatedAt }
+Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'trivia'|'memoria'|'progreso' | 'biblia', fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
 - Los títulos de nodos son únicos (sin distinguir mayúsculas ni acentos).
 

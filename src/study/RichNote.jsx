@@ -10,7 +10,7 @@ import { TextStyle, Color } from '@tiptap/extension-text-style'
 import { Placeholder } from '@tiptap/extensions'
 import { NodeLink, BibleRefs } from './noteExtensions.js'
 import NodePicker from '../components/NodePicker.jsx'
-import { refUrl } from '../lib/bible.js'
+import { openRef } from '../lib/verses.js'
 
 // Colores que se leen bien en negro y en blanco.
 export const TEXT_COLORS = [['#ef4444', 'Rojo'], ['#f59e0b', 'Naranja'], ['#22c55e', 'Verde'], ['#3b82f6', 'Azul'], ['#a855f7', 'Morado']]
@@ -98,7 +98,7 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
           if (!t || view.hasFocus()) return false
           e.preventDefault()
           if (t.dataset.node) openNodeRef.current?.(t.dataset.node)
-          else window.open(refUrl(t.dataset.ref), '_blank', 'noopener')
+          else openRef(t.dataset.ref)
           return true
         },
       },

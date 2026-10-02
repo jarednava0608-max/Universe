@@ -787,3 +787,15 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .rich a.wl { color: var(--text); font-weight: 500; text-decoration: underline; text-decoration-color: rgba(var(--link-rgb), 0.6); text-underline-offset: 3px; cursor: pointer; }
 .rich a.wl.ProseMirror-selectednode { background: rgba(var(--link-rgb), 0.15); border-radius: 4px; }
 .rich .ref-deco { color: var(--link); cursor: pointer; }
+
+/* Hoja de una cita bíblica ("Mi Biblia") */
+.ref-sheet-backdrop { z-index: 45; }
+.ref-sheet { max-height: 85vh; overflow-y: auto; }
+.ref-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.ref-sheet-title { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.ref-sheet-text p { margin: 0; font-family: var(--font-display); font-size: 19px; line-height: 1.6; color: var(--text-body); white-space: pre-line; }
+.ref-sheet-source { display: block; margin-top: 8px; font-size: 12.5px; color: var(--text-3); }
+.ref-sheet-input { margin: 4px 0 8px; resize: vertical; line-height: 1.5; }
+.ref-sheet-links { display: grid; gap: 8px; margin-top: 16px; }
+.ref-sheet-links .primary, .ref-sheet-links .secondary { margin-top: 0; }
+.as-btn { display: grid; place-items: center; text-decoration: none; }
