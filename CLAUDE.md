@@ -75,7 +75,7 @@ Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'triv
 - Los títulos de nodos son únicos (sin distinguir mayúsculas ni acentos).
 
 ## Paquetes para el mapa
-- `src/lib/seeds.js` (`SEEDS`): nodos que el usuario pidió agregar (p. ej. "Jeremías 38 y 39" con sus personajes y lecciones). `App.jsx` los aplica una sola vez por teléfono con `planImport` (marca `seed:<id>` en meta): si el nodo ya existe solo se añade lo que falta, y si el usuario los borra no vuelven.
+- `src/lib/seeds.js` (`SEEDS`): cambios que el usuario pidió en su mapa, aplicados en orden una sola vez por teléfono (`App.jsx` + `planSeed`, marca `seed:<id>` en meta). Cada paquete puede **agregar** nodos (`data.nodes`, como "Pegar conocimiento": si ya existe solo se añade lo que falta), **reemplazar** una nota (`replace`, solo si el usuario no la editó; si la editó, la nueva va abajo) y **borrar** un nodo (`remove`, solo si no lo editó). Hoy: "Jeremías" es su biografía (según Perspicacia) y lo estudiado está en un nodo por capítulo ("Jeremías 38", "Jeremías 39"), conectados con Sedequías, Ebed-melec y las lecciones (Integridad, Valor, Gratitud, Carácter, Exilio y los 70 años). Para meter más estudio al mapa: agregar un paquete nuevo al final (nunca cambiar uno ya aplicado). Las definiciones usan fechas y datos de las publicaciones, sin emojis.
 
 ## Formato de "Pegar conocimiento" (mapa)
 `{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`. Si un nodo ya existe se le añade la información. Un respaldo (`app: "universe"`) puede restaurarse reemplazando todo. Siempre hay vista previa y confirmación.

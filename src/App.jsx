@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from './lib/store.js'
 import { useSync } from './lib/useSync.js'
 import { useTheme } from './lib/theme.js'
-import { getMeta, requestPersistence, setMeta } from './lib/db.js'
+import { getMeta, loadAll, requestPersistence, setMeta } from './lib/db.js'
 import { buildExport, planImport } from './lib/importer.js'
 import { makeNode } from './lib/model.js'
 import Graph from './components/Graph.jsx'
@@ -18,7 +18,7 @@ import StudyTab from './study/StudyTab.jsx'
 import GamesTab from './games/GamesTab.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import { OPEN_REF } from './lib/verses.js'
-import { SEEDS } from './lib/seeds.js'
+import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
 
@@ -76,11 +76,14 @@ export default function App() {
       for (const seed of SEEDS) {
         if (await getMeta('seed:' + seed.id)) continue
         try {
-          const plan = planImport(seed.data, { nodes: store.nodes, edges: store.edges })
-          if (plan.newNodes.length || plan.updatedNodes.length) await store.applyImport(plan)
+          // Se lee lo guardado en ese momento (el paquete anterior pudo haber cambiado nodos).
+          const { nodes: now, edges: nowEdges } = await loadAll()
+          const { put, del } = planSeed(seed, now, nowEdges)
+          if (put.length) await store.applyImport({ newNodes: put.map((n) => ({ ...n, updatedAt: Date.now() })), updatedNodes: [], newEdges: [] })
+          for (const id of del) await store.deleteNode(id)
           await setMeta('seed:' + seed.id, Date.now())
         } catch (e) {
-          console.warn('No se pudo agregar', seed.id, e)
+          console.warn('No se pudo aplicar', seed.id, e)
         }
       }
     })()
