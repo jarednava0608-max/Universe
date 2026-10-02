@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { initials, chunkText, buildCiteQuestions, buildBookQuestions, bookRun, sectionOf, timedPoints, dailyMix, mulberry } from './logic.js'
-import { achievements, mergeProgress, withBest, isDue } from './progress.js'
+import { achievements, mergeProgress, withBest, withBestTime, isDue } from './progress.js'
 import { BOOKS } from '../lib/bible.js'
 
 const verse = (id, cita, texto = 'Texto de prueba suficientemente largo') => ({ id, kind: 'memoria', fields: { cita, texto } })
@@ -80,5 +80,22 @@ describe('Escribir (primera letra)', () => {
   it('compara sin acentos ni mayúsculas', () => {
     expect(foldLetter('Á')).toBe('a')
     expect(foldLetter('ñ')).toBe('n')
+  })
+})
+
+describe('récords de tiempo', () => {
+  it('se queda con el más rápido, también al unir dispositivos', () => {
+    let f = withBestTime({}, 'parejas-tiempo', 40)
+    f = withBestTime(f, 'parejas-tiempo', 55)
+    expect(f.best['parejas-tiempo']).toBe(40)
+    f = withBestTime(f, 'parejas-tiempo', 31)
+    expect(f.best['parejas-tiempo']).toBe(31)
+    expect(mergeProgress({ best: { 'parejas-tiempo': 31, libros: 50 } }, { best: { 'parejas-tiempo': 25, libros: 80 } }).best).toEqual({ 'parejas-tiempo': 25, libros: 80 })
+    expect(mergeProgress({ best: { 'parejas-tiempo': 31 } }, { best: {} }).best).toEqual({ 'parejas-tiempo': 31 })
+  })
+  it('logros nuevos de Memoria Bíblica y retos', () => {
+    const srs = Object.fromEntries(Array.from({ length: 64 }, (_, i) => ['mb:' + i, { box: 1, due: '2099-01-01' }]))
+    const done = achievements({ srs, best: { 'mb-w2': 100, 'mb-reto': 15, 'trivia-racha': 10, 'mb-linea': 5 } }).filter((a) => a.done).map((a) => a.id)
+    expect(done).toEqual(['mb-estrellas', 'mb-personajes', 'reto-15', 'sin-fallar-10', 'linea-5'])
   })
 })

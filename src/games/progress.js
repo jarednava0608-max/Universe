@@ -91,6 +91,14 @@ export function nextDue(keys, srs) {
   return dates[0] ?? null
 }
 
+const isTime = (k) => k.endsWith('-tiempo')
+
+// Récord de tiempo: se guarda solo si es más rápido que el anterior.
+export function withBestTime(fields, key, secs) {
+  const prev = fields.best?.[key]
+  return prev == null || secs < prev ? { ...fields, best: { ...(fields.best ?? {}), [key]: secs } } : fields
+}
+
 // Une el progreso de dos dispositivos: todos los días de estudio, el repaso más reciente de cada cosa y el mejor récord.
 export function mergeProgress(a = {}, b = {}) {
   const days = [...new Set([...(a.days ?? []), ...(b.days ?? [])])].sort().slice(-400)
@@ -99,7 +107,8 @@ export function mergeProgress(a = {}, b = {}) {
     if (!srs[k] || (v?.due ?? '') > (srs[k]?.due ?? '')) srs[k] = v
   }
   const best = { ...(b.best ?? {}) }
-  for (const [k, v] of Object.entries(a.best ?? {})) best[k] = Math.max(v ?? 0, best[k] ?? 0)
+  // Los récords de tiempo (terminan en "-tiempo") se quedan con el menor; los demás con el mayor.
+  for (const [k, v] of Object.entries(a.best ?? {})) best[k] = isTime(k) ? Math.min(v ?? Infinity, best[k] ?? Infinity) : Math.max(v ?? 0, best[k] ?? 0)
   return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0) }
 }
 
@@ -113,6 +122,7 @@ export function withBest(fields, key, value) {
 export function achievements({ days = [], srs = {}, triviaBest = 0, best = {} } = {}, { nodes = 0, memorized = 0 } = {}) {
   const { best: bestStreak } = streak(days)
   const mastered = Object.values(srs).filter((s) => (s?.box ?? 0) >= 4).length
+  const characters = Object.entries(srs).filter(([k, s]) => k.startsWith('mb:') && (s?.box ?? 0) >= 1).length
   const list = [
     ['racha-3', 'Constante', '3 días seguidos estudiando', bestStreak >= 3],
     ['racha-7', 'Una semana', '7 días seguidos estudiando', bestStreak >= 7],
@@ -126,6 +136,12 @@ export function achievements({ days = [], srs = {}, triviaBest = 0, best = {} } 
     ['reloj-1500', 'Rápido y certero', '1500 puntos contra reloj', (best['trivia-reloj'] ?? 0) >= 1500],
     ['libros-100', 'Conozco los libros', '100 % en Libros de la Biblia', (best.libros ?? 0) >= 100],
     ['dominado-25', 'Bien sembrado', '25 cosas dominadas en el repaso', mastered >= 25],
+    ['mb-estrellas', 'Tres estrellas', '100 % en un mundo de Memoria Bíblica', Object.keys(best).some((k) => /^mb-w\d+$/.test(k) && best[k] >= 100)],
+    ['mb-personajes', 'Medio camino', '64 personajes conocidos', characters >= 64],
+    ['mb-mundos', 'De Génesis a Hechos', 'Abriste los 8 mundos', (best['mb-w7'] ?? 0) >= 70],
+    ['reto-15', 'Contra el reloj', '15 aciertos en un reto de 60 segundos', Math.max(best['mb-reto'] ?? 0, best['libros-reto'] ?? 0) >= 15],
+    ['sin-fallar-10', 'Sin un error', '10 seguidas en Trivia Sin fallar', (best['trivia-racha'] ?? 0) >= 10],
+    ['linea-5', 'Historiador', '5 líneas del tiempo perfectas seguidas', (best['mb-linea'] ?? 0) >= 5],
   ]
   return list.map(([id, title, desc, done]) => ({ id, title, desc, done }))
 }

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { buildCards, buildCiteQuestions, buildGuessQuestions, buildPairs, verseSources } from './logic.js'
 import { GameScreen, Quiz, Empty, ModeCard, Result, SwipeCard, fmtTime } from './ui.jsx'
-import { byPriority, dueCount, isDue, nextDue, review, withBest } from './progress.js'
+import { byPriority, dueCount, isDue, nextDue, review, withBest, withBestTime } from './progress.js'
 import { formatDate } from '../study/kinds.js'
 
 // Juegos que usan los nodos del mapa y las notas de Estudio.
@@ -12,7 +12,7 @@ export default function StudyGames({ store, onExit }) {
   const best = store.progress.best ?? {}
   const save = (k) => (v) => store.updateProgress((f) => withBest(f, k, v))
   if (mode === 'guess') return <Guess nodes={store.nodes} best={best['que-es'] ?? 0} onBest={save('que-es')} onExit={exit} />
-  if (mode === 'pairs') return <Pairs nodes={store.nodes} best={best.parejas} onBest={(secs) => store.updateProgress((f) => ({ ...f, best: { ...(f.best ?? {}), parejas: Math.min(f.best?.parejas ?? Infinity, secs) } }))} onExit={exit} />
+  if (mode === 'pairs') return <Pairs nodes={store.nodes} best={best['parejas-tiempo']} onBest={(secs) => store.updateProgress((f) => withBestTime(f, 'parejas-tiempo', secs))} onExit={exit} />
   if (mode === 'cards') return <Cards store={store} onExit={exit} />
   if (mode === 'cite') return <Cite entries={store.entries} best={best['donde-cita'] ?? 0} onBest={save('donde-cita')} onExit={exit} />
   const cardsDue = dueCount(buildCards(store.nodes, store.entries).map((c) => 'c:' + c.id), store.progress.srs ?? {})
@@ -22,7 +22,7 @@ export default function StudyGames({ store, onExit }) {
       <p className="hint">Juegos hechos con tus nodos del mapa y tu texto diario. Entre más estudias, más preguntas hay.</p>
       <div className="mode-list">
         <ModeCard title="¿Qué es?" badge={best['que-es'] ? `Mejor ${best['que-es']} %` : null} desc="Lee una definición y elige qué nodo es." onClick={() => setMode('guess')} />
-        <ModeCard title="Parejas" badge={best.parejas ? `Récord ${fmtTime(best.parejas)}` : null} desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
+        <ModeCard title="Parejas" badge={best['parejas-tiempo'] ? `Récord ${fmtTime(best['parejas-tiempo'])}` : null} desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
         <ModeCard title="Tarjetas" badge={cardsDue ? `${cardsDue} hoy` : null} desc="Repasa: ve el título y recuerda lo que significa." onClick={() => setMode('cards')} />
         <ModeCard title="¿Dónde está?" badge={best['donde-cita'] ? `Mejor ${best['donde-cita']} %` : null} desc="Lee un texto bíblico y elige su cita." onClick={() => setMode('cite')} />
       </div>
