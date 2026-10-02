@@ -8,14 +8,14 @@ import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
 import NodePeek from '../components/NodePeek.jsx'
-import { definitionText, markdownToHtml } from '../lib/markdown.js'
-import { docToText, docToMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
+import { definitionText, markdownToHtml, unwrapCallouts } from '../lib/markdown.js'
+import { docToText, docToMarkdown, docToNodeMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
 import { findSavedVerse, findAllRefs, anyRefKey } from '../lib/verses.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
 // Pestaña Estudio: 4 apartados, cada uno con su lista de entradas.
-export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, toast }) {
+export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
@@ -77,7 +77,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
                   const def = firstSentence(definitionText(n.note))
                   return (
                     <li key={n.id}>
-                      <button className="entry-row" onClick={() => setPeekNode(n)}>
+                      <button className="entry-row" onClick={() => setPeekNode(n.id)}>
                         <span className={'node-dot' + (n.id === ROOT_ID ? ' root' : '')} />
                         <span className="entry-main">
                           <span className="entry-title">{n.title}</span>
@@ -120,7 +120,17 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         </PageScroll>
       )}
 
-      {peekNode && <NodePeek node={peekNode} nodes={nodes} onOpenMap={(n) => { setPeekNode(null); onOpenNode(n.id) }} onClose={() => setPeekNode(null)} />}
+      {peekNode && nodes.some((n) => n.id === peekNode) && (
+        <NodeNote
+          key={peekNode}
+          node={nodes.find((n) => n.id === peekNode)}
+          nodes={nodes}
+          toast={toast}
+          onSave={onSaveNode}
+          onClose={() => setPeekNode(null)}
+          onOpenMap={(id) => { setPeekNode(null); onOpenNode(id) }}
+        />
+      )}
 
       {editing && KINDS[editing.entry.kind].notes && (
         <NoteEditor
@@ -171,6 +181,91 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           onOpenNode={onOpenNode}
         />
       )}
+    </div>
+  )
+}
+
+// Un nodo del mapa abierto como nota: se lee y se edita con el mismo editor de Notas.
+// Se guarda solo (título y definición en Markdown, con sus [[enlaces]] y subtítulos) y solo si lo cambiaste.
+function NodeNote({ node, nodes, toast, onSave, onClose, onOpenMap }) {
+  const isRoot = node.id === ROOT_ID
+  const [title, setTitle] = useState(node.title)
+  const [initialHtml] = useState(() => markdownToHtml(unwrapCallouts(node.note || '')))
+  const [version, setVersion] = useState(0)
+  const [slot, setSlot] = useState(null)
+  const [editing, setEditing] = useState(false)
+  const [peek, setPeek] = useState(null)
+  const box = useVisibleBox()
+  const editor = useRef()
+  const dirty = useRef(false)
+  const saved = useRef({ title: node.title, note: node.note || '' })
+  const titleRef = useRef(title)
+  titleRef.current = title
+
+  async function flush() {
+    if (!dirty.current && titleRef.current === saved.current.title) return true
+    const t = titleRef.current.trim()
+    if (!t) return toast('Escribe un título.'), false
+    const clash = nodes.find((n) => n.id !== node.id && normKey(n.title) === normKey(t))
+    if (clash) return toast(`Ya existe un nodo llamado «${clash.title}».`), false
+    const note = dirty.current && editor.current ? docToNodeMarkdown(editor.current.getJSON()) : saved.current.note
+    if (t === saved.current.title && note === saved.current.note) return true
+    saved.current = { title: t, note }
+    dirty.current = false
+    await onSave({ ...node, title: t, note })
+    return true
+  }
+
+  useEffect(() => {
+    if (!editing) return
+    const tm = setTimeout(() => editor.current?.commands.scrollIntoView(), 60)
+    return () => clearTimeout(tm)
+  }, [box.height, editing])
+  useEffect(() => {
+    const tm = setTimeout(flush, 900)
+    return () => clearTimeout(tm)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, version])
+  useEffect(() => {
+    const onHide = () => document.visibilityState === 'hidden' && flush()
+    document.addEventListener('visibilitychange', onHide)
+    return () => document.removeEventListener('visibilitychange', onHide)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function close() {
+    if (await flush()) onClose()
+  }
+  function openByTitle(t) {
+    const n = nodes.find((x) => normKey(x.title) === normKey(t))
+    if (!n) return toast(`«${t}» todavía no está en tu mapa.`)
+    setPeek(n)
+  }
+
+  return (
+    <div className={'overlay note-editor' + (editing ? ' editing' : '')} style={box.style}>
+      <header className="bar">
+        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Estudio</button>
+        <span className="bar-spacer" />
+        <button className="bar-btn" onClick={async () => { if (await flush()) onOpenMap(node.id) }}>Ver en el mapa</button>
+      </header>
+      <div className="editor-body">
+        <p className="note-date">Nodo del mapa</p>
+        <input
+          className="title-input"
+          value={title}
+          placeholder="Título"
+          readOnly={isRoot}
+          enterKeyHint="next"
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); editor.current?.commands.focus('start') } }}
+        />
+        <Suspense fallback={<div className="rich-loading" />}>
+          <RichNote html={initialHtml} onChange={() => { dirty.current = true; setVersion((v) => v + 1) }} editorRef={editor} nodes={nodes} onOpenNode={openByTitle} toolbarSlot={slot} onEditing={setEditing} />
+        </Suspense>
+      </div>
+      <div className="toolbar-slot" ref={setSlot} />
+      {peek && <NodePeek node={peek} nodes={nodes} onOpenMap={async (n) => { setPeek(null); if (await flush()) onOpenMap(n.id) }} onClose={() => setPeek(null)} />}
     </div>
   )
 }

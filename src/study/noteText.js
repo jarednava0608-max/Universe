@@ -224,6 +224,15 @@ export function docToMarkdown(json) {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
+// Nota → Markdown para guardar la definición de un nodo del mapa: un renglón en blanco
+// entre bloques (párrafos, listas, subtítulos), como se escriben las notas del mapa.
+export function docToNodeMarkdown(json) {
+  return (json?.content ?? [])
+    .map((b) => docToMarkdown({ content: [b] }))
+    .filter((x) => x.trim())
+    .join('\n\n')
+}
+
 export function claudeTidyPrompt(titulo, markdown) {
   return `Ordena y limpia esta nota de mi estudio bíblico. No cambies su sentido ni agregues información nueva:
 - corrige ortografía y puntuación;

@@ -269,6 +269,7 @@ export default function App() {
           onDeleteEntry={store.deleteEntry}
           onProposeToMap={proposeToMap}
           onOpenNode={openNodeFromStudy}
+          onSaveNode={store.saveNode}
           toast={toast}
         />
       )}
