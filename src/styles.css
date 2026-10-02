@@ -981,3 +981,5 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .medal-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
 .medal-bar i { display: block; height: 100%; background: var(--text-3); border-radius: 2px; }
 .medal-progress small { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.tab-icon { position: relative; display: grid; }
+.tab-dot { position: absolute; top: -1px; right: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); border: 2px solid var(--bg); box-sizing: content-box; }

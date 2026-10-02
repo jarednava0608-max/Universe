@@ -13,6 +13,7 @@ import PasteSheet from './components/PasteSheet.jsx'
 import Menu from './components/Menu.jsx'
 import AccountSheet from './components/AccountSheet.jsx'
 import TabBar from './components/TabBar.jsx'
+import { dailyDone } from './games/daily.js'
 import Icon, { ICONS } from './components/Icon.jsx'
 import StudyTab from './study/StudyTab.jsx'
 import GamesTab from './games/GamesTab.jsx'
@@ -279,7 +280,7 @@ export default function App() {
         </div>
       )}
 
-      <TabBar tab={tab} onChange={setTab} />
+      <TabBar tab={tab} onChange={setTab} dots={{ juegos: store.ready && !dailyDone(store.progress) }} />
 
       {store.error && <p className="banner">{store.error}</p>}
 
