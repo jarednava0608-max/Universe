@@ -21,7 +21,8 @@ Tiene **3 pestañas abajo**: **Mapa**, **Estudio** y **Juegos**.
 - Los bloques antiguos `> [!jw]` / `> [!yo]` se muestran como texto normal y se limpian al editar (`unwrapCallouts`).
 - **Nota estilo Obsidian, como hoja de iOS con dos alturas** (como Apple Maps): solo título y texto, sin botones ni pastillas. Abre a la mitad (el mapa centra el nodo arriba); arrastrar hacia arriba la muestra completa (ahí el texto hace scroll); arrastrar hacia abajo pasa de completa a la mitad y de la mitad la cierra; tocar fuera también cierra. Deslizar a la derecha vuelve a la nota anterior. Editar = lápiz pequeño arriba a la derecha. Los `[[enlaces]]` se abren con un toque.
 - **Grafo**: líneas RECTAS (nunca curvas), zoom y arrastre con los dedos. Nodos gris neutro; Jehová (`id: "jehova"`) fijo en el centro, el ÚNICO dorado (`#f5d27a`, halo suave), no se puede borrar.
-- Buscar: al tocar la barra sin escribir salen los nodos editados hace poco ("Recientes").
+- Buscar: al tocar la barra sin escribir salen los nodos editados hace poco ("Recientes"). Orden: título exacto, el que empieza con lo escrito, el que tiene todas las palabras.
+- Los nombres de los nodos no se enciman: si uno choca con otro ya dibujado, se oculta hasta acercar el zoom (Jehová y el nodo abierto siempre se ven; `labelBox` en `Graph.jsx`).
 - Menú (☰): nuevo nodo, pegar conocimiento, cuenta y nube, exportar / importar respaldo.
 
 ## 2) Pestaña Estudio

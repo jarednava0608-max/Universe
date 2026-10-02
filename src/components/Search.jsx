@@ -22,10 +22,13 @@ export default function Search({ nodes, onPick, onMenu }) {
     for (const it of index) {
       if (!words.every((w) => it.title.includes(w) || it.textKey.includes(w))) continue
       const inTitle = words.every((w) => it.title.includes(w))
-      const score = (it.title === words.join(' ') ? 0 : it.title.startsWith(words[0]) ? 1 : inTitle ? 2 : 3)
-      out.push({ ...it, score, snippet: snippet(it.text, it.textKey, words) })
+      // Primero el título exacto, luego el que empieza con lo escrito, luego el que tiene todas las palabras.
+      const qk = words.join(' ')
+      const score = it.title === qk ? 0 : it.title.startsWith(qk) ? 1 : inTitle ? 2 : it.title.startsWith(words[0]) ? 3 : 4
+      const inTitleCount = words.filter((w) => it.title.includes(w)).length
+      out.push({ ...it, score, inTitleCount, snippet: snippet(it.text, it.textKey, words) })
     }
-    return out.sort((a, b) => a.score - b.score || a.node.title.localeCompare(b.node.title, 'es')).slice(0, 50)
+    return out.sort((a, b) => a.score - b.score || b.inTitleCount - a.inTitleCount || a.node.title.localeCompare(b.node.title, 'es')).slice(0, 50)
   }, [index, q])
 
   // Sin escribir nada: los nodos que editaste hace poco, para llegar rápido.

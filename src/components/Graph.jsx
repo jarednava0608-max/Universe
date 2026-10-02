@@ -25,6 +25,16 @@ function readPalette() {
   }
 }
 
+// Lugar que ocupa el nombre de un nodo (deja el tipo de letra listo en ctx).
+function labelBox(ctx, n, scale, focused) {
+  const fs = (n.isRoot ? 13 : 11) / scale
+  ctx.font = `${n.isRoot ? 600 : 500} ${fs}px ${FONT}`
+  const label = n.title.length > 32 ? n.title.slice(0, 31) + '…' : n.title
+  const w = ctx.measureText(label).width
+  const y = n.y + n.r + (focused ? 9 : 4) / scale
+  return { label, x1: n.x - w / 2 - 2 / scale, x2: n.x + w / 2 + 2 / scale, y1: y, y2: y + fs * 1.2 }
+}
+
 // Vista de grafo: canvas con zoom/arrastre táctil y líneas rectas.
 const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTap, onBackgroundTap }, ref) {
   const pal = useMemo(readPalette, [theme])
@@ -33,6 +43,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
   const cache = useRef(new Map()) // conserva posiciones entre renders
   const didFit = useRef(false)
+  const labelBoxes = useRef([]) // nombres ya dibujados en este cuadro (para no encimarlos)
 
   useEffect(() => {
     const el = wrap.current
@@ -106,7 +117,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
 
   useImperativeHandle(ref, () => ({
     fit() {
-      fg.current?.zoomToFit(600, 70)
+      fg.current?.zoomToFit(600, 90)
     },
     focus(id, zoom = 2.2) {
       const n = cache.current.get(id)
@@ -192,13 +203,18 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
 
           const showLabel = n.isRoot || focused || neighbors.has(n.id) || scale >= 0.9
           if (showLabel) {
-            const fs = (n.isRoot ? 13 : 11) / scale
-            ctx.font = `${n.isRoot ? 600 : 500} ${fs}px ${FONT}`
             ctx.textAlign = 'center'
             ctx.textBaseline = 'top'
-            ctx.fillStyle = n.isRoot ? pal.rootLabel : focused ? pal.focus : pal.label
-            const label = n.title.length > 32 ? n.title.slice(0, 31) + '…' : n.title
-            ctx.fillText(label, n.x, n.y + r + (focused ? 9 : 4) / scale)
+            const box = labelBox(ctx, n, scale, focused)
+            // Si el nombre se encima con otro, no se dibuja (al acercar el zoom aparece).
+            // Jehová y el nodo abierto siempre se ven (su lugar se apartó antes de dibujar).
+            const must = n.isRoot || focused
+            const hit = labelBoxes.current.some((b) => box.x1 < b.x2 && box.x2 > b.x1 && box.y1 < b.y2 && box.y2 > b.y1)
+            if (must || !hit) {
+              if (!must) labelBoxes.current.push(box)
+              ctx.fillStyle = n.isRoot ? pal.rootLabel : focused ? pal.focus : pal.label
+              ctx.fillText(box.label, n.x, box.y1)
+            }
           }
           ctx.globalAlpha = 1
         }}
@@ -209,12 +225,20 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTa
           ctx.arc(n.x, n.y, Math.max(n.r + 4, 16 / scale), 0, 2 * Math.PI)
           ctx.fill()
         }}
+        onRenderFramePre={(ctx, scale) => {
+          // Primero se apartan los lugares de Jehová y del nodo abierto (siempre se ven).
+          labelBoxes.current = []
+          for (const n of data.nodes) {
+            if (!(n.isRoot || n.id === focusId) || !Number.isFinite(n.x)) continue
+            labelBoxes.current.push(labelBox(ctx, n, scale, n.id === focusId))
+          }
+        }}
         onNodeClick={(n) => onNodeTap(n.id)}
         onBackgroundClick={onBackgroundTap}
         onEngineStop={() => {
           if (didFit.current || !fg.current) return
           didFit.current = true
-          if (data.nodes.length > 1) fg.current.zoomToFit(400, 70)
+          if (data.nodes.length > 1) fg.current.zoomToFit(400, 90)
           else {
             fg.current.centerAt(0, 0, 0)
             fg.current.zoom(1.8, 0)
