@@ -19,7 +19,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
-  // Nota borrada deslizando, con "Deshacer".
+  // Entrada borrada deslizando, con "Deshacer".
   const undoDel = useUndoDelete((e) => onDeleteEntry(e.id), (e) => onSaveEntry(e))
 
   const byKind = useMemo(() => {
@@ -68,9 +68,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           {KINDS[section].notes && byKind[section].length > 0 && (
             <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
           )}
-          {undoDel.pending?.kind === section && <UndoBar text="Nota eliminada" onUndo={undoDel.undo} />}
+          {undoDel.pending?.kind === section && <UndoBar text={KINDS[section].notes ? 'Nota eliminada' : 'Entrada eliminada'} onUndo={undoDel.undo} />}
           {byKind[section].length ? (
-            <EntryList items={KINDS[section].notes ? filterNotes(byKind[section], query) : byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={KINDS[section].notes ? undoDel.remove : undefined} />
+            <EntryList items={KINDS[section].notes ? filterNotes(byKind[section], query) : byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={undoDel.remove} />
           ) : (
             <div className="empty-state">
               <span className={'empty-icon kind-icon k-' + section}><Icon d={KINDS[section].icon} size={26} /></span>
