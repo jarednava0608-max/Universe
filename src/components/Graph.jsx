@@ -37,7 +37,13 @@ function labelBox(ctx, n, scale, focused) {
 
 // Vista de grafo: canvas con zoom/arrastre táctil y líneas rectas.
 const Graph = forwardRef(function Graph({ nodes, edges, focusId, theme, onNodeTap, onBackgroundTap }, ref) {
-  const pal = useMemo(readPalette, [theme])
+  // Los colores se leen después de que el tema ya se aplicó en <html> (si se leen al dibujar,
+  // todavía están los del tema anterior y los nombres quedan casi invisibles).
+  const [pal, setPal] = useState(readPalette)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setPal(readPalette()))
+    return () => cancelAnimationFrame(id)
+  }, [theme])
   const fg = useRef()
   const wrap = useRef()
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
