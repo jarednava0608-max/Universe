@@ -35,3 +35,16 @@ describe('citas bíblicas', () => {
     expect(linkRefsMarkdown('Ver Juan 17:3.')).toBe(`Ver [Juan 17:3](${refUrl('Juan 17:3')}).`)
   })
 })
+
+describe('Notas con formato', async () => {
+  const { markdownToHtml } = await import('./markdown.js')
+  it('convierte listas de tareas y tablas de Markdown', () => {
+    const html = markdownToHtml('## Plan\n- [ ] Leer\n- [x] Orar\n\n| Libro | Cap |\n|---|---|\n| Juan | 17 |')
+    expect(html).toContain('<h2>Plan</h2>')
+    expect(html).toContain('<ul data-type="taskList">')
+    expect(html).toContain('<li data-type="taskItem" data-checked="false">Leer')
+    expect(html).toContain('<li data-type="taskItem" data-checked="true">Orar')
+    expect(html).toContain('<table>')
+    expect(markdownToHtml('')).toBe('')
+  })
+})

@@ -93,7 +93,7 @@ export const KINDS = {
     notes: true,
     fields: [
       { key: 'titulo', label: 'Título', type: 'line' },
-      { key: 'texto', label: 'Nota', type: 'text' },
+      { key: 'texto', label: 'Nota', type: 'text', hint: 'Puedes usar Markdown: ## subtítulos, **negritas**, listas, - [ ] tareas y tablas' },
     ],
     title: (e) => e.fields.titulo || firstLine(e.fields.texto) || 'Nota nueva',
     subtitle: (e) => [noteDate(e.updatedAt), firstLine(e.fields.titulo ? e.fields.texto : lines(e.fields.texto).slice(1).join(' ')) || ''].filter(Boolean).join('  '),

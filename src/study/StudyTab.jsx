@@ -1,10 +1,13 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
 import { RefChips } from '../components/RefLink.jsx'
+import { markdownToHtml } from '../lib/markdown.js'
+// El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
+const RichNote = lazy(() => import('./RichNote.jsx'))
 
 // Pestaña Estudio: 4 apartados, cada uno con su lista de entradas.
 export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, toast }) {
@@ -153,23 +156,26 @@ function filterNotes(list, query) {
 // y al salir. Una nota que se queda vacía se borra.
 function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onPropose, onOpenNode }) {
   const [titulo, setTitulo] = useState(entry.fields.titulo ?? '')
-  const [texto, setTexto] = useState(() => noteBody(entry.fields))
+  // El contenido con formato vive en `html`; `texto` es la versión en texto simple (buscar, mapa, citas).
+  const [initialHtml] = useState(() => entry.fields.html || markdownToHtml(noteBody(entry.fields)))
+  const [content, setContent] = useState(() => ({ html: initialHtml, texto: noteBody(entry.fields) }))
+  const texto = content.texto
   const [menu, setMenu] = useState(false)
   const [paste, setPaste] = useState(false)
   const [proposal, setProposal] = useState(null)
-  const body = useRef()
-  const saved = useRef({ titulo: entry.fields.titulo ?? '', texto: noteBody(entry.fields), exists: !isNew })
-  const latest = useRef({ titulo, texto })
-  latest.current = { titulo, texto }
+  const editor = useRef()
+  const saved = useRef({ titulo: entry.fields.titulo ?? '', html: initialHtml, exists: !isNew })
+  const latest = useRef({ titulo, ...content })
+  latest.current = { titulo, ...content }
 
-  const draft = () => ({ ...entry, fields: { ...entry.fields, titulo: latest.current.titulo, texto: latest.current.texto, preguntas: '' } })
-  const empty = () => !latest.current.titulo.trim() && !latest.current.texto.trim()
+  const draft = () => ({ ...entry, fields: { ...entry.fields, titulo: latest.current.titulo, texto: latest.current.texto, html: latest.current.html, preguntas: '' } })
+  const empty = () => !latest.current.titulo.trim() && !latest.current.texto.trim() && !/<(table|hr)/.test(latest.current.html)
 
   async function flush() {
     const cur = latest.current
-    if (cur.titulo === saved.current.titulo && cur.texto === saved.current.texto) return
+    if (cur.titulo === saved.current.titulo && cur.html === saved.current.html) return
     if (empty()) return
-    saved.current = { ...cur, exists: true }
+    saved.current = { titulo: cur.titulo, html: cur.html, exists: true }
     await onSave(draft())
   }
 
@@ -178,7 +184,7 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
     const t = setTimeout(flush, 800)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [titulo, texto])
+  }, [titulo, content])
 
   // Si la app se va a segundo plano, se guarda de inmediato.
   useEffect(() => {
@@ -219,9 +225,11 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
           autoFocus={isNew}
           enterKeyHint="next"
           onChange={(e) => setTitulo(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); body.current?.focus() } }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); editor.current?.commands.focus('start') } }}
         />
-        <NoteBody inputRef={body} value={texto} onChange={setTexto} />
+        <Suspense fallback={<div className="rich-loading" />}>
+          <RichNote html={initialHtml} onChange={setContent} editorRef={editor} />
+        </Suspense>
         {refs.length > 0 && (
           <div className="note-refs">
             <RefChips refs={refs} />
@@ -266,7 +274,10 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
           onApply={(data) => {
             const f = fieldsFromJson(entry.kind, data, { titulo, texto })
             setTitulo(f.titulo ?? '')
-            setTexto(f.texto ?? '')
+            if (f.texto !== texto && editor.current) {
+              editor.current.commands.setContent(markdownToHtml(f.texto))
+              setContent({ html: editor.current.getHTML(), texto: editor.current.getText({ blockSeparator: '\n' }) })
+            }
             setPaste(false)
             toast('Nota llenada.')
           }}
@@ -278,15 +289,6 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
       )}
     </div>
   )
-}
-
-function NoteBody({ value, onChange, inputRef }) {
-  useLayoutEffect(() => {
-    const ta = inputRef.current
-    ta.style.height = 'auto'
-    ta.style.height = ta.scrollHeight + 2 + 'px'
-  }, [value, inputRef])
-  return <textarea ref={inputRef} className="body-input" value={value} placeholder="Escribe tu nota…" onChange={(e) => onChange(e.target.value)} />
 }
 
 function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, onPropose, onOpenNode }) {

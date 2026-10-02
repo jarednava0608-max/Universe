@@ -82,3 +82,14 @@ export function renameLinks(text, oldTitle, newTitle) {
     return label ? `[[${newTitle}|${label}]]` : `[[${newTitle}]]`
   })
 }
+
+// Markdown (o texto simple) → HTML para el editor de Notas. Las listas "- [ ]" se vuelven
+// listas de tareas. El editor descarta lo que no reconoce, así que no hace falta limpiar más.
+export function markdownToHtml(text) {
+  const src = String(text ?? '').trim()
+  if (!src) return ''
+  return marked
+    .parse(src, { breaks: true, gfm: true })
+    .replace(/<li><input (checked="" )?disabled="" type="checkbox">\s?/g, (_, c) => `<li data-type="taskItem" data-checked="${c ? 'true' : 'false'}">`)
+    .replace(/<ul>\s*(?=<li data-type="taskItem")/g, '<ul data-type="taskList">')
+}

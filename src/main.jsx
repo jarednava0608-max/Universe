@@ -15,3 +15,6 @@ createRoot(document.getElementById('root')).render(
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'))
 }
+
+// Precarga el editor de Notas (así también queda guardado para usarlo sin conexión).
+window.addEventListener('load', () => setTimeout(() => import('./study/RichNote.jsx'), 2500))
