@@ -96,6 +96,7 @@ function Practice({ verse, store, onSaved, onBack }) {
   const [shown, setShown] = useState(() => new Set())
   const [peek, setPeek] = useState(false)
   const [ordered, setOrdered] = useState(null) // errores al terminar de ordenar
+  const [note, setNote] = useState(null) // aviso de nivel después de "Lo sé" / "Repasar"
   const words = useMemo(() => clozeWords(verse.fields.texto, nivel, seed), [verse.fields.texto, nivel, seed])
   const pieces = useMemo(() => chunkText(verse.fields.texto), [verse.fields.texto])
   const hiddenLeft = words.filter((w, i) => w.hidden && !shown.has(i)).length
@@ -110,6 +111,7 @@ function Practice({ verse, store, onSaved, onBack }) {
   async function next(knewIt) {
     const { stored, lvl } = await saveVerseResult(store, verse, knewIt, nivel)
     if (verse.fromDaily) onSaved(stored)
+    setNote({ k: Date.now(), up: lvl > nivel, text: lvl > nivel ? `Subiste a ${LEVELS[lvl]}` : lvl < nivel ? `Bajó a ${LEVELS[lvl]}` : knewIt ? '¡Ya lo sabes de memoria!' : 'Otra vez, con calma' })
     setNivel(lvl)
     reset()
   }
@@ -126,9 +128,11 @@ function Practice({ verse, store, onSaved, onBack }) {
     <GameScreen title={verse.fields.cita || 'Texto'} back="Textos" onExit={onBack}>
       <div className="seg-modes">
         {MODES.map(([m, l]) => (
-          <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); reset() }}>{l}</button>
+          <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); setNote(null); reset() }}>{l}</button>
         ))}
       </div>
+
+      {note && <p key={note.k} className={'level-note' + (note.up ? ' up' : '')}>{note.text}</p>}
 
       {mode === 'hide' && (
         <>

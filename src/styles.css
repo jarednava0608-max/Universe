@@ -970,3 +970,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .daily-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line-strong); }
 .daily-dots i.on { background: var(--ok); border-color: transparent; }
 .daily-card .entry-sub { white-space: normal; }
+.level-note { justify-self: center; align-self: center; margin: -4px 0 12px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); animation: pop 0.4s var(--ease); }
+.level-note.up { color: var(--ok); background: rgba(134, 239, 172, 0.1); border-color: rgba(134, 239, 172, 0.25); }
+/* En los juegos los avisos van arriba, debajo de la barra, para no tapar los botones. */
+body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
