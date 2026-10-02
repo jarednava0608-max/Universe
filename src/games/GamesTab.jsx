@@ -5,6 +5,7 @@ import { buildCards, verseSources } from './logic.js'
 import { achievements, dueCount, lastWeek, streak } from './progress.js'
 import Review from './Review.jsx'
 import Sheet from '../components/Sheet.jsx'
+import PageScroll from '../components/PageScroll.jsx'
 
 // Pestaña Juegos: menú armado desde registry.js.
 export default function GamesTab({ store, toast }) {
@@ -15,22 +16,26 @@ export default function GamesTab({ store, toast }) {
 
   return (
     <div className="page">
-      <div className="page-scroll">
+      <PageScroll title="Juegos">
         <h1 className="page-title">Juegos</h1>
         <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
         <div className="game-list">
-          {GAMES.map((g) => (
-            <button key={g.id} className="game-card" onClick={() => setOpen(g.id)}>
-              <span className={'game-icon g-' + g.id}><Icon d={g.icon} size={22} /></span>
-              <span className="entry-main">
-                <span className="game-title">{g.title}{g.soon && <em className="soon-tag">Pronto</em>}</span>
-                <span className="entry-sub">{g.desc}</span>
-              </span>
-              <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-            </button>
-          ))}
+          {GAMES.map((g) => {
+            const st = g.stat?.(store)
+            return (
+              <button key={g.id} className="game-card" onClick={() => setOpen(g.id)}>
+                <span className={'game-icon g-' + g.id}><Icon d={g.icon} size={22} /></span>
+                <span className="entry-main">
+                  <span className="game-title">{g.title}{g.soon && <em className="soon-tag">Pronto</em>}</span>
+                  <span className="entry-sub">{g.desc}</span>
+                </span>
+                {st && <span className={'game-pill' + (st.due ? ' due' : '')}>{st.text}</span>}
+                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+              </button>
+            )
+          })}
         </div>
-      </div>
+      </PageScroll>
       {game && <game.Component store={store} toast={toast} onExit={() => setOpen(null)} />}
       {reviewing && <Review store={store} onExit={() => setReviewing(false)} />}
       {medals && <Medals store={store} onClose={() => setMedals(false)} />}

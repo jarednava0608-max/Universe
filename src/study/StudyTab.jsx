@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import PageScroll from '../components/PageScroll.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
@@ -29,7 +30,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   return (
     <div className="page">
       {!section ? (
-        <div className="page-scroll">
+        <PageScroll title="Estudio">
           <h1 className="page-title">Estudio</h1>
           <div className="kind-grid">
             {KIND_ORDER.map((k) => (
@@ -48,9 +49,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               <EntryList items={recent} showKind onOpen={(e) => setEditing({ entry: e, isNew: false })} />
             </>
           )}
-        </div>
+        </PageScroll>
       ) : (
-        <div className="page-scroll">
+        <PageScroll key={section} title={KINDS[section].label}>
           <button className="back-link" onClick={() => { setSection(null); setQuery('') }}>
             <Icon d={ICONS.back} size={18} stroke={2} /> Estudio
           </button>
@@ -71,7 +72,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               <button className="primary" onClick={() => setEditing({ entry: makeEntry(section), isNew: true })}>Nueva entrada</button>
             </div>
           )}
-        </div>
+        </PageScroll>
       )}
 
       {editing && KINDS[editing.entry.kind].notes && (
