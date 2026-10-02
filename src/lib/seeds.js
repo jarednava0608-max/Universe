@@ -1,8 +1,8 @@
 // Paquetes que el usuario pidió agregar o cambiar en su mapa. Cada uno se aplica una sola vez por
 // teléfono (marca `seed:<id>` en meta), en orden:
 // - data.nodes: se agregan; si el nodo ya existe solo se le añade la información (como "Pegar conocimiento").
-// - replace: [{ title, note, ifNote }] cambia la nota solo si sigue igual a ifNote (el usuario no la editó);
-//   si la editó, la nueva se agrega abajo sin borrar nada.
+// - replace: [{ title, note, ifNote, keepIfEdited }] cambia la nota solo si sigue igual a ifNote (el usuario
+//   no la editó); si la editó, la nueva se agrega abajo sin borrar nada (o se deja igual con keepIfEdited).
 // - remove: [{ title, ifNote }] borra el nodo solo si su nota sigue igual a ifNote.
 import { planImport } from './importer.js'
 import { makeNode, normKey } from './model.js'
@@ -130,13 +130,26 @@ Aha: Jeremías no tenía nada con qué pagarle a quien lo sacó del pozo, pero J
 ## El exilio
 Comienzan los 70 años de desolación. Daniel ya estaba en Babilonia desde antes y Ezequiel profetizaba allá: la misma historia vista desde distintos lugares. Ver [[Exilio y los 70 años]].`
 
+// El paquete 2 ya no se aplica en teléfonos nuevos: el usuario pidió quitarlo porque no quiere en su
+// mapa cosas que no haya leído. Se guarda solo para reconocerlo y deshacerlo (paquete 3).
+export const SEED_BIO = {
+  id: 'jeremias-biografia-y-capitulos',
+  replace: [{ title: 'Jeremías', ifNote: v1Note('Jeremías'), note: BIO_JEREMIAS }],
+  remove: [{ title: 'Jeremías 38 y 39', ifNote: v1Note('Jeremías 38 y 39') }],
+  data: { nodes: [{ title: 'Jeremías 38', note: CAP_38 }, { title: 'Jeremías 39', note: CAP_39 }] },
+}
+
 export const SEEDS = [
   { id: 'jeremias-38-39', data: { nodes: V1 } },
+  // 3) Volver a como estaba (solo lo que el usuario no editó).
   {
-    id: 'jeremias-biografia-y-capitulos',
-    replace: [{ title: 'Jeremías', ifNote: v1Note('Jeremías'), note: BIO_JEREMIAS }],
-    remove: [{ title: 'Jeremías 38 y 39', ifNote: v1Note('Jeremías 38 y 39') }],
-    data: { nodes: [{ title: 'Jeremías 38', note: CAP_38 }, { title: 'Jeremías 39', note: CAP_39 }] },
+    id: 'jeremias-volver-a-v1',
+    replace: [{ title: 'Jeremías', ifNote: BIO_JEREMIAS, note: v1Note('Jeremías'), keepIfEdited: true }],
+    remove: [
+      { title: 'Jeremías 38', ifNote: CAP_38 },
+      { title: 'Jeremías 39', ifNote: CAP_39 },
+    ],
+    restore: [V1.find((n) => n.title === 'Jeremías 38 y 39')],
   },
 ]
 
@@ -149,9 +162,15 @@ export function planSeed(seed, nodes, edges = []) {
   const del = []
   for (const r of seed.replace ?? []) {
     const cur = byKey.get(normKey(r.title))
-    if (!cur) put.push(makeNode({ title: r.title, note: r.note }))
+    if (!cur) {
+      if (!r.keepIfEdited) put.push(makeNode({ title: r.title, note: r.note }))
+    } else if (same(cur.note, r.note)) continue
     else if (same(cur.note, r.ifNote) || !cur.note.trim()) put.push({ ...cur, note: r.note })
-    else if (!cur.note.includes(r.note.trim())) put.push({ ...cur, note: `${cur.note.trim()}\n\n---\n\n${r.note}` })
+    else if (!r.keepIfEdited && !cur.note.includes(r.note.trim())) put.push({ ...cur, note: `${cur.note.trim()}\n\n---\n\n${r.note}` })
+  }
+  // restore: vuelve a crear un nodo que se había quitado, solo si no existe.
+  for (const n of seed.restore ?? []) {
+    if (!byKey.has(normKey(n.title))) put.push(makeNode({ title: n.title, note: n.note }))
   }
   for (const r of seed.remove ?? []) {
     const cur = byKey.get(normKey(r.title))
