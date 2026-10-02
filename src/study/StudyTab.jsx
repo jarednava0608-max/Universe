@@ -19,6 +19,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
+  const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
+  // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
+  const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
   // Entrada borrada deslizando, con "Deshacer".
   const undoDel = useUndoDelete((e) => onDeleteEntry(e.id), (e) => onSaveEntry(e))
 
@@ -65,6 +68,29 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               <EntryList items={recent.filter((e) => e.id !== last?.id).slice(0, 5)} showKind onOpen={(e) => setEditing({ entry: e, isNew: false })} />
             </>
           )}
+
+          {allNodes.length > 0 && (
+            <>
+              <h2 className="section-label">Tus nodos · {allNodes.length}</h2>
+              <ul className="entry-list">
+                {allNodes.map((n) => {
+                  const def = firstSentence(definitionText(n.note))
+                  return (
+                    <li key={n.id}>
+                      <button className="entry-row" onClick={() => setPeekNode(n)}>
+                        <span className={'node-dot' + (n.id === ROOT_ID ? ' root' : '')} />
+                        <span className="entry-main">
+                          <span className="entry-title">{n.title}</span>
+                          <span className="entry-sub">{def || 'Sin definición todavía'}</span>
+                        </span>
+                        <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
         </PageScroll>
       ) : (
         <PageScroll key={section} title={KINDS[section].label}>
@@ -93,6 +119,8 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           )}
         </PageScroll>
       )}
+
+      {peekNode && <NodePeek node={peekNode} nodes={nodes} onOpenMap={(n) => { setPeekNode(null); onOpenNode(n.id) }} onClose={() => setPeekNode(null)} />}
 
       {editing && KINDS[editing.entry.kind].notes && (
         <NoteEditor
@@ -145,6 +173,13 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
       )}
     </div>
   )
+}
+
+// Primera oración de una definición (para la lista de nodos).
+function firstSentence(text) {
+  const t = (text || '').trim()
+  const m = t.match(/^.{12,}?[.!?](\s|$)/)
+  return (m ? m[0] : t).trim()
 }
 
 // Texto diario de hoy: si ya lo llenaste, el versículo; si no, invitación a agregarlo.
