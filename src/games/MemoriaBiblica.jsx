@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { GameScreen, Quiz, ModeCard, OrderPuzzle, Result, Sprint, cheer, fmtTime } from './ui.jsx'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { GameScreen, Quiz, ModeCard, OrderPuzzle, Result, Sprint, cheer, fmtTime, toTop } from './ui.jsx'
 import { CHARACTERS, WORLDS } from './memoria/characters.js'
 import { KEY, PASS, inWorld, knownIn, unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, sprintQuestion, stars } from './memoria/logic.js'
 import { review, withBest } from './progress.js'
@@ -167,7 +167,9 @@ function WhoAmI({ title, chars, daily, srs, best: bestNow, onAnswer, onFinish, o
   const [run, setRun] = useState(0)
   const [maxRun, setMaxRun] = useState(0)
   const started = useRef(Date.now())
+  const box = useRef(null)
   const q = round[i]
+  useEffect(() => toTop(box.current), [i])
 
   function again() {
     setBest(bestNow)
@@ -198,7 +200,7 @@ function WhoAmI({ title, chars, daily, srs, best: bestNow, onAnswer, onFinish, o
         <Result
           pct={pct}
           msg={`${right} de ${round.length} correctas · ${points} ${points === 1 ? 'punto' : 'puntos'}. ${cheer(pct)}`}
-          record={best != null && pct > best && pct > 0}
+          record={best > 0 && pct > best}
           stats={[['Tiempo', fmtTime(Math.round((Date.now() - started.current) / 1000))], ['Mejor racha', maxRun], ...(best != null ? [['Tu mejor', Math.max(best, pct) + ' %']] : [])]}
           onAgain={again}
           onDone={onBack}
@@ -246,7 +248,7 @@ function WhoAmI({ title, chars, daily, srs, best: bestNow, onAnswer, onFinish, o
 
   return (
     <GameScreen title={title} onExit={onBack}>
-      <div className="quiz">
+      <div className="quiz" ref={box}>
         <div className="progress"><span style={{ width: `${(i / round.length) * 100}%` }} /></div>
         <div className="quiz-meta">
           <span className="quiz-count">{i + 1} de {round.length}</span>
@@ -311,7 +313,7 @@ function Timeline({ open, best, onRecord, onBack }) {
     setErrors(e)
     const n = e === 0 ? perfect + 1 : 0
     setPerfect(n)
-    setRecord(n > best)
+    setRecord(best > 0 && n > best)
     if (n > best) onRecord(n)
   }
   return (

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { buildCards, dailyMix, initials, triviaToQuestion, verseSources } from './logic.js'
-import { GameScreen, Confetti, SwipeCard } from './ui.jsx'
+import { GameScreen, Result, SwipeCard } from './ui.jsx'
 import { isDue, review } from './progress.js'
 import { saveVerseResult } from './Memorize.jsx'
 import { findRefs } from '../lib/bible.js'
@@ -18,12 +18,14 @@ export default function Review({ store, onExit }) {
   const [items] = useState(() => reviewItems(store))
   const [i, setI] = useState(0)
   const [good, setGood] = useState(0)
+  const [missed, setMissed] = useState([])
   const item = items[i]
 
   async function answer(knew) {
     if (item.type === 'verse') await saveVerseResult(store, item.item, knew)
     else store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [item.key]: review(f.srs?.[item.key], knew) } }))
     if (knew) setGood((g) => g + 1)
+    else setMissed((m) => [...m, item])
     setI(i + 1)
   }
 
@@ -36,12 +38,24 @@ export default function Review({ store, onExit }) {
           <button className="secondary" onClick={onExit}>Salir</button>
         </div>
       ) : !item ? (
-        <div className="result-card">
-          <Confetti />
-          <p className="result-big">¡Listo!</p>
-          <p className="result-msg">Repasaste {items.length} {items.length === 1 ? 'cosa' : 'cosas'} y te sabías {good}. Lo que fallaste vuelve pronto.</p>
-          <button className="primary" onClick={onExit}>Terminar</button>
-        </div>
+        <Result
+          pct={Math.round((good / items.length) * 100)}
+          msg={`Repasaste ${items.length} ${items.length === 1 ? 'cosa' : 'cosas'} y te sabías ${good}.${missed.length ? ' Lo que fallaste vuelve pronto.' : ''}`}
+          onDone={onExit}
+          doneLabel="Terminar"
+        >
+          {missed.length > 0 && (
+            <div className="missed">
+              <p className="missed-title">Para repasar</p>
+              {missed.map((m) => (
+                <div key={m.key} className="missed-item">
+                  <p className="missed-q">{LABEL[m.type]}</p>
+                  <p className="missed-a">{m.type === 'card' ? m.item.front : m.type === 'verse' ? m.item.fields.cita || m.item.fields.texto.slice(0, 60) : m.item.fields.pregunta}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Result>
       ) : (
         <>
           <div className="progress"><span style={{ width: `${(i / items.length) * 100}%` }} /></div>

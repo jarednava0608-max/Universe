@@ -65,7 +65,7 @@ function OrderBooks({ best, onRecord, onExit }) {
     setErrors(e)
     const n = e === 0 ? perfect + 1 : 0
     setPerfect(n)
-    setRecord(n > best)
+    setRecord(best > 0 && n > best)
     if (n > best) onRecord(n)
   }
   return (

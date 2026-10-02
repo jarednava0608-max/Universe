@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { buildCards, buildCiteQuestions, buildGuessQuestions, buildPairs, verseSources } from './logic.js'
-import { GameScreen, Quiz, Empty, ModeCard, Confetti, SwipeCard } from './ui.jsx'
-import { byPriority, dueCount, isDue, nextDue, review } from './progress.js'
+import { GameScreen, Quiz, Empty, ModeCard, Result, SwipeCard, fmtTime } from './ui.jsx'
+import { byPriority, dueCount, isDue, nextDue, review, withBest } from './progress.js'
 import { formatDate } from '../study/kinds.js'
 
 // Juegos que usan los nodos del mapa y las notas de Estudio.
@@ -9,19 +9,22 @@ export default function StudyGames({ store, onExit }) {
   const [mode, setMode] = useState(null)
   const exit = () => setMode(null)
 
-  if (mode === 'guess') return <Guess nodes={store.nodes} onExit={exit} />
-  if (mode === 'pairs') return <Pairs nodes={store.nodes} onExit={exit} />
+  const best = store.progress.best ?? {}
+  const save = (k) => (v) => store.updateProgress((f) => withBest(f, k, v))
+  if (mode === 'guess') return <Guess nodes={store.nodes} best={best['que-es'] ?? 0} onBest={save('que-es')} onExit={exit} />
+  if (mode === 'pairs') return <Pairs nodes={store.nodes} best={best.parejas} onBest={(secs) => store.updateProgress((f) => ({ ...f, best: { ...(f.best ?? {}), parejas: Math.min(f.best?.parejas ?? Infinity, secs) } }))} onExit={exit} />
   if (mode === 'cards') return <Cards store={store} onExit={exit} />
-  if (mode === 'cite') return <Cite entries={store.entries} onExit={exit} />
+  if (mode === 'cite') return <Cite entries={store.entries} best={best['donde-cita'] ?? 0} onBest={save('donde-cita')} onExit={exit} />
+  const cardsDue = dueCount(buildCards(store.nodes, store.entries).map((c) => 'c:' + c.id), store.progress.srs ?? {})
 
   return (
     <GameScreen title="Con lo que estudio" onExit={onExit}>
       <p className="hint">Juegos hechos con tus nodos del mapa y tu texto diario. Entre más estudias, más preguntas hay.</p>
       <div className="mode-list">
-        <ModeCard title="¿Qué es?" desc="Lee una definición y elige qué nodo es." onClick={() => setMode('guess')} />
-        <ModeCard title="Parejas" desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
-        <ModeCard title="Tarjetas" desc="Repasa: ve el título y recuerda lo que significa." onClick={() => setMode('cards')} />
-        <ModeCard title="¿Dónde está?" desc="Lee un texto bíblico y elige su cita." onClick={() => setMode('cite')} />
+        <ModeCard title="¿Qué es?" badge={best['que-es'] ? `Mejor ${best['que-es']} %` : null} desc="Lee una definición y elige qué nodo es." onClick={() => setMode('guess')} />
+        <ModeCard title="Parejas" badge={best.parejas ? `Récord ${fmtTime(best.parejas)}` : null} desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
+        <ModeCard title="Tarjetas" badge={cardsDue ? `${cardsDue} hoy` : null} desc="Repasa: ve el título y recuerda lo que significa." onClick={() => setMode('cards')} />
+        <ModeCard title="¿Dónde está?" badge={best['donde-cita'] ? `Mejor ${best['donde-cita']} %` : null} desc="Lee un texto bíblico y elige su cita." onClick={() => setMode('cite')} />
       </div>
     </GameScreen>
   )
@@ -30,13 +33,13 @@ export default function StudyGames({ store, onExit }) {
 
 const needMore = 'Necesitas al menos 4 nodos con definición en tu mapa para este juego.'
 
-function Guess({ nodes, onExit }) {
+function Guess({ nodes, best, onBest, onExit }) {
   const [round, setRound] = useState(() => buildGuessQuestions(nodes))
   const [nonce, setNonce] = useState(0)
   return (
     <GameScreen title="¿Qué es?" onExit={onExit}>
       {round.length ? (
-        <Quiz key={nonce} questions={round} onDone={onExit} onAgain={() => { setRound(buildGuessQuestions(nodes)); setNonce((x) => x + 1) }} />
+        <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(buildGuessQuestions(nodes)); setNonce((x) => x + 1) }} />
       ) : (
         <Empty>{needMore}</Empty>
       )}
@@ -44,14 +47,14 @@ function Guess({ nodes, onExit }) {
   )
 }
 
-function Cite({ entries, onExit }) {
+function Cite({ entries, best, onBest, onExit }) {
   const verses = useMemo(() => verseSources(entries), [entries])
   const [round, setRound] = useState(() => buildCiteQuestions(verses))
   const [nonce, setNonce] = useState(0)
   return (
     <GameScreen title="¿Dónde está?" onExit={onExit}>
       {round.length ? (
-        <Quiz key={nonce} questions={round} onDone={onExit} onAgain={() => { setRound(buildCiteQuestions(verses)); setNonce((x) => x + 1) }} />
+        <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(buildCiteQuestions(verses)); setNonce((x) => x + 1) }} />
       ) : (
         <Empty>Necesitas al menos 4 textos con su cita (en Memorizar textos o en tu Texto diario) para este juego.</Empty>
       )}
@@ -59,7 +62,8 @@ function Cite({ entries, onExit }) {
   )
 }
 
-function Pairs({ nodes, onExit }) {
+function Pairs({ nodes, best, onBest, onExit }) {
+  const [prevBest, setPrevBest] = useState(best)
   const [board, setBoard] = useState(() => buildPairs(nodes))
   const [left, setLeft] = useState(null)
   const [done, setDone] = useState(() => new Set())
@@ -77,7 +81,11 @@ function Pairs({ nodes, onExit }) {
       const next = new Set(done).add(id)
       setDone(next)
       setLeft(null)
-      if (next.size === board.left.length) setSecs(Math.round((Date.now() - startRef.current) / 1000))
+      if (next.size === board.left.length) {
+        const t = Math.max(1, Math.round((Date.now() - startRef.current) / 1000))
+        setSecs(t)
+        onBest(t)
+      }
     } else {
       setMiss(id)
       setErrors((e) => e + 1)
@@ -85,6 +93,7 @@ function Pairs({ nodes, onExit }) {
     }
   }
   function again() {
+    setPrevBest(best)
     setBoard(buildPairs(nodes))
     setDone(new Set())
     setLeft(null)
@@ -95,13 +104,17 @@ function Pairs({ nodes, onExit }) {
   return (
     <GameScreen title="Parejas" onExit={onExit}>
       {finished ? (
-        <div className="result-card">
-          {errors === 0 && <Confetti />}
-          <p className="result-big">{errors === 0 ? '¡Perfecto!' : '¡Listo!'}</p>
-          <p className="result-msg">{errors === 0 ? 'Sin errores' : `${errors} ${errors === 1 ? 'error' : 'errores'}`} · {secs} segundos.</p>
-          <button className="primary" onClick={again}>Otra ronda</button>
-          <button className="secondary" onClick={onExit}>Salir</button>
-        </div>
+        <Result
+          pct={Math.round((board.left.length / (board.left.length + errors)) * 100)}
+          value={fmtTime(secs)}
+          unit=""
+          msg={errors === 0 ? '¡Perfecto, sin errores!' : `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.`}
+          record={prevBest != null && secs < prevBest}
+          stats={[['Parejas', board.left.length], ['Errores', errors], ['Récord', fmtTime(Math.min(prevBest ?? Infinity, secs))]]}
+          onAgain={again}
+          againLabel="Otra ronda"
+          onDone={onExit}
+        />
       ) : (
         <>
           <p className="hint">Toca un título y luego su definición.</p>
@@ -161,12 +174,13 @@ function Cards({ store, onExit }) {
           <button className="secondary" onClick={onExit}>Salir</button>
         </div>
       ) : !card ? (
-        <div className="result-card">
-          <Confetti />
-          <p className="result-big">¡Listo!</p>
-          <p className="result-msg">Repasaste {known} {known === 1 ? 'tarjeta' : 'tarjetas'}. Las que fallaste volverán pronto.</p>
-          <button className="secondary" onClick={onExit}>Salir</button>
-        </div>
+        <Result
+          pct={Math.round((known / deck.length) * 100)}
+          value={known}
+          unit={known === 1 ? ' tarjeta' : ' tarjetas'}
+          msg={deck.length > known ? 'Las que repasaste otra vez volverán pronto.' : '¡Te las sabías todas!'}
+          onDone={onExit}
+        />
       ) : (
         <>
           <p className="quiz-count">{i + 1} de {deck.length}{due ? ` · ${due} para hoy` : ''}</p>

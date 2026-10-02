@@ -54,6 +54,9 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
     onAnswer?.(q, ok)
   }
 
+  const quizBox = useRef(null)
+  useEffect(() => toTop(quizBox.current), [i])
+
   // Cuenta regresiva de cada pregunta.
   useEffect(() => {
     if (!seconds || !q || answered) return
@@ -73,7 +76,8 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
 
   if (!q) {
     const pct = Math.round((score / questions.length) * 100)
-    const record = seconds ? points > (best ?? 0) && points > 0 : best != null && pct > best && pct > 0
+    // Récord = superar uno anterior (la primera vez no cuenta).
+    const record = seconds ? best > 0 && points > best : best > 0 && pct > best
     return (
       <Result
         pct={pct}
@@ -106,7 +110,7 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
   }
 
   return (
-    <div className="quiz">
+    <div className="quiz" ref={quizBox}>
       <div className="progress"><span style={{ width: `${(i / questions.length) * 100}%` }} /></div>
       <div className="quiz-meta">
         <span className="quiz-count">{i + 1} de {questions.length}</span>
@@ -143,6 +147,11 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
   )
 }
 
+// Sube al inicio la pantalla del juego (cada pregunta y el resultado empiezan arriba).
+export function toTop(el) {
+  el?.closest('.game-body')?.scrollTo({ top: 0 })
+}
+
 export const cheer = (pct) => (pct === 100 ? '¡Perfecto!' : pct >= 85 ? '¡Excelente!' : pct >= 70 ? '¡Muy bien!' : pct >= 40 ? 'Vas bien, sigue repasando.' : 'Buen comienzo. ¡Otra vez!')
 
 // 75 -> "1:15"; menos de un minuto -> "45 s".
@@ -154,12 +163,14 @@ export function Result({ pct, value, unit, msg, record, stats = [], onAgain, onD
   const R = 52
   const C = 2 * Math.PI * R
   const [shown, setShown] = useState(0)
+  const box = useRef(null)
+  useEffect(() => toTop(box.current), [])
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(pct ?? 0))
     return () => cancelAnimationFrame(t)
   }, [pct])
   return (
-    <div className={'result-card' + (compact ? ' compact' : '')}>
+    <div ref={box} className={'result-card' + (compact ? ' compact' : '')}>
       {(pct ?? 0) >= 70 && <Confetti />}
       {pct != null && (
         <div className={'ring' + (pct >= 70 ? ' good' : pct >= 40 ? ' mid' : '')}>
@@ -284,7 +295,7 @@ export function Sprint({ make, seconds = 60, best: bestNow = 0, onFinish, onExit
   }
 
   if (phase === 'done') {
-    const record = right > best
+    const record = best > 0 && right > best
     return (
       <Result
         value={right}
@@ -339,6 +350,8 @@ export function Survival({ questions, best: bestNow = 0, onFinish, onAgain, onDo
   const q = questions[i]
   const answered = picked != null
   const ok = answered && picked === q?.answer
+  const box = useRef(null)
+  useEffect(() => toTop(box.current), [i])
 
   function choose(k) {
     if (answered) return
@@ -364,7 +377,7 @@ export function Survival({ questions, best: bestNow = 0, onFinish, onAgain, onDo
         value={n}
         unit={n === 1 ? ' seguida' : ' seguidas'}
         msg={all ? '¡Todas sin fallar!' : n === 0 ? 'A la primera. ¡Otra vez!' : `Llegaste a ${n} sin fallar.`}
-        record={n > best}
+        record={best > 0 && n > best}
         stats={[['Récord', Math.max(best, n)], ['Preguntas', questions.length]]}
         onAgain={onAgain}
         onDone={onDone}
@@ -385,7 +398,7 @@ export function Survival({ questions, best: bestNow = 0, onFinish, onAgain, onDo
   }
 
   return (
-    <div className="quiz">
+    <div className="quiz" ref={box}>
       <div className="quiz-meta">
         <span className="quiz-count">Pregunta {i + 1}</span>
         {i > 0 && <span className="quiz-run" key={i}>{i} {i === 1 ? 'seguida' : 'seguidas'}</span>}
