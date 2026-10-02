@@ -34,7 +34,7 @@ const names = PUBLICATIONS.flatMap(([title, symbol]) => [title, ...(symbol ? [sy
 
 export const PUB_SOURCE = [
   // Libro conocido o símbolo + capítulo/lección/página
-  `(?:${names})(?:,|\\s)\\s?${MARKS}`,
+  `(?:${names})(?:\\s?,|\\s)\\s?${MARKS}`,
   // Cualquier título entre comillas + capítulo/lección/página
   `[«“"][^«»“”"\\n]{3,80}[»”"],?\\s${MARKS}`,
   // La Atalaya / ¡Despertemos! por símbolo: w23.05, g23.1, w23.05 pág. 10

@@ -12,6 +12,7 @@ import { Placeholder } from '@tiptap/extensions'
 import { NodeLink, BibleRefs } from './noteExtensions.js'
 import NodePicker from '../components/NodePicker.jsx'
 import { openRef } from '../lib/verses.js'
+import { suggest } from '../lib/suggest.js'
 
 // Colores que se leen bien en negro y en blanco.
 export const TEXT_COLORS = [['#ef4444', 'Rojo'], ['#f59e0b', 'Naranja'], ['#22c55e', 'Verde'], ['#3b82f6', 'Azul'], ['#a855f7', 'Morado']]
@@ -87,6 +88,13 @@ export default function RichNote({ html, onChange, editorRef, nodes = [], onOpen
       scrollThreshold: { top: 24, bottom: 56, left: 0, right: 0 },
       // Escribir "[[" abre la lista de nodos para enlazar uno.
       handleTextInput(view, from, to, text) {
+        // Como el teclado del iPhone: coma o punto justo después de una sugerencia se pega a la palabra.
+        if (/^[,.;:!?)]$/.test(text) && view.pickEnd === from && view.state.doc.textBetween(from - 1, from) === ' ') {
+          view.pickEnd = null
+          view.dispatch(view.state.tr.insertText(text, from - 1, to))
+          return true
+        }
+        view.pickEnd = null
         if (text !== '[' || view.state.doc.textBetween(Math.max(0, from - 1), from) !== '[') return false
         view.dispatch(view.state.tr.delete(from - 1, to))
         openPicker.current?.(from - 1)
@@ -164,6 +172,12 @@ function Toolbar({ editor, onLink }) {
       bullet: e.isActive('bulletList'),
       ordered: e.isActive('orderedList'),
       quote: e.isActive('blockquote'),
+      // Sugerencias de libros y publicaciones según lo que vas escribiendo.
+      sugg: (() => {
+        const { $from, empty } = e.state.selection
+        if (!empty || !$from.parent.isTextblock) return null
+        return suggest($from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc'))
+      })(),
     }),
   })
 
@@ -174,6 +188,18 @@ function Toolbar({ editor, onLink }) {
   }, [panel, s.table, editor])
 
   const run = (fn) => () => fn(editor.chain().focus()).run()
+  const pick = (name) => {
+    const at = editor.state.selection.from
+    editor.chain().focus().insertContentAt({ from: at - s.sugg.length, to: at }, name + ' ').run()
+    editor.view.pickEnd = editor.state.selection.from
+  }
+  const suggestions = s.sugg && (
+    <div className="tb-suggest">
+      {s.sugg.items.map((name) => (
+        <Btn key={name} label={'Escribir ' + name} wide onTap={() => pick(name)}>{name}</Btn>
+      ))}
+    </div>
+  )
 
   if (s.table) {
     return (
@@ -191,6 +217,7 @@ function Toolbar({ editor, onLink }) {
 
   return (
     <div className="toolbar">
+      {suggestions}
       {panel && (
         <div className="tb-panel">
           <div className="tb-row styles">

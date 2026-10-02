@@ -820,3 +820,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .related-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
 .rich .ref-deco.pub { color: var(--link); text-decoration: underline dotted; text-decoration-color: rgba(var(--link-rgb), 0.5); text-underline-offset: 3px; }
 .as-btn { text-align: center; padding: 0 12px; }
+/* Sugerencias al escribir (libros y publicaciones) */
+.tb-suggest { display: flex; gap: 6px; padding: 0 0 6px; margin-bottom: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tb-suggest::-webkit-scrollbar { display: none; }
+.tb-suggest .tb-btn { flex: 1 0 auto; height: 38px; background: rgba(var(--fg-rgb), 0.07); font-weight: 500; white-space: nowrap; }
