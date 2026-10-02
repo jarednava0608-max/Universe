@@ -700,7 +700,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .progress-actions .primary, .progress-actions .secondary { margin-top: 0; }
 .medals-btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; font-variant-numeric: tabular-nums; }
 .sheet-title { margin: 4px 4px 14px; font-size: 17px; font-weight: 600; }
-.medal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 60vh; overflow-y: auto; }
+.medal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .medal { display: grid; gap: 3px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; opacity: 0.55; }
 .medal.done { opacity: 1; border-color: rgba(245, 210, 122, 0.35); }
 .medal-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(var(--fg-rgb), 0.06); color: var(--text-3); margin-bottom: 4px; }
@@ -792,7 +792,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 
 /* Hoja de una cita bíblica ("Mi Biblia") */
 .ref-sheet-backdrop { z-index: 45; }
-.ref-sheet { max-height: 85vh; overflow-y: auto; }
 .ref-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .ref-sheet-title { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
 .ref-sheet-text p { margin: 0; font-family: var(--font-display); font-size: 19px; line-height: 1.6; color: var(--text-body); white-space: pre-line; }
@@ -848,14 +847,27 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .mb-more { justify-self: start; min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 14px; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); }
 .mb-order { text-align: left; margin: 0 0 12px; padding-left: 22px; display: grid; gap: 4px; }
 .mb-order span { color: var(--text-3); font-size: 14px; }
-.mb-card { max-height: 80vh; overflow-y: auto; display: grid; gap: 10px; }
+.mb-card .sheet-scroll { display: grid; gap: 10px; align-content: start; }
 .mb-card-t { margin: -4px 0 4px; color: var(--text-2); }
 .tb-suggest .tb-btn { display: inline-flex; align-items: center; gap: 7px; }
 .sugg-node { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--graph-node); }
 
 /* Vista rápida de un nodo desde una nota */
 .peek-backdrop { z-index: 44; }
-.peek { max-height: 75vh; overflow-y: auto; display: grid; gap: 12px; }
 .peek-title { margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: var(--title); }
 .peek-body { font-size: 16.5px; }
-.peek .secondary { margin-top: 4px; }
+.peek .sheet-foot .secondary { margin-top: 0; }
+
+/* Hoja de abajo con contenido largo (Sheet.jsx): nunca tapa toda la pantalla y se cierra con la × */
+.sheet-v2 { display: flex; flex-direction: column; max-height: 78vh; max-height: 78dvh; padding-top: 8px; transition: transform 0.2s var(--ease); }
+.sheet-top { flex: none; touch-action: none; }
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.sheet-h { margin: 6px 0 0; font-family: var(--font-display); font-size: 23px; font-weight: 700; letter-spacing: -0.02em; color: var(--title); line-height: 1.2; }
+.sheet-head-actions { display: flex; align-items: center; gap: 2px; flex: none; margin-left: auto; }
+.sheet-close { width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
+.sheet-close::before { content: ''; position: absolute; width: 30px; height: 30px; border-radius: 50%; background: rgba(var(--fg-rgb), 0.08); }
+.sheet-close { position: relative; }
+.sheet-close svg { position: relative; }
+.sheet-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.sheet-foot { flex: none; padding-top: 12px; }
+.sheet-foot .ref-sheet-links { margin-top: 0; }

@@ -4,6 +4,7 @@ import { GAMES } from './registry.js'
 import { buildCards, verseSources } from './logic.js'
 import { achievements, dueCount, lastWeek, streak } from './progress.js'
 import Review from './Review.jsx'
+import Sheet from '../components/Sheet.jsx'
 
 // Pestaña Juegos: menú armado desde registry.js.
 export default function GamesTab({ store, toast }) {
@@ -104,10 +105,7 @@ function Medals({ store, onClose }) {
   const { memorized } = useStats(store)
   const list = achievements(store.progress, { nodes: store.nodes.length, memorized })
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="grabber" />
-        <p className="sheet-title">Logros · {list.filter((m) => m.done).length} de {list.length}</p>
+    <Sheet title={`Logros · ${list.filter((m) => m.done).length} de ${list.length}`} onClose={onClose}>
         <div className="medal-grid">
           {list.map((m) => (
             <div key={m.id} className={'medal' + (m.done ? ' done' : '')}>
@@ -121,7 +119,6 @@ function Medals({ store, onClose }) {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+    </Sheet>
   )
 }

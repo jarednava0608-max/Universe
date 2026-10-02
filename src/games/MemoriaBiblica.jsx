@@ -4,6 +4,7 @@ import { CHARACTERS, WORLDS } from './memoria/characters.js'
 import { KEY, PASS, inWorld, knownIn, unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue } from './memoria/logic.js'
 import { review, withBest } from './progress.js'
 import RefLink from '../components/RefLink.jsx'
+import Sheet from '../components/Sheet.jsx'
 
 // Memoria Bíblica: 8 mundos de personajes, 4 modos (¿Quién soy?, ¿Qué hizo?, ¿Dónde está?,
 // Línea del tiempo), mapa de mundos que se abren al sacar 70 % y repaso diario.
@@ -279,16 +280,12 @@ function People({ world, srs, onBack }) {
         ))}
       </ul>
       {open && (
-        <div className="sheet-backdrop" onClick={() => setOpen(null)}>
-          <div className="sheet mb-card" onClick={(e) => e.stopPropagation()}>
-            <div className="grabber" />
-            <h2 className="ref-sheet-title">{open.n}</h2>
-            <p className="mb-card-t">{open.t}</p>
-            {open.p.map((x, k) => <p key={k} className="mb-clue">«{x}»</p>)}
-            <p className="mb-clue last">{open.d}</p>
-            <p className="ref"><RefLink refText={open.c} /></p>
-          </div>
-        </div>
+        <Sheet title={open.n} className="mb-card" onClose={() => setOpen(null)}>
+          <p className="mb-card-t">{open.t}</p>
+          {open.p.map((x, k) => <p key={k} className="mb-clue">«{x}»</p>)}
+          <p className="mb-clue last">{open.d}</p>
+          <p className="ref"><RefLink refText={open.c} /></p>
+        </Sheet>
       )}
     </GameScreen>
   )

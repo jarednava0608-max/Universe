@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { buildResolver, renderNote } from '../lib/markdown.js'
+import Sheet from './Sheet.jsx'
 
 // Vista rápida de un nodo del mapa desde una nota: su título y su definición, sin salir de la nota.
 // Los [[enlaces]] de adentro abren el otro nodo aquí mismo; las citas abren su hoja (App).
@@ -19,17 +20,18 @@ export default function NodePeek({ node, nodes, onOpenMap, onClose }) {
   }
 
   return (
-    <div className="sheet-backdrop peek-backdrop" onClick={onClose}>
-      <div className="sheet peek" onClick={(e) => e.stopPropagation()}>
-        <div className="grabber" />
-        <h2 className="peek-title">{current.title}</h2>
-        {current.note?.trim() ? (
-          <div className="md peek-body" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }} />
-        ) : (
-          <p className="hint">Este nodo todavía no tiene definición.</p>
-        )}
-        <button className="secondary" onClick={() => onOpenMap(current)}>Abrir en el mapa</button>
-      </div>
-    </div>
+    <Sheet
+      title={current.title}
+      backdropClass="peek-backdrop"
+      className="peek"
+      onClose={onClose}
+      footer={<button className="secondary" onClick={() => onOpenMap(current)}>Abrir en el mapa</button>}
+    >
+      {current.note?.trim() ? (
+        <div className="md peek-body" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }} />
+      ) : (
+        <p className="hint">Este nodo todavía no tiene definición.</p>
+      )}
+    </Sheet>
   )
 }
