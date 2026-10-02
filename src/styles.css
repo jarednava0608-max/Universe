@@ -996,3 +996,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .pass-wrap { position: relative; display: block; }
 .pass-wrap .input { padding-right: 84px; }
 .pass-toggle { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); min-height: 36px; padding: 0 10px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--link); }
+
+/* Pantallas chicas: que nada empuje fuera de la pantalla (los hijos de grid/flex se pueden encoger) */
+.search { min-width: 0; }
+.search input { min-width: 0; }
+.mb-path > li, .mode-list > *, .options > *, .result-stats > * { min-width: 0; }
