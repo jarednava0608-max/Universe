@@ -3,7 +3,7 @@ import { refUrl } from '../lib/bible.js'
 import { findSavedVerse, jwLibraryUrl, makeBibleEntry, isPub } from '../lib/verses.js'
 import { pubTitle, pubUrl } from '../lib/pubs.js'
 
-const SOURCE = { memoria: 'De Memorizar textos', diario: 'De tu Texto diario' }
+const SOURCE = { memoria: 'De Memorizar textos', diario: 'De tu Texto diario', capitulo: 'Los versículos que tienes guardados de este capítulo' }
 
 // Hoja que se abre al tocar una cita: el texto guardado (o para pegarlo una vez)
 // y botones para abrir la cita en JW Library o en wol.jw.org.

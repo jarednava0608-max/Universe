@@ -6,6 +6,8 @@
 // - remove: [{ title, ifNote }] borra el nodo solo si su nota sigue igual a ifNote.
 import { planImport } from './importer.js'
 import { makeNode, normKey } from './model.js'
+import { anyRefKey, makeBibleEntry } from './verses.js'
+import { JEREMIAS_38_39 } from './seedVerses.js'
 
 // 1) Lo que estudiamos de Jeremías 38 y 39 (primera versión).
 const V1 = [
@@ -139,6 +141,34 @@ export const SEED_BIO = {
   data: { nodes: [{ title: 'Jeremías 38', note: CAP_38 }, { title: 'Jeremías 39', note: CAP_39 }] },
 }
 
+// 4) Un nodo por capítulo, solo con el texto que el usuario pegó y lo que estudiamos (aprobado en el chat),
+//    y el texto de los dos capítulos guardado en su "Mi Biblia".
+const CAPITULO_38 = `## Lo que pasa
+- Los príncipes oyen a [[Jeremías]] decir que el que se quede en la ciudad morirá y el que se rinda ante los caldeos seguirá viviendo (Jeremías 38:1-3).
+- Le piden al rey que lo maten, "porque con las cosas que dice está desmoralizando a los soldados" (Jeremías 38:4). [[Sedequías]] responde: "Miren, ahí lo tienen, está en sus manos" (Jeremías 38:5).
+- Lo arrojan en la cisterna de Malkiya, en el Patio de la Guardia. No había agua, solo fango, y empezó a hundirse (Jeremías 38:6).
+- [[Ebed-melec]] el etíope le dice al rey que lo que le hicieron "es muy cruel" (Jeremías 38:7-9). El rey le ordena llevarse a 30 hombres (Jeremías 38:10). Le bajan trapos viejos para que se los ponga entre las axilas y las sogas, y lo sacan (Jeremías 38:11-13).
+- Sedequías lo manda traer en secreto: "Tengo que preguntarte algo. No me ocultes nada" (Jeremías 38:14). Jeremías le dice que si se rinde seguirá con vida y la ciudad no será quemada (Jeremías 38:17). Sedequías responde: "Les tengo miedo a los judíos que se han pasado al bando de los caldeos" (Jeremías 38:19).
+- Sedequías le pide que no cuente nada de la conversación. Jeremías se queda en el Patio de la Guardia hasta que conquistan Jerusalén (Jeremías 38:24-28).
+
+## Lo que estudiamos
+- Para los príncipes, Jeremías no era un profeta sino alguien que desanimaba a los soldados en plena guerra. Por eso la tensión estalla.
+- Jeremías tenía la salida fácil, decir lo que querían oír, y no la tomó. Eligió el lodo antes que cambiar el mensaje. Ver [[Integridad]].
+- Ebed-melec: el único con la brújula moral intacta era el forastero. Y lo de los trapos fue justicia con tacto.
+- Sedequías: no le faltaron respuestas de Jehová, le faltó [[Valor]]. El miedo al qué dirán pesó más.`
+
+const CAPITULO_39 = `## Lo que pasa
+- En el noveno año de Sedequías, Nabucodonosor rodea Jerusalén (Jeremías 39:1). En el año 11 atraviesan la muralla (Jeremías 39:2).
+- [[Sedequías]] huye de noche, pero lo alcanzan en las llanuras desérticas de Jericó. En Riblá matan a sus hijos ante sus ojos, lo ciegan y lo llevan con grilletes a Babilonia (Jeremías 39:4-7).
+- Queman la casa del rey y las casas del pueblo, y demuelen las murallas (Jeremías 39:8). Nebuzaradán lleva al destierro al resto de la gente y deja en Judá a algunos de los más pobres, con viñas y campos (Jeremías 39:9, 10).
+- Nabucodonosor ordena sobre [[Jeremías]]: "Ve a buscarlo y cuida de él; no le hagas daño y dale todo lo que te pida" (Jeremías 39:11, 12). Lo sacan del Patio de la Guardia y lo entregan a Guedalías (Jeremías 39:14).
+- Jehová le manda decir a [[Ebed-melec]]: "Yo te rescataré ese día", "no caerás a espada", "porque confiaste en mí" (Jeremías 39:15-18).
+
+## Lo que estudiamos
+- Sedequías perdió exactamente lo que quería proteger: lo último que vio fue cómo mataban a sus hijos.
+- Jeremías no tenía cómo pagarle a Ebed-melec, pero su Dios sí: lo protegió en medio de la destrucción. Ver [[Gratitud]].
+- Así empieza el exilio. Ver [[Exilio y los 70 años]].`
+
 export const SEEDS = [
   { id: 'jeremias-38-39', data: { nodes: V1 } },
   // 3) Volver a como estaba (solo lo que el usuario no editó).
@@ -151,12 +181,18 @@ export const SEEDS = [
     ],
     restore: [V1.find((n) => n.title === 'Jeremías 38 y 39')],
   },
+  {
+    id: 'jeremias-38-y-39-por-capitulo',
+    data: { nodes: [{ title: 'Jeremías 38', note: CAPITULO_38 }, { title: 'Jeremías 39', note: CAPITULO_39 }] },
+    verses: JEREMIAS_38_39,
+  },
 ]
 
 const same = (a, b) => String(a ?? '').replace(/\s+/g, ' ').trim() === String(b ?? '').replace(/\s+/g, ' ').trim()
 
 // Lo que hay que guardar y borrar para aplicar un paquete sobre los nodos actuales.
-export function planSeed(seed, nodes, edges = []) {
+// verses: [[cita, texto]] se guardan en "Mi Biblia" si esa cita aún no tiene texto guardado.
+export function planSeed(seed, nodes, edges = [], entries = []) {
   const byKey = new Map(nodes.map((n) => [normKey(n.title), n]))
   const put = []
   const del = []
@@ -185,5 +221,7 @@ export function planSeed(seed, nodes, edges = []) {
       else put.push(n)
     }
   }
-  return { put, del }
+  const saved = new Set(entries.filter((e) => e.kind === 'biblia' && e.fields.texto?.trim()).map((e) => anyRefKey(e.fields.cita)))
+  const verses = (seed.verses ?? []).filter(([cita]) => !saved.has(anyRefKey(cita))).map(([cita, texto]) => makeBibleEntry(cita, texto))
+  return { put, del, verses }
 }

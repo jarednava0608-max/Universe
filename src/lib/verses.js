@@ -37,6 +37,44 @@ export function anyRefUrl(ref) {
 export function findSavedVerse(entries, ref) {
   const key = anyRefKey(ref)
   if (!key) return null
+  const exact = findExact(entries, key)
+  if (exact || key.startsWith('pub:')) return exact
+  return joinVerses(entries, ref)
+}
+
+// "Jeremías 38:7-9", "Mateo 6:9, 10" o el capítulo entero ("Jeremías 39"): se arma con los
+// versículos guardados uno por uno (cada uno con su número).
+function joinVerses(entries, ref) {
+  const r = parseRef(ref)
+  if (!r) return null
+  const spec = String(ref).split(':')[1]
+  let nums
+  if (spec) {
+    nums = []
+    for (const part of spec.split(',')) {
+      const [a, b] = part.split(/[-–]/).map((x) => parseInt(x, 10))
+      if (!a) continue
+      for (let v = a; v <= (b || a); v++) nums.push(v)
+    }
+    if (nums.length < 2) return null
+  } else {
+    nums = Array.from({ length: 176 }, (_, i) => i + 1)
+  }
+  // Índice de lo guardado (una sola pasada, para no buscar 176 veces).
+  const index = new Map()
+  for (const v of verseSources(entries)) if (v.fields.cita && v.fields.texto?.trim()) index.set(refKey(v.fields.cita), v.fields.texto)
+  for (const e of entries) if (e.kind === 'biblia' && e.fields.texto?.trim()) index.set(anyRefKey(e.fields.cita), e.fields.texto)
+  const parts = []
+  for (const v of nums) {
+    const texto = index.get(`${r.book}:${r.chapter}:${v}`)
+    if (texto) parts.push(`${v} ${texto.trim()}`)
+    else if (spec) return null // falta un versículo del rango: mejor no mostrar algo incompleto
+  }
+  if (!parts.length) return null
+  return { entry: null, texto: parts.join('\n'), source: spec ? 'versos' : 'capitulo' }
+}
+
+function findExact(entries, key) {
   const own = entries.find((e) => e.kind === 'biblia' && anyRefKey(e.fields.cita) === key && e.fields.texto?.trim())
   if (own) return { entry: own, texto: own.fields.texto, source: 'biblia' }
   if (key.startsWith('pub:')) return null

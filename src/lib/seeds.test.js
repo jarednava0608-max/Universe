@@ -16,7 +16,7 @@ describe('Paquetes del mapa (Jeremías)', () => {
   const titles = (ns) => ns.map((n) => n.title).sort()
 
   it('en un teléfono nuevo quedan los 9 nodos de lo que estudiamos, como al principio', () => {
-    const out = run([makeRoot()])
+    const out = run([makeRoot()], SEEDS.slice(0, 2))
     expect(titles(out)).toContain('Jeremías 38 y 39')
     expect(titles(out)).not.toContain('Jeremías 38')
     expect(out.find((n) => n.title === 'Jeremías').note).toMatch(/^Profeta que eligió la cisterna/)
@@ -27,7 +27,7 @@ describe('Paquetes del mapa (Jeremías)', () => {
     const before = run(run([makeRoot()], [SEEDS[0]]), [SEED_BIO])
     expect(titles(before)).toContain('Jeremías 38')
     const out = run(before, [SEEDS[1]])
-    expect(titles(out)).toEqual(titles(run([makeRoot()])))
+    expect(titles(out)).toEqual(titles(run([makeRoot()], SEEDS.slice(0, 2))))
     expect(out.find((n) => n.title === 'Jeremías').note).toMatch(/^Profeta que eligió la cisterna/)
   })
 
@@ -38,5 +38,20 @@ describe('Paquetes del mapa (Jeremías)', () => {
     expect(out.find((n) => n.title === 'Jeremías').note).toContain('Mío.')
     expect(titles(out)).toContain('Jeremías 38')
     expect(titles(out)).not.toContain('Jeremías 39')
+  })
+})
+
+describe('Paquete por capítulo con los versículos', () => {
+  it('agrega Jeremías 38 y 39 y guarda los 46 versículos una sola vez', () => {
+    const last = SEEDS.at(-1)
+    const out = run([makeRoot()])
+    expect(out.find((n) => n.title === 'Jeremías 38').note).toMatch(/^## Lo que pasa/)
+    expect(out.find((n) => n.title === 'Jeremías 39').note).toContain('Guedalías')
+    expect(out.find((n) => n.title === 'Jeremías 38 y 39')).toBeTruthy()
+    const { verses } = planSeed(last, out, [], [])
+    expect(verses).toHaveLength(46)
+    expect(verses[5].fields).toMatchObject({ cita: 'Jeremías 38:6' })
+    expect(verses.every((v) => !/[+*]/.test(v.fields.texto))).toBe(true)
+    expect(planSeed(last, out, [], verses).verses).toHaveLength(0)
   })
 })

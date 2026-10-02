@@ -25,3 +25,18 @@ describe('Mi Biblia', () => {
     expect(jwLibraryUrl('Génesis 1:1')).toContain('bible=01001001')
   })
 })
+
+describe('Mi Biblia: rangos y capítulos con versículos guardados', () => {
+  const e = (cita, texto) => makeBibleEntry(cita, texto)
+  const entries = [e('Jeremías 38:7', 'Siete.'), e('Jeremías 38:8', 'Ocho.'), e('Jeremías 38:9', 'Nueve.'), e('Jer. 39:1', 'Uno.')]
+  it('arma un rango con los versículos sueltos', () => {
+    expect(findSavedVerse(entries, 'Jeremías 38:7-9').texto).toBe('7 Siete.\n8 Ocho.\n9 Nueve.')
+    expect(findSavedVerse(entries, 'Jeremías 38:7, 8').texto).toBe('7 Siete.\n8 Ocho.')
+    expect(findSavedVerse(entries, 'Jeremías 38:7-10')).toBe(null) // falta el 10
+    expect(findSavedVerse(entries, 'Jeremías 38:8').texto).toBe('Ocho.')
+  })
+  it('arma el capítulo entero con lo que haya guardado', () => {
+    expect(findSavedVerse(entries, 'Jeremías 38')).toMatchObject({ texto: '7 Siete.\n8 Ocho.\n9 Nueve.', source: 'capitulo' })
+    expect(findSavedVerse(entries, 'Jeremías 40')).toBe(null)
+  })
+})
