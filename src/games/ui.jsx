@@ -5,10 +5,12 @@ import { parseJsonLoose } from '../lib/importer.js'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
 import { shuffle, timedPoints } from './logic.js'
+import { EraScene } from './eras.jsx'
 
 // Pantalla de un juego: barra con "volver" y título.
 // Como en iOS, deslizar desde el borde izquierdo hacia la derecha regresa.
-export function GameScreen({ title, onExit, right, back = 'Juegos', children }) {
+// `era` (1-8) le pone el color y el paisaje de esa época.
+export function GameScreen({ title, onExit, right, back = 'Juegos', era, children }) {
   const [dx, setDx] = useState(0)
   const drag = useRef(null)
   const onTouchStart = (e) => {
@@ -38,12 +40,14 @@ export function GameScreen({ title, onExit, right, back = 'Juegos', children }) 
   return (
     <div
       className="overlay game"
+      data-era={era}
       style={dx ? { transform: `translateX(${dx}px)`, transition: 'none', boxShadow: '-12px 0 30px rgba(0,0,0,0.35)' } : undefined}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
     >
+      {era && <EraScene era={era} />}
       <header className="bar">
         <button className="bar-btn back" onClick={onExit}><Icon d={ICONS.back} size={18} stroke={2} /> {back}</button>
         <span className="bar-title">{title}</span>

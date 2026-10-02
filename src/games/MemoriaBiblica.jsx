@@ -38,6 +38,7 @@ export default function MemoriaBiblica({ store, onExit }) {
         onAnswer={answer}
         onFinish={(pct) => finish(screen.world, pct, 'who')}
         best={screen.world ? best[`mb-w${screen.world}-who`] : undefined}
+        era={screen.world}
         onBack={back}
       />
     )
@@ -85,7 +86,7 @@ export default function MemoriaBiblica({ store, onExit }) {
           const b = best[`mb-w${w.id}`] ?? 0
           return (
             <li key={w.id}>
-              <button className={'mb-world' + (locked ? ' locked' : '') + (b >= PASS ? ' passed' : '')} disabled={locked} onClick={() => go('world', { world: w.id })}>
+              <button className={'mb-world' + (locked ? ' locked' : '') + (b >= PASS ? ' passed' : '')} data-era={w.id} disabled={locked} onClick={() => go('world', { world: w.id })}>
                 <span className="mb-num">{locked ? <LockIcon /> : w.id}</span>
                 <span className="entry-main">
                   <span className="mb-wname">{w.name}</span>
@@ -131,7 +132,7 @@ function World({ world, srs, best, bests, next, onBack, onMode }) {
   const known = knownIn(world.id, srs)
   const mode = (m) => bests[`mb-w${world.id}-${m}`] ? `Mejor ${bests[`mb-w${world.id}-${m}`]} %` : null
   return (
-    <GameScreen title={world.name} back="Mundos" onExit={onBack}>
+    <GameScreen title={world.name} back="Mundos" era={world.id} onExit={onBack}>
       <div className="mb-world-hero">
         <span className="mb-num big">{world.id}</span>
         <div className="entry-main">
@@ -157,7 +158,7 @@ function World({ world, srs, best, bests, next, onBack, onMode }) {
 }
 
 // ¿Quién soy?: hasta 3 pistas; 3 puntos con una pista, 2 con dos, 1 con tres.
-function WhoAmI({ title, back, chars, daily, srs, best: bestNow, onAnswer, onFinish, onBack }) {
+function WhoAmI({ title, back, era, chars, daily, srs, best: bestNow, onAnswer, onFinish, onBack }) {
   const [best, setBest] = useState(bestNow) // el récord de antes de esta ronda
   const [nonce, setNonce] = useState(0)
   // En el repaso diario las opciones salen de todos los personajes (vienen de mundos distintos).
@@ -194,7 +195,7 @@ function WhoAmI({ title, back, chars, daily, srs, best: bestNow, onAnswer, onFin
 
   if (!round.length) {
     return (
-      <GameScreen title={title} back={back} onExit={onBack}>
+      <GameScreen title={title} back={back} era={era} onExit={onBack}>
         <div className="result-card"><p className="result-msg">No hay personajes para repasar hoy.</p><button className="secondary" onClick={onBack}>Volver</button></div>
       </GameScreen>
     )
@@ -203,7 +204,7 @@ function WhoAmI({ title, back, chars, daily, srs, best: bestNow, onAnswer, onFin
   if (!q) {
     const pct = Math.round((right / round.length) * 100)
     return (
-      <GameScreen title={title} back={back} onExit={onBack}>
+      <GameScreen title={title} back={back} era={era} onExit={onBack}>
         <Result
           pct={pct}
           msg={`${right} de ${round.length} correctas · ${points} ${points === 1 ? 'punto' : 'puntos'}. ${cheer(pct)}`}
@@ -257,7 +258,7 @@ function WhoAmI({ title, back, chars, daily, srs, best: bestNow, onAnswer, onFin
   }
 
   return (
-    <GameScreen title={title} back={back} onExit={onBack}>
+    <GameScreen title={title} back={back} era={era} onExit={onBack}>
       <div className="quiz" ref={box}>
         <div className="progress"><span style={{ width: `${(i / round.length) * 100}%` }} /></div>
         <div className="quiz-meta">
@@ -298,7 +299,7 @@ function ChoiceMode({ kind, world, srs, best, onAnswer, onFinish, onBack }) {
   const [nonce, setNonce] = useState(0)
   const byKey = useMemo(() => new Map(CHARACTERS.map((c) => [KEY(c), c])), [])
   return (
-    <GameScreen title={{ what: '¿Qué hizo?', where: '¿Dónde está?', tf: '¿Cierto o falso?' }[kind]} back={`Mundo ${world}`} onExit={onBack}>
+    <GameScreen title={{ what: '¿Qué hizo?', where: '¿Dónde está?', tf: '¿Cierto o falso?' }[kind]} back={`Mundo ${world}`} era={world} onExit={onBack}>
       <Quiz
         key={nonce}
         questions={round}
@@ -361,7 +362,7 @@ function People({ world, srs, onBack }) {
   const chars = inWorld(world).filter((c) => (!q.trim() || fold(c.n + ' ' + c.t).includes(fold(q.trim()))) && (only === 'all' || (only === 'known') === isKnown(c)))
   const idx = open ? chars.findIndex((c) => c.id === open.id) : -1
   return (
-    <GameScreen title="Personajes" back={`Mundo ${world}`} onExit={onBack}>
+    <GameScreen title="Personajes" back={`Mundo ${world}`} era={world} onExit={onBack}>
       <input className="input mb-search" type="search" placeholder="Buscar personaje" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="seg-modes small">
         {[['all', 'Todos'], ['known', 'Conocidos'], ['new', 'Por aprender']].map(([k, l]) => (

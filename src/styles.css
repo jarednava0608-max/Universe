@@ -1019,3 +1019,36 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .continue-sub { font-size: 13px; color: var(--text-2); }
 .node-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--graph-node); }
 .node-dot.root { background: #f5d27a; box-shadow: 0 0 8px rgba(245, 210, 122, 0.5); }
+
+/* ---------- Ambiente de cada época (mundos de Memoria Bíblica, src/games/eras.jsx) ---------- */
+[data-era='1'] { --era-rgb: 110, 196, 140; }  /* los comienzos: verde del jardín */
+[data-era='2'] { --era-rgb: 214, 162, 102; }  /* patriarcas: arena */
+[data-era='3'] { --era-rgb: 222, 116, 88; }   /* éxodo: desierto rojizo */
+[data-era='4'] { --era-rgb: 156, 176, 92; }   /* conquista y jueces: olivo */
+[data-era='5'] { --era-rgb: 156, 126, 220; }  /* reino unido: púrpura real */
+[data-era='6'] { --era-rgb: 212, 122, 146; }  /* reino dividido: atardecer */
+[data-era='7'] { --era-rgb: 86, 140, 226; }   /* exilio: azul de Babilonia */
+[data-era='8'] { --era-rgb: 72, 184, 198; }   /* Galilea: azul del mar */
+.overlay.game[data-era] {
+  background:
+    radial-gradient(130% 55% at 50% 0%, rgba(var(--era-rgb), 0.17), transparent 70%),
+    linear-gradient(to top, rgba(var(--era-rgb), 0.07), transparent 40%),
+    var(--bg);
+}
+.overlay.game[data-era] > :not(.era-scene) { position: relative; z-index: 1; }
+.overlay.game[data-era] .bar { background: rgba(var(--bg-rgb), 0.6); }
+.era-scene {
+  position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: calc(150px + var(--sab));
+  padding-bottom: var(--sab); color: rgb(var(--era-rgb)); opacity: 0.13; pointer-events: none;
+  animation: era-in 0.9s var(--ease) both;
+}
+:root[data-theme='light'] .era-scene { opacity: 0.18; }
+@keyframes era-in { from { opacity: 0; transform: translateY(10px); } }
+.overlay.game[data-era] .progress span { background: rgb(var(--era-rgb)); }
+.overlay.game[data-era] .mb-num, .mb-world[data-era]:not(.locked) .mb-num {
+  background: rgba(var(--era-rgb), 0.16); border-color: rgba(var(--era-rgb), 0.5); color: var(--text);
+}
+.overlay.game[data-era] .mb-world-hero {
+  background: linear-gradient(160deg, rgba(var(--era-rgb), 0.14), var(--surface) 75%);
+  border-color: rgba(var(--era-rgb), 0.28);
+}
