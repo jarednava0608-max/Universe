@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { buildCards, buildCiteQuestions, buildGuessQuestions, buildPairs, verseSources } from './logic.js'
+import { bibleSources, buildCards, buildCiteQuestions, buildFillQuestions, buildGuessQuestions, buildPairs } from './logic.js'
 import { GameScreen, Quiz, Empty, ModeCard, Result, SwipeCard, fmtTime } from './ui.jsx'
 import { byPriority, dueCount, isDue, nextDue, review, withBest, withBestTime } from './progress.js'
 import { formatDate } from '../study/kinds.js'
@@ -14,16 +14,18 @@ export default function StudyGames({ store, onExit }) {
   if (mode === 'guess') return <Guess nodes={store.nodes} best={best['que-es'] ?? 0} onBest={save('que-es')} onExit={exit} />
   if (mode === 'pairs') return <Pairs nodes={store.nodes} best={best['parejas-tiempo']} onBest={(secs) => store.updateProgress((f) => withBestTime(f, 'parejas-tiempo', secs))} onExit={exit} />
   if (mode === 'cards') return <Cards store={store} onExit={exit} />
+  if (mode === 'fill') return <Fill entries={store.entries} best={best.completa ?? 0} onBest={save('completa')} onExit={exit} />
   if (mode === 'cite') return <Cite entries={store.entries} best={best['donde-cita'] ?? 0} onBest={save('donde-cita')} onExit={exit} />
   const cardsDue = dueCount(buildCards(store.nodes, store.entries).map((c) => 'c:' + c.id), store.progress.srs ?? {})
 
   return (
     <GameScreen title="Con lo que estudio" onExit={onExit}>
-      <p className="hint">Juegos hechos con tus nodos del mapa y tu texto diario. Entre más estudias, más preguntas hay.</p>
+      <p className="hint">Juegos hechos con tus nodos del mapa, tus textos y tu texto diario. Entre más estudias, más preguntas hay.</p>
       <div className="mode-list">
         <ModeCard title="¿Qué es?" badge={best['que-es'] ? `Mejor ${best['que-es']} %` : null} desc="Lee una definición y elige qué nodo es." onClick={() => setMode('guess')} />
         <ModeCard title="Parejas" badge={best['parejas-tiempo'] ? `Récord ${fmtTime(best['parejas-tiempo'])}` : null} desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
         <ModeCard title="Tarjetas" badge={cardsDue ? `${cardsDue} hoy` : null} desc="Repasa: ve el título y recuerda lo que significa." onClick={() => setMode('cards')} />
+        <ModeCard title="Completa el texto" badge={best.completa ? `Mejor ${best.completa} %` : null} desc="Falta una palabra en tus textos. ¿Cuál es?" onClick={() => setMode('fill')} />
         <ModeCard title="¿Dónde está?" badge={best['donde-cita'] ? `Mejor ${best['donde-cita']} %` : null} desc="Lee un texto bíblico y elige su cita." onClick={() => setMode('cite')} />
       </div>
     </GameScreen>
@@ -47,8 +49,23 @@ function Guess({ nodes, best, onBest, onExit }) {
   )
 }
 
+function Fill({ entries, best, onBest, onExit }) {
+  const verses = useMemo(() => bibleSources(entries), [entries])
+  const [round, setRound] = useState(() => buildFillQuestions(verses))
+  const [nonce, setNonce] = useState(0)
+  return (
+    <GameScreen title="Completa el texto" onExit={onExit}>
+      {round.length >= 3 ? (
+        <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(buildFillQuestions(verses)); setNonce((x) => x + 1) }} />
+      ) : (
+        <Empty>Necesitas al menos 3 textos (en Memorizar textos, tu Texto diario o Mi Biblia) para este juego.</Empty>
+      )}
+    </GameScreen>
+  )
+}
+
 function Cite({ entries, best, onBest, onExit }) {
-  const verses = useMemo(() => verseSources(entries), [entries])
+  const verses = useMemo(() => bibleSources(entries), [entries])
   const [round, setRound] = useState(() => buildCiteQuestions(verses))
   const [nonce, setNonce] = useState(0)
   return (
@@ -56,7 +73,7 @@ function Cite({ entries, best, onBest, onExit }) {
       {round.length ? (
         <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(buildCiteQuestions(verses)); setNonce((x) => x + 1) }} />
       ) : (
-        <Empty>Necesitas al menos 4 textos con su cita (en Memorizar textos o en tu Texto diario) para este juego.</Empty>
+        <Empty>Necesitas al menos 4 textos con su cita (en Memorizar textos, tu Texto diario o Mi Biblia) para este juego.</Empty>
       )}
     </GameScreen>
   )

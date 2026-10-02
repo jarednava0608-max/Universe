@@ -99,3 +99,36 @@ describe('récords de tiempo', () => {
     expect(done).toEqual(['mb-estrellas', 'mb-personajes', 'reto-15', 'sin-fallar-10', 'linea-5'])
   })
 })
+
+import { buildFillQuestions } from './logic.js'
+describe('Completa el texto', () => {
+  const verses = [
+    { id: 'a', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna: que lleguen a conocerte a ti, el único Dios verdadero.' } },
+    { id: 'b', fields: { cita: 'Salmo 83:18', texto: 'Que la gente sepa que tú, cuyo nombre es Jehová, solo tú eres el Altísimo sobre toda la tierra.' } },
+    { id: 'c', fields: { cita: '', texto: 'Muy corto aquí' } },
+  ]
+  it('quita una palabra que está entre las 4 opciones distintas', () => {
+    const qs = buildFillQuestions(verses, 10, mulberry(3))
+    expect(qs).toHaveLength(2)
+    for (const q of qs) {
+      expect(q.options).toHaveLength(4)
+      expect(new Set(q.options.map((o) => o.toLowerCase())).size).toBe(4)
+      expect(q.prompt).toContain('_____')
+      const v = verses.find((x) => 'llenar:' + x.id === q.key)
+      expect(q.prompt.replace('_____', q.options[q.answer])).toBe(v.fields.texto)
+    }
+  })
+})
+
+import { bibleSources } from './logic.js'
+describe('bibleSources', () => {
+  it('suma los versículos de Mi Biblia sin publicaciones ni repetidos', () => {
+    const entries = [
+      { id: '1', kind: 'memoria', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna' } },
+      { id: '2', kind: 'biblia', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna' } },
+      { id: '3', kind: 'biblia', fields: { cita: 'Jeremías 38:6', texto: 'Así que agarraron a Jeremías' } },
+      { id: '4', kind: 'biblia', fields: { cita: 'Seamos valientes, cap. 3', texto: 'Un párrafo' } },
+    ]
+    expect(bibleSources(entries).map((e) => e.id)).toEqual(['1', '3'])
+  })
+})

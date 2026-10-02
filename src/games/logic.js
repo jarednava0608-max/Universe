@@ -152,6 +152,15 @@ export function verseSources(entries) {
   return [...own, ...daily]
 }
 
+// Todos tus textos bíblicos: los de Memorizar, el Texto diario y los versículos guardados en Mi Biblia
+// (sin publicaciones). Para "Completa el texto" y "¿Dónde está?".
+export function bibleSources(entries) {
+  const base = verseSources(entries)
+  const keys = new Set(base.map((v) => normKey(v.fields.texto)))
+  const saved = entries.filter((e) => e.kind === 'biblia' && e.fields.texto?.trim() && parseRef(e.fields.cita ?? '') && !keys.has(normKey(e.fields.texto)))
+  return [...base, ...saved]
+}
+
 // Palabras del texto; en cada nivel se oculta una parte mayor (25%, 50%, 75%, 100%).
 export function clozeWords(texto, nivel, seed = 1) {
   const words = texto.split(/\s+/).filter(Boolean)
@@ -331,4 +340,44 @@ export function typeWords(texto) {
       if (!m) return { pre: raw, word: '', post: '', letter: '' }
       return { pre: m[1], word: m[2], post: m[3], letter: foldLetter(m[2][0]) }
     })
+}
+
+// ---------- "Completa el texto" ----------
+
+// Un texto con una palabra importante quitada; hay que elegirla entre 4.
+// Las opciones salen del mismo texto o de tus otros textos (palabras de 4 letras o más).
+const COMMON = new Set(['para', 'como', 'pero', 'porque', 'cuando', 'donde', 'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'esos', 'esas', 'todo', 'toda', 'todos', 'todas', 'sobre', 'entre', 'hasta', 'desde', 'también', 'aunque', 'según', 'ellos', 'ellas', 'nosotros', 'ustedes', 'aquel', 'aquella', 'cual', 'quien', 'mismo', 'misma'])
+const fillWord = (w) => w.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '')
+const fold = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+const goodWord = (w) => w.length >= 4 && !COMMON.has(fold(w))
+
+export function buildFillQuestions(verses, count = 10, rnd = Math.random) {
+  const seen = new Set()
+  const pool = verses.filter((v) => {
+    const t = (v.fields.texto ?? '').trim()
+    const k = fold(t).slice(0, 60)
+    if (t.split(/\s+/).length < 6 || seen.has(k)) return false
+    seen.add(k)
+    return true
+  })
+  const allWords = [...new Set(pool.flatMap((v) => v.fields.texto.split(/\s+/).map(fillWord).filter(goodWord)))]
+  const out = []
+  for (const v of shuffle(pool, rnd)) {
+    if (out.length >= count) break
+    const raw = v.fields.texto.split(/\s+/)
+    const idx = shuffle(raw.map((_, i) => i).filter((i) => i > 0 && goodWord(fillWord(raw[i]))), rnd)[0]
+    if (idx == null) continue
+    const word = fillWord(raw[idx])
+    const others = shuffle(allWords.filter((w) => fold(w) !== fold(word)), rnd)
+    const opts = []
+    for (const w of others) {
+      if (opts.length >= 3) break
+      if (!opts.some((o) => fold(o) === fold(w))) opts.push(w)
+    }
+    if (opts.length < 3) continue
+    const options = shuffle([word, ...opts], rnd)
+    const prompt = raw.map((w, i) => (i === idx ? w.replace(word, '_____') : w)).join(' ')
+    out.push({ prompt: clipText(prompt, 320), options, answer: options.indexOf(word), ref: v.fields.cita || undefined, key: 'llenar:' + v.id })
+  }
+  return out
 }
