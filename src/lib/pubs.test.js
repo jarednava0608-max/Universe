@@ -11,7 +11,17 @@ describe('Referencias a publicaciones', () => {
   })
   it('no confunde texto normal ni citas bíblicas', () => {
     expect(findPubs('Juan 3:16, el capítulo 3 es bonito. Hay 5 libros. La cap 3')).toEqual([])
-    expect(findPubs('Imitemos su fe es un buen libro')).toEqual([])
+    expect(findPubs('tengo perspicacia para entender, y leí La Atalaya ayer')).toEqual([])
+  })
+  it('reconoce el título solo, el nombre corto y los volúmenes', () => {
+    expect(findPubs('Imitemos su fe es un buen libro')).toEqual(['Imitemos su fe'])
+    expect(findPubs('Ver Perspicacia para comprender las Escrituras.')).toEqual(['Perspicacia para comprender las Escrituras'])
+    expect(findPubs('Perspicacia, vol. 1, pág. 345 y it-2 pág. 10; también Perspicacia')).toEqual(['Perspicacia, vol. 1, pág. 345', 'it-2 pág. 10', 'Perspicacia'])
+    expect(pubTitle('Perspicacia, vol. 1, pág. 345')).toBe('Perspicacia para comprender las Escrituras')
+    expect(pubTitle('it-2 pág. 10')).toBe('Perspicacia para comprender las Escrituras')
+    expect(pubTitle('Perspicacia')).toBe('Perspicacia para comprender las Escrituras')
+    expect(isPubRef('Perspicacia')).toBe(true)
+    expect(isPubRef('perspicacia')).toBe(false)
   })
   it('busca la publicación en wol.jw.org', () => {
     expect(pubTitle('Seamos valientes, cap. 3')).toBe('Seamos valientes')
