@@ -76,3 +76,35 @@ describe('Ordenar nota: casos del editor', async () => {
     expect(capRefs('el mar 5 veces, hay 3 cosas, est 2')).toBe('el mar 5 veces, hay 3 cosas, est 2')
   })
 })
+
+describe('Ordenar: completar con lo que ya tienes', async () => {
+  const { enrichDoc, relatedIds, SECTION_TEXTS, SECTION_MAP } = await import('./noteText.js')
+  const { findRefs } = await import('../lib/bible.js')
+  const { refKey } = await import('../lib/verses.js')
+  const p = (text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })
+  const opts = {
+    nodes: [{ title: 'Reino de Dios', note: 'Gobierno celestial de Jehová. Lo dirige Jesús.' }, { title: 'Fe', note: '' }],
+    findRefs, refKey,
+    verseText: (r) => (refKey(r) === refKey('Daniel 2:44') ? 'El Dios del cielo establecerá un reino…' : null),
+  }
+  it('enlaza nodos, agrega los textos y lo que dice el mapa', () => {
+    const doc = { type: 'doc', content: [p('El reino de Dios aplastará todo (Daniel 2:44) y Dan. 2:44, ver Mateo 6:10.')] }
+    const out = enrichDoc(doc, opts).content
+    expect(out[0].content.find((c) => c.type === 'nodeLink').attrs.title).toBe('Reino de Dios')
+    const heads = out.filter((b) => b.type === 'heading').map((b) => b.content[0].text)
+    expect(heads).toEqual([SECTION_TEXTS, SECTION_MAP])
+    expect(out.filter((b) => b.type === 'blockquote')).toHaveLength(1)
+    expect(out.filter((b) => b.type === 'paragraph' && b.content?.[0]?.marks).map((b) => b.content[0].text)).toEqual(['Daniel 2:44', 'Mateo 6:10'])
+    expect(out.at(-1).content[0].content[0].content[1].text).toBe(': Gobierno celestial de Jehová.')
+  })
+  it('al ordenar otra vez no repite las secciones', () => {
+    const doc = { type: 'doc', content: [p('Leer Juan 17:3')] }
+    const once = enrichDoc(doc, opts)
+    const twice = enrichDoc(once, opts)
+    expect(twice).toEqual(once)
+  })
+  it('encuentra entradas relacionadas por citas o ideas', () => {
+    const items = [{ id: 'a', text: 'Sobre Sal. 83:18 y [[Fe]]' }, { id: 'b', text: 'Nada que ver' }, { id: 'c', text: 'Salmo 83:18' }]
+    expect(relatedIds('Hablar de [[Fe]] con Salmo 83:18', items, { findRefs, refKey })).toEqual(['a', 'c'])
+  })
+})

@@ -2,11 +2,12 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState }
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
-import { normKey } from '../lib/model.js'
+import { normKey, ROOT_ID } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
 import { RefChips } from '../components/RefLink.jsx'
-import { markdownToHtml } from '../lib/markdown.js'
-import { docToText, docToMarkdown, tidyDoc, claudeTidyPrompt, capRefs } from './noteText.js'
+import { markdownToHtml, plainText } from '../lib/markdown.js'
+import { docToText, docToMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
+import { findSavedVerse, refKey } from '../lib/verses.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -79,10 +80,12 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           entry={editing.entry}
           isNew={editing.isNew}
           nodes={nodes}
+          entries={entries}
           toast={toast}
           onSave={onSaveEntry}
           onDelete={onDeleteEntry}
           onClose={() => setEditing(null)}
+          onOpenEntry={(e) => setEditing({ entry: e, isNew: false })}
           onPropose={async (e, node) => {
             const saved = await onSaveEntry(e)
             const nodeId = await onProposeToMap(node)
@@ -181,7 +184,7 @@ function useVisibleBox() {
 const TIDY_ICON = 'M4 6h16M4 12h10M4 18h6M17 14l1.2 2.8L21 18l-2.8 1.2L17 22l-1.2-2.8L13 18l2.8-1.2z'
 const SHARE_ICON = 'M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1'
 
-function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onPropose, onOpenNode }) {
+function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onClose, onPropose, onOpenNode, onOpenEntry }) {
   const [titulo, setTitulo] = useState(entry.fields.titulo ?? '')
   // El contenido con formato vive en `html`; `texto` es la versión en texto simple (buscar, mapa, citas).
   // No se convierte en cada letra: se lee del editor solo al guardar.
@@ -197,6 +200,7 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
   const saved = useRef({ titulo: entry.fields.titulo ?? '', html: initialHtml, exists: !isNew })
   const tituloRef = useRef(titulo)
   tituloRef.current = titulo
+  const [relatedText, setRelatedText] = useState(() => `${entry.fields.titulo ?? ''}\n${noteBody(entry.fields)}`)
 
   const read = () => {
     const ed = editor.current
@@ -211,6 +215,7 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
     if (cur.titulo === saved.current.titulo && cur.html === saved.current.html) return
     if (isEmpty(cur)) return
     saved.current = { titulo: cur.titulo, html: cur.html, exists: true }
+    setRelatedText(`${cur.titulo}\n${cur.texto}`)
     await onSave(draft(cur))
   }
 
@@ -265,13 +270,33 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
     const ed = editor.current
     if (!ed) return
     const before = { json: ed.getJSON(), titulo }
-    const after = tidyDoc(before.json)
+    const after = enrichDoc(tidyDoc(before.json), {
+      nodes: nodes.filter((n) => n.id !== ROOT_ID),
+      findRefs,
+      refKey,
+      verseText: (r) => findSavedVerse(entries, r)?.texto ?? null,
+      plain: plainText,
+    })
     const nuevoTitulo = capRefs(titulo.replace(/\s+/g, ' ').trim()).replace(/^(\p{Ll})/u, (l) => l.toUpperCase())
     if (JSON.stringify(after) === JSON.stringify(before.json) && nuevoTitulo === titulo) return toast('La nota ya está ordenada.')
     ed.commands.setContent(after)
     setTitulo(nuevoTitulo)
     setVersion((v) => v + 1)
     setUndo(before)
+  }
+
+  // Otras entradas que comparten citas o ideas del mapa con esta nota.
+  const related = useMemo(() => {
+    const items = entries
+      .filter((e) => e.id !== entry.id && KINDS[e.kind])
+      .map((e) => ({ id: e.id, text: Object.values(e.fields ?? {}).map((v) => (Array.isArray(v) ? v.map((x) => x?.nota ?? x).join('\n') : typeof v === 'string' ? v : '')).join('\n') }))
+    const ids = relatedIds(relatedText, items, { findRefs, refKey })
+    return ids.map((id) => entries.find((e) => e.id === id))
+  }, [entries, entry.id, relatedText])
+
+  async function openEntry(e) {
+    await flush()
+    onOpenEntry(e)
   }
 
   function undoTidy() {
@@ -345,6 +370,17 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
         {linked && (
           <button className="link-note" onClick={async () => { await flush(); onOpenNode(linked.id) }}>En el mapa como «{linked.title}» · Ver</button>
         )}
+        {!editing && related.length > 0 && (
+          <div className="related">
+            <p className="related-title">Relacionado</p>
+            {related.map((e) => (
+              <button key={e.id} className="related-row" onClick={() => openEntry(e)}>
+                <span className="related-kind">{KINDS[e.kind].short}</span>
+                <span className="related-name">{KINDS[e.kind].title(e)}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="toolbar-slot" ref={setSlot} />
 
@@ -354,7 +390,7 @@ function NoteEditor({ entry, isNew, nodes, toast, onSave, onDelete, onClose, onP
             <div className="grabber" />
             <div className="menu-group">
               <button className="menu-item" onClick={() => { setMenu(false); tidy() }}>
-                <span className="menu-icon"><Icon d={TIDY_ICON} size={20} /></span><span className="menu-text"><span>Ordenar nota</span><span className="menu-sub">Limpia espacios, mayúsculas y arma listas</span></span>
+                <span className="menu-icon"><Icon d={TIDY_ICON} size={20} /></span><span className="menu-text"><span>Ordenar nota</span><span className="menu-sub">Limpia, arma listas y agrega tus textos y tu mapa</span></span>
               </button>
               <button className="menu-item" onClick={tidyWithClaude}>
                 <span className="menu-icon"><Icon d={ICONS.pegar} size={20} /></span><span className="menu-text"><span>Ordenar con Claude</span><span className="menu-sub">Copia la nota con instrucciones para tu chat</span></span>

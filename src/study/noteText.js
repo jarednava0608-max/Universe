@@ -237,3 +237,154 @@ Título: ${titulo || '(sin título)'}
 
 ${markdown || '(vacía)'}`
 }
+
+// ---------- Completar con lo que ya tienes (local, sin IA) ----------
+
+export const SECTION_TEXTS = 'Textos de esta nota'
+export const SECTION_MAP = 'De tu mapa'
+const GENERATED = [SECTION_TEXTS, SECTION_MAP]
+const isGeneratedHeading = (b) => b.type === 'heading' && GENERATED.includes(textOf(b).trim())
+
+// Quita las secciones que agregó "Ordenar" la vez anterior (para no repetirlas).
+function withoutGenerated(blocks) {
+  const i = blocks.findIndex(isGeneratedHeading)
+  return i < 0 ? blocks : blocks.slice(0, i)
+}
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+// Convierte en enlace la primera mención de cada nodo del mapa que aparezca en el texto.
+function linkNodes(blocks, nodes) {
+  const already = new Set()
+  const walkFind = (n) => {
+    if (n.type === 'nodeLink') already.add(n.attrs.title.toLowerCase())
+    ;(n.content ?? []).forEach(walkFind)
+  }
+  blocks.forEach(walkFind)
+  const titles = nodes
+    .map((n) => n.title.trim())
+    .filter((t) => t.length >= 3 && !already.has(t.toLowerCase()))
+    .sort((a, b) => b.length - a.length)
+  const linked = new Set()
+  const visit = (n) => {
+    if (!n.content || n.type === 'nodeLink') return n
+    if (n.type === 'heading') return n // los subtítulos se dejan como están
+    const content = []
+    for (const c of n.content) {
+      if (c.type !== 'text' || c.marks?.some((m) => m.type === 'link')) {
+        content.push(c.content ? visit(c) : c)
+        continue
+      }
+      let parts = [c]
+      for (const title of titles) {
+        if (linked.has(title)) continue
+        const re = new RegExp(`(?<![\\p{L}\\d])${escapeRe(title)}(?![\\p{L}\\d])`, 'iu')
+        const k = parts.findIndex((p) => p.type === 'text' && re.test(p.text))
+        if (k < 0) continue
+        const p = parts[k]
+        const m = p.text.match(re)
+        const before = p.text.slice(0, m.index)
+        const after = p.text.slice(m.index + m[0].length)
+        const pieces = [
+          ...(before ? [{ ...p, text: before }] : []),
+          { type: 'nodeLink', attrs: { title } },
+          ...(after ? [{ ...p, text: after }] : []),
+        ]
+        parts = [...parts.slice(0, k), ...pieces, ...parts.slice(k + 1)]
+        linked.add(title)
+      }
+      content.push(...parts)
+    }
+    return { ...n, content }
+  }
+  return blocks.map(visit)
+}
+
+const allText = (blocks) => {
+  const out = []
+  const walk = (n) => {
+    if (n.type === 'text') out.push(n.text)
+    else if (n.type === 'nodeLink') out.push(n.attrs.title)
+    ;(n.content ?? []).forEach(walk)
+    if (n.type === 'paragraph' || n.type === 'heading') out.push('\n')
+  }
+  blocks.forEach(walk)
+  return out.join('')
+}
+const linkedTitles = (blocks) => {
+  const out = []
+  const walk = (n) => {
+    if (n.type === 'nodeLink' && !out.includes(n.attrs.title)) out.push(n.attrs.title)
+    ;(n.content ?? []).forEach(walk)
+  }
+  blocks.forEach(walk)
+  return out
+}
+
+function firstSentence(text, max = 180) {
+  const t = String(text ?? '').replace(/\s+/g, ' ').trim()
+  const m = t.match(/^.{20,}?[.!?](?=\s|$)/)
+  const s = m && m[0].length <= max ? m[0] : t
+  return s.length > max ? s.slice(0, max).replace(/\s+\S*$/, '') + '…' : s
+}
+
+// Completa la nota: enlaza tus nodos, y al final agrega los textos bíblicos de la nota
+// (con su texto si ya lo guardaste) y lo que dice tu mapa de las ideas enlazadas.
+// opts: { nodes: [{ title, note }], findRefs(text) → citas, refKey(cita), verseText(cita) → texto | null, plain(note) → texto }
+export function enrichDoc(json, { nodes = [], findRefs, refKey, verseText, plain = (s) => s }) {
+  let blocks = withoutGenerated(json?.content ?? [])
+  while (blocks.length && blocks.at(-1).type === 'paragraph' && !textOf(blocks.at(-1)).trim()) blocks = blocks.slice(0, -1)
+  blocks = linkNodes(blocks, nodes)
+  const extra = []
+
+  // 1 y 4: los textos bíblicos de la nota, sin repetir, con su texto si está guardado.
+  const seen = new Set()
+  const refs = findRefs(allText(blocks)).filter((r) => {
+    const k = refKey(r) ?? r
+    if (seen.has(k)) return false
+    seen.add(k)
+    return true
+  })
+  if (refs.length) {
+    extra.push({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: SECTION_TEXTS }] })
+    for (const r of refs) {
+      const texto = verseText(r)
+      extra.push(para([{ type: 'text', text: r, marks: [{ type: 'bold' }] }]))
+      if (texto) extra.push({ type: 'blockquote', content: [para([{ type: 'text', text: texto }])] })
+    }
+  }
+
+  // 2: lo que dice tu mapa de cada idea enlazada.
+  const byTitle = new Map(nodes.map((n) => [n.title.toLowerCase(), n]))
+  const defs = linkedTitles(blocks)
+    .map((t) => byTitle.get(t.toLowerCase()))
+    .filter((n) => n && plain(n.note).trim())
+  if (defs.length) {
+    extra.push({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: SECTION_MAP }] })
+    extra.push({
+      type: 'bulletList',
+      content: defs.map((n) => ({ type: 'listItem', content: [para([{ type: 'nodeLink', attrs: { title: n.title } }, { type: 'text', text: ': ' + firstSentence(plain(n.note)) }])] })),
+    })
+  }
+
+  const content = [...blocks, ...extra]
+  return { type: 'doc', content: content.length ? content : [para()] }
+}
+
+// 3: entradas relacionadas (comparten citas o ideas del mapa con este texto).
+// items: [{ id, text }]; devuelve los ids ordenados por cuántas cosas comparten.
+export function relatedIds(text, items, { findRefs, refKey, max = 5 }) {
+  const keysOf = (t) => {
+    const k = new Set(findRefs(t).map((r) => 'r:' + (refKey(r) ?? r)))
+    for (const m of String(t).matchAll(/\[\[([^\]|\n]+)/g)) k.add('n:' + m[1].trim().toLowerCase())
+    return k
+  }
+  const mine = keysOf(text)
+  if (!mine.size) return []
+  return items
+    .map((it) => ({ id: it.id, score: [...keysOf(it.text)].filter((k) => mine.has(k)).length }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, max)
+    .map((x) => x.id)
+}
