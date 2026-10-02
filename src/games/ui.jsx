@@ -7,6 +7,9 @@ import RefLink from '../components/RefLink.jsx'
 import { shuffle, timedPoints } from './logic.js'
 import { EraScene } from './eras.jsx'
 
+// Las preguntas largas (definiciones, versículos) van en letra más chica para leerse bien.
+const promptClass = (p) => 'quiz-prompt' + (typeof p === 'string' && p.length > 150 ? ' long' : '')
+
 // Pantalla de un juego: barra con "volver" y título.
 // Como en iOS, deslizar desde el borde izquierdo hacia la derecha regresa.
 // `era` (1-8) le pone el color y el paisaje de esa época.
@@ -157,7 +160,7 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
         {seconds ? <span className="quiz-points">{points} pts</span> : null}
       </div>
       {seconds ? <div className={'timer' + (left < 4000 ? ' low' : '')}><span style={{ width: `${(left / (seconds * 1000)) * 100}%` }} /></div> : null}
-      <p className="quiz-prompt" key={'p' + i}>{q.prompt}</p>
+      <p className={promptClass(q.prompt)} key={'p' + i}>{q.prompt}</p>
       <div className={'options' + (q.options.length === 2 ? ' two' : '')}>
         {q.options.map((o, k) => {
           const state = !answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim'
@@ -373,7 +376,7 @@ export function Sprint({ make, seconds = 60, best: bestNow = 0, onFinish, onExit
         <span className="quiz-points">{right} {right === 1 ? 'acierto' : 'aciertos'}</span>
       </div>
       <div className={'timer' + (left < 10000 ? ' low' : '')}><span style={{ width: `${(left / (seconds * 1000)) * 100}%` }} /></div>
-      <p className="quiz-prompt" key={'p' + total}>{q.prompt}</p>
+      <p className={promptClass(q.prompt)} key={'p' + total}>{q.prompt}</p>
       <div className="options">
         {q.options.map((o, k) => (
           <button key={total + ':' + k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => choose(k)}>{o}</button>
@@ -446,7 +449,7 @@ export function Survival({ questions, best: bestNow = 0, onFinish, onAgain, onDo
         {i > 0 && <span className="quiz-run" key={i}>{i} {i === 1 ? 'seguida' : 'seguidas'}</span>}
         <span className="quiz-points">Récord {Math.max(best, i)}</span>
       </div>
-      <p className="quiz-prompt" key={'p' + i}>{q.prompt}</p>
+      <p className={promptClass(q.prompt)} key={'p' + i}>{q.prompt}</p>
       <div className={'options' + (q.options.length === 2 ? ' two' : '')}>
         {q.options.map((o, k) => (
           <button key={i + ':' + k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => choose(k)}>{o}</button>

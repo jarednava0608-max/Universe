@@ -163,3 +163,13 @@ describe('definiciones sin subtítulos', () => {
     expect(defText('## Lo que pasa\nEn el noveno año.\n\n## Lo que estudiamos\nValor.')).toBe('En el noveno año. Valor.')
   })
 })
+
+describe('trimQuotes', () => {
+  it('quita comillas sueltas al inicio y al final', async () => {
+    const { trimQuotes } = await import('./logic.js')
+    expect(trimQuotes('“‘Pero yo te rescataré ese día —afirma Jehová—’.')).toBe('Pero yo te rescataré ese día —afirma Jehová—.')
+    expect(trimQuotes('Jehová es mi pastor.')).toBe('Jehová es mi pastor.')
+    expect(trimQuotes('\u201c\u2018Porque confiaste en mí\u2019, afirma Jehová\u201d.')).toBe('Porque confiaste en mí, afirma Jehová.')
+    expect(trimQuotes('Le dijo: “Ven” y fue')).toBe('Le dijo: “Ven” y fue')
+  })
+})

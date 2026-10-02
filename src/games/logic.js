@@ -92,6 +92,14 @@ export function maskTitle(text, title) {
   return out
 }
 
+// Quita las comillas sueltas al inicio y al final de un trozo de versículo («“‘Pero yo…’.» → «Pero yo….»).
+export function trimQuotes(s) {
+  let t = s.trim().replace(/^[\u201c\u201d"\u2018\u2019'\u00ab\u00bb\s]+/, '').replace(/[\u201c\u201d"\u2018\u2019'\u00ab\u00bb]+(?=[.,;:!?\s]*$)/, '')
+  // Un cierre que quedó sin su apertura (el versículo empezaba a media cita) también sobra.
+  for (const [open, close] of [['\u201c', '\u201d'], ['\u2018', '\u2019'], ['\u00ab', '\u00bb']]) if (!t.includes(open)) t = t.split(close).join('')
+  return t
+}
+
 function clipText(s, n = 220) {
   return s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s
 }
@@ -251,7 +259,7 @@ export function buildCiteQuestions(verses, count = 10, rnd = Math.random) {
   if (pool.length < 4) return []
   return shuffle(pool, rnd).slice(0, count).map((v) => {
     const opts = shuffle([v, ...shuffle(pool.filter((o) => o !== v), rnd).slice(0, 3)], rnd)
-    return { prompt: clipText(v.fields.texto, 260), options: opts.map((o) => o.fields.cita), answer: opts.indexOf(v), key: 'cita:' + v.id }
+    return { prompt: clipText(trimQuotes(v.fields.texto), 260), options: opts.map((o) => o.fields.cita), answer: opts.indexOf(v), key: 'cita:' + v.id }
   })
 }
 
@@ -382,7 +390,7 @@ export function buildFillQuestions(verses, count = 10, rnd = Math.random) {
     if (opts.length < 3) continue
     const options = shuffle([word, ...opts], rnd)
     const prompt = raw.map((w, i) => (i === idx ? w.replace(word, '_____') : w)).join(' ')
-    out.push({ prompt: clipText(prompt, 320), options, answer: options.indexOf(word), ref: v.fields.cita || undefined, key: 'llenar:' + v.id })
+    out.push({ prompt: clipText(trimQuotes(prompt), 320), options, answer: options.indexOf(word), ref: v.fields.cita || undefined, key: 'llenar:' + v.id })
   }
   return out
 }
