@@ -66,8 +66,11 @@ describe('Notas', async () => {
   })
   it('fecha corta como en Notas y orden por última edición', () => {
     const now = new Date(2026, 9, 2, 18, 0)
-    expect(noteDate(new Date(2026, 9, 1, 9, 0).getTime(), now)).toBe('Ayer')
-    expect(noteDate(new Date(2026, 9, 2, 9, 5).getTime(), now)).toMatch(/9:05/)
+    expect(noteDate(new Date(2026, 9, 1, 9, 0).getTime(), now)).toMatch(/^Ayer, 9:00/)
+    expect(noteDate(new Date(2026, 9, 2, 9, 5).getTime(), now)).toMatch(/^Hoy, 9:05/)
+    expect(noteDate(new Date(2026, 8, 28, 9, 5).getTime(), now)).toMatch(/lunes 28/)
+    expect(noteDate(new Date(2026, 5, 3, 9, 5).getTime(), now)).toMatch(/^3 jun/)
+    expect(noteDate(new Date(2025, 5, 3, 9, 5).getTime(), now)).toMatch(/2025/)
     expect(KINDS.reflexion.label).toBe('Notas')
     const a = { kind: 'reflexion', fields: {}, createdAt: 1, updatedAt: 500 }
     const b = { kind: 'reflexion', fields: {}, createdAt: 9, updatedAt: 100 }

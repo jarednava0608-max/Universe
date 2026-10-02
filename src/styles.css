@@ -1002,3 +1002,18 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .search input { min-width: 0; }
 .mb-path > li, .mode-list > *, .options > *, .result-stats > * { min-width: 0; }
 .bar-title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+
+/* ---------- Estudio: Texto de hoy y Seguir donde te quedaste ---------- */
+.today-card { display: grid; gap: 10px; padding: 16px 18px; margin: -4px 0 12px; border-radius: 18px; background: linear-gradient(160deg, var(--surface-2), var(--surface) 70%); border: 1px solid var(--line); }
+.today-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+.today-text { display: grid; gap: 8px; text-align: left; }
+.today-verse { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.5; color: var(--text); font-style: italic; }
+.today-sub { font-size: 13px; color: var(--text-2); }
+.today-add { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 500; color: var(--text); background: rgba(var(--fg-rgb), 0.06); border: 1px solid var(--line-strong); }
+.today-add:active { background: rgba(var(--fg-rgb), 0.1); }
+.continue-card { position: relative; display: grid; gap: 2px; width: 100%; padding: 12px 40px 12px 16px; margin-bottom: 16px; text-align: left; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.continue-card:active { background: var(--surface-2); }
+.continue-card .chev { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); }
+.continue-label { font-size: 12px; font-weight: 600; color: var(--link); }
+.continue-title { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.continue-sub { font-size: 13px; color: var(--text-2); }

@@ -3,7 +3,7 @@ import PageScroll from '../components/PageScroll.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody } from './kinds.js'
+import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody, noteDate, today } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -29,13 +29,25 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
     return m
   }, [entries])
 
-  const recent = useMemo(() => entries.filter((e) => KINDS[e.kind]).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5), [entries])
+  const recent = useMemo(() => entries.filter((e) => KINDS[e.kind]).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6), [entries])
+  // Arriba en Estudio: el Texto diario de hoy y "Seguir donde te quedaste" (lo último que editaste esta semana).
+  const todayEntry = byKind.diario.find((e) => e.fields.fecha === today())
+  const last = recent[0] && recent[0].id !== todayEntry?.id && Date.now() - recent[0].updatedAt < 7 * 864e5 ? recent[0] : null
 
   return (
     <div className="page">
       {!section ? (
         <PageScroll title="Estudio">
           <h1 className="page-title">Estudio</h1>
+          <TodayCard entry={todayEntry} onOpen={(e) => setEditing({ entry: e, isNew: false })} onAdd={() => setEditing({ entry: makeEntry('diario'), isNew: true })} />
+          {last && (
+            <button className="continue-card" onClick={() => setEditing({ entry: last, isNew: false })}>
+              <span className="continue-label">Seguir donde te quedaste</span>
+              <span className="continue-title">{KINDS[last.kind].title(last)}</span>
+              <span className="continue-sub">{KINDS[last.kind].short} · {noteDate(last.updatedAt)}</span>
+              <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+            </button>
+          )}
           <div className="kind-grid">
             {KIND_ORDER.map((k) => (
               <button key={k} className="kind-card" onClick={() => setSection(k)}>
@@ -50,7 +62,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           {recent.length > 0 && (
             <>
               <h2 className="section-label">Recientes</h2>
-              <EntryList items={recent} showKind onOpen={(e) => setEditing({ entry: e, isNew: false })} />
+              <EntryList items={recent.filter((e) => e.id !== last?.id).slice(0, 5)} showKind onOpen={(e) => setEditing({ entry: e, isNew: false })} />
             </>
           )}
         </PageScroll>
@@ -132,6 +144,27 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
     </div>
+  )
+}
+
+// Texto diario de hoy: si ya lo llenaste, el versículo; si no, invitación a agregarlo.
+function TodayCard({ entry, onOpen, onAdd }) {
+  const fecha = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
+  const texto = entry?.fields.texto?.trim()
+  return (
+    <section className={'today-card' + (entry ? ' done' : '')}>
+      <span className="today-label">Texto de hoy · {fecha}</span>
+      {entry ? (
+        <button className="today-text" onClick={() => onOpen(entry)}>
+          <span className="today-verse">{texto ? (texto.length > 180 ? texto.slice(0, 180).replace(/\s+\S*$/, '') + '…' : texto) : 'Sin texto todavía'}</span>
+          {entry.fields.resumen && <span className="today-sub">{entry.fields.resumen}</span>}
+        </button>
+      ) : (
+        <button className="today-add" onClick={onAdd}>
+          <Icon d={ICONS.plus} size={16} stroke={2} /> Agregar el texto de hoy
+        </button>
+      )}
+    </section>
   )
 }
 

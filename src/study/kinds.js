@@ -4,7 +4,7 @@
 import { newId } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
 
-const today = () => {
+export const today = () => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -96,7 +96,7 @@ export const KINDS = {
       { key: 'texto', label: 'Nota', type: 'text', hint: 'Puedes usar Markdown: ## subtítulos, **negritas**, listas, - [ ] tareas y tablas' },
     ],
     title: (e) => e.fields.titulo || firstLine(e.fields.texto) || 'Nota nueva',
-    subtitle: (e) => [noteDate(e.updatedAt), firstLine(e.fields.titulo ? e.fields.texto : lines(e.fields.texto).slice(1).join(' ')) || ''].filter(Boolean).join('  '),
+    subtitle: (e) => [noteDate(e.updatedAt), firstLine(e.fields.titulo ? e.fields.texto : lines(e.fields.texto).slice(1).join(' ')) || ''].filter(Boolean).join(' · '),
     toNode: (f) => ({
       title: f.titulo || firstLine(f.texto) || 'Nota',
       idea: f.texto,
@@ -129,10 +129,12 @@ export function noteDate(ms, now = new Date()) {
   const d = new Date(ms)
   const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
   const diff = Math.round((day(now) - day(d)) / 864e5)
-  if (diff === 0) return d.toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })
-  if (diff === 1) return 'Ayer'
-  if (diff < 7 && diff > 0) return d.toLocaleDateString('es', { weekday: 'long' })
-  return d.toLocaleDateString('es', { day: 'numeric', month: 'numeric', year: '2-digit' })
+  const time = d.toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit' })
+  // Fecha clara: "Hoy, 9:05", "Ayer, 18:30", "lunes 28 sep", "2 oct" o "2 oct 2025" si es de otro año.
+  if (diff === 0) return `Hoy, ${time}`
+  if (diff === 1) return `Ayer, ${time}`
+  if (diff > 1 && diff < 7) return d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' }).replace(',', '')
+  return d.toLocaleDateString('es', { day: 'numeric', month: 'short', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) })
 }
 
 // Orden en las listas: por fecha (si tiene) y luego por la última edición. Las notas, por la última edición.
