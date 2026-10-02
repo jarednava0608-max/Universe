@@ -2,8 +2,10 @@ import { useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
 import { buildCards, verseSources } from './logic.js'
-import { achievements, dueCount, lastWeek, streak } from './progress.js'
+import { achievements, dueCount, lastWeek, streak, todayISO } from './progress.js'
 import Review from './Review.jsx'
+import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
+import { GameScreen, Quiz } from './ui.jsx'
 import Sheet from '../components/Sheet.jsx'
 import PageScroll from '../components/PageScroll.jsx'
 
@@ -12,6 +14,7 @@ export default function GamesTab({ store, toast }) {
   const [open, setOpen] = useState(null)
   const [reviewing, setReviewing] = useState(false)
   const [medals, setMedals] = useState(false)
+  const [daily, setDaily] = useState(false)
   const game = GAMES.find((g) => g.id === open)
 
   return (
@@ -19,6 +22,7 @@ export default function GamesTab({ store, toast }) {
       <PageScroll title="Juegos">
         <h1 className="page-title">Juegos</h1>
         <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
+        <DailyCard store={store} onOpen={() => setDaily(true)} />
         <div className="game-list">
           {GAMES.map((g) => {
             const st = g.stat?.(store)
@@ -39,7 +43,48 @@ export default function GamesTab({ store, toast }) {
       {game && <game.Component store={store} toast={toast} onExit={() => setOpen(null)} />}
       {reviewing && <Review store={store} onExit={() => setReviewing(false)} />}
       {medals && <Medals store={store} onClose={() => setMedals(false)} />}
+      {daily && <Daily store={store} onExit={() => setDaily(false)} />}
     </div>
+  )
+}
+
+// Reto del día: 5 preguntas iguales todo el día. Muestra si ya lo hiciste y cómo te fue.
+function DailyCard({ store, onOpen }) {
+  const done = dailyDone(store.progress)
+  return (
+    <button className={'daily-card' + (done ? ' done' : '')} onClick={onOpen}>
+      <span className="daily-icon">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          {done
+            ? <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            : <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />}
+        </svg>
+      </span>
+      <span className="entry-main">
+        <span className="game-title">Reto del día</span>
+        <span className="entry-sub">{done ? `Hecho: ${done.score} de ${DAILY_SIZE}. Mañana hay otro` : `${DAILY_SIZE} preguntas nuevas cada día`}</span>
+      </span>
+      {done ? <span className="daily-dots">{Array.from({ length: DAILY_SIZE }, (_, i) => <i key={i} className={i < done.score ? 'on' : ''} />)}</span> : <span className="game-pill due">Hoy</span>}
+    </button>
+  )
+}
+
+function Daily({ store, onExit }) {
+  const [questions] = useState(() => dailyQuestions({ nodes: store.nodes, entries: store.entries, best: store.progress.best }))
+  const [nonce, setNonce] = useState(0)
+  return (
+    <GameScreen title="Reto del día" onExit={onExit}>
+      <Quiz
+        key={nonce}
+        questions={questions}
+        onDone={onExit}
+        onAgain={() => setNonce((n) => n + 1)}
+        onFinish={(score) => store.updateProgress((f) => {
+          const prev = dailyDone(f)
+          return prev && prev.score >= score ? f : { ...f, daily: { day: todayISO(), score } }
+        })}
+      />
+    </GameScreen>
   )
 }
 

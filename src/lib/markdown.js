@@ -70,7 +70,9 @@ export function plainText(text) {
   return String(text ?? '')
     .replace(WIKI_RE, (_, t, l) => (l ?? t))
     .replace(/\[!(jw|yo)\]/gi, '')
-    .replace(/[#>*_`~-]+/g, ' ')
+    .replace(/^\s*[-+]\s+/gm, ' ') // viñetas de lista (los guiones dentro de palabras y citas se quedan: 38:1-6, Ébed-Mélec)
+    .replace(/^\s*-{3,}\s*$/gm, ' ') // líneas separadoras
+    .replace(/[#>*_`~]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }

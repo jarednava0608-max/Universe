@@ -958,3 +958,15 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .page-bar span { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .empty-state .empty-icon { display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; margin-bottom: 14px; }
 .empty-state .empty-title { margin: 0 0 4px; font-size: 18px; font-weight: 600; color: var(--text); }
+
+/* ---------- Reto del día ---------- */
+.daily-card { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 70px; padding: 14px; margin: -6px 0 18px; text-align: left; background: rgba(245, 210, 122, 0.06); border: 1px solid rgba(245, 210, 122, 0.28); border-radius: 16px; transition: transform 0.15s var(--ease); }
+.daily-card:active { transform: scale(0.985); }
+.daily-card .entry-main { min-width: 0; }
+.daily-card.done { background: var(--surface); border-color: var(--line); }
+.daily-icon { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(245, 210, 122, 0.14); color: var(--gold-text); }
+.daily-card.done .daily-icon { background: rgba(134, 239, 172, 0.12); color: var(--ok); }
+.daily-dots { flex: none; display: flex; gap: 4px; }
+.daily-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line-strong); }
+.daily-dots i.on { background: var(--ok); border-color: transparent; }
+.daily-card .entry-sub { white-space: normal; }

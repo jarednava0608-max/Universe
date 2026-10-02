@@ -109,7 +109,11 @@ export function mergeProgress(a = {}, b = {}) {
   const best = { ...(b.best ?? {}) }
   // Los récords de tiempo (terminan en "-tiempo") se quedan con el menor; los demás con el mayor.
   for (const [k, v] of Object.entries(a.best ?? {})) best[k] = isTime(k) ? Math.min(v ?? Infinity, best[k] ?? Infinity) : Math.max(v ?? 0, best[k] ?? 0)
-  return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0) }
+  // Reto del día: el del día más reciente; si es el mismo día, el mejor resultado.
+  const da = a.daily
+  const db = b.daily
+  const daily = !da ? db : !db ? da : da.day !== db.day ? (da.day > db.day ? da : db) : (da.score >= db.score ? da : db)
+  return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}) }
 }
 
 // Guarda un récord solo si supera el anterior. Devuelve los campos nuevos (o los mismos).
