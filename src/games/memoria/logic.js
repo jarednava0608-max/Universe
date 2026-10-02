@@ -24,8 +24,13 @@ export function knownIn(w, srs = {}) {
   return inWorld(w).filter((c) => (srs[KEY(c)]?.box ?? 0) >= 1).length
 }
 
+// Personajes que no deben salir como opción falsa del otro: lo que hizo uno también lo hizo el otro
+// (Eva también comió del fruto; Timoteo también acompañó a Pablo en su segundo viaje).
+const CONFUSABLE = [['Adán', 'Eva'], ['Silas', 'Timoteo']]
+const confusable = (a, b) => CONFUSABLE.some(([x, y]) => (a.n === x && b.n === y) || (a.n === y && b.n === x))
+
 function options(answer, pool, get, rnd) {
-  const others = shuffle([...new Set(pool.map(get).filter((x) => x !== get(answer)))], rnd).slice(0, 3)
+  const others = shuffle([...new Set(pool.filter((x) => !confusable(answer, x)).map(get).filter((x) => x !== get(answer)))], rnd).slice(0, 3)
   const opts = shuffle([get(answer), ...others], rnd)
   return { options: opts, answer: opts.indexOf(get(answer)) }
 }
@@ -98,7 +103,7 @@ export const stars = (pct = 0) => (pct >= 100 ? 3 : pct >= 85 ? 2 : pct >= PASS 
 // ¿Cierto o falso?: el nombre con lo que hizo él (cierto) o lo que hizo otro del mismo mundo (falso).
 export function trueFalseRound(chars, srs = {}, rnd = Math.random) {
   return pick(chars, srs, ROUND, rnd).map((c) => {
-    const others = chars.filter((o) => o.id !== c.id && o.d !== c.d)
+    const others = chars.filter((o) => o.id !== c.id && o.d !== c.d && !confusable(c, o))
     const isTrue = rnd() < 0.5 || !others.length
     const shown = isTrue ? c : others[Math.floor(rnd() * others.length)]
     return {

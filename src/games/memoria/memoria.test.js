@@ -84,3 +84,15 @@ describe('¿Cierto o falso?', () => {
     }
   })
 })
+
+describe('opciones sin dos respuestas correctas', () => {
+  it('Eva no sale como opción de Adán ni Timoteo de Silas', () => {
+    const rnd = mulberry(21)
+    const adan = CHARACTERS.find((c) => c.n === 'Adán')
+    const silas = CHARACTERS.find((c) => c.n === 'Silas')
+    for (let i = 0; i < 300; i++) {
+      for (const q of whoRound([adan], {}, rnd, inWorld(1))) expect(q.options).not.toContain('Eva')
+      for (const q of whoRound([silas], {}, rnd, inWorld(8))) expect(q.options).not.toContain('Timoteo')
+    }
+  })
+})
