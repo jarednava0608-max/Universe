@@ -14,7 +14,7 @@ export default function Books({ store, onExit }) {
 
   if (mode === 'quiz') {
     return (
-      <GameScreen title="Preguntas" onExit={exit}>
+      <GameScreen title="Preguntas" back="Libros" onExit={exit}>
         <Quiz
           key={nonce}
           questions={round}
@@ -29,7 +29,7 @@ export default function Books({ store, onExit }) {
   if (mode === 'order') return <OrderBooks best={store.progress.best?.['libros-orden'] ?? 0} onRecord={(n) => store.updateProgress((f) => withBest(f, 'libros-orden', n))} onExit={exit} />
   if (mode === 'sprint') {
     return (
-      <GameScreen title="Reto de 60 segundos" onExit={exit}>
+      <GameScreen title="Reto de 60 segundos" back="Libros" onExit={exit}>
         <Sprint
           make={bookSprintQuestion}
           best={store.progress.best?.['libros-reto'] ?? 0}
@@ -69,7 +69,7 @@ function OrderBooks({ best, onRecord, onExit }) {
     if (n > best) onRecord(n)
   }
   return (
-    <GameScreen title="Ordenar" onExit={onExit}>
+    <GameScreen title="Ordenar" back="Libros" onExit={onExit}>
       <div className="quiz-meta tl-meta">
         <span className="quiz-count">En el orden de la Biblia</span>
         {perfect >= 1 && <span className="quiz-run" key={perfect}>{perfect} {perfect === 1 ? 'perfecta' : 'perfectas seguidas'}</span>}
@@ -91,7 +91,7 @@ function OrderBooks({ best, onRecord, onExit }) {
 
 function BookList({ onExit }) {
   return (
-    <GameScreen title="Los 66 libros" onExit={onExit}>
+    <GameScreen title="Los 66 libros" back="Libros" onExit={onExit}>
       {SECTIONS.map((s) => (
         <section key={s.name} className="book-section">
           <p className="book-section-title">{s.name}</p>

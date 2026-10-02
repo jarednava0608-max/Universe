@@ -58,7 +58,7 @@ export default function Trivia({ store, toast, onExit }) {
   if (list) return <QuestionList bank={bank} store={store} onBack={() => setList(false)} />
 
   return (
-    <GameScreen title="Trivia" onExit={round ? () => setRound(null) : onExit}>
+    <GameScreen title="Trivia" back={round ? 'Trivia' : 'Juegos'} onExit={round ? () => setRound(null) : onExit}>
       {round && survival ? (
         <Survival
           key={nonce}
@@ -113,7 +113,7 @@ export default function Trivia({ store, toast, onExit }) {
 // Lista de preguntas guardadas: se pueden borrar una por una o todas.
 function QuestionList({ bank, store, onBack }) {
   return (
-    <GameScreen title="Mis preguntas" onExit={onBack}>
+    <GameScreen title="Mis preguntas" back="Trivia" onExit={onBack}>
       <ul className="q-list">
         {bank.map((e) => (
           <li key={e.id} className="q-item">

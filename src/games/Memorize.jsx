@@ -123,7 +123,7 @@ function Practice({ verse, store, onSaved, onBack }) {
   )
 
   return (
-    <GameScreen title={verse.fields.cita || 'Texto'} onExit={onBack}>
+    <GameScreen title={verse.fields.cita || 'Texto'} back="Textos" onExit={onBack}>
       <div className="seg-modes">
         {MODES.map(([m, l]) => (
           <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); reset() }}>{l}</button>

@@ -39,7 +39,7 @@ function Guess({ nodes, best, onBest, onExit }) {
   const [round, setRound] = useState(() => buildGuessQuestions(nodes))
   const [nonce, setNonce] = useState(0)
   return (
-    <GameScreen title="¿Qué es?" onExit={onExit}>
+    <GameScreen title="¿Qué es?" back="Mi estudio" onExit={onExit}>
       {round.length ? (
         <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(buildGuessQuestions(nodes)); setNonce((x) => x + 1) }} />
       ) : (
@@ -54,7 +54,7 @@ function Fill({ entries, best, onBest, onExit }) {
   const [round, setRound] = useState(() => buildFillQuestions(verses))
   const [nonce, setNonce] = useState(0)
   return (
-    <GameScreen title="Completa el texto" onExit={onExit}>
+    <GameScreen title="Completa el texto" back="Mi estudio" onExit={onExit}>
       {round.length >= 3 ? (
         <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(buildFillQuestions(verses)); setNonce((x) => x + 1) }} />
       ) : (
@@ -69,7 +69,7 @@ function Cite({ entries, best, onBest, onExit }) {
   const [round, setRound] = useState(() => buildCiteQuestions(verses))
   const [nonce, setNonce] = useState(0)
   return (
-    <GameScreen title="¿Dónde está?" onExit={onExit}>
+    <GameScreen title="¿Dónde está?" back="Mi estudio" onExit={onExit}>
       {round.length ? (
         <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(buildCiteQuestions(verses)); setNonce((x) => x + 1) }} />
       ) : (
@@ -89,7 +89,7 @@ function Pairs({ nodes, best, onBest, onExit }) {
   const startRef = useRef(Date.now())
   const [secs, setSecs] = useState(0)
 
-  if (!board) return <GameScreen title="Parejas" onExit={onExit}><Empty>Necesitas al menos 3 nodos con definición en tu mapa para este juego.</Empty></GameScreen>
+  if (!board) return <GameScreen title="Parejas" back="Mi estudio" onExit={onExit}><Empty>Necesitas al menos 3 nodos con definición en tu mapa para este juego.</Empty></GameScreen>
 
   const finished = done.size === board.left.length
   function pickRight(id) {
@@ -119,7 +119,7 @@ function Pairs({ nodes, best, onBest, onExit }) {
   }
 
   return (
-    <GameScreen title="Parejas" onExit={onExit}>
+    <GameScreen title="Parejas" back="Mi estudio" onExit={onExit}>
       {finished ? (
         <Result
           pct={Math.round((board.left.length / (board.left.length + errors)) * 100)}
@@ -180,7 +180,7 @@ function Cards({ store, onExit }) {
 
   const next = nextDue(keys, srs)
   return (
-    <GameScreen title="Tarjetas" onExit={onExit}>
+    <GameScreen title="Tarjetas" back="Mi estudio" onExit={onExit}>
       {!all.length ? (
         <Empty>Agrega definiciones a tus nodos o textos diarios para repasar con tarjetas.</Empty>
       ) : !deck.length ? (

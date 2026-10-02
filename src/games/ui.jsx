@@ -7,11 +7,45 @@ import RefLink from '../components/RefLink.jsx'
 import { shuffle, timedPoints } from './logic.js'
 
 // Pantalla de un juego: barra con "volver" y título.
-export function GameScreen({ title, onExit, right, children }) {
+// Como en iOS, deslizar desde el borde izquierdo hacia la derecha regresa.
+export function GameScreen({ title, onExit, right, back = 'Juegos', children }) {
+  const [dx, setDx] = useState(0)
+  const drag = useRef(null)
+  const onTouchStart = (e) => {
+    const t = e.touches[0]
+    drag.current = t.clientX < 28 ? { x: t.clientX, y: t.clientY, on: false } : null
+  }
+  const onTouchMove = (e) => {
+    const d = drag.current
+    if (!d) return
+    const t = e.touches[0]
+    const x = t.clientX - d.x
+    if (!d.on) {
+      if (Math.abs(t.clientY - d.y) > Math.abs(x)) { drag.current = null; return }
+      if (x > 8) d.on = true
+    }
+    if (d.on) {
+      d.dx = Math.max(0, x)
+      setDx(d.dx)
+    }
+  }
+  const onTouchEnd = () => {
+    const d = drag.current
+    drag.current = null
+    setDx(0)
+    if (d?.on && d.dx > 90) onExit() // la distancia va en el ref (el estado puede ir atrasado)
+  }
   return (
-    <div className="overlay game">
+    <div
+      className="overlay game"
+      style={dx ? { transform: `translateX(${dx}px)`, transition: 'none', boxShadow: '-12px 0 30px rgba(0,0,0,0.35)' } : undefined}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+    >
       <header className="bar">
-        <button className="bar-btn back" onClick={onExit}><Icon d={ICONS.back} size={18} stroke={2} /> Juegos</button>
+        <button className="bar-btn back" onClick={onExit}><Icon d={ICONS.back} size={18} stroke={2} /> {back}</button>
         <span className="bar-title">{title}</span>
         {right ?? <span className="bar-spacer" />}
       </header>
