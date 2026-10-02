@@ -66,6 +66,7 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
   const [run, setRun] = useState(0)
   const [maxRun, setMaxRun] = useState(0)
   const roundStart = useRef(Date.now())
+  const roundEnd = useRef(0) // se fija al terminar (así el tiempo no sigue corriendo si la pantalla se redibuja)
   const [missed, setMissed] = useState([])
   const [left, setLeft] = useState(seconds ? seconds * 1000 : 0)
   const startRef = useRef(0)
@@ -116,11 +117,11 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
       <Result
         pct={pct}
         value={seconds ? points : score}
-        unit={seconds ? 'pts' : `/${questions.length}`}
+        unit={seconds ? ' pts' : `/${questions.length}`}
         msg={(seconds ? `${score} de ${questions.length} correctas. ` : '') + cheer(pct)}
         record={record}
         stats={[
-          ['Tiempo', fmtTime(Math.round((Date.now() - roundStart.current) / 1000))],
+          ['Tiempo', fmtTime(Math.round(((roundEnd.current || Date.now()) - roundStart.current) / 1000))],
           ['Mejor racha', maxRun],
           ...(best != null ? [[seconds ? 'Récord' : 'Tu mejor', seconds ? Math.max(best, points) + ' pts' : Math.max(best, pct) + ' %']] : []),
         ]}
@@ -169,7 +170,10 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
           {q.explain && <p className="explain">{q.explain}</p>}
           {q.ref && <p className="ref">{findRefs(q.ref).length ? <RefLink refText={findRefs(q.ref)[0]} /> : q.ref}</p>}
           <button className="primary" onClick={() => {
-            if (i + 1 >= questions.length) onFinish?.(score, questions.length, points)
+            if (i + 1 >= questions.length) {
+              roundEnd.current = Date.now()
+              onFinish?.(score, questions.length, points)
+            }
             setPicked(null)
             setI(i + 1)
           }}>

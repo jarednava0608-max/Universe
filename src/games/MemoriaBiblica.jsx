@@ -172,6 +172,7 @@ function WhoAmI({ title, back, chars, daily, srs, best: bestNow, onAnswer, onFin
   const [run, setRun] = useState(0)
   const [maxRun, setMaxRun] = useState(0)
   const started = useRef(Date.now())
+  const ended = useRef(0)
   const box = useRef(null)
   const q = round[i]
   useEffect(() => toTop(box.current), [i])
@@ -179,6 +180,7 @@ function WhoAmI({ title, back, chars, daily, srs, best: bestNow, onAnswer, onFin
   function again() {
     setBest(bestNow)
     started.current = Date.now()
+    ended.current = 0
     setRun(0)
     setMaxRun(0)
     setNonce((n) => n + 1)
@@ -206,7 +208,7 @@ function WhoAmI({ title, back, chars, daily, srs, best: bestNow, onAnswer, onFin
           pct={pct}
           msg={`${right} de ${round.length} correctas · ${points} ${points === 1 ? 'punto' : 'puntos'}. ${cheer(pct)}`}
           record={best > 0 && pct > best}
-          stats={[['Tiempo', fmtTime(Math.round((Date.now() - started.current) / 1000))], ['Mejor racha', maxRun], ...(best != null ? [['Tu mejor', Math.max(best, pct) + ' %']] : [])]}
+          stats={[['Tiempo', fmtTime(Math.round(((ended.current || Date.now()) - started.current) / 1000))], ['Mejor racha', maxRun], ...(best != null ? [['Tu mejor', Math.max(best, pct) + ' %']] : [])]}
           onAgain={again}
           onDone={onBack}
         >
@@ -245,7 +247,10 @@ function WhoAmI({ title, back, chars, daily, srs, best: bestNow, onAnswer, onFin
     onAnswer(q.ch, ok)
   }
   function next() {
-    if (i + 1 >= round.length) onFinish(Math.round(((right) / round.length) * 100))
+    if (i + 1 >= round.length) {
+      ended.current = Date.now()
+      onFinish(Math.round((right / round.length) * 100))
+    }
     setI(i + 1)
     setShown(1)
     setPicked(null)
