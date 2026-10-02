@@ -593,6 +593,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .revealed { color: var(--link); }
 .verse-ref { color: var(--text-2); font-size: 15px; margin: 0 0 22px; }
 .hint.center { text-align: center; }
+.primary + .hint, .secondary + .hint { margin-top: 10px; }
 
 .soon { text-align: center; padding: 48px 8px; }
 .soon h2 { font-family: var(--font-display); font-size: 28px; margin: 14px 0 6px; letter-spacing: -0.02em; }
