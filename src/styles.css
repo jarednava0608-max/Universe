@@ -956,3 +956,5 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 }
 .page-bar.on { opacity: 1; transform: none; }
 .page-bar span { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empty-state .empty-icon { display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; margin-bottom: 14px; }
+.empty-state .empty-title { margin: 0 0 4px; font-size: 18px; font-weight: 600; color: var(--text); }

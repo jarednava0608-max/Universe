@@ -19,7 +19,7 @@ export const GAMES = [
   {
     id: 'memoria-biblica',
     title: 'Memoria Bíblica',
-    desc: '128 personajes, 8 mundos y 4 modos',
+    desc: '128 personajes, 8 mundos y retos',
     icon: 'M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z',
     Component: MemoriaBiblica,
     stat: (store) => {
@@ -41,7 +41,7 @@ export const GAMES = [
   {
     id: 'memorizar',
     title: 'Memorizar textos',
-    desc: 'Cada nivel oculta más palabras',
+    desc: 'Ocultar, iniciales, escribir y ordenar',
     icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5M9 7h7M9 11h5',
     Component: Memorize,
     stat: (store) => {

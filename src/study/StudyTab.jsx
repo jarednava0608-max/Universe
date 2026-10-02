@@ -68,8 +68,10 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             <EntryList items={KINDS[section].notes ? filterNotes(byKind[section], query) : byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} />
           ) : (
             <div className="empty-state">
-              <p>Aún no hay nada aquí.</p>
-              <button className="primary" onClick={() => setEditing({ entry: makeEntry(section), isNew: true })}>Nueva entrada</button>
+              <span className={'empty-icon kind-icon k-' + section}><Icon d={KINDS[section].icon} size={26} /></span>
+              <p className="empty-title">Aún no hay nada aquí</p>
+              <p>{KINDS[section].desc}.</p>
+              <button className="primary" onClick={() => setEditing({ entry: makeEntry(section), isNew: true })}>{KINDS[section].notes ? 'Nueva nota' : 'Nueva entrada'}</button>
             </div>
           )}
         </PageScroll>
