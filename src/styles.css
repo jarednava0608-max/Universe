@@ -904,6 +904,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .mb-best { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 .mb-world-hero { display: flex; align-items: center; gap: 14px; padding: 14px; margin: 4px 0 14px; background: linear-gradient(160deg, var(--surface-2), var(--surface) 75%); border: 1px solid var(--line); border-radius: 16px; }
 .mb-world-hero .entry-main { gap: 4px; }
+.mb-world-hero .entry-sub { white-space: normal; overflow: visible; }
 .mb-world-hero .stars svg { width: 16px; height: 16px; }
 .mb-num.big { width: 50px; height: 50px; font-size: 20px; }
 .mb-world-stats { font-size: 15px; font-weight: 600; }
