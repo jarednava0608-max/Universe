@@ -8,7 +8,7 @@ import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
 import NodePeek from '../components/NodePeek.jsx'
-import { markdownToHtml, plainText } from '../lib/markdown.js'
+import { definitionText, markdownToHtml } from '../lib/markdown.js'
 import { docToText, docToMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
 import { findSavedVerse, findAllRefs, anyRefKey } from '../lib/verses.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
@@ -289,7 +289,7 @@ function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onC
       findRefs: findAllRefs,
       refKey: anyRefKey,
       verseText: (r) => findSavedVerse(entries, r)?.texto ?? null,
-      plain: plainText,
+      plain: definitionText,
     })
     const nuevoTitulo = capRefs(titulo.replace(/\s+/g, ' ').trim()).replace(/^(\p{Ll})/u, (l) => l.toUpperCase())
     if (JSON.stringify(after) === JSON.stringify(before.json) && nuevoTitulo === titulo) return toast('La nota ya está ordenada.')

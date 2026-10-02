@@ -278,7 +278,8 @@ function linkNodes(blocks, nodes) {
       let parts = [c]
       for (const title of titles) {
         if (linked.has(title)) continue
-        const re = new RegExp(`(?<![\\p{L}\\d])${escapeRe(title)}(?![\\p{L}\\d])`, 'iu')
+        // No dentro de una cita: "Jeremías 38:6" no enlaza "Jeremías 38" ni "Jeremías".
+        const re = new RegExp(`(?<![\\p{L}\\d])${escapeRe(title)}(?![\\p{L}\\d]|[:.]\\d|\\s+\\d)`, 'iu')
         const k = parts.findIndex((p) => p.type === 'text' && re.test(p.text))
         if (k < 0) continue
         const p = parts[k]

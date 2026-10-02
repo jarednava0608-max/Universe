@@ -77,6 +77,12 @@ export function plainText(text) {
     .trim()
 }
 
+// Texto de una definición sin sus subtítulos (## Lo que pasa…), que si no quedan pegados
+// al texto ("Lo que pasa En el noveno año…"). Para juegos y resúmenes.
+export function definitionText(text) {
+  return plainText(String(text ?? '').replace(/^\s*#{1,6}\s.*$/gm, ''))
+}
+
 // Al renombrar un nodo, actualiza los [[Viejo]] en una nota.
 export function renameLinks(text, oldTitle, newTitle) {
   const oldKey = normKey(oldTitle)

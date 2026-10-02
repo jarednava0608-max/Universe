@@ -97,6 +97,15 @@ describe('Ordenar: completar con lo que ya tienes', async () => {
     expect(out.filter((b) => b.type === 'paragraph' && b.content?.[0]?.marks).map((b) => b.content[0].text)).toEqual(['Daniel 2:44', 'Mateo 6:10'])
     expect(out.at(-1).content[0].content[0].content[1].text).toBe(': Gobierno celestial de Jehová.')
   })
+  it('no enlaza un nodo dentro de una cita ni pega subtítulos en "De tu mapa"', () => {
+    const o = { ...opts, plain: (t) => t.replace(/^#+\s.*$/gm, '').trim(), nodes: [{ title: 'Jeremías 38', note: '## Lo que pasa\nLos príncipes oyen a Jeremías.' }, { title: 'Jeremías', note: 'Profeta.' }] }
+    const doc = { type: 'doc', content: [p('Hablamos de Jeremías 38:6 y de Jeremías 38.')] }
+    const out = enrichDoc(doc, o).content
+    const first = out[0].content
+    expect(first.filter((c) => c.type === 'nodeLink').map((c) => c.attrs.title)).toEqual(['Jeremías 38'])
+    expect(first[0].text).toBe('Hablamos de Jeremías 38:6 y de ')
+    expect(out.at(-1).content[0].content[0].content[1].text).toBe(': Los príncipes oyen a Jeremías.')
+  })
   it('al ordenar otra vez no repite las secciones', () => {
     const doc = { type: 'doc', content: [p('Leer Juan 17:3')] }
     const once = enrichDoc(doc, opts)

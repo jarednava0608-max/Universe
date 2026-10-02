@@ -1,10 +1,9 @@
 // Lógica de los juegos (sin interfaz), para poder probarla.
 import { newId, normKey, ROOT_ID } from '../lib/model.js'
-import { plainText } from '../lib/markdown.js'
+import { definitionText } from '../lib/markdown.js'
 
-// Texto de una definición para los juegos: sin los subtítulos (## Lo que pasa…), que si no
-// quedan pegados al texto ("Lo que pasa En el noveno año…").
-export const defText = (note) => plainText(String(note ?? '').replace(/^\s*#{1,6}\s.*$/gm, ''))
+// Texto de una definición para los juegos (sin subtítulos).
+export const defText = definitionText
 import { BOOKS, parseRef } from '../lib/bible.js'
 
 export function shuffle(list, rnd = Math.random) {
