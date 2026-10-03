@@ -8,6 +8,7 @@ import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
 import { GameScreen, Quiz } from './ui.jsx'
 import Sheet from '../components/Sheet.jsx'
 import PageScroll from '../components/PageScroll.jsx'
+import Sky from './Sky.jsx'
 
 // Pestaña Juegos: menú armado desde registry.js.
 export default function GamesTab({ store, toast }) {
@@ -19,7 +20,8 @@ export default function GamesTab({ store, toast }) {
   useNewMedals(store, toast)
 
   return (
-    <div className="page">
+    <div className="page games-page">
+      <Sky />
       <PageScroll title="Juegos">
         <h1 className="page-title">Juegos</h1>
         <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
