@@ -1172,3 +1172,5 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
   .sky-comet, .sky-ripple::before, .sky-const line.on, .sky-const b.on { animation: none; }
   .sky-venus, .sky-moon { transform: none; }
 }
+/* Con el cielo detrás (sol, luna), el título grande lleva una sombra suave para leerse siempre. */
+.sky-page .page-title { text-shadow: 0 1px 14px rgba(var(--bg-rgb), 0.75), 0 0 2px rgba(var(--bg-rgb), 0.5); }

@@ -61,7 +61,7 @@ export function skyAt(minutes, theme = 'dark') {
 // Dónde va el sol según la hora: sale por la izquierda (6:00), sube al mediodía y baja por la derecha (19:00).
 export function sunPos(minutes) {
   const t = Math.min(Math.max((minutes - 360) / (1140 - 360), 0), 1)
-  return { x: 8 + t * 84, y: 24 - Math.sin(t * Math.PI) * 18 }
+  return { x: 8 + t * 84, y: 22 - Math.sin(t * Math.PI) * 19 }
 }
 
 // Para compatibilidad: el nombre del momento del día.
