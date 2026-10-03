@@ -1,12 +1,13 @@
 // "Mi Biblia": los textos bíblicos que el usuario pega (no se descarga la Biblia completa).
 // Se guardan como entradas `kind: 'biblia'` ({ cita, texto }) y se sincronizan como las demás.
-import { parseRef, refUrl, findRefs } from './bible.js'
+import { parseRef, refUrl, findRefs, canonRef } from './bible.js'
 import { findPubs, isPubRef, pubUrl } from './pubs.js'
 import { newId } from './model.js'
 import { verseSources } from '../games/logic.js'
 
 // Clave para comparar citas escritas de formas distintas ("Sal. 83:18" = "Salmo 83:18").
 export function refKey(ref) {
+  ref = canonRef(ref)
   const r = parseRef(ref)
   if (!r) return null
   const spec = String(ref).split(':')[1]?.replace(/\s+/g, '').replace(/–/g, '-').replace(/\.$/, '')
@@ -45,6 +46,7 @@ export function findSavedVerse(entries, ref) {
 // "Jeremías 38:7-9", "Mateo 6:9, 10" o el capítulo entero ("Jeremías 39"): se arma con los
 // versículos guardados uno por uno (cada uno con su número).
 function joinVerses(entries, ref) {
+  ref = canonRef(ref)
   const r = parseRef(ref)
   if (!r) return null
   const spec = String(ref).split(':')[1]
@@ -125,6 +127,7 @@ export function makeBibleEntry(cita, texto) {
 
 // Enlace que abre la cita en JW Library si está instalada (si no, en jw.org).
 export function jwLibraryUrl(ref) {
+  ref = canonRef(ref)
   const r = parseRef(ref)
   if (!r) return refUrl(ref)
   const code = (v) => String(r.book).padStart(2, '0') + String(r.chapter).padStart(3, '0') + String(v).padStart(3, '0')

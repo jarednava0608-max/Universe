@@ -68,4 +68,15 @@ describe('Éxodo (empieza con letra acentuada)', () => {
     expect(linkRefsMarkdown('ver Éxodo 12')).toContain('](https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/2/12)')
     expect(findRefs('aÉxodo 2:3')).toEqual([])
   })
+  it('libros de un solo capítulo: "3 Juan 3" es el versículo 3', () => {
+    expect(parseRef('3 Juan 3')).toEqual({ book: 64, chapter: 1, verse: 3 })
+    expect(parseRef('Judas 9')).toEqual({ book: 65, chapter: 1, verse: 9 })
+    expect(refUrl('3 Juan 3')).toBe('https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/64/1#study=discover&v=64:1:3')
+    expect(findRefs('(3 Juan 3, 4)')).toEqual(['3 Juan 3, 4'])
+  })
+  it('no pierde la cita después de una palabra con número', () => {
+    expect(findRefs('(Lea 1 Corintios 3:5-9.)')).toEqual(['1 Corintios 3:5-9'])
+    expect(findRefs('Salmo 23, 1 Juan 4:8')).toEqual(['Salmo 23', '1 Juan 4:8'])
+    expect(linkRefsMarkdown('Lea 1 Corintios 3:5')).toBe('Lea [1 Corintios 3:5](https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/46/3#study=discover&v=46:3:5)')
+  })
 })

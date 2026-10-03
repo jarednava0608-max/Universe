@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { refKey, findSavedVerse, jwLibraryUrl, makeBibleEntry, splitChapter } from './verses.js'
+import { wrongThirdJohn } from './verseSave.js'
 
 describe('Mi Biblia', () => {
   it('compara citas escritas de formas distintas', () => {
@@ -63,5 +64,13 @@ porque solo de él son la sabiduría y el poder.+
     expect(splitChapter('Solo un versículo sin números.', 2)).toBe(null)
     const entries = v.map(({ v, texto }) => makeBibleEntry(`Daniel 2:${v}`, texto))
     expect(findSavedVerse(entries, 'Daniel 2:1-3').texto.split('\n')).toHaveLength(3)
+  })
+  it('3 Juan 3 se guarda como versículo y se borra el texto equivocado', () => {
+    expect(refKey('3 Juan 3')).toBe(refKey('3 Juan 1:3'))
+    expect(findSavedVerse([makeBibleEntry('3 Juan 1:3', 'Me alegré mucho')], '3 Juan 3')).toMatchObject({ texto: 'Me alegré mucho' })
+    const bad = makeBibleEntry('3 Juan 3', '¿Qué es Apolos? ¿Qué es Pablo?+')
+    const good = makeBibleEntry('1 Corintios 3:5', '¿Qué es Apolos?')
+    const nodes = [{ id: 'n1', title: '3 Juan 3', note: 'Qué es Apolos?' }, { id: 'n2', title: 'Apolos', note: 'Apolos' }]
+    expect(wrongThirdJohn(nodes, [bad, good])).toEqual({ entryIds: [bad.id], nodeIds: ['n1'] })
   })
 })

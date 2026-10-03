@@ -11,7 +11,8 @@ const SOURCE = { memoria: 'De Memorizar textos', diario: 'De tu Texto diario', c
 export default function RefSheet({ refText, entries, onSave, onSaveMany, onClose, toast }) {
   const pub = isPub(refText)
   // Capítulo entero ("Daniel 2"): lo pegado se guarda versículo por versículo.
-  const chapter = !pub && !refText.includes(':') ? parseRef(refText)?.chapter : null
+  const parsed = pub ? null : parseRef(refText)
+  const chapter = parsed && parsed.verse == null ? parsed.chapter : null
   const saved = findSavedVerse(entries, refText)
   const [editing, setEditing] = useState(!saved)
   const [text, setText] = useState(saved?.texto ?? '')

@@ -56,7 +56,34 @@ const BOOK_RE = '(?:[1-3]\\s?)?[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+\\.?'
 // "Juan 17:3", "1 Juan 4:8", "Sal. 83:18", "Mateo 6:9, 10", "Rom. 5:12-14" y solo el capítulo: "Jeremías 38"
 // Inicio de cita: que no venga pegada a otra letra. (\b no sirve: en JavaScript la É no cuenta como letra.)
 export const REF_START = '(?<![A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\d])'
-export const REF_SOURCE = `${BOOK_RE}\\s\\d{1,3}(?::\\d{1,3}(?:\\s?[-–,]\\s?\\d{1,3})*)?(?![\\d:])`
+// Tras el número puede venir una lista o rango ("Mateo 6:9, 10", "3 Juan 3, 4"), pero no el número de otro
+// libro ("Salmo 23, 1 Juan 4:8").
+export const REF_SOURCE = `${BOOK_RE}\\s\\d{1,3}(?::\\d{1,3})?(?:\\s?[-–,]\\s?\\d{1,3}(?!\\d|\\s+[A-ZÁÉÍÓÚÑ]))*(?![\\d:])`
+
+// Libros de un solo capítulo (Abdías, Filemón, 2 Juan, 3 Juan, Judas): "3 Juan 3" es el versículo 3.
+export const ONE_CHAPTER = new Set([31, 57, 63, 64, 65])
+
+// "3 Juan 3, 4" → "3 Juan 1:3, 4" (para comparar y armar enlaces como cualquier otra cita).
+export function canonRef(ref) {
+  const s = String(ref ?? '')
+  if (s.includes(':')) return s
+  const m = s.trim().match(/^(.+?)\s(\d{1,3})/)
+  return m && ONE_CHAPTER.has(bookNumber(m[1])) ? s.replace(/^(\s*.+?\s)(\d{1,3})/, '$11:$2') : s
+}
+
+// Citas de un texto con su posición. Si algo parece cita pero no lo es ("Lea 1"), se sigue buscando
+// desde la letra siguiente para no perder la cita de verdad ("Lea 1 Corintios 3:5-9").
+export function scanRefs(text) {
+  const out = []
+  const s = String(text ?? '')
+  const re = new RegExp(REF_START + REF_SOURCE, 'g')
+  let m
+  while ((m = re.exec(s))) {
+    if (parseRef(m[0])) out.push({ index: m.index, ref: m[0] })
+    else re.lastIndex = m.index + 1
+  }
+  return out
+}
 
 // Separa una cita en libro, capítulo y versículo; null si el libro no existe.
 export function parseRef(ref) {
@@ -64,6 +91,7 @@ export function parseRef(ref) {
   if (!m) return null
   const book = bookNumber(m[1])
   if (!book) return null
+  if (ONE_CHAPTER.has(book) && !m[3]) return { book, chapter: 1, verse: Number(m[2]) }
   return { book, chapter: Number(m[2]), verse: m[3] ? Number(m[3]) : null }
 }
 
@@ -79,15 +107,13 @@ export function refUrl(ref) {
 export function findRefs(...texts) {
   const out = []
   const seen = new Set()
-  const re = new RegExp(REF_START + REF_SOURCE, 'g')
   for (const t of texts) {
-    for (const m of String(t ?? '').matchAll(re)) {
-      const ref = m[0].replace(/\s+/g, ' ').trim()
+    for (const m of scanRefs(t)) {
+      const ref = m.ref.replace(/\s+/g, ' ').trim()
       const k = ref.toLowerCase()
-      if (!seen.has(k) && parseRef(ref)) {
-        seen.add(k)
-        out.push(ref)
-      }
+      if (seen.has(k)) continue
+      seen.add(k)
+      out.push(ref)
     }
   }
   return out
@@ -96,6 +122,12 @@ export function findRefs(...texts) {
 // Convierte las citas de un texto de markdown en enlaces a wol.jw.org.
 // `skip` son fragmentos que no se tocan (por ejemplo, enlaces [[…]] ya convertidos).
 export function linkRefsMarkdown(text) {
-  const re = new RegExp(REF_START + REF_SOURCE, 'g')
-  return String(text ?? '').replace(re, (ref) => (parseRef(ref) ? `[${ref}](${refUrl(ref)})` : ref))
+  const s = String(text ?? '')
+  let out = ''
+  let last = 0
+  for (const { index, ref } of scanRefs(s)) {
+    out += s.slice(last, index) + `[${ref}](${refUrl(ref)})`
+    last = index + ref.length
+  }
+  return out + s.slice(last)
 }

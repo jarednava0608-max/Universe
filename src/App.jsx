@@ -22,7 +22,7 @@ import { OPEN_REF } from './lib/verses.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
-import { planVerseSave, cleanSavedVerses } from './lib/verseSave.js'
+import { planVerseSave, cleanSavedVerses, wrongThirdJohn } from './lib/verseSave.js'
 
 let seedsRunning = false
 
@@ -113,6 +113,18 @@ export default function App() {
         }
       } catch (e) {
         console.warn('No se pudieron limpiar los textos', e)
+      }
+      // Una sola vez: borra el texto de 1 Corintios 3 que quedó guardado por error en "3 Juan 3".
+      try {
+        if (!(await getMeta('clean:3juan-1'))) {
+          const { nodes: allNodes, entries: all } = await loadAll()
+          const { entryIds, nodeIds } = wrongThirdJohn(allNodes, all)
+          if (entryIds.length) await store.deleteEntries(entryIds)
+          for (const id of nodeIds) await store.deleteNode(id)
+          await setMeta('clean:3juan-1', Date.now())
+        }
+      } catch (e) {
+        console.warn('No se pudo borrar el texto de 3 Juan 3', e)
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
