@@ -18,6 +18,12 @@ describe('Reto del día', () => {
     expect(a.map((q) => q.prompt)).not.toEqual(c.map((q) => q.prompt))
     for (const q of a) expect(q.options[q.answer]).toBeTruthy()
   })
+  it('incluye una de tus preguntas de Trivia', () => {
+    const q = { id: 't', kind: 'trivia', fields: { pregunta: '¿Cuál es el objetivo número uno del maestro?', opciones: ['Que llegue a conocer bien a Jehová', 'Otra', 'Otra más', 'Una más'], respuesta: 0 } }
+    const a = dailyQuestions({ nodes, entries: [...entries, q] }, '2026-10-02')
+    const t = a.find((x) => x.prompt === q.fields.pregunta)
+    expect(t.options[t.answer]).toBe('Que llegue a conocer bien a Jehová')
+  })
   it('sin textos ni nodos se completa con personajes y libros', () => {
     expect(dailyQuestions({}, '2026-10-02')).toHaveLength(DAILY_SIZE)
   })

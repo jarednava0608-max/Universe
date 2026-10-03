@@ -50,8 +50,8 @@ export function parseTrivia(data) {
   return { questions: out, warnings }
 }
 
-export function triviaToQuestion(f) {
-  const order = shuffle(f.opciones.map((_, i) => i))
+export function triviaToQuestion(f, rnd = Math.random) {
+  const order = shuffle(f.opciones.map((_, i) => i), rnd)
   return {
     prompt: f.pregunta,
     options: order.map((i) => f.opciones[i]),

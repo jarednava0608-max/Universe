@@ -270,6 +270,11 @@ SEEDS.push({
   verses: DANIEL_2,
 })
 
+// 10) Preguntas de La Atalaya del 3 de octubre de 2026 ("Ayudemos a otros a conocer bien a Jehová") para
+// Trivia, Repasar hoy y el Reto del día, como el usuario pidió (incluida la suya: el objetivo número uno del
+// maestro). Solo las preguntas: la entrada de Reuniones la hace el usuario en la app.
+SEEDS.push({ id: 'trivia-atalaya-conocer-a-jehova', trivia: TRIVIA_ATALAYA_CONOCER })
+
 // La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
 // El artículo completo no va aquí (el repositorio es público); el usuario lo pega en su nodo desde la app.
 export const SEED_ATALAYA_CONOCER = {

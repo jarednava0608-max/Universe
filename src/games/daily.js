@@ -1,6 +1,6 @@
 // Reto del día: 5 preguntas que son las mismas todo el día (se arman con la fecha como semilla)
-// y mezclan personajes, libros de la Biblia, tus textos y tu mapa. Sin servicios externos.
-import { bibleSources, bookSprintQuestion, buildFillQuestions, buildGuessQuestions, mulberry, shuffle } from './logic.js'
+// y mezclan personajes, libros de la Biblia, tus preguntas de Trivia, tus textos y tu mapa. Sin servicios externos.
+import { bibleSources, bookSprintQuestion, buildFillQuestions, buildGuessQuestions, mulberry, shuffle, triviaToQuestion } from './logic.js'
 import { sprintQuestion, unlockedWorlds } from './memoria/logic.js'
 import { todayISO } from './progress.js'
 
@@ -13,7 +13,10 @@ export function dailyQuestions({ nodes = [], entries = [], best = {} }, day = to
   const worlds = unlockedWorlds(best)
   const fill = buildFillQuestions(bibleSources(entries), 1, rnd)
   const guess = buildGuessQuestions(nodes, 1, rnd)
-  const out = [sprintQuestion(worlds, rnd), bookSprintQuestion(rnd), ...fill, ...guess]
+  // Una de tus preguntas de Trivia al azar: así lo que estudiaste vuelve de sorpresa semanas después.
+  const trivia = entries.filter((e) => e.kind === 'trivia' && e.fields.opciones?.length >= 2)
+  const quiz = trivia.length ? [triviaToQuestion(trivia[Math.floor(rnd() * trivia.length)].fields, rnd)] : []
+  const out = [sprintQuestion(worlds, rnd), bookSprintQuestion(rnd), ...quiz, ...fill, ...guess]
   // Si faltan textos o nodos, se completa con personajes y libros.
   while (out.length < DAILY_SIZE) out.push(out.length % 2 ? bookSprintQuestion(rnd) : sprintQuestion(worlds, rnd))
   return shuffle(out.slice(0, DAILY_SIZE), rnd)
