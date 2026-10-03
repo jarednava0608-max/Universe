@@ -9,6 +9,7 @@ import { GameScreen, Quiz } from './ui.jsx'
 import Sheet from '../components/Sheet.jsx'
 import PageScroll from '../components/PageScroll.jsx'
 import Sky from '../components/Sky.jsx'
+import { celebrateSky } from '../lib/celebrate.js'
 
 // Pestaña Juegos: menú armado desde registry.js.
 export default function GamesTab({ store, toast }) {
@@ -82,10 +83,13 @@ function Daily({ store, onExit }) {
         questions={questions}
         onDone={onExit}
         onAgain={() => setNonce((n) => n + 1)}
-        onFinish={(score) => store.updateProgress((f) => {
-          const prev = dailyDone(f)
-          return prev && prev.score >= score ? f : { ...f, daily: { day: todayISO(), score } }
-        })}
+        onFinish={(score) => {
+          celebrateSky() // Reto del día hecho: el cielo brilla unos segundos
+          store.updateProgress((f) => {
+            const prev = dailyDone(f)
+            return prev && prev.score >= score ? f : { ...f, daily: { day: todayISO(), score } }
+          })
+        }}
       />
     </GameScreen>
   )
