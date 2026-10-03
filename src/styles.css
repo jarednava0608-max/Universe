@@ -1072,7 +1072,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* ---------- Cielo de Estudio y Juegos según la hora (src/components/Sky.jsx) ---------- */
 /* El color de fondo lo calcula Sky.jsx minuto a minuto; aquí van las capas. --sy = cuánto bajaste. */
 .sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; transition: background 2s linear; --sy: 0px; --tx: 0px; --ty: 0px; }
-.sky.enter { animation: sky-in 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.sky.enter { animation: sky-in 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 /* Al entrar a Estudio o Juegos el cielo se enciende de arriba hacia abajo. */
 @keyframes sky-in { from { clip-path: inset(0 0 100% 0); filter: brightness(1.6); } to { clip-path: inset(0 0 0 0); } }
 /* Las tarjetas dejan ver un poco el cielo detrás. */
@@ -1174,3 +1174,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 }
 /* Con el cielo detrás (sol, luna), el título grande lleva una sombra suave para leerse siempre. */
 .sky-page .page-title { text-shadow: 0 1px 14px rgba(var(--bg-rgb), 0.75), 0 0 2px rgba(var(--bg-rgb), 0.5); }
+/* Al entrar a Estudio o Juegos las estrellas se encienden poco a poco (unos 10 segundos). */
+.sky.enter .sky-stars i { animation-name: twinkle, star-in; animation-timing-function: ease-in-out, ease-out; animation-iteration-count: infinite, 1; animation-fill-mode: none, both; }
+@keyframes star-in { from { filter: opacity(0); transform: scale(0.4); } to { filter: opacity(1); transform: none; } }
+.sky.enter .sky-milky, .sky.enter .sky-const, .sky.enter .sky-moon, .sky.enter .sky-venus { animation: sky-fade 7s ease-out 1s both; }
+@keyframes sky-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sky.enter .sky-stars i, .sky.enter .sky-milky, .sky.enter .sky-const, .sky.enter .sky-moon, .sky.enter .sky-venus { animation: none; } }

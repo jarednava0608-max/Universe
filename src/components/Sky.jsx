@@ -79,7 +79,7 @@ const LAYERS = (() => {
   const r = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
   return [[60, 1, 0.02], [26, 1.6, 0.05], [10, 2.3, 0.1]].map(([count, size, depth]) => ({
     depth,
-    stars: Array.from({ length: count }, () => ({ x: r() * 100, y: Math.pow(r(), 1.4) * 62, size: size * (0.8 + r() * 0.4), delay: r() * 6, dur: 3 + r() * 4, o: 0.35 + r() * 0.55, th: r() * 0.8 })),
+    stars: Array.from({ length: count }, () => ({ x: r() * 100, y: Math.pow(r(), 1.4) * 62, size: size * (0.8 + r() * 0.4), delay: r() * 6, dur: 3 + r() * 4, o: 0.35 + r() * 0.55, th: r() * 0.8, in: 0.4 + r() * 7.4 })), // in: cuándo se enciende al entrar (unos 10 s en total)
   }))
 })()
 
@@ -191,13 +191,23 @@ export default function Sky() {
       frame = requestAnimationFrame(() => set('--sy', Math.min(y, 1200) + 'px'))
     }
     let base = null
+    // Inclinar: poquito movimiento ya se nota (más sensible) y el cielo lo sigue suave, sin saltos.
+    const cur = { x: 0, y: 0 }
+    const tgt = { x: 0, y: 0 }
+    let glide = 0
+    const step = () => {
+      cur.x += (tgt.x - cur.x) * 0.12
+      cur.y += (tgt.y - cur.y) * 0.12
+      set('--tx', cur.x.toFixed(2) + 'px')
+      set('--ty', cur.y.toFixed(2) + 'px')
+      glide = Math.abs(tgt.x - cur.x) + Math.abs(tgt.y - cur.y) > 0.05 ? requestAnimationFrame(step) : 0
+    }
     const onTilt = (e) => {
       if (e.gamma == null || e.beta == null) return
       base ??= { g: e.gamma, b: e.beta } // la posición en que lo tienes es el centro
-      const tx = Math.max(-1, Math.min(1, (e.gamma - base.g) / 25))
-      const ty = Math.max(-1, Math.min(1, (e.beta - base.b) / 25))
-      set('--tx', (tx * 18).toFixed(1) + 'px')
-      set('--ty', (ty * 18).toFixed(1) + 'px')
+      tgt.x = Math.max(-1, Math.min(1, (e.gamma - base.g) / 12)) * 24
+      tgt.y = Math.max(-1, Math.min(1, (e.beta - base.b) / 12)) * 24
+      if (!glide) glide = requestAnimationFrame(step)
     }
     // En iPhone el permiso de movimiento se pide con un toque. Si ya lo diste, iOS responde sin
     // volver a preguntar; por eso se pide con el primer toque cada vez que se abre la app.
@@ -222,6 +232,7 @@ export default function Sky() {
       root.removeEventListener('click', ask, true)
       window.removeEventListener('deviceorientation', onTilt)
       cancelAnimationFrame(frame)
+      cancelAnimationFrame(glide)
     }
   }, [])
 
@@ -338,7 +349,7 @@ export default function Sky() {
           {LAYERS.map((layer, li) => (
             <div key={li} className="sky-stars" style={{ '--depth': layer.depth }}>
               {layer.stars.map((st, i) => (
-                <i key={i} style={{ left: st.x + '%', top: st.y + '%', width: st.size, height: st.size, '--o': st.o * Math.min(Math.max((sky.stars - st.th) / 0.2, 0), 1), animationDelay: st.delay + 's', animationDuration: st.dur + 's' }} />
+                <i key={i} style={{ left: st.x + '%', top: st.y + '%', width: st.size, height: st.size, '--o': st.o * Math.min(Math.max((sky.stars - st.th) / 0.2, 0), 1), ...(entrance ? { animationDelay: `${st.delay}s, ${st.in}s`, animationDuration: `${st.dur}s, 2.4s` } : { animationDelay: st.delay + 's', animationDuration: st.dur + 's' }) }} />
               ))}
             </div>
           ))}
