@@ -512,6 +512,8 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .overlay.game { z-index: 20; }
 .bar-btn.back { display: inline-flex; align-items: center; gap: 2px; padding-left: 2px; white-space: nowrap; flex: none; }
 .game-body { display: flex; flex-direction: column; }
+/* Que nada se aplaste al alto de la pantalla: lo largo (como Mis preguntas) se baja con scroll. */
+.game-body > * { flex-shrink: 0; }
 .game-home { display: grid; gap: 8px; padding-top: 12px; }
 .game-home .primary, .game-home .secondary { margin-top: 0; }
 .game-stat { text-align: center; color: var(--text-2); margin: 8px 0 16px; font-size: 15px; }
