@@ -82,9 +82,19 @@ function findExact(entries, key) {
   return other ? { entry: other, texto: other.fields.texto, source: other.kind === 'diario' || other.fromDaily ? 'diario' : 'memoria' } : null
 }
 
+// Texto copiado de JW Library o wol: quita las marcas de notas al pie (+ y *) y los espacios que dejan.
+export function cleanVerseText(s) {
+  return String(s ?? '')
+    .replace(/[+*]/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+([,.;:!?”’)])/g, '$1')
+    .replace(/[ \t]+$/gm, '')
+    .trim()
+}
+
 export function makeBibleEntry(cita, texto) {
   const now = Date.now()
-  return { id: newId(), kind: 'biblia', fields: { cita: cita.trim(), texto: texto.trim() }, createdAt: now, updatedAt: now }
+  return { id: newId(), kind: 'biblia', fields: { cita: cita.trim(), texto: cleanVerseText(texto) }, createdAt: now, updatedAt: now }
 }
 
 // Enlace que abre la cita en JW Library si está instalada (si no, en jw.org).

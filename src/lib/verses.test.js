@@ -40,3 +40,11 @@ describe('Mi Biblia: rangos y capítulos con versículos guardados', () => {
     expect(findSavedVerse(entries, 'Jeremías 40')).toBe(null)
   })
 })
+
+describe('cleanVerseText', () => {
+  it('quita las marcas + y * de las notas al pie y los espacios que dejan', async () => {
+    const { cleanVerseText } = await import('./verses.js')
+    expect(cleanVerseText('  Esto es lo que dice Jehová+: “El que se quede*  en esta ciudad + morirá +.”  ')).toBe('Esto es lo que dice Jehová: “El que se quede en esta ciudad morirá.”')
+    expect(cleanVerseText('Uno+\n\nDos *')).toBe('Uno\n\nDos')
+  })
+})

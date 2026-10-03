@@ -5,6 +5,7 @@ import { definitionText } from '../lib/markdown.js'
 // Texto de una definición para los juegos (sin subtítulos).
 export const defText = definitionText
 import { BOOKS, parseRef } from '../lib/bible.js'
+import { cleanVerseText } from '../lib/verses.js'
 
 export function shuffle(list, rnd = Math.random) {
   const a = [...list]
@@ -150,7 +151,7 @@ export function buildCards(nodes, entries) {
 
 export function makeVerse({ cita = '', texto = '' } = {}) {
   const now = Date.now()
-  return { id: newId(), kind: 'memoria', fields: { cita: cita.trim(), texto: texto.trim(), nivel: 0 }, createdAt: now, updatedAt: now }
+  return { id: newId(), kind: 'memoria', fields: { cita: cita.trim(), texto: cleanVerseText(texto), nivel: 0 }, createdAt: now, updatedAt: now }
 }
 
 // Memorizar textos: solo los textos de la Biblia que el usuario agregó. El Texto diario no entra

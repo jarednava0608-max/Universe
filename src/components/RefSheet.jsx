@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { refUrl } from '../lib/bible.js'
-import { findSavedVerse, jwLibraryUrl, makeBibleEntry, isPub } from '../lib/verses.js'
+import { findSavedVerse, jwLibraryUrl, makeBibleEntry, cleanVerseText, isPub } from '../lib/verses.js'
 import { pubTitle, pubUrl } from '../lib/pubs.js'
 import Sheet from './Sheet.jsx'
 
@@ -15,7 +15,7 @@ export default function RefSheet({ refText, entries, onSave, onClose, toast }) {
   const [text, setText] = useState(saved?.texto ?? '')
 
   async function save() {
-    const texto = text.trim()
+    const texto = cleanVerseText(text)
     if (!texto) return
     const entry = saved?.source === 'biblia' ? { ...saved.entry, fields: { ...saved.entry.fields, texto } } : makeBibleEntry(refText, texto)
     await onSave(entry)
@@ -25,7 +25,7 @@ export default function RefSheet({ refText, entries, onSave, onClose, toast }) {
 
   async function paste() {
     try {
-      setText((await navigator.clipboard.readText()).trim())
+      setText(cleanVerseText(await navigator.clipboard.readText()))
     } catch {
       toast('Mantén presionado el cuadro y elige “Pegar”.')
     }
@@ -60,7 +60,7 @@ export default function RefSheet({ refText, entries, onSave, onClose, toast }) {
                 : 'Aún no tienes este texto guardado. Cópialo de JW Library y pégalo aquí una vez; después lo verás sin salir de la app.'}
             </p>
           )}
-          <textarea className="input ref-sheet-input" rows={5} value={text} placeholder={pub ? 'Pega aquí el párrafo' : 'Pega aquí el texto del versículo'} onChange={(e) => setText(e.target.value)} />
+          <textarea className="input ref-sheet-input" rows={5} value={text} placeholder={pub ? 'Pega aquí el párrafo' : 'Pega aquí el texto del versículo'} onChange={(e) => setText(e.target.value.replace(/[+*]/g, ''))} />
           <div className="two-btn">
             <button className="secondary" onClick={paste}>Pegar</button>
             <button className="primary" disabled={!text.trim()} onClick={save}>Guardar</button>
