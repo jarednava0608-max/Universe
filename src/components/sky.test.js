@@ -12,3 +12,19 @@ describe('cielo según la hora', () => {
     expect(skyAt(6 * 60 + 30, 'light').rise).toBe(1)
   })
 })
+
+describe('luna real', () => {
+  it('reconoce lunas nuevas y llenas conocidas', async () => {
+    const { moonPhase, moonPath } = await import('./Sky.jsx')
+    const full = moonPhase(new Date(Date.UTC(2024, 0, 25, 17, 54)))
+    expect(Math.abs(full - 0.5)).toBeLessThan(0.03)
+    const nw = moonPhase(new Date(Date.UTC(2024, 0, 11, 11, 57)))
+    expect(Math.min(nw, 1 - nw)).toBeLessThan(0.03)
+    expect(moonPath(0.25)).toMatch(/^M0,-1 A1,1 0 0,1 0,1 A/)
+  })
+  it('el lucero sale al anochecer y las estrellas después', async () => {
+    const { skyAt } = await import('./Sky.jsx')
+    expect(skyAt(19 * 60 + 30).venus).toBe(1)
+    expect(skyAt(12 * 60).venus).toBe(0)
+  })
+})
