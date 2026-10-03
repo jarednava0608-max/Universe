@@ -90,7 +90,7 @@ export default function Memorize({ store, toast, onExit }) {
 function Dots({ n }) {
   return (
     <span className="level-dots" aria-label={`Nivel ${n + 1} de 4`}>
-      {[0, 1, 2, 3].map((i) => <i key={i} className={i <= n - 1 ? 'on' : ''} />)}
+      {[0, 1, 2, 3].map((i) => <i key={i} className={i <= n ? 'on' : ''} />)}
     </span>
   )
 }
