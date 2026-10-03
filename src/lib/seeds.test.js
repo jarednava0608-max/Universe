@@ -56,6 +56,18 @@ describe('Paquete por capítulo con los versículos', () => {
   })
 })
 
+describe('Paquete de Daniel 2', () => {
+  it('guarda los 49 versículos y crea el nodo con el capítulo', () => {
+    const seed = SEEDS.find((s) => s.id === 'daniel-2')
+    const out = run([makeRoot()])
+    expect(out.find((n) => n.title === 'Daniel 2').note).toMatch(/^1 En el segundo año/)
+    const { verses } = planSeed(seed, out, [], [])
+    expect(verses).toHaveLength(49)
+    expect(verses[43].fields.cita).toBe('Daniel 2:44')
+    expect(verses.every((v) => !/[+*]/.test(v.fields.texto))).toBe(true)
+  })
+})
+
 describe('paquete de Trivia', () => {
   it('las preguntas son válidas, su cita existe en el texto guardado y no se repiten', async () => {
     const { TRIVIA_JEREMIAS_38_39, TRIVIA_BIBLIA } = await import('./seedTrivia.js')

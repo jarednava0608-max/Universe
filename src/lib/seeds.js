@@ -8,7 +8,7 @@ import { planImport } from './importer.js'
 import { makeNode, normKey } from './model.js'
 import { anyRefKey, makeBibleEntry } from './verses.js'
 import { TRIVIA_JEREMIAS_38_39, TRIVIA_BIBLIA } from './seedTrivia.js'
-import { JEREMIAS_38_39 } from './seedVerses.js'
+import { JEREMIAS_38_39, DANIEL_2 } from './seedVerses.js'
 import { ATALAYA_CONOCER_REUNION, TRIVIA_ATALAYA_CONOCER } from './seedAtalaya.js'
 
 // 1) Lo que estudiamos de Jeremías 38 y 39 (primera versión).
@@ -260,6 +260,14 @@ SEEDS.push({
       verdad('Jehová es amigo de quien lo ama', 'Si alguien ama a Dios, [[Jehová]] lo conoce y lo considera su amigo.', '1 Corintios 8:3 (párr. 18).', BIBLIA),
     ],
   },
+})
+
+// 9) Daniel 2 completo, como el usuario lo pegó en el chat: cada versículo en Mi Biblia y un nodo
+// "Daniel 2" con el capítulo entero (con sus números) para verlo en el mapa y en "Tus nodos".
+SEEDS.push({
+  id: 'daniel-2',
+  data: { nodes: [{ title: 'Daniel 2', note: DANIEL_2.map(([cita, texto]) => `${cita.split(':')[1]} ${texto}`).join('\n\n') }] },
+  verses: DANIEL_2,
 })
 
 // La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
