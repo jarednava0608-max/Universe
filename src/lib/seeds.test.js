@@ -105,3 +105,22 @@ describe('La Atalaya del 3 de octubre de 2026', () => {
     }
   })
 })
+
+describe('Textos pegados', () => {
+  it('un texto nuevo va a Memorizar y a un nodo; no se repite; las publicaciones no', async () => {
+    const { planVerseSave, cleanSavedVerses } = await import('./verseSave.js')
+    const { makeBibleEntry } = await import('./verses.js')
+    const e = makeBibleEntry('Juan 17:3', 'Esto significa vida eterna+')
+    const first = planVerseSave(e, [], [])
+    expect(first.memoria.kind).toBe('memoria')
+    expect(first.memoria.fields.texto).toBe('Esto significa vida eterna')
+    expect(first.node.title).toBe('Juan 17:3')
+    expect(first.node.note).toBe('Esto significa vida eterna')
+    const again = planVerseSave(e, [first.node], [first.memoria])
+    expect(again).toEqual({ memoria: null, node: null })
+    expect(planVerseSave(makeBibleEntry('Seamos valientes, cap. 3', 'Un párrafo'), [], [])).toEqual({ memoria: null, node: null })
+    const sucio = { id: 'x', kind: 'biblia', fields: { cita: 'Salmo 83:18', texto: 'Para que sepan+ que tú*' } }
+    const limpio = { id: 'y', kind: 'memoria', fields: { cita: 'Juan 3:16', texto: 'Ya limpio' } }
+    expect(cleanSavedVerses([sucio, limpio]).map((x) => x.fields.texto)).toEqual(['Para que sepan que tú'])
+  })
+})

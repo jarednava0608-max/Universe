@@ -22,6 +22,7 @@ import { OPEN_REF } from './lib/verses.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
+import { planVerseSave, cleanSavedVerses } from './lib/verseSave.js'
 
 let seedsRunning = false
 
@@ -30,6 +31,14 @@ const LAST_NODE = 'universe-last-node'
 export default function App() {
   const store = useStore()
   const sync = useSync(store)
+
+  // Guardar un texto en Mi Biblia también lo manda a Memorizar y crea su nodo (una sola vez por cita).
+  async function saveVerse(entry) {
+    await store.saveEntry(entry)
+    const { memoria, node } = planVerseSave(entry, store.nodes, store.entries)
+    if (memoria) await store.saveEntry(memoria)
+    if (node) await store.saveNode(node)
+  }
   const { mode, theme, setMode } = useTheme()
   const { nodes, edges } = store
   const graph = useRef()
@@ -93,6 +102,17 @@ export default function App() {
         } catch (e) {
           console.warn('No se pudo aplicar', seed.id, e)
         }
+      }
+      // Una sola vez por teléfono: quita las marcas + y * de los textos que ya estaban guardados.
+      try {
+        if (!(await getMeta('clean:verses-1'))) {
+          const { entries: all } = await loadAll()
+          const fixed = cleanSavedVerses(all)
+          if (fixed.length) await store.saveEntries(fixed)
+          await setMeta('clean:verses-1', Date.now())
+        }
+      } catch (e) {
+        console.warn('No se pudieron limpiar los textos', e)
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -346,7 +366,7 @@ export default function App() {
         />
       )}
 
-      {refOpen && <RefSheet key={refOpen} refText={refOpen} entries={store.entries} onSave={store.saveEntry} onClose={() => setRefOpen(null)} toast={toast} />}
+      {refOpen && <RefSheet key={refOpen} refText={refOpen} entries={store.entries} onSave={saveVerse} onClose={() => setRefOpen(null)} toast={toast} />}
 
       {toastMsg && <div className="toast">{toastMsg}</div>}
     </div>
