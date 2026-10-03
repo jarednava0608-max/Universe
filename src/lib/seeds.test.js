@@ -43,7 +43,7 @@ describe('Paquetes del mapa (Jeremías)', () => {
 
 describe('Paquete por capítulo con los versículos', () => {
   it('agrega Jeremías 38 y 39 y guarda los 46 versículos una sola vez', () => {
-    const last = SEEDS.at(-1)
+    const last = SEEDS.find((s) => s.id === 'jeremias-38-y-39-por-capitulo')
     const out = run([makeRoot()])
     expect(out.find((n) => n.title === 'Jeremías 38').note).toMatch(/^## Lo que pasa/)
     expect(out.find((n) => n.title === 'Jeremías 39').note).toContain('Guedalías')
@@ -53,5 +53,28 @@ describe('Paquete por capítulo con los versículos', () => {
     expect(verses[5].fields).toMatchObject({ cita: 'Jeremías 38:6' })
     expect(verses.every((v) => !/[+*]/.test(v.fields.texto))).toBe(true)
     expect(planSeed(last, out, [], verses).verses).toHaveLength(0)
+  })
+})
+
+describe('paquete de Trivia', () => {
+  it('las preguntas son válidas, su cita existe en el texto guardado y no se repiten', async () => {
+    const { TRIVIA_JEREMIAS_38_39: T } = await import('./seedTrivia.js')
+    const { parseTrivia } = await import('../games/logic.js')
+    const { findRefs } = await import('./bible.js')
+    const { questions, warnings } = parseTrivia({ preguntas: T.map((q) => q.fields) })
+    expect(warnings).toEqual([])
+    expect(questions.length).toBe(T.length)
+    expect(new Set(T.map((q) => q.id)).size).toBe(T.length)
+    for (const q of T) {
+      expect(q.fields.opciones.length).toBe(4)
+      expect(new Set(q.fields.opciones).size).toBe(4)
+      expect(findRefs(q.fields.cita).length).toBe(1)
+    }
+    const seed = SEEDS.find((s) => s.id === 'trivia-jeremias-38-39')
+    const first = planSeed(seed, [], [], [])
+    expect(first.trivia.length).toBe(T.length)
+    expect(first.trivia.every((e) => e.kind === 'trivia')).toBe(true)
+    // Si ya están (otro teléfono las sincronizó), no se vuelven a agregar.
+    expect(planSeed(seed, [], [], first.trivia).trivia.length).toBe(0)
   })
 })

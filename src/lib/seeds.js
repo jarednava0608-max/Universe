@@ -7,6 +7,7 @@
 import { planImport } from './importer.js'
 import { makeNode, normKey } from './model.js'
 import { anyRefKey, makeBibleEntry } from './verses.js'
+import { TRIVIA_JEREMIAS_38_39 } from './seedTrivia.js'
 import { JEREMIAS_38_39 } from './seedVerses.js'
 
 // 1) Lo que estudiamos de Jeremías 38 y 39 (primera versión).
@@ -186,12 +187,15 @@ export const SEEDS = [
     data: { nodes: [{ title: 'Jeremías 38', note: CAPITULO_38 }, { title: 'Jeremías 39', note: CAPITULO_39 }] },
     verses: JEREMIAS_38_39,
   },
+  // 5) Preguntas de Trivia sobre Jeremías 38 y 39 (solo del texto bíblico que pegó el usuario).
+  { id: 'trivia-jeremias-38-39', trivia: TRIVIA_JEREMIAS_38_39 },
 ]
 
 const same = (a, b) => String(a ?? '').replace(/\s+/g, ' ').trim() === String(b ?? '').replace(/\s+/g, ' ').trim()
 
 // Lo que hay que guardar y borrar para aplicar un paquete sobre los nodos actuales.
 // verses: [[cita, texto]] se guardan en "Mi Biblia" si esa cita aún no tiene texto guardado.
+// trivia: [{ id, fields }] se agregan a Trivia si esa pregunta (id) no existe.
 export function planSeed(seed, nodes, edges = [], entries = []) {
   const byKey = new Map(nodes.map((n) => [normKey(n.title), n]))
   const put = []
@@ -223,5 +227,8 @@ export function planSeed(seed, nodes, edges = [], entries = []) {
   }
   const saved = new Set(entries.filter((e) => e.kind === 'biblia' && e.fields.texto?.trim()).map((e) => anyRefKey(e.fields.cita)))
   const verses = (seed.verses ?? []).filter(([cita]) => !saved.has(anyRefKey(cita))).map(([cita, texto]) => makeBibleEntry(cita, texto))
-  return { put, del, verses }
+  const have = new Set(entries.map((e) => e.id))
+  const now = Date.now()
+  const trivia = (seed.trivia ?? []).filter((q) => !have.has(q.id)).map((q) => ({ id: q.id, kind: 'trivia', fields: q.fields, createdAt: now, updatedAt: now }))
+  return { put, del, verses, trivia }
 }

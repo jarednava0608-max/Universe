@@ -83,10 +83,11 @@ export default function App() {
         try {
           // Se lee lo guardado en ese momento (el paquete anterior pudo haber cambiado nodos).
           const { nodes: now, edges: nowEdges, entries: nowEntries } = await loadAll()
-          const { put, del, verses } = planSeed(seed, now, nowEdges, nowEntries)
+          const { put, del, verses, trivia } = planSeed(seed, now, nowEdges, nowEntries)
           if (put.length) await store.applyImport({ newNodes: put.map((n) => ({ ...n, updatedAt: Date.now() })), updatedNodes: [], newEdges: [] })
           for (const id of del) await store.deleteNode(id)
           if (verses.length) await store.saveEntries(verses)
+          if (trivia.length) await store.saveEntries(trivia)
           await setMeta('seed:' + seed.id, Date.now())
         } catch (e) {
           console.warn('No se pudo aplicar', seed.id, e)
