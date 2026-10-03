@@ -92,6 +92,32 @@ export function cleanVerseText(s) {
     .trim()
 }
 
+// Un capítulo entero pegado de JW Library ("Daniel\n2 En el segundo año… 2 Así que…") en versículos:
+// el número del capítulo ocupa el lugar del versículo 1 y los demás números van en orden.
+// Devuelve [{ v, texto }] o null si no se encuentran al menos 2 versículos.
+export function splitChapter(text, chapter) {
+  let s = cleanVerseText(text)
+  const lines = s.split('\n')
+  if (lines.length > 1 && !/\d\s+\S/.test(lines[0].replace(/^\d\s+/, '')) && lines[0].length < 40) s = lines.slice(1).join('\n') // renglón del libro
+  s = s.trim()
+  const lead = s.match(/^(\d{1,3})\s+(?=\D)/)
+  if (lead && (Number(lead[1]) === chapter || lead[1] === '1')) s = s.slice(lead[0].length)
+  const out = []
+  let v = 1
+  let start = 0
+  for (;;) {
+    const re = new RegExp(`(^|[\\s“”"(])${v + 1}(?:\\s+(?=\\D)|(?=[”“"]))`, 'g')
+    re.lastIndex = start
+    const m = re.exec(s)
+    out.push({ v, texto: s.slice(start, m ? m.index : s.length).replace(/\s+/g, ' ').trim() })
+    if (!m) break
+    start = m.index + m[0].length
+    v++
+  }
+  const verses = out.filter((x) => x.texto)
+  return verses.length >= 2 ? verses : null
+}
+
 export function makeBibleEntry(cita, texto) {
   const now = Date.now()
   return { id: newId(), kind: 'biblia', fields: { cita: cita.trim(), texto: cleanVerseText(texto) }, createdAt: now, updatedAt: now }

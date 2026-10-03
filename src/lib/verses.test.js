@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { refKey, findSavedVerse, jwLibraryUrl, makeBibleEntry } from './verses.js'
+import { refKey, findSavedVerse, jwLibraryUrl, makeBibleEntry, splitChapter } from './verses.js'
 
 describe('Mi Biblia', () => {
   it('compara citas escritas de formas distintas', () => {
@@ -46,5 +46,22 @@ describe('cleanVerseText', () => {
     const { cleanVerseText } = await import('./verses.js')
     expect(cleanVerseText('  Esto es lo que dice Jehová+: “El que se quede*  en esta ciudad + morirá +.”  ')).toBe('Esto es lo que dice Jehová: “El que se quede en esta ciudad morirá.”')
     expect(cleanVerseText('Uno+\n\nDos *')).toBe('Uno\n\nDos')
+  })
+  it('separa un capítulo pegado de JW Library en versículos', () => {
+    const text = `Daniel
+2 En el segundo año de su reinado, Nabucodonosor tuvo varios sueños, y él* se inquietó tanto+ que no conseguía dormir. 2 Así que el rey mandó llamar a los caldeos.+ 3 El rey les dijo: “He tenido un sueño”.
+4 Daniel dijo:
+“Alabado sea el nombre de Dios,*
+porque solo de él son la sabiduría y el poder.+
+5 Estos son tu sueño y las visiones:
+6 ”Oh, rey, cuando estabas acostado en tu cama.`
+    const v = splitChapter(text, 2)
+    expect(v.map((x) => x.v)).toEqual([1, 2, 3, 4, 5, 6])
+    expect(v[0].texto).toBe('En el segundo año de su reinado, Nabucodonosor tuvo varios sueños, y él se inquietó tanto que no conseguía dormir.')
+    expect(v[3].texto).toBe('Daniel dijo: “Alabado sea el nombre de Dios, porque solo de él son la sabiduría y el poder.')
+    expect(v[5].texto).toBe('”Oh, rey, cuando estabas acostado en tu cama.')
+    expect(splitChapter('Solo un versículo sin números.', 2)).toBe(null)
+    const entries = v.map(({ v, texto }) => makeBibleEntry(`Daniel 2:${v}`, texto))
+    expect(findSavedVerse(entries, 'Daniel 2:1-3').texto.split('\n')).toHaveLength(3)
   })
 })

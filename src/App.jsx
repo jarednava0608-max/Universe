@@ -366,7 +366,7 @@ export default function App() {
         />
       )}
 
-      {refOpen && <RefSheet key={refOpen} refText={refOpen} entries={store.entries} onSave={saveVerse} onClose={() => setRefOpen(null)} toast={toast} />}
+      {refOpen && <RefSheet key={refOpen} refText={refOpen} entries={store.entries} onSave={saveVerse} onSaveMany={store.saveEntries} onClose={() => setRefOpen(null)} toast={toast} />}
 
       {toastMsg && <div className="toast">{toastMsg}</div>}
     </div>
