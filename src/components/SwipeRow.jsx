@@ -9,7 +9,8 @@ export default function SwipeRow({ children, onDelete }) {
   const close = () => { setOpen(false); setX(0) }
   return (
     <li className="swipe-row">
-      <button className="swipe-del" tabIndex={open ? 0 : -1} onClick={() => { close(); onDelete() }}>Eliminar</button>
+      {/* Solo existe mientras deslizas: las tarjetas son translúcidas (se ve el cielo) y se transparentaba. */}
+      {x < 0 && <button className="swipe-del" tabIndex={open ? 0 : -1} onClick={() => { close(); onDelete() }}>Eliminar</button>}
       <div
         className="swipe-front"
         style={{ transform: `translateX(${x}px)`, transition: drag.current?.on ? 'none' : undefined }}

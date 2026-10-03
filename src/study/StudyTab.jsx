@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import PageScroll from '../components/PageScroll.jsx'
 import Sky from '../components/Sky.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
@@ -13,6 +13,8 @@ import { definitionText, markdownToHtml, unwrapCallouts } from '../lib/markdown.
 import { docToText, docToMarkdown, docToNodeMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
 import { findSavedVerse, findAllRefs, anyRefKey } from '../lib/verses.js'
 import TitleArea from '../components/TitleArea.jsx'
+import AutoText from '../components/AutoText.jsx'
+import AtalayaStudy from './AtalayaStudy.jsx'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -22,6 +24,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
+  const [proposal, setProposal] = useState(null) // { entry, node } desde La Atalaya por pasos
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
   const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
   // Entrada borrada deslizando, con "Deshacer".
@@ -34,10 +37,15 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
     return m
   }, [entries])
 
-  const recent = useMemo(() => entries.filter((e) => KINDS[e.kind]).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6), [entries])
+  // Recientes: entradas de Estudio y nodos del mapa juntos, por última edición (un nodo se abre como nota).
+  const recent = useMemo(() => [
+    ...entries.filter((e) => KINDS[e.kind]).map((e) => ({ entry: e, at: e.updatedAt })),
+    ...nodes.map((n) => ({ node: n, at: n.updatedAt || n.createdAt || 0 })),
+  ].sort((a, b) => b.at - a.at).slice(0, 6), [entries, nodes])
+  const openRecent = (r) => (r.node ? setPeekNode(r.node.id) : setEditing({ entry: r.entry, isNew: false }))
   // Arriba en Estudio: el Texto diario de hoy y "Seguir donde te quedaste" (lo último que editaste esta semana).
   const todayEntry = byKind.diario.find((e) => e.fields.fecha === today())
-  const last = recent[0] && recent[0].id !== todayEntry?.id && Date.now() - recent[0].updatedAt < 7 * 864e5 ? recent[0] : null
+  const last = recent[0] && recent[0].entry?.id !== todayEntry?.id && Date.now() - recent[0].at < 7 * 864e5 ? recent[0] : null
 
   return (
     <div className="page sky-page">
@@ -47,10 +55,10 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           <h1 className="page-title">Estudio</h1>
           <TodayCard entry={todayEntry} onOpen={(e) => setEditing({ entry: e, isNew: false })} onAdd={() => setEditing({ entry: makeEntry('diario'), isNew: true })} />
           {last && (
-            <button className="continue-card" onClick={() => setEditing({ entry: last, isNew: false })}>
+            <button className="continue-card" onClick={() => openRecent(last)}>
               <span className="continue-label">Seguir donde te quedaste</span>
-              <span className="continue-title">{KINDS[last.kind].title(last)}</span>
-              <span className="continue-sub">{KINDS[last.kind].short} · {noteDate(last.updatedAt)}</span>
+              <span className="continue-title">{last.node ? last.node.title : KINDS[last.entry.kind].title(last.entry)}</span>
+              <span className="continue-sub">{last.node ? 'Nodo' : KINDS[last.entry.kind].short} · {noteDate(last.at)}</span>
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
           )}
@@ -68,7 +76,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           {recent.length > 0 && (
             <>
               <h2 className="section-label">Recientes</h2>
-              <EntryList items={recent.filter((e) => e.id !== last?.id).slice(0, 5)} showKind onOpen={(e) => setEditing({ entry: e, isNew: false })} />
+              <RecentList items={recent} onOpen={openRecent} />
             </>
           )}
 
@@ -157,7 +165,40 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
 
-      {editing && !KINDS[editing.entry.kind].notes && (
+      {editing && isAtalaya(editing.entry) && (
+        <AtalayaStudy
+          key={editing.entry.id}
+          entry={editing.entry}
+          isNew={editing.isNew}
+          toast={toast}
+          onSave={onSaveEntry}
+          onClose={() => setEditing(null)}
+          onDelete={async (id) => {
+            await onDeleteEntry(id)
+            setEditing(null)
+            toast('Estudio eliminado.')
+          }}
+          onSwitchToForm={(e) => setEditing({ entry: e, isNew: editing.isNew })}
+          onPropose={(e) => setProposal({ entry: e, node: proposeNode(e) })}
+        />
+      )}
+
+      {proposal && (
+        <ProposeSheet
+          initial={proposal.node}
+          nodes={nodes}
+          onCancel={() => setProposal(null)}
+          onApprove={async (node) => {
+            const saved = await onSaveEntry(proposal.entry)
+            const nodeId = await onProposeToMap(node)
+            if (nodeId) await onSaveEntry({ ...saved, mapNodeId: nodeId })
+            setProposal(null)
+            setEditing(null)
+          }}
+        />
+      )}
+
+      {editing && !KINDS[editing.entry.kind].notes && !isAtalaya(editing.entry) && (
         <EntryEditor
           key={editing.entry.id}
           entry={editing.entry}
@@ -300,12 +341,12 @@ function TodayCard({ entry, onOpen, onAdd }) {
   )
 }
 
-function EntryList({ items, onOpen, showKind, onDelete }) {
+function EntryList({ items, onOpen, onDelete }) {
   return (
     <ul className="entry-list">
       {items.map((e) => {
         const def = KINDS[e.kind]
-        const sub = [showKind && def.short, def.subtitle(e)].filter(Boolean).join(' · ')
+        const sub = def.subtitle(e)
         const row = (
             <button className="entry-row" onClick={() => onOpen(e)}>
               <span className="entry-main">
@@ -322,6 +363,48 @@ function EntryList({ items, onOpen, showKind, onDelete }) {
   )
 }
 
+
+// La Atalaya se estudia por pasos; la reunión de entre semana usa el formulario.
+const isAtalaya = (e) => e.kind === 'reunion' && e.fields.tipo !== 'entresemana'
+
+// Lo último que tocaste: entradas de Estudio y nodos del mapa.
+function RecentList({ items, onOpen }) {
+  return (
+    <ul className="entry-list">
+      {items.map((r) => {
+        const key = r.node ? 'n-' + r.node.id : r.entry.id
+        if (r.node) {
+          return (
+            <li key={key}>
+              <button className="entry-row" onClick={() => onOpen(r)}>
+                <span className={'node-dot' + (r.node.id === ROOT_ID ? ' root' : '')} />
+                <span className="entry-main">
+                  <span className="entry-title">{r.node.title}</span>
+                  <span className="entry-sub">Nodo · {noteDate(r.at)}</span>
+                </span>
+                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+              </button>
+            </li>
+          )
+        }
+        const e = r.entry
+        const def = KINDS[e.kind]
+        return (
+          <li key={key}>
+            <button className="entry-row" onClick={() => onOpen(r)}>
+              <span className="entry-main">
+                <span className="entry-title">{def.title(e)}</span>
+                <span className="entry-sub">{[def.short, def.notes ? noteDate(e.updatedAt) : def.subtitle(e)].filter(Boolean).join(' · ')}</span>
+              </span>
+              {e.mapNodeId && <span className="in-map" title="En el mapa"><Icon d={ICONS.nodo} size={14} /></span>}
+              <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
 
 function filterNotes(list, query) {
   const q = normKey(query)
@@ -730,15 +813,6 @@ function Field({ field, value, onChange }) {
   )
 }
 
-function AutoText({ value, placeholder, onChange, minRows = 2 }) {
-  const ref = useRef()
-  useLayoutEffect(() => {
-    const ta = ref.current
-    ta.style.height = 'auto'
-    ta.style.height = ta.scrollHeight + 2 + 'px'
-  }, [value])
-  return <textarea ref={ref} className="input auto" rows={minRows} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
-}
 
 function Paragraphs({ field, value, onChange }) {
   const update = (i, patch) => onChange(value.map((p, j) => (j === i ? { ...p, ...patch } : p)))

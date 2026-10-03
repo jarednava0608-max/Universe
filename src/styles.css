@@ -27,6 +27,7 @@
   --danger: #f87171;
   --danger-text: #fecaca;
   --ok: #86efac;
+  --mark: rgba(233, 184, 114, 0.32);
   --overlay: rgba(0, 0, 0, 0.5);
   /* Colores del mapa (los lee el canvas) */
   --graph-bg: #09090b;
@@ -52,6 +53,7 @@
 
 /* Versión en blanco: el mismo diseño con los colores invertidos. */
 :root[data-theme='light'] {
+  --mark: rgba(250, 204, 21, 0.38);
   --bg: #fafafa;
   --bg-rgb: 250, 250, 250;
   --bg-raise: #f4f4f5;
@@ -1180,3 +1182,42 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .sky.enter .sky-milky, .sky.enter .sky-const, .sky.enter .sky-moon, .sky.enter .sky-venus { animation: sky-fade 7s ease-out 1s both; }
 @keyframes sky-fade { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sky.enter .sky-stars i, .sky.enter .sky-milky, .sky.enter .sky-const, .sky.enter .sky-moon, .sky.enter .sky-venus { animation: none; } }
+
+/* La Atalaya por pasos */
+.at-steps { display: flex; gap: 2px; padding: 8px calc(var(--sar) + 10px) 8px calc(var(--sal) + 10px); border-bottom: 1px solid var(--line); }
+.at-step { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 0 2px; border-radius: 18px; color: var(--text-3); font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.at-step:disabled { opacity: 0.4; }
+.at-step.on { color: var(--btn-ink); background: var(--btn); font-weight: 600; }
+.at-h { font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: var(--title); margin: 4px 0 10px; }
+.at-tip { color: var(--text-2); font-size: 15px; line-height: 1.5; margin: 0 0 18px; }
+.at-tip.small { font-size: 13px; color: var(--text-3); margin: 0 0 10px; }
+.at-card { padding: 16px; margin-bottom: 18px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 10px; }
+.at-title { font-family: var(--font-display); font-size: 19px; font-weight: 650; line-height: 1.3; color: var(--title); margin: 0; }
+.at-theme { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.5; color: var(--text); margin: 0; }
+.at-summary { color: var(--text-2); font-size: 15px; line-height: 1.5; margin: 0; }
+.at-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); margin: 22px 0 8px; }
+.at-list { margin: 0 0 20px; padding-left: 22px; color: var(--text-body); font-size: 15px; line-height: 1.5; }
+.at-list.plain { list-style: disc; }
+.at-list li { margin: 0 0 6px; }
+.at-list button { text-align: left; color: var(--text); min-height: 32px; font-size: 15px; }
+.at-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.at-progress .progress { flex: 1; }
+.at-sub { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-text); margin: 0 0 8px; }
+.at-qnum { font-size: 13px; color: var(--text-3); margin: 0 0 4px; }
+.at-question, .sfield-label.at-q { font-size: 17px; font-weight: 600; line-height: 1.4; color: var(--title); margin: 0 0 8px; }
+.sfield-label.at-q { font-size: 15px; }
+.at-text { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.65; color: var(--text-body); margin-bottom: 14px; -webkit-user-select: none; user-select: none; }
+.at-text p { margin: 0 0 12px; }
+.at-word { border-radius: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.at-word.on { background: var(--mark); color: var(--title); box-shadow: 0 0 0 1px var(--mark); }
+.at-extras { margin: 0 0 16px; font-size: 14px; color: var(--text-2); line-height: 1.5; }
+.at-extras summary { min-height: 36px; display: flex; align-items: center; color: var(--text-3); font-size: 13px; }
+.at-extras p { margin: 6px 0 10px; white-space: pre-line; }
+.at-keys { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
+.at-keys span { padding: 4px 10px; border-radius: 12px; background: var(--mark); color: var(--title); font-size: 14px; }
+.at-nav { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.at-nav .primary, .at-nav .secondary { margin-top: 0; }
+.at-missing { display: flex; flex-wrap: wrap; gap: 6px; }
+.at-missing button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 14px; }
+.primary:disabled { opacity: 0.4; }
+@media (max-width: 374px) { .at-step { font-size: 12px; } }

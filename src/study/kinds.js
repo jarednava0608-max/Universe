@@ -49,6 +49,7 @@ export const KINDS = {
       { key: 'articulo', label: '1. Pega la Atalaya', type: 'text', hint: 'El artículo completo, tal cual; luego "Proponer al mapa" lo guarda como nodo', noClaude: true },
       { key: 'parrafos', label: '2. Preguntas: mis respuestas por párrafo', type: 'paragraphs' },
       { key: 'idea', label: 'Idea principal', type: 'text' },
+      { key: 'aplicacion', label: 'Cómo lo aplico', type: 'text' },
       { key: 'notas', label: 'Notas generales', type: 'text' },
     ],
     title: (e) => e.fields.titulo || (e.fields.tipo === 'entresemana' ? 'Reunión de entre semana' : 'La Atalaya'),
@@ -56,7 +57,7 @@ export const KINDS = {
     toNode: (f) => ({
       title: f.titulo || 'Reunión',
       idea: f.idea,
-      textos: refsIn(f.idea, f.notas, ...(f.parrafos ?? []).map((p) => p.nota)),
+      textos: refsIn(f.idea, f.aplicacion, f.notas, ...(f.parrafos ?? []).map((p) => p.nota), ...(f.repaso ?? []).map((r) => r.nota)),
     }),
   },
 
@@ -148,7 +149,7 @@ export function entrySortKey(e) {
 
 const ALIASES = {
   diario: { date: 'fecha', text: 'texto', versiculo: 'texto', context: 'contexto', principle: 'principio', story: 'relato', relato_de_apoyo: 'relato', application: 'aplicacion', aplicación: 'aplicacion', summary: 'resumen', notes: 'notas', mis_notas: 'notas' },
-  reunion: { type: 'tipo', date: 'fecha', title: 'titulo', título: 'titulo', idea_principal: 'idea', paragraphs: 'parrafos', párrafos: 'parrafos', notes: 'notas' },
+  reunion: { type: 'tipo', date: 'fecha', title: 'titulo', título: 'titulo', idea_principal: 'idea', paragraphs: 'parrafos', párrafos: 'parrafos', notes: 'notas', aplicación: 'aplicacion', application: 'aplicacion' },
   estudio: { title: 'titulo', título: 'titulo', idea_central: 'idea', hook: 'gancho', extracción: 'extraccion', golpe_logico: 'golpe', golpe_lógico: 'golpe', aha_extra: 'aha', summary: 'resumen' },
   reflexion: { title: 'titulo', título: 'titulo', nota: 'texto', note: 'texto', notas: 'texto', contenido: 'texto' },
 }
@@ -225,6 +226,9 @@ export function entryForClaude(entry) {
       parts.push(`${field.label}:\n${String(v).trim()}`)
     }
   }
+  // Repaso de La Atalaya por pasos: cada pregunta con mi respuesta.
+  const repaso = (f.repaso ?? []).filter((r) => String(r.nota ?? '').trim())
+  if (repaso.length) parts.push(`Repaso:\n${repaso.map((r) => `${r.pregunta}\n${String(r.nota).trim()}`).join('\n')}`)
   return `Esto es lo que llevo en mi apartado "${def.label}" de la app. Revísalo conmigo:\n\n${parts.join('\n\n')}`
 }
 
