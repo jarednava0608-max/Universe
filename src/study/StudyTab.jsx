@@ -4,7 +4,7 @@ import Sky from '../components/Sky.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, proposeNode, noteBody, noteDate, today } from './kinds.js'
+import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -662,6 +662,11 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, o
         <div className="action-stack">
           <button className="secondary icon-left" onClick={() => setPaste(true)}>
             <Icon d={ICONS.pegar} size={18} /> Pegar de Claude
+          </button>
+          <button className="secondary icon-left" onClick={async () => {
+            try { await navigator.clipboard.writeText(entryForClaude(draft())); toast('Copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
+          }}>
+            <Icon d={ICONS.pegar} size={18} /> Copiar para Claude
           </button>
           <button className="secondary icon-left" onClick={() => setProposal(proposeNode(draft()))}>
             <Icon d={ICONS.nodo} size={18} /> Proponer al mapa

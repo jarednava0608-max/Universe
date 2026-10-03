@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER } from './kinds.js'
+import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER } from './kinds.js'
 
 describe('Estudio', () => {
   it('detecta citas bíblicas sin repetir', () => {
@@ -85,5 +85,20 @@ describe('Notas', async () => {
     expect(p.title).toBe('Ayudemos')
     expect(p.note).toBe(articulo.trim())
     expect(claudeFormat('reunion')).not.toContain('articulo')
+  })
+
+  it('"Copiar para Claude" junta solo los campos con contenido', () => {
+    const e = makeEntry('diario')
+    e.fields.fecha = '2026-10-03'
+    e.fields.texto = 'No calumnia con su lengua (Sal. 15:3).'
+    e.fields.aplicacion = 'Pensar en lo positivo de un hermano'
+    const t = entryForClaude(e)
+    expect(t).toContain('Texto:\nNo calumnia con su lengua (Sal. 15:3).')
+    expect(t).toContain('Aplicación:\nPensar en lo positivo de un hermano')
+    expect(t).not.toContain('Contexto')
+    const r = makeEntry('reunion')
+    r.fields.parrafos = [{ num: '2', nota: 'Conocimiento exacto' }, { num: '3', nota: '' }]
+    expect(entryForClaude(r)).toContain('Párrafo 2: Conocimiento exacto')
+    expect(entryForClaude(r)).not.toContain('Párrafo 3')
   })
 })

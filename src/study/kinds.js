@@ -204,6 +204,30 @@ ${JSON.stringify(example, null, 2)}
 Usa solo información de jw.org y wol.jw.org. Deja vacío ("") lo que no aplique.`
 }
 
+// ---------- "Copiar para Claude" ----------
+
+// Junta todo lo que lleva la entrada (solo los campos con contenido) en un texto para pegarlo en el chat.
+export function entryForClaude(entry) {
+  const def = KINDS[entry.kind]
+  const f = entry.fields
+  const parts = []
+  for (const field of def.fields) {
+    const v = f[field.key]
+    if (field.type === 'paragraphs') {
+      const rows = (v ?? []).filter((p) => String(p.nota ?? '').trim()).map((p) => `Párrafo ${p.num}: ${String(p.nota).trim()}`)
+      if (rows.length) parts.push(`${field.label}:\n${rows.join('\n')}`)
+    } else if (field.type === 'choice') {
+      const label = field.options.find((o) => o[0] === v)?.[1]
+      if (label) parts.push(`${field.label}: ${label}`)
+    } else if (field.type === 'date') {
+      if (v) parts.push(`${field.label}: ${formatDate(v)}`)
+    } else if (String(v ?? '').trim()) {
+      parts.push(`${field.label}:\n${String(v).trim()}`)
+    }
+  }
+  return `Esto es lo que llevo en mi apartado "${def.label}" de la app. Revísalo conmigo:\n\n${parts.join('\n\n')}`
+}
+
 // ---------- "Proponer al mapa" ----------
 
 // Arma un nodo ordenado solo con lo clave: título, idea principal, principio y textos.
