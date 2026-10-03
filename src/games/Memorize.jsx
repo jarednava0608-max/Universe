@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { chunkText, clozeWords, foldLetter, initials, makeVerse, parseVerses, typeWords, memorizeSources, VERSES_FORMAT } from './logic.js'
+import { chunkText, citeSteps, clozeWords, foldLetter, initials, makeVerse, parseVerses, typeWords, memorizeSources, VERSES_FORMAT } from './logic.js'
 import { GameScreen, PasteJson, Empty, OrderPuzzle } from './ui.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
@@ -8,7 +8,7 @@ import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import { byPriority, isDue, review } from './progress.js'
 
 const LEVELS = ['Fácil', 'Medio', 'Difícil', 'De memoria']
-const MODES = [['hide', 'Ocultar'], ['initials', 'Iniciales'], ['type', 'Escribir'], ['order', 'Ordenar']]
+const MODES = [['hide', 'Ocultar'], ['initials', 'Iniciales'], ['type', 'Escribir'], ['order', 'Ordenar'], ['cite', 'Cita']]
 
 // Guarda el resultado de practicar un texto: sube o baja de nivel y agenda el próximo repaso.
 // Los textos del diario se copian a "mis textos" la primera vez que se practican.
@@ -106,12 +106,18 @@ function Practice({ verse, store, onSaved, onBack }) {
   const words = useMemo(() => clozeWords(verse.fields.texto, nivel, seed), [verse.fields.texto, nivel, seed])
   const pieces = useMemo(() => chunkText(verse.fields.texto), [verse.fields.texto])
   const hiddenLeft = words.filter((w, i) => w.hidden && !shown.has(i)).length
+  // "Cita" solo si la cita tiene libro, capítulo y versículo.
+  const canCite = useMemo(() => !!citeSteps(verse.fields.cita), [verse.fields.cita])
+  const [citeShown, setCiteShown] = useState(false)
+  // En "De memoria" y en "Cita" la cita también se oculta (ni en el título).
+  const hideCite = (mode === 'hide' && nivel === 3 && !citeShown) || mode === 'cite'
 
   function reset() {
     setSeed(Math.floor(Math.random() * 1e6))
     setShown(new Set())
     setPeek(false)
     setOrdered(null)
+    setCiteShown(false)
   }
 
   async function next(knewIt) {
@@ -122,7 +128,10 @@ function Practice({ verse, store, onSaved, onBack }) {
     reset()
   }
 
-  const ref = verse.fields.cita && <p className="verse-ref">{findRefs(verse.fields.cita).length ? <RefLink refText={findRefs(verse.fields.cita)[0]} /> : verse.fields.cita}</p>
+  const fullRef = verse.fields.cita && <p className="verse-ref">{findRefs(verse.fields.cita).length ? <RefLink refText={findRefs(verse.fields.cita)[0]} /> : verse.fields.cita}</p>
+  const ref = mode === 'hide' && nivel === 3 && !citeShown && verse.fields.cita
+    ? <button className="cite-blank" onClick={() => setCiteShown(true)}>¿Cuál es la cita? Toca para verla</button>
+    : fullRef
   const answer = (
     <div className="two-btn">
       <button className="secondary" onClick={() => next(false)}>Repasar</button>
@@ -131,9 +140,9 @@ function Practice({ verse, store, onSaved, onBack }) {
   )
 
   return (
-    <GameScreen title={verse.fields.cita || 'Texto'} back="Textos" onExit={onBack}>
+    <GameScreen title={(!hideCite && verse.fields.cita) || 'Texto'} back="Textos" onExit={onBack}>
       <div className="seg-modes">
-        {MODES.map(([m, l]) => (
+        {MODES.filter(([m]) => m !== 'cite' || canCite).map(([m, l]) => (
           <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); setNote(null); reset() }}>{l}</button>
         ))}
       </div>
@@ -144,7 +153,7 @@ function Practice({ verse, store, onSaved, onBack }) {
         <>
           <div className="level-tabs">
             {LEVELS.map((l, i) => (
-              <button key={l} className={i === nivel ? 'on' : ''} onClick={() => { setNivel(i); setShown(new Set()) }}>{l}</button>
+              <button key={l} className={i === nivel ? 'on' : ''} onClick={() => { setNivel(i); setShown(new Set()); setCiteShown(false) }}>{l}</button>
             ))}
           </div>
           <p className="verse">
@@ -199,7 +208,60 @@ function Practice({ verse, store, onSaved, onBack }) {
           )}
         </>
       )}
+      {mode === 'cite' && (
+        <CiteQuiz key={seed} verse={verse} footer={(errors) => (
+          <>
+            <p className={'order-result ' + (errors ? 'bad' : 'ok')}>{errors ? `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.` : '¡Perfecto, sin errores!'}</p>
+            {fullRef}
+            {answer}
+          </>
+        )} />
+      )}
     </GameScreen>
+  )
+}
+
+// Cita: con el texto a la vista, arma su cita en 3 pasos (libro, capítulo y versículo).
+// Si fallas, la opción se marca y vuelves a intentar.
+function CiteQuiz({ verse, footer }) {
+  const steps = useMemo(() => citeSteps(verse.fields.cita), [verse.fields.cita])
+  const [at, setAt] = useState(0)
+  const [wrong, setWrong] = useState(() => new Set())
+  const [errors, setErrors] = useState(0)
+  const done = at >= steps.length
+  const picked = steps.slice(0, at).map((s) => s.options[s.answer])
+
+  function choose(k) {
+    if (k === steps[at].answer) {
+      setAt(at + 1)
+      setWrong(new Set())
+    } else {
+      setWrong((w) => new Set(w).add(k))
+      setErrors((n) => n + 1)
+    }
+  }
+
+  return (
+    <>
+      <p className="verse">{verse.fields.texto}</p>
+      {!done ? (
+        <>
+          <p className="cite-built">
+            <span className={picked[0] ? '' : 'cite-gap'}>{picked[0] ?? 'Libro'}</span>{' '}
+            <span className={picked[1] ? '' : 'cite-gap'}>{picked[1] ?? 'cap.'}</span>:
+            <span className={picked[2] ? '' : 'cite-gap'}>{picked[2] ?? 'vers.'}</span>
+          </p>
+          <p className="hint center">¿{steps[at].label === 'Libro' ? 'En qué libro' : steps[at].label === 'Capítulo' ? 'Qué capítulo' : 'Qué versículo'} está?</p>
+          <div className="options">
+            {steps[at].options.map((o, k) => (
+              <button key={at + ':' + k} className={'option' + (wrong.has(k) ? ' wrong' : '')} disabled={wrong.has(k)} onClick={() => choose(k)}>{o}</button>
+            ))}
+          </div>
+        </>
+      ) : (
+        footer(errors)
+      )}
+    </>
   )
 }
 

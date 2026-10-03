@@ -411,3 +411,35 @@ export function sectionRun(rnd = Math.random) {
   const s = list[Math.floor(rnd() * list.length)]
   return { name: s.name, books: BOOKS.slice(s.from - 1, s.to) }
 }
+
+// ---------- Memorizar: "Cita" (armar la cita de un texto) ----------
+
+// La cita en 3 pasos (libro, capítulo, versículo), cada uno con 4 opciones cercanas a la buena.
+// null si la cita no se reconoce o no tiene versículo.
+export function citeSteps(cita, rnd = Math.random) {
+  const r = parseRef(cita ?? '')
+  const vs = String(cita ?? '').match(/:\s*(\d{1,3}(?:\s?[-–,]\s?\d{1,3})*)/)
+  if (!r || !r.verse || !vs) return null
+  const near = (n, span) => {
+    const pool = []
+    for (let d = 1; pool.length < span * 2 && d < 200; d++) {
+      if (n - d >= 1) pool.push(n - d)
+      pool.push(n + d)
+    }
+    return shuffle(pool.slice(0, span * 2), rnd).slice(0, 3)
+  }
+  const step = (label, right, others) => {
+    const options = shuffle([right, ...others], rnd)
+    return { label, options, answer: options.indexOf(right) }
+  }
+  // Versículo: si es un tramo ("16-18") las opciones mueven todo el tramo.
+  const verseText = vs[1].replace(/\s+/g, '')
+  const shift = (d) => verseText.replace(/\d+/g, (x) => String(Number(x) + d))
+  const books = near(r.book, 4).filter((b) => b <= BOOKS.length)
+  while (books.length < 3) books.push(...near(r.book, 6).filter((b) => b <= BOOKS.length && !books.includes(b)).slice(0, 3 - books.length))
+  return [
+    step('Libro', BOOKS[r.book - 1], books.map((b) => BOOKS[b - 1])),
+    step('Capítulo', String(r.chapter), near(r.chapter, 3).map(String)),
+    step('Versículo', verseText, near(r.verse, 3).map((v) => shift(v - r.verse))),
+  ]
+}

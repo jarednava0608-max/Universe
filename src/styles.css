@@ -1222,3 +1222,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-missing button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 14px; }
 .primary:disabled { opacity: 0.4; }
 @media (max-width: 374px) { .at-step { font-size: 12px; } }
+
+/* ---------- Memorizar: Cita ---------- */
+.cite-built { text-align: center; font-size: 20px; font-weight: 600; margin: 4px 0 6px; }
+.cite-gap { color: var(--text-3); font-weight: 500; border-bottom: 2px solid var(--line-strong); padding: 0 4px; }
+.cite-blank { display: block; min-height: var(--tap); margin: 0 0 22px; padding: 0 14px; font-size: 15px; color: var(--text-2); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 12px; }
