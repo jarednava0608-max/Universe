@@ -138,6 +138,7 @@ const INTERACTIVE = 'button, a, input, textarea, select, label, [role="button"],
 
 // Para que al pasar de Estudio a Juegos el cielo no se apague (no repite la entrada ni el tinte).
 let mounted = 0
+let tiltState = 'unknown' // permiso de movimiento en esta sesión: 'unknown' | 'granted' | 'denied'
 let lastUnmount = 0
 
 export default function Sky() {
@@ -195,23 +196,21 @@ export default function Sky() {
       base ??= { g: e.gamma, b: e.beta } // la posición en que lo tienes es el centro
       const tx = Math.max(-1, Math.min(1, (e.gamma - base.g) / 25))
       const ty = Math.max(-1, Math.min(1, (e.beta - base.b) / 25))
-      set('--tx', (tx * 14).toFixed(1) + 'px')
-      set('--ty', (ty * 14).toFixed(1) + 'px')
+      set('--tx', (tx * 18).toFixed(1) + 'px')
+      set('--ty', (ty * 18).toFixed(1) + 'px')
     }
-    // El iPhone pide permiso una sola vez para usar el movimiento (con el primer toque).
-    const ask = () => {
-      const D = window.DeviceOrientationEvent
-      let asked = null
-      try { asked = localStorage.getItem('universe-tilt') } catch { /* */ }
-      if (D?.requestPermission && !asked) {
-        try { localStorage.setItem('universe-tilt', 'asked') } catch { /* */ }
-        D.requestPermission().then((r) => { if (r === 'granted') window.addEventListener('deviceorientation', onTilt) }).catch(() => {})
-      }
-    }
+    // En iPhone el permiso de movimiento se pide con un toque. Si ya lo diste, iOS responde sin
+    // volver a preguntar; por eso se pide con el primer toque cada vez que se abre la app.
     const D = window.DeviceOrientationEvent
-    let granted = !D?.requestPermission
-    try { granted ||= localStorage.getItem('universe-tilt') === 'asked' } catch { /* */ }
-    if (granted) window.addEventListener('deviceorientation', onTilt)
+    const listen = () => window.addEventListener('deviceorientation', onTilt)
+    const ask = () => {
+      if (!D?.requestPermission || tiltState !== 'unknown') return
+      D.requestPermission().then((r) => {
+        tiltState = r === 'granted' ? 'granted' : 'denied'
+        if (tiltState === 'granted') listen()
+      }).catch(() => {})
+    }
+    if (!D?.requestPermission || tiltState === 'granted') listen()
     root.addEventListener('scroll', onScroll, true)
     root.addEventListener('pointerdown', ask, { once: true })
     return () => {
