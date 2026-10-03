@@ -137,3 +137,14 @@ describe('Paquete Calumnia y Salmo 15:3', () => {
     expect(again.put.length).toBe(0)
   })
 })
+
+describe('Paquete de verdades de La Atalaya', () => {
+  it('agrega las 14 verdades enlazadas al artículo y no las duplica', () => {
+    const seed = SEEDS.find((s) => s.id === 'verdades-atalaya-conocer-a-jehova')
+    expect(seed.data.nodes.length).toBe(14)
+    expect(seed.data.nodes.every((n) => n.note.includes('[[Ayudemos a otros a conocer bien a Jehová]]') && n.note.includes('[[Jehová]]'))).toBe(true)
+    const base = run([makeRoot()], SEEDS.filter((s) => s.data))
+    expect(base.map((n) => n.title)).toContain('Jehová es el Gran Instructor')
+    expect(planSeed(seed, base).put.length).toBe(0)
+  })
+})

@@ -233,6 +233,35 @@ SEEDS.push({
   },
 })
 
+// 8) Verdades fundamentales de La Atalaya del 3 de octubre de 2026, como el usuario las aprobó en
+// el chat: cada una es un nodo, enlazado a Jehová, a su texto y al nodo del artículo.
+const ART = '[[Ayudemos a otros a conocer bien a Jehová]]'
+const BIBLIA = 'Lo dice la Biblia directamente.'
+const CONCLUSION = 'Conclusión del artículo, basada en la Biblia.'
+const verdad = (title, texto, fuente, tipo) => ({ title, note: `${texto}\n\n${fuente}\n\n${tipo} De ${ART}.` })
+
+SEEDS.push({
+  id: 'verdades-atalaya-conocer-a-jehova',
+  data: {
+    nodes: [
+      verdad('Conocer a Jehová da vida eterna', 'Conocer a [[Jehová]], el único Dios verdadero, da vida eterna.', '[[Juan 17:3]]', BIBLIA),
+      verdad('El mérito es de Jehová', 'El progreso de un estudiante es obra de [[Jehová]]: nosotros plantamos y regamos, él hace crecer. Por eso el mérito es suyo.', '1 Corintios 3:5-9 (párr. 1).', CONCLUSION),
+      verdad('Jehová quiere que todos se salven', '[[Jehová]] quiere que toda clase de personas se salven y lleguen a tener un conocimiento exacto de la verdad.', '[[1 Timoteo 2:3, 4]]', BIBLIA),
+      verdad('Conocimiento exacto', 'No es saber datos: es conocer a [[Jehová]] tanto que te cambia la vida. Un conocimiento que "influye por completo en la persona".', '[[Jer. 9:24]] (párr. 2).', CONCLUSION),
+      verdad('Sin conocer a Jehová no se le puede amar', 'Un estudiante no puede amar a [[Jehová]] si no lo conoce bien.', '[[Marcos 12:30]] (párr. 4).', CONCLUSION),
+      verdad('Bautizarse por amor a Jehová', 'Uno debe bautizarse porque ama a [[Jehová]] y quiere dedicarle su vida, no por amigos, por formar parte de la organización ni porque le gusten ciertas enseñanzas.', 'Párrafo 4.', CONCLUSION),
+      verdad('El amor impulsa a obedecer', 'Lo que más motiva a obedecer a [[Jehová]] y serle leal es el amor que sentimos por él. El amor y la obediencia van de la mano.', '[[1 Juan 5:3]]; [[Juan 14:31]]', BIBLIA),
+      verdad('A Jehová se le conoce con la práctica', 'A [[Jehová]] se le conoce estudiando y también viviendo sus principios, como un piloto que acumula horas de vuelo.', 'Párrafo 6.', CONCLUSION),
+      verdad('Jehová es el Gran Instructor', 'Quien enseña de verdad es [[Jehová]], y solo él merece toda la alabanza.', '[[Is. 30:20, 21]]', BIBLIA),
+      verdad('Jehová siempre hace lo correcto', '[[Jehová]] siempre hace lo correcto, aunque la Biblia no dé todos los detalles de una decisión suya: valora la vida, no castiga a inocentes y no deja sin castigo al que lo merece.', '[[2 Ped. 3:9]]; [[Efes. 2:4, 5]]; [[Éx. 34:6, 7]] (párr. 13).', CONCLUSION),
+      verdad('Lo que hace feliz a Jehová es una buena decisión', 'Cualquier decisión que hace feliz a [[Jehová]] es una buena decisión. Jesús: "Siempre hago lo que a él le agrada".', 'Juan 8:29 (párr. 15).', CONCLUSION),
+      verdad('Si pongo a Jehová primero, él me cuida', 'Si ponemos a [[Jehová]] en primer lugar, él cuida de nosotros. No significa que todo saldrá siempre bien: él cuida, pero no siempre como esperamos.', 'Mateo 6:33 (párr. 16).', CONCLUSION),
+      verdad('Lo más importante es conocer bien a Jehová', 'Lo más importante que debe aprender un estudiante no son datos, sino conocer bien a [[Jehová]].', 'Párrafo 17.', CONCLUSION),
+      verdad('Jehová es amigo de quien lo ama', 'Si alguien ama a Dios, [[Jehová]] lo conoce y lo considera su amigo.', '1 Corintios 8:3 (párr. 18).', BIBLIA),
+    ],
+  },
+})
+
 // La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
 // El artículo completo no va aquí (el repositorio es público); el usuario lo pega en su nodo desde la app.
 export const SEED_ATALAYA_CONOCER = {
