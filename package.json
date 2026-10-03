@@ -20,6 +20,7 @@
     "@tiptap/pm": "^3.31.4",
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
+    "d3-force-3d": "^3.0.6",
     "dompurify": "^3.4.16",
     "idb": "^8.0.3",
     "marked": "^18.0.14",

@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
+import { forceCollide, forceRadial } from 'd3-force-3d'
 import { nodeColor, ROOT_ID } from '../lib/model.js'
 import { buildResolver, extractLinks } from '../lib/markdown.js'
 
@@ -30,7 +31,9 @@ function readPalette() {
 function labelBox(ctx, n, scale, focused) {
   const fs = (n.isRoot ? 13 : 11) / scale
   ctx.font = `${n.isRoot ? 600 : 500} ${fs}px ${FONT}`
-  const label = n.title.length > 32 ? n.title.slice(0, 31) + '…' : n.title
+  // De lejos los nombres largos se acortan más (el nodo abierto se ve completo hasta 32 letras).
+  const max = focused || scale >= 1.6 ? 32 : 20
+  const label = n.title.length > max ? n.title.slice(0, max - 1).trimEnd() + '…' : n.title
   const w = ctx.measureText(label).width
   const y = n.y + n.r + (focused ? 9 : 4) / scale
   return { label, x1: n.x - w / 2 - 2 / scale, x2: n.x + w / 2 + 2 / scale, y1: y, y2: y + fs * 1.2 }
@@ -39,6 +42,9 @@ function labelBox(ctx, n, scale, focused) {
 // Vista de grafo: canvas con zoom/arrastre táctil y líneas rectas.
 // Margen al ajustar el mapa a la pantalla (90 dejaba el mapa chiquito en el iPhone).
 const FIT_PAD = 58
+// Distancia entre anillos: Jehová en el centro, lo que se enlaza con él en el primer anillo, lo que
+// se enlaza con esos en el segundo… y lo suelto (sin enlaces) en el anillo de afuera, no perdido lejos.
+const RING = 105
 
 const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme, onNodeTap, onBackgroundTap }, ref) {
   // Los colores se leen después de que el tema ya se aplicó en <html> (si se leen al dibujar,
@@ -53,7 +59,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
   const cache = useRef(new Map()) // conserva posiciones entre renders
   const didFit = useRef(false) // true cuando el usuario ya movió el mapa o se abrió un nodo: ya no se reajusta solo
-  const labelBoxes = useRef([]) // nombres ya dibujados en este cuadro (para no encimarlos)
+  const labels = useRef(new Set()) // nodos cuyo nombre cabe en este cuadro sin encimarse
   const lastBgTap = useRef(0)
 
   useEffect(() => {
@@ -90,13 +96,34 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
       }
     }
 
+    // Anillo de cada nodo: cuántos pasos hay desde Jehová siguiendo las líneas.
+    const near = new Map()
+    for (const l of links) {
+      if (!near.has(l.source)) near.set(l.source, [])
+      if (!near.has(l.target)) near.set(l.target, [])
+      near.get(l.source).push(l.target)
+      near.get(l.target).push(l.source)
+    }
+    const depth = new Map([[ROOT_ID, 0]])
+    for (let queue = [ROOT_ID]; queue.length; ) {
+      const id = queue.shift()
+      for (const m of near.get(id) ?? []) {
+        if (depth.has(m)) continue
+        depth.set(m, depth.get(id) + 1)
+        queue.push(m)
+      }
+    }
+    const outer = Math.max(1, ...depth.values())
+
     const gNodes = nodes.map((n) => {
       const g = old.get(n.id) ?? { id: n.id }
       g.title = n.title
       g.color = nodeColor(n)
       g.isRoot = n.id === ROOT_ID
       g.fresh = !g.isRoot && Date.now() - (n.createdAt ?? 0) < 24 * 3600 * 1000 // creado en las últimas 24 h
-      g.r = g.isRoot ? 8 : 3.5 + Math.min(5, Math.sqrt(degree.get(n.id) ?? 0) * 1.4)
+      g.deg = degree.get(n.id) ?? 0
+      g.r = g.isRoot ? 8 : 3.5 + Math.min(5, Math.sqrt(g.deg) * 1.4)
+      g.ring = depth.get(n.id) ?? outer
       if (g.isRoot) {
         g.fx = 0
         g.fy = 0
@@ -120,12 +147,16 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
     return set
   }, [data, focusId])
 
+  // Fuerzas para que el mapa se vea ordenado y no como un enredo: anillos alrededor de Jehová,
+  // los nodos no se enciman y los muy conectados se separan más.
   useEffect(() => {
     const f = fg.current
     if (!f) return
-    f.d3Force('charge').strength(-150).distanceMax(420)
-    f.d3Force('link').distance(90)
-  }, [])
+    f.d3Force('charge').strength((n) => (n.isRoot ? -300 : -90 - 15 * Math.min(n.deg, 8))).distanceMax(360)
+    f.d3Force('link').distance((l) => (l.source.isRoot || l.target.isRoot ? RING : 60 + 6 * Math.min(8, Math.max(l.source.deg ?? 0, l.target.deg ?? 0))))
+    f.d3Force('collide', forceCollide((n) => n.r + 10).iterations(2))
+    f.d3Force('radial', forceRadial((n) => RING * n.ring, 0, 0).strength((n) => (n.isRoot ? 0 : 0.14)))
+  }, [data])
 
   // Al abrir la app, el mapa vuelve al último nodo que viste (cuando ya se acomodó un poco).
   useEffect(() => {
@@ -267,20 +298,12 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
             ctx.stroke()
           }
 
-          const showLabel = n.isRoot || focused || neighbors.has(n.id) || scale >= 0.9
-          if (showLabel) {
+          if (labels.current.has(n.id)) {
             ctx.textAlign = 'center'
             ctx.textBaseline = 'top'
             const box = labelBox(ctx, n, scale, focused)
-            // Si el nombre se encima con otro, no se dibuja (al acercar el zoom aparece).
-            // Jehová y el nodo abierto siempre se ven (su lugar se apartó antes de dibujar).
-            const must = n.isRoot || focused
-            const hit = labelBoxes.current.some((b) => box.x1 < b.x2 && box.x2 > b.x1 && box.y1 < b.y2 && box.y2 > b.y1)
-            if (must || !hit) {
-              if (!must) labelBoxes.current.push(box)
-              ctx.fillStyle = n.isRoot ? pal.rootLabel : focused ? pal.focus : pal.label
-              ctx.fillText(box.label, n.x, box.y1)
-            }
+            ctx.fillStyle = n.isRoot ? pal.rootLabel : focused ? pal.focus : pal.label
+            ctx.fillText(box.label, n.x, box.y1)
           }
           ctx.globalAlpha = 1
         }}
@@ -292,11 +315,21 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
           ctx.fill()
         }}
         onRenderFramePre={(ctx, scale) => {
-          // Primero se apartan los lugares de Jehová y del nodo abierto (siempre se ven).
-          labelBoxes.current = []
-          for (const n of data.nodes) {
-            if (!(n.isRoot || n.id === focusId) || !Number.isFinite(n.x)) continue
-            labelBoxes.current.push(labelBox(ctx, n, scale, n.id === focusId))
+          // Qué nombres se dibujan: primero Jehová y el nodo abierto (siempre), luego sus vecinos y
+          // después los más conectados. Si un nombre se encima con otro ya puesto, se oculta hasta
+          // acercar el zoom. De lejos solo salen los nodos importantes.
+          const rank = (n) => (n.isRoot ? 3e3 : n.id === focusId ? 2e3 : neighbors.has(n.id) ? 1e3 + n.deg : n.deg)
+          // Los puntos también cuentan: un nombre no se dibuja encima de otro nodo.
+          const boxes = data.nodes.filter((n) => Number.isFinite(n.x)).map((n) => ({ id: n.id, x1: n.x - n.r, x2: n.x + n.r, y1: n.y - n.r, y2: n.y + n.r }))
+          labels.current = new Set()
+          for (const n of [...data.nodes].sort((a, b) => rank(b) - rank(a))) {
+            if (!Number.isFinite(n.x)) continue
+            const must = n.isRoot || n.id === focusId
+            if (!must && !neighbors.has(n.id) && scale < (n.deg >= 4 ? 0.45 : 0.9)) continue
+            const box = labelBox(ctx, n, scale, n.id === focusId)
+            if (!must && boxes.some((b) => b.id !== n.id && box.x1 < b.x2 && box.x2 > b.x1 && box.y1 < b.y2 && box.y2 > b.y1)) continue
+            boxes.push(box)
+            labels.current.add(n.id)
           }
         }}
         onNodeClick={(n) => onNodeTap(n.id)}
