@@ -9,6 +9,7 @@ import { makeNode, normKey } from './model.js'
 import { anyRefKey, makeBibleEntry } from './verses.js'
 import { TRIVIA_JEREMIAS_38_39, TRIVIA_BIBLIA } from './seedTrivia.js'
 import { JEREMIAS_38_39 } from './seedVerses.js'
+import { ATALAYA_CONOCER_TITULO, ATALAYA_CONOCER_NODO, ATALAYA_CONOCER_REUNION, TRIVIA_ATALAYA_CONOCER } from './seedAtalaya.js'
 
 // 1) Lo que estudiamos de Jeremías 38 y 39 (primera versión).
 const V1 = [
@@ -193,11 +194,20 @@ export const SEEDS = [
   { id: 'trivia-toda-la-biblia', trivia: TRIVIA_BIBLIA },
 ]
 
+// La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
+export const SEED_ATALAYA_CONOCER = {
+  id: 'atalaya-2026-10-03-conocer-a-jehova',
+  data: { nodes: [{ title: ATALAYA_CONOCER_TITULO, note: ATALAYA_CONOCER_NODO }] },
+  entries: [ATALAYA_CONOCER_REUNION],
+  trivia: TRIVIA_ATALAYA_CONOCER,
+}
+
 const same = (a, b) => String(a ?? '').replace(/\s+/g, ' ').trim() === String(b ?? '').replace(/\s+/g, ' ').trim()
 
 // Lo que hay que guardar y borrar para aplicar un paquete sobre los nodos actuales.
 // verses: [[cita, texto]] se guardan en "Mi Biblia" si esa cita aún no tiene texto guardado.
 // trivia: [{ id, fields }] se agregan a Trivia si esa pregunta (id) no existe.
+// entries: [{ id, kind, fields }] entradas de Estudio (Reuniones, Texto diario…) si ese id no existe.
 export function planSeed(seed, nodes, edges = [], entries = []) {
   const byKey = new Map(nodes.map((n) => [normKey(n.title), n]))
   const put = []
@@ -232,5 +242,6 @@ export function planSeed(seed, nodes, edges = [], entries = []) {
   const have = new Set(entries.map((e) => e.id))
   const now = Date.now()
   const trivia = (seed.trivia ?? []).filter((q) => !have.has(q.id)).map((q) => ({ id: q.id, kind: 'trivia', fields: q.fields, createdAt: now, updatedAt: now }))
-  return { put, del, verses, trivia }
+  const study = (seed.entries ?? []).filter((e) => !have.has(e.id)).map((e) => ({ ...e, createdAt: now, updatedAt: now }))
+  return { put, del, verses, trivia, entries: study }
 }

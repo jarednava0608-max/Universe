@@ -79,4 +79,29 @@ describe('paquete de Trivia', () => {
     // Si ya están (otro teléfono las sincronizó), no se vuelven a agregar.
     expect(planSeed(seed, [], [], first.trivia).trivia.length).toBe(0)
   })
+
+  it('agrega entradas de Estudio una sola vez', () => {
+    const seed = { id: 'x', entries: [{ id: 'reunion-x', kind: 'reunion', fields: { titulo: 'T' } }] }
+    const first = planSeed(seed, [], [], [])
+    expect(first.entries).toHaveLength(1)
+    expect(first.entries[0].kind).toBe('reunion')
+    expect(first.entries[0].createdAt).toBeTruthy()
+    expect(planSeed(seed, [], [], first.entries).entries).toHaveLength(0)
+  })
+})
+
+describe('La Atalaya del 3 de octubre de 2026', () => {
+  it('agrega el nodo, la reunión y la trivia con citas reconocibles', async () => {
+    const { TRIVIA_ATALAYA_CONOCER } = await import('./seedAtalaya.js')
+    const { findRefs } = await import('./bible.js')
+    const { SEED_ATALAYA_CONOCER: seed } = await import('./seeds.js')
+    const plan = planSeed(seed, [], [], [])
+    expect(plan.put.map((n) => n.title)).toContain('Ayudemos a otros a conocer bien a Jehová')
+    expect(plan.entries[0].fields.parrafos).toHaveLength(18)
+    expect(plan.trivia).toHaveLength(TRIVIA_ATALAYA_CONOCER.length)
+    for (const q of TRIVIA_ATALAYA_CONOCER) {
+      expect(new Set(q.fields.opciones).size).toBe(4)
+      expect(findRefs(q.fields.cita).length).toBe(1)
+    }
+  })
 })
