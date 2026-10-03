@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { buildCards, dailyMix, initials, triviaToQuestion, verseSources } from './logic.js'
+import { buildCards, dailyMix, initials, triviaToQuestion, memorizeSources } from './logic.js'
 import { GameScreen, Result, SwipeCard } from './ui.jsx'
 import { isDue, review } from './progress.js'
 import { saveVerseResult } from './Memorize.jsx'
@@ -13,7 +13,7 @@ const LABEL = { card: 'Tarjeta', verse: 'Texto para memorizar', trivia: 'Pregunt
 // Una sola sesión con todo lo que toca hoy: tarjetas, textos y preguntas, alternados.
 export function reviewItems(store) {
   const trivia = store.entries.filter((e) => e.kind === 'trivia')
-  return dailyMix({ cards: buildCards(store.nodes, store.entries), verses: verseSources(store.entries), trivia, people: CHARACTERS }, store.progress.srs ?? {}, (s) => isDue(s))
+  return dailyMix({ cards: buildCards(store.nodes, store.entries), verses: memorizeSources(store.entries), trivia, people: CHARACTERS }, store.progress.srs ?? {}, (s) => isDue(s))
 }
 
 export default function Review({ store, onExit }) {

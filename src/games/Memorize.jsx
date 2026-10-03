@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { chunkText, clozeWords, foldLetter, initials, makeVerse, parseVerses, typeWords, verseSources, VERSES_FORMAT } from './logic.js'
+import { chunkText, clozeWords, foldLetter, initials, makeVerse, parseVerses, typeWords, memorizeSources, VERSES_FORMAT } from './logic.js'
 import { GameScreen, PasteJson, Empty, OrderPuzzle } from './ui.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
@@ -26,7 +26,7 @@ export default function Memorize({ store, toast, onExit }) {
   const srs = store.progress.srs ?? {}
   // Repaso inteligente: arriba los textos que toca repasar hoy.
   const verses = useMemo(() => {
-    const list = verseSources(store.entries)
+    const list = memorizeSources(store.entries)
     const byKey = new Map(list.map((v) => ['v:' + v.id, v]))
     return byPriority([...byKey.keys()], srs, undefined, () => 0.5).map((k) => byKey.get(k))
   }, [store.entries, srs])
@@ -62,7 +62,7 @@ export default function Memorize({ store, toast, onExit }) {
         </>
       ) : (
         <Empty action={<><button className="primary" onClick={() => setAdding(true)}>Agregar un texto</button><button className="secondary" onClick={() => setPaste(true)}>Agregar textos de Claude</button></>}>
-          Agrega los textos que quieras memorizar. Los de tu Texto diario aparecen aquí solos.
+          Agrega los textos de la Biblia que quieras memorizar.
         </Empty>
       )}
 

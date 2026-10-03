@@ -153,7 +153,14 @@ export function makeVerse({ cita = '', texto = '' } = {}) {
   return { id: newId(), kind: 'memoria', fields: { cita: cita.trim(), texto: texto.trim(), nivel: 0 }, createdAt: now, updatedAt: now }
 }
 
-// Textos para memorizar: los guardados en el juego + los del Texto diario.
+// Memorizar textos: solo los textos de la Biblia que el usuario agregó. El Texto diario no entra
+// (tampoco las copias que se hicieron de él cuando sí entraba).
+export function memorizeSources(entries) {
+  const daily = new Set(entries.filter((e) => e.kind === 'diario' && e.fields.texto?.trim()).flatMap((e) => [normKey(e.fields.texto), normKey(stripRef(e.fields.texto))]))
+  return entries.filter((e) => e.kind === 'memoria' && !daily.has(normKey(e.fields.texto ?? '')))
+}
+
+// Textos con su cita (para Mi Biblia): los de Memorizar + los del Texto diario.
 export function verseSources(entries) {
   const own = entries.filter((e) => e.kind === 'memoria')
   const ownKeys = new Set(own.map((e) => normKey(e.fields.texto)))

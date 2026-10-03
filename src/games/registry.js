@@ -9,7 +9,7 @@ import StudyGames from './StudyGames.jsx'
 import Books from './Books.jsx'
 import { CHARACTERS } from './memoria/characters.js'
 import { KEY } from './memoria/logic.js'
-import { buildCards, verseSources } from './logic.js'
+import { buildCards, memorizeSources } from './logic.js'
 import { dueCount } from './progress.js'
 
 const srsOf = (store) => store.progress.srs ?? {}
@@ -45,7 +45,7 @@ export const GAMES = [
     icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5M9 7h7M9 11h5',
     Component: Memorize,
     stat: (store) => {
-      const v = verseSources(store.entries)
+      const v = memorizeSources(store.entries)
       const m = v.filter((x) => (x.fields.nivel ?? 0) >= 3).length
       return v.length ? { text: `${m}/${v.length}` } : null
     },

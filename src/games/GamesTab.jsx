@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
-import { buildCards, verseSources } from './logic.js'
+import { buildCards, memorizeSources } from './logic.js'
 import { achievements, dueCount, lastWeek, streak, todayISO } from './progress.js'
 import Review from './Review.jsx'
 import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
@@ -111,7 +111,7 @@ const DAY_LETTERS = ['D', 'L', 'M', 'M', 'J', 'V', 'S']
 
 // Racha de días seguidos estudiando, la semana y lo que toca repasar hoy.
 function useStats(store) {
-  const verses = verseSources(store.entries)
+  const verses = memorizeSources(store.entries)
   return { verses, memorized: verses.filter((v) => (v.fields.nivel ?? 0) >= 3).length }
 }
 

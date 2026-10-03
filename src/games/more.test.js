@@ -184,3 +184,15 @@ describe('Texto diario con cita de Éxodo', () => {
     expect(w.fields.cita).toBe('Salmo 23:1')
   })
 })
+
+describe('Memorizar sin Texto diario', () => {
+  it('solo deja los textos propios y oculta las copias del Texto diario', async () => {
+    const { memorizeSources } = await import('./logic.js')
+    const entries = [
+      { id: 'd', kind: 'diario', fields: { texto: 'Viernes 2 de octubre Dios revela los secretos (Daniel 2:28).' } },
+      { id: 'c', kind: 'memoria', fields: { cita: 'Daniel 2:28', texto: 'Viernes 2 de octubre Dios revela los secretos' } },
+      { id: 'm', kind: 'memoria', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna.' } },
+    ]
+    expect(memorizeSources(entries).map((e) => e.id)).toEqual(['m'])
+  })
+})
