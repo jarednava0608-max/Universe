@@ -9,7 +9,8 @@ import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import { byPriority, isDue, review } from './progress.js'
 
 const LEVELS = ['Fácil', 'Medio', 'Difícil', 'De memoria']
-const MODES = [['hide', 'Ocultar'], ['initials', 'Iniciales'], ['type', 'Escribir'], ['order', 'Ordenar'], ['cite', 'Cita']]
+// En el orden en que conviene practicar un texto nuevo: de lo más fácil a lo más difícil.
+const MODES = [['hide', 'Ocultar'], ['initials', 'Iniciales'], ['order', 'Ordenar'], ['type', 'Escribir'], ['cite', 'Cita']]
 
 // Guarda el resultado de practicar un texto: sube o baja de nivel y agenda el próximo repaso.
 // Los textos del diario se copian a "mis textos" la primera vez que se practican.
@@ -132,10 +133,18 @@ function Practice({ verse, store, onSaved, onBack }) {
     reset()
   }
 
+  // Después de "Lo sé" se sugiere el modo que sigue (en Ocultar, hasta llegar a De memoria).
+  const modes = MODES.filter(([m]) => m !== 'cite' || canCite)
+  function nextMode(lvl) {
+    if (mode === 'hide' && lvl < 3) return null
+    const i = modes.findIndex(([m]) => m === mode)
+    return modes[(i + 1) % modes.length]
+  }
+
   async function next(knewIt) {
     const { stored, lvl } = await saveVerseResult(store, verse, knewIt, nivel)
     if (verse.fromDaily) onSaved(stored)
-    setNote({ k: Date.now(), up: lvl > nivel, text: lvl > nivel ? `Subiste a ${LEVELS[lvl]}` : lvl < nivel ? `Bajó a ${LEVELS[lvl]}` : knewIt ? '¡Ya lo sabes de memoria!' : 'Otra vez, con calma' })
+    setNote({ k: Date.now(), up: lvl > nivel, next: knewIt ? nextMode(lvl) : null, text: lvl > nivel ? `Subiste a ${LEVELS[lvl]}` : lvl < nivel ? `Bajó a ${LEVELS[lvl]}` : knewIt ? '¡Ya lo sabes de memoria!' : 'Otra vez, con calma' })
     setNivel(lvl)
     reset()
   }
@@ -144,22 +153,26 @@ function Practice({ verse, store, onSaved, onBack }) {
   const ref = mode === 'hide' && nivel === 3 && !citeShown && verse.fields.cita
     ? <button className="cite-blank" onClick={() => setCiteShown(true)}>¿Cuál es la cita? Toca para verla</button>
     : fullRef
-  const answer = (
+  // Cuando hay resultado (Escribir, Ordenar, Cita), el botón principal es el que toca: tú decides igual.
+  const answer = (ok = true) => (
     <div className="two-btn">
-      <button className="secondary" onClick={() => next(false)}>Repasar</button>
-      <button className="primary" onClick={() => next(true)}>Lo sé</button>
+      <button className={ok ? 'secondary' : 'primary'} onClick={() => next(false)}>Repasar</button>
+      <button className={ok ? 'primary' : 'secondary'} onClick={() => next(true)}>Lo sé</button>
     </div>
   )
 
   return (
     <GameScreen title={(!hideCite && verse.fields.cita) || 'Texto'} back="Textos" onExit={onBack} right={!verse.fromDaily && <button className="bar-btn" onClick={() => setEditing(true)}>Editar</button>}>
       <div className="seg-modes">
-        {MODES.filter(([m]) => m !== 'cite' || canCite).map(([m, l]) => (
+        {modes.map(([m, l]) => (
           <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); setNote(null); reset() }}>{l}</button>
         ))}
       </div>
 
       {note && <p key={note.k} className={'level-note' + (note.up ? ' up' : '')}>{note.text}</p>}
+      {note?.next && note.next[0] !== mode && (
+        <button className="secondary next-mode" onClick={() => { setMode(note.next[0]); setNote(null); reset() }}>Seguir con {note.next[1]}</button>
+      )}
 
       {mode === 'hide' && (
         <>
@@ -183,7 +196,7 @@ function Practice({ verse, store, onSaved, onBack }) {
           </p>
           {ref}
           <p className="hint center">{hiddenLeft ? 'Dilo de memoria. Toca un espacio para ver la palabra.' : '¿Lo dijiste completo?'}</p>
-          {answer}
+          {answer()}
         </>
       )}
 
@@ -194,7 +207,7 @@ function Practice({ verse, store, onSaved, onBack }) {
           </button>
           {ref}
           <p className="hint center">{peek ? 'Toca el texto para volver a las iniciales.' : 'Solo ves la primera letra de cada palabra. Dilo completo; toca el texto si te atoras.'}</p>
-          {answer}
+          {answer()}
         </>
       )}
 
@@ -203,7 +216,7 @@ function Practice({ verse, store, onSaved, onBack }) {
           <>
             <p className={'order-result ' + (pct >= 90 ? 'ok' : 'bad')}>{pct === 100 ? '¡Perfecto, sin errores!' : `${pct} % a la primera.`}</p>
             {ref}
-            {answer}
+            {answer(pct >= 90)}
           </>
         )} />
       )}
@@ -215,7 +228,7 @@ function Practice({ verse, store, onSaved, onBack }) {
             <>
               <p className={'order-result ' + (ordered ? 'bad' : 'ok')}>{ordered ? `Listo, con ${ordered} ${ordered === 1 ? 'error' : 'errores'}.` : '¡Perfecto, sin errores!'}</p>
               {ref}
-              {answer}
+              {answer(ordered <= 1)}
             </>
           )}
         </>
@@ -227,7 +240,7 @@ function Practice({ verse, store, onSaved, onBack }) {
           <>
             <p className={'order-result ' + (errors ? 'bad' : 'ok')}>{errors ? `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.` : '¡Perfecto, sin errores!'}</p>
             {fullRef}
-            {answer}
+            {answer(errors === 0)}
           </>
         )} />
       )}
@@ -237,7 +250,7 @@ function Practice({ verse, store, onSaved, onBack }) {
 
 // Cita: con el texto a la vista, arma su cita en 3 pasos (libro, capítulo y versículo).
 // Si fallas, la opción se marca y vuelves a intentar.
-function CiteQuiz({ verse, footer }) {
+export function CiteQuiz({ verse, footer }) {
   const steps = useMemo(() => citeSteps(verse.fields.cita), [verse.fields.cita])
   const [at, setAt] = useState(0)
   const [wrong, setWrong] = useState(() => new Set())

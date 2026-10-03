@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
-import { buildCards, dailyMix, initials, triviaToQuestion, memorizeSources } from './logic.js'
+import { buildCards, citeSteps, dailyMix, initials, triviaToQuestion, memorizeSources } from './logic.js'
 import { GameScreen, Result, SwipeCard } from './ui.jsx'
 import { isDue, review } from './progress.js'
-import { saveVerseResult } from './Memorize.jsx'
+import { CiteQuiz, saveVerseResult } from './Memorize.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
 import { CHARACTERS } from './memoria/characters.js'
@@ -79,9 +79,22 @@ function CardStep({ card, onAnswer }) {
   return <SwipeCard front={card.front} back={card.back} onAnswer={onAnswer} />
 }
 
+// Los textos se repasan a veces con iniciales y a veces armando su cita (si tiene versículo).
 function VerseStep({ verse, onAnswer }) {
   const [peek, setPeek] = useState(false)
+  const [asCite] = useState(() => !!citeSteps(verse.fields.cita) && Math.random() < 0.5)
   const cita = verse.fields.cita
+  if (asCite) {
+    return (
+      <CiteQuiz verse={verse} footer={(errors) => (
+        <>
+          <p className={'order-result ' + (errors ? 'bad' : 'ok')}>{errors ? `Con ${errors} ${errors === 1 ? 'error' : 'errores'}: vuelve pronto.` : '¡Perfecto!'}</p>
+          <p className="verse-ref"><RefLink refText={findRefs(cita)[0]} /></p>
+          <TwoButtons onAnswer={() => onAnswer(errors === 0)} single="Siguiente" />
+        </>
+      )} />
+    )
+  }
   return (
     <>
       <button className="verse initials" onClick={() => setPeek((p) => !p)}>{peek ? verse.fields.texto : initials(verse.fields.texto)}</button>
@@ -145,9 +158,10 @@ function PersonStep({ ch, onAnswer }) {
   )
 }
 
-function TwoButtons({ onAnswer, no, yes }) {
+function TwoButtons({ onAnswer, no, yes, single }) {
   const [busy, setBusy] = useState(false)
   const go = async (v) => { if (busy) return; setBusy(true); await onAnswer(v) }
+  if (single) return <button className="primary" onClick={() => go()}>{single}</button>
   return (
     <div className="two-btn">
       <button className="secondary" onClick={() => go(false)}>{no}</button>

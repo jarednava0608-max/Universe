@@ -8,8 +8,6 @@ import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
 import { GameScreen, Quiz } from './ui.jsx'
 import Sheet from '../components/Sheet.jsx'
 import PageScroll from '../components/PageScroll.jsx'
-import Sky from '../components/Sky.jsx'
-import { celebrateSky } from '../lib/celebrate.js'
 
 // Pestaña Juegos: menú armado desde registry.js.
 export default function GamesTab({ store, toast }) {
@@ -21,8 +19,7 @@ export default function GamesTab({ store, toast }) {
   useNewMedals(store, toast)
 
   return (
-    <div className="page sky-page">
-      <Sky />
+    <div className="page">
       <PageScroll title="Juegos">
         <h1 className="page-title">Juegos</h1>
         <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
@@ -84,7 +81,6 @@ function Daily({ store, onExit }) {
         onDone={onExit}
         onAgain={() => setNonce((n) => n + 1)}
         onFinish={(score) => {
-          celebrateSky() // Reto del día hecho: el cielo brilla unos segundos
           store.updateProgress((f) => {
             const prev = dailyDone(f)
             return prev && prev.score >= score ? f : { ...f, daily: { day: todayISO(), score } }

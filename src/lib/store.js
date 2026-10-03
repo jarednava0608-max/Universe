@@ -3,8 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import * as db from './db.js'
 import { makeEdge, makeRoot, ROOT_ID } from './model.js'
 import { renameLinks } from './markdown.js'
-import { PROGRESS_ID, makeProgress, withDay, todayISO } from '../games/progress.js'
-import { celebrateSky } from './celebrate.js'
+import { PROGRESS_ID, makeProgress, withDay } from '../games/progress.js'
 
 export function useStore() {
   const [state, setState] = useState({ nodes: [], edges: [], entries: [], ready: false, error: null })
@@ -142,14 +141,12 @@ function withActivity(change, entries) {
   if (i >= 0) {
     const next = [...puts]
     const fields = withDay(puts[i].fields)
-    if (fields !== puts[i].fields && !(entries.find((e) => e.id === PROGRESS_ID)?.fields.days ?? []).includes(todayISO())) celebrateSky()
     next[i] = { ...puts[i], fields }
     return { ...change, putEntries: next }
   }
   const cur = entries.find((e) => e.id === PROGRESS_ID) ?? makeProgress()
   const fields = withDay(cur.fields)
   if (fields === cur.fields) return change
-  celebrateSky() // primer estudio del día: la racha sube y el cielo brilla
   const now = Date.now()
   return { ...change, putEntries: [...puts, { ...cur, fields, createdAt: cur.createdAt || now, updatedAt: now }] }
 }

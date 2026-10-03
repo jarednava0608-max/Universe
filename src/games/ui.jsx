@@ -6,7 +6,6 @@ import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
 import { shuffle, timedPoints } from './logic.js'
 import { EraScene } from './eras.jsx'
-import { StarShower } from '../components/Sky.jsx'
 
 // Las preguntas largas (definiciones, versículos) van en letra más chica para leerse bien.
 const promptClass = (p) => 'quiz-prompt' + (typeof p === 'string' && p.length > 150 ? ' long' : '')
@@ -218,7 +217,6 @@ export function Result({ pct, value, unit, msg, record, stats = [], onAgain, onD
   return (
     <div ref={box} className={'result-card' + (compact ? ' compact' : '')}>
       {(pct ?? 0) >= 70 && <Confetti />}
-      {record && <StarShower />}
       {pct != null && (
         <div className={'ring' + (pct >= 70 ? ' good' : pct >= 40 ? ' mid' : '')}>
           <svg viewBox="0 0 120 120" aria-hidden="true">
