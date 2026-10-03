@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { chunkText, citeSteps, clozeWords, foldLetter, initials, makeVerse, parseVerses, typeWords, memorizeSources, VERSES_FORMAT } from './logic.js'
 import { GameScreen, PasteJson, Empty, OrderPuzzle } from './ui.jsx'
 import { findRefs } from '../lib/bible.js'
+import { cleanVerseText } from '../lib/verses.js'
 import RefLink from '../components/RefLink.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
@@ -103,6 +104,7 @@ function Practice({ verse, store, onSaved, onBack }) {
   const [peek, setPeek] = useState(false)
   const [ordered, setOrdered] = useState(null) // errores al terminar de ordenar
   const [note, setNote] = useState(null) // aviso de nivel después de "Lo sé" / "Repasar"
+  const [editing, setEditing] = useState(false)
   const words = useMemo(() => clozeWords(verse.fields.texto, nivel, seed), [verse.fields.texto, nivel, seed])
   const pieces = useMemo(() => chunkText(verse.fields.texto), [verse.fields.texto])
   const hiddenLeft = words.filter((w, i) => w.hidden && !shown.has(i)).length
@@ -118,6 +120,16 @@ function Practice({ verse, store, onSaved, onBack }) {
     setPeek(false)
     setOrdered(null)
     setCiteShown(false)
+  }
+
+  // Corregir la cita o el texto sin perder el nivel ni el repaso.
+  async function saveEdit({ cita, texto }) {
+    const stored = await store.saveEntry({ ...verse, fields: { ...verse.fields, cita: cita.trim(), texto: cleanVerseText(texto) } })
+    onSaved(stored)
+    setEditing(false)
+    setMode('hide')
+    setNote(null)
+    reset()
   }
 
   async function next(knewIt) {
@@ -140,7 +152,7 @@ function Practice({ verse, store, onSaved, onBack }) {
   )
 
   return (
-    <GameScreen title={(!hideCite && verse.fields.cita) || 'Texto'} back="Textos" onExit={onBack}>
+    <GameScreen title={(!hideCite && verse.fields.cita) || 'Texto'} back="Textos" onExit={onBack} right={!verse.fromDaily && <button className="bar-btn" onClick={() => setEditing(true)}>Editar</button>}>
       <div className="seg-modes">
         {MODES.filter(([m]) => m !== 'cite' || canCite).map(([m, l]) => (
           <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); setNote(null); reset() }}>{l}</button>
@@ -208,6 +220,8 @@ function Practice({ verse, store, onSaved, onBack }) {
           )}
         </>
       )}
+      {editing && <AddVerse initial={verse.fields} onCancel={() => setEditing(false)} onSave={saveEdit} />}
+
       {mode === 'cite' && (
         <CiteQuiz key={seed} verse={verse} footer={(errors) => (
           <>
@@ -265,14 +279,14 @@ function CiteQuiz({ verse, footer }) {
   )
 }
 
-function AddVerse({ onCancel, onSave }) {
-  const [cita, setCita] = useState('')
-  const [texto, setTexto] = useState('')
+function AddVerse({ initial, onCancel, onSave }) {
+  const [cita, setCita] = useState(initial?.cita ?? '')
+  const [texto, setTexto] = useState(initial?.texto ?? '')
   return (
     <div className="overlay picker">
       <header className="bar">
         <button className="bar-btn" onClick={onCancel}>Cancelar</button>
-        <span className="bar-title">Nuevo texto</span>
+        <span className="bar-title">{initial ? 'Editar texto' : 'Nuevo texto'}</span>
         <button className="bar-btn strong" disabled={!texto.trim()} onClick={() => onSave({ cita, texto })}>Guardar</button>
       </header>
       <div className="editor-body">
