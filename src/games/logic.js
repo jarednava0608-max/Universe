@@ -205,7 +205,8 @@ export function parseVerses(data) {
 
 // ---------- utilidades ----------
 
-const REF_RE = /\(?\b((?:[1-3]\s?)?[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+\.?\s\d{1,3}:\d{1,3}(?:\s?[-–,]\s?\d{1,3})*)\)?\.?\s*$/
+// (?<!…) en vez de \b: en JavaScript la É de Éxodo no cuenta como letra para \b.
+const REF_RE = /\(?(?<![\p{L}\d])((?:[1-3]\s?)?[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+\.?\s\d{1,3}:\d{1,3}(?:\s?[-–,]\s?\d{1,3})*)\)?\.?\s*$/u
 function refOf(s) {
   return String(s).trim().match(REF_RE)?.[1] ?? ''
 }

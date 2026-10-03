@@ -173,3 +173,14 @@ describe('trimQuotes', () => {
     expect(trimQuotes('Le dijo: “Ven” y fue')).toBe('Le dijo: “Ven” y fue')
   })
 })
+
+describe('Texto diario con cita de Éxodo', () => {
+  it('separa la cita aunque empiece con É', async () => {
+    const { verseSources } = await import('./logic.js')
+    const [v] = verseSources([{ id: 'd1', kind: 'diario', fields: { texto: 'Yo seré lo que yo decida ser (Éxodo 3:14).' } }])
+    expect(v.fields.cita).toBe('Éxodo 3:14')
+    expect(v.fields.texto).toBe('Yo seré lo que yo decida ser')
+    const [w] = verseSources([{ id: 'd2', kind: 'diario', fields: { texto: 'Jehová es mi pastor. Salmo 23:1' } }])
+    expect(w.fields.cita).toBe('Salmo 23:1')
+  })
+})
