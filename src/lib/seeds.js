@@ -194,6 +194,45 @@ export const SEEDS = [
   { id: 'trivia-toda-la-biblia', trivia: TRIVIA_BIBLIA },
 ]
 
+// 7) Calumnia y el texto de hoy (3 de octubre de 2026): lo que el usuario leyó y aprobó en el chat.
+const CALUMNIA = `Decir algo falso sobre otra persona que daña su reputación. Hay dos cosas juntas: lo que se dice no es verdad y le hace daño a alguien.
+
+## La palabra en la Biblia
+- En el griego, "calumniador" es *diábolos*, de donde viene "Diablo". Su nombre significa calumniador; quien calumnia imita al Diablo.
+- En el hebreo de [[Salmo 15:3]], la palabra viene de la misma raíz que "pie": alguien que va de un lado a otro contando cosas de los demás. La calumnia no se queda en una sola conversación, se esparce.
+
+## Ejemplos
+- Satanás calumnió a [[Jehová]] en Edén (Génesis 3:4, 5) y a Job (Job 1:9-11).
+- La esposa de Potifar calumnió a José, que era inocente y terminó en la cárcel (Génesis 39:14-18).
+- Nabot fue acusado con mentiras y lo mataron (1 Reyes 21:10-13).
+- A Jesús lo llamaron "comilón y borracho" (Mateo 11:19).
+- A [[Jeremías]] los príncipes lo acusaron de desanimar al pueblo (Jeremías 38:4), y [[Ebed-melec]] lo defendió.
+
+## Calumnia, chisme y difamación
+- Chisme: hablar de la vida de otros sin necesidad. Puede ser verdad, pero es ocioso (1 Timoteo 5:13).
+- Calumnia: lo que se dice es falso y hace daño (Levítico 19:16; Proverbios 10:18).
+- Difamar o "manchar la reputación": es lo del texto de hoy. No hace falta mentir a propósito, basta con especular.
+
+Si un hermano deja de ser anciano y cuento "por qué" sin saberlo, lo más probable es que diga algo que no es cierto. Ahí el chisme se vuelve calumnia sin darme cuenta. "Es muy posible que no conozcamos todos los detalles."`
+
+const SALMO_15_3 = `Texto diario del sábado 3 de octubre de 2026: "No calumnia con su lengua" (Sal. 15:3).
+
+Principio: el huésped de [[Jehová]] no le hace nada malo a su prójimo y no mancha la reputación de sus amigos. Ver [[Calumnia]].
+
+Bernabé defendió a Saulo (Hechos 9:26, 27); [[Ebed-melec]] defendió a [[Jeremías]] (Jeremías 38:7-9).
+
+Antes de hablar: ¿es verdad, es amable y es necesario?`
+
+SEEDS.push({
+  id: 'calumnia-y-salmo-15-3',
+  data: {
+    nodes: [
+      { title: 'Calumnia', note: CALUMNIA },
+      { title: 'Salmo 15:3', note: SALMO_15_3 },
+    ],
+  },
+})
+
 // La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
 // El artículo completo no va aquí (el repositorio es público); el usuario lo pega en su nodo desde la app.
 export const SEED_ATALAYA_CONOCER = {

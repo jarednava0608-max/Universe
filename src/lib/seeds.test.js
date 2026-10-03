@@ -124,3 +124,16 @@ describe('Textos pegados', () => {
     expect(cleanSavedVerses([sucio, limpio]).map((x) => x.fields.texto)).toEqual(['Para que sepan que tú'])
   })
 })
+
+describe('Paquete Calumnia y Salmo 15:3', () => {
+  it('agrega los dos nodos y no deja enlaces rotos ni duplica al repetirlo', () => {
+    const seed = SEEDS.find((s) => s.id === 'calumnia-y-salmo-15-3')
+    const base = run([makeRoot()], SEEDS.filter((s) => s.data))
+    const titles = base.map((n) => n.title)
+    expect(titles).toContain('Calumnia')
+    expect(titles).toContain('Salmo 15:3')
+    expect(base.find((n) => n.title === 'Calumnia').note).toContain('[[Salmo 15:3]]')
+    const again = planSeed(seed, base)
+    expect(again.put.length).toBe(0)
+  })
+})
