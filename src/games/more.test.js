@@ -52,7 +52,8 @@ describe('Más juegos', () => {
   it('repasar hoy alterna tipos y solo toma lo que toca', () => {
     const srs = { 'c:a': { box: 3, due: '2999-01-01' } }
     const mix = dailyMix({ cards: [{ id: 'a' }, { id: 'b' }], verses: [{ id: 'v' }], trivia: [{ id: 'q1' }, { id: 'q2' }] }, srs, (s) => isDue(s, '2026-10-01'))
-    expect(mix.map((x) => x.key)).toEqual(['c:b', 'v:v', 'q:q1', 'q:q2'])
+    expect(mix.slice(0, 2).map((x) => x.key)).toEqual(['c:b', 'v:v'])
+    expect(mix.slice(2).map((x) => x.key).sort()).toEqual(['q:q1', 'q:q2'])
   })
 
   it('récords y logros', () => {

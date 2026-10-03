@@ -51,8 +51,8 @@ export default function Review({ store, onExit }) {
               <p className="missed-title">Para repasar</p>
               {missed.map((m) => (
                 <div key={m.key} className="missed-item">
-                  <p className="missed-q">{LABEL[m.type]}</p>
-                  <p className="missed-a">{m.type === 'card' ? m.item.front : m.type === 'verse' ? m.item.fields.cita || m.item.fields.texto.slice(0, 60) : m.type === 'person' ? m.item.n : m.item.fields.pregunta}</p>
+                  <p className="missed-q">{m.type === 'trivia' ? m.item.fields.pregunta : LABEL[m.type]}</p>
+                  <p className="missed-a">{m.type === 'card' ? m.item.front : m.type === 'verse' ? m.item.fields.cita || m.item.fields.texto.slice(0, 60) : m.type === 'person' ? m.item.n : m.item.fields.opciones[m.item.fields.respuesta]}</p>
                 </div>
               ))}
             </div>

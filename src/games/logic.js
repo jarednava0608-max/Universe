@@ -331,14 +331,15 @@ export function timedPoints(msLeft, msTotal) {
 // ---------- Repasar hoy ----------
 
 // Mezcla lo que toca hoy (tarjetas, textos y preguntas) en una sola sesión, alternando tipos.
-export function dailyMix({ cards = [], verses = [], trivia = [], people = [] }, srs, isDueFn, limit = 20) {
+export function dailyMix({ cards = [], verses = [], trivia = [], people = [] }, srs, isDueFn, limit = 20, rnd = Math.random) {
   const lists = [
     cards.filter((c) => isDueFn(srs['c:' + c.id])).map((c) => ({ type: 'card', key: 'c:' + c.id, item: c })),
     verses.filter((v) => isDueFn(srs['v:' + v.id])).map((v) => ({ type: 'verse', key: 'v:' + v.id, item: v })),
     trivia.filter((t) => isDueFn(srs['q:' + t.id])).map((t) => ({ type: 'trivia', key: 'q:' + t.id, item: t })),
     // Personajes de Memoria Bíblica: solo los que ya viste alguna vez.
     people.filter((c) => srs['mb:' + c.id] && isDueFn(srs['mb:' + c.id])).map((c) => ({ type: 'person', key: 'mb:' + c.id, item: c })),
-  ].map((l) => l.sort((a, b) => (srs[a.key]?.due ?? '').localeCompare(srs[b.key]?.due ?? '')))
+    // Primero lo que ya toca por fecha; lo nunca visto va revuelto (si no, siempre salían las mismas primeras).
+  ].map((l) => shuffle(l, rnd).sort((a, b) => (srs[a.key]?.due ?? '\uffff').localeCompare(srs[b.key]?.due ?? '\uffff')))
   const out = []
   while (out.length < limit && lists.some((l) => l.length)) {
     for (const l of lists) if (l.length && out.length < limit) out.push(l.shift())
