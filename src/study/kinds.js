@@ -46,8 +46,9 @@ export const KINDS = {
       { key: 'tipo', label: 'Reunión', type: 'choice', options: [['atalaya', 'La Atalaya'], ['entresemana', 'Entre semana']], default: () => 'atalaya' },
       { key: 'fecha', label: 'Fecha', type: 'date', default: today },
       { key: 'titulo', label: 'Título', type: 'line' },
+      { key: 'articulo', label: '1. Pega la Atalaya', type: 'text', hint: 'El artículo completo, tal cual; luego "Proponer al mapa" lo guarda como nodo', noClaude: true },
+      { key: 'parrafos', label: '2. Preguntas: mis respuestas por párrafo', type: 'paragraphs' },
       { key: 'idea', label: 'Idea principal', type: 'text' },
-      { key: 'parrafos', label: 'Notas por párrafo', type: 'paragraphs' },
       { key: 'notas', label: 'Notas generales', type: 'text' },
     ],
     title: (e) => e.fields.titulo || (e.fields.tipo === 'entresemana' ? 'Reunión de entre semana' : 'La Atalaya'),
@@ -190,6 +191,7 @@ export function claudeFormat(kind) {
   const def = KINDS[kind]
   const example = {}
   for (const f of def.fields) {
+    if (f.noClaude) continue
     if (f.type === 'paragraphs') example[f.key] = [{ num: '1', nota: '…' }, { num: '2', nota: '…' }]
     else if (f.type === 'choice') example[f.key] = f.options.map((o) => o[0]).join(' | ')
     else if (f.type === 'date') example[f.key] = 'AAAA-MM-DD'
@@ -206,6 +208,11 @@ Usa solo información de jw.org y wol.jw.org. Deja vacío ("") lo que no aplique
 
 // Arma un nodo ordenado solo con lo clave: título, idea principal, principio y textos.
 export function proposeNode(entry) {
+  // Una Atalaya con el artículo pegado pasa completa al mapa, sin resumir.
+  if (entry.kind === 'reunion' && String(entry.fields.articulo ?? '').trim()) {
+    // Sin clean(): conserva los renglones vacíos entre párrafos.
+    return { title: clip(clean(entry.fields.titulo) || 'La Atalaya', 80), note: String(entry.fields.articulo).trim() }
+  }
   const p = KINDS[entry.kind].toNode(entry.fields)
   const parts = []
   if (clean(p.idea)) parts.push(clip(clean(p.idea), 420))

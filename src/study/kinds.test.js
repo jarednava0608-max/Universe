@@ -77,4 +77,13 @@ describe('Notas', async () => {
     expect(entrySortKey(a) > entrySortKey(b)).toBe(true)
     expect(KINDS.reflexion.title({ fields: { titulo: '', texto: 'Primera línea\nResto' } })).toBe('Primera línea')
   })
+
+  it('la Atalaya con el artículo pegado pasa completa al mapa', () => {
+    const articulo = 'Primer párrafo largo. '.repeat(60) + '\n\nSegundo párrafo.'
+    const e = { ...makeEntry('reunion'), fields: { ...makeEntry('reunion').fields, titulo: 'Ayudemos', articulo } }
+    const p = proposeNode(e)
+    expect(p.title).toBe('Ayudemos')
+    expect(p.note).toBe(articulo.trim())
+    expect(claudeFormat('reunion')).not.toContain('articulo')
+  })
 })
