@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseArticle, questionNums, withAnswer, answerOf, keyPhrases, firstUnanswered, withReview, reviewAnswer } from './atalaya.js'
+import { parseArticle, questionNums, withAnswer, answerOf, keyPhrases, firstUnanswered, withReview, reviewAnswer, paragraphUrl } from './atalaya.js'
 
 const ARTICULO = `La Atalaya, estudio de prueba.
 
@@ -120,5 +120,17 @@ describe('La Atalaya por pasos: respuestas', () => {
   it('junta las palabras clave marcadas que van seguidas', () => {
     const b = { parrafos: ['Un conocimiento exacto de la verdad.'] }
     expect(keyPhrases(b, [1, 2, 5])).toEqual(['conocimiento exacto', 'verdad'])
+  })
+})
+
+describe('La Atalaya por pasos: enlace al párrafo', () => {
+  const p = 'La voluntad de Jehová "es que toda clase de personas se salven'
+  it('con el enlace del artículo salta al párrafo', () => {
+    expect(paragraphUrl('https://wol.jw.org/es/wol/d/r4/lp-s/2026600#h=1', p))
+      .toBe('https://wol.jw.org/es/wol/d/r4/lp-s/2026600#:~:text=' + encodeURIComponent('La voluntad de Jehová es que'))
+  })
+  it('sin enlace busca el párrafo en wol.jw.org', () => {
+    expect(paragraphUrl('', p)).toBe('https://wol.jw.org/es/wol/s/r4/lp-s?q=' + encodeURIComponent('"La voluntad de Jehová es que"') + '&p=par')
+    expect(paragraphUrl('no es enlace', p)).toContain('wol.jw.org/es/wol/s/')
   })
 })

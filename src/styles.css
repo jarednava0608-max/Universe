@@ -1210,6 +1210,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-text p { margin: 0 0 12px; }
 .at-word { border-radius: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .at-word.on { background: var(--mark); color: var(--title); box-shadow: 0 0 0 1px var(--mark); }
+.at-jw { display: inline-flex; align-items: center; min-height: 44px; margin: -6px 0 6px; font-size: 14px; color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
 .at-extras { margin: 0 0 16px; font-size: 14px; color: var(--text-2); line-height: 1.5; }
 .at-extras summary { min-height: 36px; display: flex; align-items: center; color: var(--text-3); font-size: 13px; }
 .at-extras p { margin: 6px 0 10px; white-space: pre-line; }

@@ -4,7 +4,7 @@ import AutoText from '../components/AutoText.jsx'
 import { RefChips } from '../components/RefLink.jsx'
 import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered } from './atalaya.js'
+import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl } from './atalaya.js'
 
 // La Atalaya por pasos, como recomienda jw.org para prepararse: primero una idea general
 // (título, subtítulos y preguntas de repaso), luego cada párrafo buscando la respuesta y
@@ -108,6 +108,10 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
               <span className="sfield-label">Título</span>
               <input className="input" value={fields.titulo ?? ''} placeholder="Título del artículo" onChange={(e) => set({ titulo: e.target.value })} />
             </label>
+            <label className="sfield">
+              <span className="sfield-label">Enlace en jw.org (opcional)</span>
+              <input className="input" type="url" inputMode="url" value={fields.enlace ?? ''} placeholder="Para abrir cada párrafo en jw.org" onChange={(e) => set({ enlace: e.target.value.trim() })} />
+            </label>
             <div className="sfield">
               <span className="sfield-label">El artículo completo, tal cual</span>
               <AutoText value={fields.articulo ?? ''} placeholder="Cópialo de JW Library o de wol.jw.org con sus preguntas y pégalo aquí" onChange={setArticle} minRows={6} />
@@ -161,6 +165,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
           <Block
             key={bloques[idx].key}
             b={bloques[idx]}
+            enlace={fields.enlace}
             n={idx}
             total={bloques.length}
             answer={answerOf(fields, bloques[idx].key)}
@@ -239,7 +244,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
 
 // Una pregunta con sus párrafos: tocar palabras las subraya (palabras clave), los textos
 // se abren con un toque y abajo va la respuesta con tus palabras.
-function Block({ b, n, total, answer, marks, onAnswer, onMarks, onPrev, onNext }) {
+function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, onNext }) {
   const refs = useMemo(() => findAllRefs(b.pregunta, ...b.parrafos), [b])
   const marked = new Set(marks)
   const toggle = (i) => onMarks(marked.has(i) ? marks.filter((x) => x !== i) : [...marks, i])
@@ -265,6 +270,9 @@ function Block({ b, n, total, answer, marks, onAnswer, onMarks, onPrev, onNext }
           </p>
         ))}
       </div>
+      {b.parrafos[0] && (
+        <a className="at-jw" data-direct="1" href={paragraphUrl(enlace, b.parrafos[0])} target="_blank" rel="noopener noreferrer">Ver este párrafo en jw.org</a>
+      )}
       {b.extras?.length > 0 && (
         <details className="at-extras">
           <summary>Imágenes y recuadros</summary>

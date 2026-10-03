@@ -166,3 +166,14 @@ export function firstUnanswered(bloques, fields) {
   const i = bloques.findIndex((b) => !answerOf(fields, b.key).trim())
   return i < 0 ? Math.max(0, bloques.length - 1) : i
 }
+
+// Enlace al párrafo en jw.org. Con el enlace del artículo (wol.jw.org o jw.org) abre el
+// artículo y salta al párrafo marcándolo (#:~:text=, lo entiende Safari); sin él, busca
+// las primeras palabras del párrafo en wol.jw.org.
+export function paragraphUrl(enlace, parrafo) {
+  const start = words(String(parrafo ?? '').replace(/[“”"«»]/g, ''))
+    .slice(0, 6).join(' ').replace(/[.,;:]+$/, '')
+  const url = String(enlace ?? '').trim().split('#')[0]
+  if (/^https:\/\/(wol\.jw\.org|www\.jw\.org)\//.test(url)) return start ? `${url}#:~:text=${encodeURIComponent(start)}` : url
+  return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(`"${start}"`)}&p=par`
+}
