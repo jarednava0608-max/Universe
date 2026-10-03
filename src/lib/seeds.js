@@ -7,7 +7,7 @@
 import { planImport } from './importer.js'
 import { makeNode, normKey } from './model.js'
 import { anyRefKey, makeBibleEntry } from './verses.js'
-import { TRIVIA_JEREMIAS_38_39 } from './seedTrivia.js'
+import { TRIVIA_JEREMIAS_38_39, TRIVIA_BIBLIA } from './seedTrivia.js'
 import { JEREMIAS_38_39 } from './seedVerses.js'
 
 // 1) Lo que estudiamos de Jeremías 38 y 39 (primera versión).
@@ -189,6 +189,8 @@ export const SEEDS = [
   },
   // 5) Preguntas de Trivia sobre Jeremías 38 y 39 (solo del texto bíblico que pegó el usuario).
   { id: 'trivia-jeremias-38-39', trivia: TRIVIA_JEREMIAS_38_39 },
+  // 6) Preguntas de toda la Biblia (de Génesis a Apocalipsis).
+  { id: 'trivia-toda-la-biblia', trivia: TRIVIA_BIBLIA },
 ]
 
 const same = (a, b) => String(a ?? '').replace(/\s+/g, ' ').trim() === String(b ?? '').replace(/\s+/g, ' ').trim()

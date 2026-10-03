@@ -54,6 +54,8 @@ export function bookNumber(raw) {
 
 const BOOK_RE = '(?:[1-3]\\s?)?[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+\\.?'
 // "Juan 17:3", "1 Juan 4:8", "Sal. 83:18", "Mateo 6:9, 10", "Rom. 5:12-14" y solo el capítulo: "Jeremías 38"
+// Inicio de cita: que no venga pegada a otra letra. (\b no sirve: en JavaScript la É no cuenta como letra.)
+export const REF_START = '(?<![A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\d])'
 export const REF_SOURCE = `${BOOK_RE}\\s\\d{1,3}(?::\\d{1,3}(?:\\s?[-–,]\\s?\\d{1,3})*)?(?![\\d:])`
 
 // Separa una cita en libro, capítulo y versículo; null si el libro no existe.
@@ -77,7 +79,7 @@ export function refUrl(ref) {
 export function findRefs(...texts) {
   const out = []
   const seen = new Set()
-  const re = new RegExp(`\\b${REF_SOURCE}`, 'g')
+  const re = new RegExp(REF_START + REF_SOURCE, 'g')
   for (const t of texts) {
     for (const m of String(t ?? '').matchAll(re)) {
       const ref = m[0].replace(/\s+/g, ' ').trim()
@@ -94,6 +96,6 @@ export function findRefs(...texts) {
 // Convierte las citas de un texto de markdown en enlaces a wol.jw.org.
 // `skip` son fragmentos que no se tocan (por ejemplo, enlaces [[…]] ya convertidos).
 export function linkRefsMarkdown(text) {
-  const re = new RegExp(`\\b${REF_SOURCE}`, 'g')
+  const re = new RegExp(REF_START + REF_SOURCE, 'g')
   return String(text ?? '').replace(re, (ref) => (parseRef(ref) ? `[${ref}](${refUrl(ref)})` : ref))
 }

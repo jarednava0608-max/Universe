@@ -3,7 +3,7 @@
 import { Node, Extension, mergeAttributes } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
-import { REF_SOURCE, parseRef } from '../lib/bible.js'
+import { REF_SOURCE, REF_START, parseRef } from '../lib/bible.js'
 import { pubMatches } from '../lib/pubs.js'
 
 // Enlace a un nodo del mapa: se ve como el título y en el texto simple queda como [[Título]].
@@ -30,7 +30,7 @@ export const NodeLink = Node.create({
 // Marca las citas ("Juan 17:3", "Jeremías 38") y las publicaciones para que se puedan tocar. No cambia el texto guardado.
 function findRefDecorations(doc) {
   const decos = []
-  const re = new RegExp(`\\b${REF_SOURCE}`, 'g')
+  const re = new RegExp(REF_START + REF_SOURCE, 'g')
   doc.descendants((node, pos) => {
     if (!node.isText) return
     for (const m of node.text.matchAll(re)) {

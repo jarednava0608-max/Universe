@@ -59,3 +59,13 @@ describe('Citas solo con capítulo', async () => {
     expect(linkRefsMarkdown('ver Jeremías 38.')).toBe('ver [Jeremías 38](https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/24/38).')
   })
 })
+
+describe('Éxodo (empieza con letra acentuada)', () => {
+  it('se reconoce al inicio, en medio del texto y como enlace', async () => {
+    const { findRefs, linkRefsMarkdown } = await import('./bible.js')
+    expect(findRefs('Éxodo 2:3')).toEqual(['Éxodo 2:3'])
+    expect(findRefs('Lee Éxodo 3:14 y Génesis 1:1.')).toEqual(['Éxodo 3:14', 'Génesis 1:1'])
+    expect(linkRefsMarkdown('ver Éxodo 12')).toContain('](https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/2/12)')
+    expect(findRefs('aÉxodo 2:3')).toEqual([])
+  })
+})

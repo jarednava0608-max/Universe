@@ -58,7 +58,8 @@ describe('Paquete por capítulo con los versículos', () => {
 
 describe('paquete de Trivia', () => {
   it('las preguntas son válidas, su cita existe en el texto guardado y no se repiten', async () => {
-    const { TRIVIA_JEREMIAS_38_39: T } = await import('./seedTrivia.js')
+    const { TRIVIA_JEREMIAS_38_39, TRIVIA_BIBLIA } = await import('./seedTrivia.js')
+    const T = [...TRIVIA_JEREMIAS_38_39, ...TRIVIA_BIBLIA]
     const { parseTrivia } = await import('../games/logic.js')
     const { findRefs } = await import('./bible.js')
     const { questions, warnings } = parseTrivia({ preguntas: T.map((q) => q.fields) })
@@ -72,7 +73,8 @@ describe('paquete de Trivia', () => {
     }
     const seed = SEEDS.find((s) => s.id === 'trivia-jeremias-38-39')
     const first = planSeed(seed, [], [], [])
-    expect(first.trivia.length).toBe(T.length)
+    expect(first.trivia.length).toBe(TRIVIA_JEREMIAS_38_39.length)
+    expect(planSeed(SEEDS.find((s) => s.id === 'trivia-toda-la-biblia'), [], [], []).trivia.length).toBe(TRIVIA_BIBLIA.length)
     expect(first.trivia.every((e) => e.kind === 'trivia')).toBe(true)
     // Si ya están (otro teléfono las sincronizó), no se vuelven a agregar.
     expect(planSeed(seed, [], [], first.trivia).trivia.length).toBe(0)
