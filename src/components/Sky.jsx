@@ -205,17 +205,21 @@ export default function Sky() {
     const listen = () => window.addEventListener('deviceorientation', onTilt)
     const ask = () => {
       if (!D?.requestPermission || tiltState !== 'unknown') return
+      tiltState = 'asking'
       D.requestPermission().then((r) => {
         tiltState = r === 'granted' ? 'granted' : 'denied'
         if (tiltState === 'granted') listen()
-      }).catch(() => {})
+      }).catch(() => { tiltState = 'unknown' }) // sin gesto válido: se vuelve a intentar con el siguiente toque
     }
     if (!D?.requestPermission || tiltState === 'granted') listen()
     root.addEventListener('scroll', onScroll, true)
-    root.addEventListener('pointerdown', ask, { once: true })
+    // iOS solo deja pedir el permiso al soltar el dedo (touchend / click), no al apoyarlo.
+    root.addEventListener('touchend', ask, true)
+    root.addEventListener('click', ask, true)
     return () => {
       root.removeEventListener('scroll', onScroll, true)
-      root.removeEventListener('pointerdown', ask)
+      root.removeEventListener('touchend', ask, true)
+      root.removeEventListener('click', ask, true)
       window.removeEventListener('deviceorientation', onTilt)
       cancelAnimationFrame(frame)
     }
