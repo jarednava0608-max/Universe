@@ -1069,9 +1069,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-theme='light'] .sheet { box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.1); }
 :root[data-theme='light'] .toast { box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1); }
 
-/* ---------- Cielo de la pestaña Juegos según la hora (src/games/Sky.jsx) ---------- */
+/* ---------- Cielo de Estudio y Juegos según la hora (src/components/Sky.jsx) ---------- */
 .sky { position: absolute; inset: 0; pointer-events: none; transition: background 1.2s var(--ease); }
-.games-page .page-scroll { position: relative; z-index: 1; }
+.sky-page .page-scroll { position: relative; z-index: 1; }
 .sky[data-sky='manana'] { background: radial-gradient(120% 45% at 70% 0%, rgba(255, 168, 120, 0.2), transparent 70%), radial-gradient(90% 35% at 15% 0%, rgba(255, 120, 150, 0.1), transparent 70%), var(--bg); }
 .sky[data-sky='tarde'] { background: radial-gradient(130% 50% at 50% 0%, rgba(255, 176, 84, 0.17), transparent 72%), var(--bg); }
 .sky[data-sky='noche'] { background: radial-gradient(120% 50% at 50% 0%, rgba(80, 100, 190, 0.22), transparent 72%), linear-gradient(to bottom, #0a0f22, var(--bg) 65%); }

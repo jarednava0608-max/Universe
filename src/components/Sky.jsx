@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-// Fondo de la pestaña Juegos según la hora: amanecer (mañana), luz ámbar (tarde) y cielo con
+// Fondo de Estudio y Juegos según la hora: amanecer (mañana), luz ámbar (tarde) y cielo con
 // estrellas (noche). Solo decoración; los colores están en styles.css (.sky[data-sky]).
 export function skyPeriod(date = new Date()) {
   const h = date.getHours()

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import PageScroll from '../components/PageScroll.jsx'
+import Sky from '../components/Sky.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
@@ -39,7 +40,8 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   const last = recent[0] && recent[0].id !== todayEntry?.id && Date.now() - recent[0].updatedAt < 7 * 864e5 ? recent[0] : null
 
   return (
-    <div className="page">
+    <div className="page sky-page">
+      <Sky />
       {!section ? (
         <PageScroll title="Estudio">
           <h1 className="page-title">Estudio</h1>
