@@ -9,7 +9,7 @@ import { makeNode, normKey } from './model.js'
 import { anyRefKey, makeBibleEntry } from './verses.js'
 import { TRIVIA_JEREMIAS_38_39, TRIVIA_BIBLIA } from './seedTrivia.js'
 import { JEREMIAS_38_39 } from './seedVerses.js'
-import { ATALAYA_CONOCER_TITULO, ATALAYA_CONOCER_NODO, ATALAYA_CONOCER_REUNION, TRIVIA_ATALAYA_CONOCER } from './seedAtalaya.js'
+import { ATALAYA_CONOCER_REUNION, TRIVIA_ATALAYA_CONOCER } from './seedAtalaya.js'
 
 // 1) Lo que estudiamos de Jeremías 38 y 39 (primera versión).
 const V1 = [
@@ -195,9 +195,9 @@ export const SEEDS = [
 ]
 
 // La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
+// El artículo completo no va aquí (el repositorio es público); el usuario lo pega en su nodo desde la app.
 export const SEED_ATALAYA_CONOCER = {
   id: 'atalaya-2026-10-03-conocer-a-jehova',
-  data: { nodes: [{ title: ATALAYA_CONOCER_TITULO, note: ATALAYA_CONOCER_NODO }] },
   entries: [ATALAYA_CONOCER_REUNION],
   trivia: TRIVIA_ATALAYA_CONOCER,
 }

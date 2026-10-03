@@ -91,12 +91,12 @@ describe('paquete de Trivia', () => {
 })
 
 describe('La Atalaya del 3 de octubre de 2026', () => {
-  it('agrega el nodo, la reunión y la trivia con citas reconocibles', async () => {
+  it('agrega la reunión y la trivia con citas reconocibles', async () => {
     const { TRIVIA_ATALAYA_CONOCER } = await import('./seedAtalaya.js')
     const { findRefs } = await import('./bible.js')
     const { SEED_ATALAYA_CONOCER: seed } = await import('./seeds.js')
     const plan = planSeed(seed, [], [], [])
-    expect(plan.put.map((n) => n.title)).toContain('Ayudemos a otros a conocer bien a Jehová')
+    expect(plan.put).toHaveLength(0)
     expect(plan.entries[0].fields.parrafos).toHaveLength(18)
     expect(plan.trivia).toHaveLength(TRIVIA_ATALAYA_CONOCER.length)
     for (const q of TRIVIA_ATALAYA_CONOCER) {

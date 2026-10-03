@@ -1,36 +1,8 @@
 // La Atalaya "Ayudemos a otros a conocer bien a Jehová" (estudio del 3 de octubre de 2026), hecho
-// solo con el artículo que pegó el usuario: el nodo del mapa, la entrada de Reuniones y preguntas
+// solo con el artículo que pegó el usuario: la entrada de Reuniones y preguntas
 // de Trivia (la respuesta correcta es la primera opción; el juego las revuelve).
 
 export const ATALAYA_CONOCER_TITULO = 'Ayudemos a otros a conocer bien a Jehová'
-
-export const ATALAYA_CONOCER_NODO = `La Atalaya, estudio del 3 de octubre de 2026. Texto temático: "Esto significa vida eterna: que lleguen a conocerte a ti, el único Dios verdadero" (Juan 17:3).
-
-Idea central: al dar clases de la Biblia, lo más importante no es enseñar datos, sino ayudar a la persona a conocer y amar a [[Jehová]]: sus cualidades, lo que le agrada y lo que no.
-
-## Por qué necesitan conocer bien a Jehová
-- La voluntad de Jehová es que toda clase de personas se salven y tengan un conocimiento exacto de la verdad (1 Timoteo 2:3, 4). Conocimiento exacto no es solo aprender datos, es un conocimiento que influye por completo en la persona.
-- El mandamiento más importante es amar a Jehová con todo el corazón, el alma, la mente y las fuerzas (Marcos 12:30). Nadie puede amarlo si no lo conoce bien.
-- Queremos que el estudiante se bautice porque desea dedicarle su vida a Jehová, no porque quiera ser nuestro amigo, formar parte de la organización o porque le gusten ciertas enseñanzas.
-- El amor y la obediencia van de la mano. Lo que más lo motivará a obedecer y ser leal es el amor que sienta por Jehová (Juan 14:31; 1 Juan 5:3).
-- Ejemplo del piloto: no basta con estudiar las normas, hacen falta horas de vuelo. Igual, se conoce a Jehová viendo en la práctica los beneficios de decidir según los principios bíblicos.
-- José rechazó a la esposa de Potifar porque conocía a Jehová y sabía lo que le agradaba: "¿Cómo podría yo hacer algo tan malo y de hecho pecar contra Dios?" (Génesis 39:7-9).
-
-## Cómo enseñarles cómo es Jehová
-- Con preguntas, como Jehová hizo con Job: más de 50 preguntas (Job 38:1-41:34). El libro Disfrute de la vida trae preguntas para eso.
-- Que al leer la Biblia se pregunten por qué Jehová incluyó ese relato y qué muestra de él. Santiago, al hablar de Job, destacó el cariño y la misericordia de Jehová (Santiago 5:11).
-- Ejemplo de Daniel: ¿por qué lo salvó Jehová y qué le hace feliz? ¿Qué les pasó a los que lo acusaron y qué le desagrada? (Daniel 6:4, 5, 10, 22, 24, 26, 27).
-- Recordarles que quien les enseña es Jehová, el Gran Instructor, y que solo él merece la alabanza (Isaías 30:20, 21; 1 Corintios 3:5-9).
-
-## Cómo ayudarles a usar lo que saben de Jehová
-- Con un relato difícil: pensar en lo que ya saben de él. Valora la vida (2 Pedro 3:9), dio mucho para salvarnos (Efesios 2:4, 5), no castiga a inocentes ni deja sin castigo al que lo merece (Éxodo 34:6, 7). La Biblia no siempre da todos los detalles, pero sabemos que Jehová siempre hace lo correcto.
-- Con un roce en la congregación: pensar en cómo ve Jehová a los hermanos (Juan 3:16), cuánto valora la unidad (Salmo 133:1) y que le alegra que mantengamos la paz (2 Corintios 13:11). Fijarse en las virtudes, no en los defectos.
-- En una decisión importante: imitar a Jesús, "siempre hago lo que a él le agrada" (Juan 8:29), y preguntarse qué decisión le agradaría a Jehová. Marianne no le dijo a su estudiante qué hacer: la animó a pensar si Jehová estaría feliz o triste y a contarle todo en oración.
-
-## Las bendiciones
-- Lo más importante que aprenden los estudiantes no son las enseñanzas ni cómo funciona la organización, sino conocer bien a Jehová.
-- Quienes lo conocen tienen hoy una vida plena (Salmo 25:12-15) y en el futuro vivirán para siempre (1 Juan 5:20).
-- "Si alguien ama a Dios, este lo conoce" (1 Corintios 8:3): Jehová nos considera sus amigos.`
 
 export const ATALAYA_CONOCER_REUNION = {
   id: 'reunion-2026-10-03-conocer-a-jehova',
