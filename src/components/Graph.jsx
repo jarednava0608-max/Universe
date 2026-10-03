@@ -37,6 +37,9 @@ function labelBox(ctx, n, scale, focused) {
 }
 
 // Vista de grafo: canvas con zoom/arrastre táctil y líneas rectas.
+// Margen al ajustar el mapa a la pantalla (90 dejaba el mapa chiquito en el iPhone).
+const FIT_PAD = 58
+
 const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme, onNodeTap, onBackgroundTap }, ref) {
   // Los colores se leen después de que el tema ya se aplicó en <html> (si se leen al dibujar,
   // todavía están los del tema anterior y los nombres quedan casi invisibles).
@@ -49,7 +52,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
   const wrap = useRef()
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
   const cache = useRef(new Map()) // conserva posiciones entre renders
-  const didFit = useRef(false)
+  const didFit = useRef(false) // true cuando el usuario ya movió el mapa o se abrió un nodo: ya no se reajusta solo
   const labelBoxes = useRef([]) // nombres ya dibujados en este cuadro (para no encimarlos)
   const lastBgTap = useRef(0)
 
@@ -139,7 +142,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
 
   useImperativeHandle(ref, () => ({
     fit() {
-      fg.current?.zoomToFit(600, 90)
+      fg.current?.zoomToFit(600, FIT_PAD)
     },
     focus(id, zoom = 2.2) {
       // Si abres un nodo antes de que el mapa termine de acomodarse, ya no se aleja solo al final.
@@ -186,7 +189,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
   const linkColor = (l) => (isHi(l) ? linkHiNow() : focusId ? pal.linkDim : pal.link)
 
   return (
-    <div className="graph" ref={wrap}>
+    <div className="graph" ref={wrap} onPointerDownCapture={() => { didFit.current = true }} onWheelCapture={() => { didFit.current = true }}>
       <ForceGraph2D
         ref={fg}
         width={size.w}
@@ -300,14 +303,15 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
         onBackgroundClick={() => {
           // Doble toque en el fondo: ver todo el mapa.
           const now = Date.now()
-          if (now - lastBgTap.current < 320) fg.current?.zoomToFit(500, 90)
+          if (now - lastBgTap.current < 320) fg.current?.zoomToFit(500, FIT_PAD)
           lastBgTap.current = now
           onBackgroundTap()
         }}
         onEngineStop={() => {
+          // Se ajusta cada vez que el mapa termina de acomodarse (por ejemplo, si llegan nodos nuevos
+          // al abrir), mientras el usuario no lo haya movido ni abierto un nodo.
           if (didFit.current || !fg.current) return
-          didFit.current = true
-          if (data.nodes.length > 1) fg.current.zoomToFit(400, 90)
+          if (data.nodes.length > 1) fg.current.zoomToFit(400, FIT_PAD)
           else {
             fg.current.centerAt(0, 0, 0)
             fg.current.zoom(1.8, 0)
