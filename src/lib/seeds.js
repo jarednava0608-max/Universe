@@ -275,6 +275,20 @@ SEEDS.push({
 // maestro). Solo las preguntas: la entrada de Reuniones la hace el usuario en la app.
 SEEDS.push({ id: 'trivia-atalaya-conocer-a-jehova', trivia: TRIVIA_ATALAYA_CONOCER })
 
+// 11) Texto diario del domingo 4 de octubre de 2026, tal como lo pegó el usuario (solo fecha y texto;
+// lo demás lo llena él en la app). Id fijo para que no se repita en otro teléfono.
+SEEDS.push({
+  id: 'diario-2026-10-04',
+  entries: [{
+    id: 'diario-2026-10-04',
+    kind: 'diario',
+    fields: {
+      fecha: '2026-10-04',
+      texto: 'Siempre tengo a Jehová delante de mí. Como él está a mi derecha, nada me sacudirá jamás (Sal. 16:8).\n\nAlgo que nos ayudará a fortalecer nuestro temor de Jehová es tener siempre muy presente lo que le agrada antes de tomar cualquier decisión. Cuando lea un relato de la Biblia, pregúntese: “Si hubiera estado allí, ¿qué decisión habría tomado?”. Por ejemplo, imagine que está escuchando el informe negativo de los 10 espías que fueron a ver la tierra que Jehová había prometido darles a los israelitas. ¿Creería lo que dicen y se dejaría vencer por el miedo al hombre? ¿O podría más su amor por Jehová y su deseo de agradarle? Toda una generación de israelitas no logró distinguir que Josué y Caleb decían la verdad. ¿Cuál fue el resultado? Se quedaron sin entrar en la Tierra Prometida (Núm. 14:10, 22, 23). w24.07 10 párr. 7',
+    },
+  }],
+})
+
 // La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
 // El artículo completo no va aquí (el repositorio es público); el usuario lo pega en su nodo desde la app.
 export const SEED_ATALAYA_CONOCER = {
