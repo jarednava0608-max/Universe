@@ -285,6 +285,13 @@ export function dailyTextUrl(fecha) {
   return y && m && d ? `https://wol.jw.org/es/wol/dt/r4/lp-s/${y}/${m}/${d}` : 'https://wol.jw.org/es/wol/h/r4/lp-s'
 }
 
+// El mismo texto diario en la app JW Library (enlace jw.org/finder: abre la app si está instalada).
+export function dailyTextAppUrl(fecha) {
+  const [y, m, d] = String(fecha ?? '').split('-').map(Number)
+  const date = y && m && d ? `&date=${y}${String(m).padStart(2, '0')}${String(d).padStart(2, '0')}` : ''
+  return `https://www.jw.org/finder?srcid=jwlshare&wtlocale=S&prefer=lang&alias=daily-text${date}`
+}
+
 function firstLine(s) {
   return lines(s)[0]?.slice(0, 80) ?? ''
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyTextUrl } from './kinds.js'
+import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyTextUrl, dailyTextAppUrl } from './kinds.js'
 
 describe('Estudio', () => {
   it('detecta citas bíblicas sin repetir', () => {
@@ -109,5 +109,6 @@ describe('Texto diario', () => {
   })
   it('arma el enlace al texto diario de esa fecha', () => {
     expect(dailyTextUrl('2026-10-04')).toBe('https://wol.jw.org/es/wol/dt/r4/lp-s/2026/10/4')
+    expect(dailyTextAppUrl('2026-10-04')).toContain('alias=daily-text&date=20261004')
   })
 })
