@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER } from './kinds.js'
+import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyTextUrl } from './kinds.js'
 
 describe('Estudio', () => {
   it('detecta citas bíblicas sin repetir', () => {
@@ -100,5 +100,14 @@ describe('Notas', async () => {
     r.fields.parrafos = [{ num: '2', nota: 'Conocimiento exacto' }, { num: '3', nota: '' }]
     expect(entryForClaude(r)).toContain('Párrafo 2: Conocimiento exacto')
     expect(entryForClaude(r)).not.toContain('Párrafo 3')
+  })
+})
+
+describe('Texto diario', () => {
+  it('toma solo el versículo con su cita', () => {
+    expect(dailyVerse('\nNo calumnia con su lengua (Sal. 15:3).\n\nEl salmista (Sal. 15:1).')).toBe('No calumnia con su lengua (Sal. 15:3).')
+  })
+  it('arma el enlace al texto diario de esa fecha', () => {
+    expect(dailyTextUrl('2026-10-04')).toBe('https://wol.jw.org/es/wol/dt/r4/lp-s/2026/10/4')
   })
 })

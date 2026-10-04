@@ -279,6 +279,12 @@ export function dailyVerse(texto) {
   return m ? m[0] : line
 }
 
+// El texto diario de esa fecha en wol.jw.org ("2026-10-04" → .../dt/r4/lp-s/2026/10/4).
+export function dailyTextUrl(fecha) {
+  const [y, m, d] = String(fecha ?? '').split('-').map(Number)
+  return y && m && d ? `https://wol.jw.org/es/wol/dt/r4/lp-s/${y}/${m}/${d}` : 'https://wol.jw.org/es/wol/h/r4/lp-s'
+}
+
 function firstLine(s) {
   return lines(s)[0]?.slice(0, 80) ?? ''
 }
