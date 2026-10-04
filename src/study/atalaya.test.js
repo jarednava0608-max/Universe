@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { parseArticle, questionNums, withAnswer, answerOf, keyPhrases, firstUnanswered, withReview, reviewAnswer, paragraphUrl } from './atalaya.js'
+import { parseArticle, questionNums, withAnswer, answerOf, keyPhrases, firstUnanswered, withReview, reviewAnswer, paragraphUrl, highlightArticle } from './atalaya.js'
+import { proposeNode } from './kinds.js'
+import { markdownToHtml } from '../lib/markdown.js'
 
 const ARTICULO = `La Atalaya, estudio de prueba.
 
@@ -134,3 +136,22 @@ describe('La Atalaya por pasos: enlace al párrafo', () => {
     expect(paragraphUrl('no es enlace', p)).toContain('wol.jw.org/es/wol/s/')
   })
 })
+
+describe('Palabras clave subrayadas al pasar al mapa', () => {
+  // Bloque "2": "La voluntad de Jehová es que todos lleguen a tener un conocimiento exacto de la verdad."
+  const marcas = { 2: [11, 12, 13, 14, 15], '3, 4': [0, 4] }
+  it('subraya las palabras marcadas en el artículo, sin la puntuación', () => {
+    const out = highlightArticle(ARTICULO, marcas)
+    expect(out).toContain('tener un ==conocimiento exacto de la verdad==.')
+    expect(out).toContain('3 ==Primera== parte')
+    expect(out).toContain('4 ==Segundo== párrafo')
+    expect(out.replace(/==/g, '')).toBe(ARTICULO)
+    expect(highlightArticle(ARTICULO, {})).toBe(ARTICULO)
+  })
+  it('Proponer al mapa lleva el subrayado y el mapa lo muestra', () => {
+    const { note } = proposeNode({ kind: 'reunion', fields: { titulo: 'Prueba', articulo: ARTICULO, marcas } })
+    expect(note).toContain('==conocimiento exacto de la verdad==')
+    expect(markdownToHtml(note)).toContain('<mark>conocimiento exacto de la verdad</mark>')
+  })
+})
+

@@ -339,14 +339,30 @@ function TodayCard({ entry, onOpen, onAdd }) {
   )
 }
 
+// "2026-10-04" → { d: 4, m: 'oct' } para la fecha de cada reunión.
+function meetingDay(iso) {
+  const [y, m, d] = String(iso ?? '').split('-').map(Number)
+  if (!y || !m || !d) return null
+  return { d, m: new Date(y, m - 1, d).toLocaleDateString('es', { month: 'short' }).replace('.', '') }
+}
+
 function EntryList({ items, onOpen, onDelete }) {
   return (
     <ul className="entry-list">
       {items.map((e) => {
         const def = KINDS[e.kind]
-        const sub = def.subtitle(e)
+        const day = e.kind === 'reunion' ? meetingDay(e.fields.fecha) : null
+        // En Reuniones la fecha ya va en su hoja de calendario; abajo solo el tipo.
+        const sub = day ? (e.fields.tipo === 'entresemana' ? 'Entre semana' : 'La Atalaya') : def.subtitle(e)
+        // Reuniones: tarjeta con la fecha como en un calendario, el título completo y el tipo.
         const row = (
-            <button className="entry-row" onClick={() => onOpen(e)}>
+            <button className={'entry-row' + (day ? ' meeting' : '')} onClick={() => onOpen(e)}>
+              {day && (
+                <span className="meeting-date" aria-hidden="true">
+                  <b>{day.d}</b>
+                  <span>{day.m}</span>
+                </span>
+              )}
               <span className="entry-main">
                 <span className="entry-title">{def.title(e)}</span>
                 {sub && <span className="entry-sub">{sub}</span>}

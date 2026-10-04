@@ -28,6 +28,7 @@
   --danger-text: #fecaca;
   --ok: #86efac;
   --mark: rgba(233, 184, 114, 0.32);
+  --hl: #5e4b12;
   --overlay: rgba(0, 0, 0, 0.5);
   /* Colores del mapa (los lee el canvas) */
   --graph-bg: #09090b;
@@ -54,6 +55,7 @@
 /* Versión en blanco: el mismo diseño con los colores invertidos. */
 :root[data-theme='light'] {
   --mark: rgba(250, 204, 21, 0.38);
+  --hl: #ffe27a;
   --bg: #fafafa;
   --bg-rgb: 250, 250, 250;
   --bg-raise: #f4f4f5;
@@ -473,6 +475,14 @@ a { color: inherit; }
 .entry-sub { font-size: 13px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .in-map { color: var(--gold); opacity: 0.8; display: grid; }
 .entry-row .chev { color: var(--text-3); display: grid; }
+/* Reuniones: la fecha como hoja de calendario y el título completo. */
+.entry-row.meeting { align-items: center; gap: 14px; min-height: 72px; padding-top: 12px; padding-bottom: 12px; }
+.entry-row.meeting .entry-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; font-weight: 600; }
+.meeting-date { flex: 0 0 auto; width: 48px; height: 52px; border-radius: 12px; background: var(--surface-2); display: grid; place-content: center; text-align: center; line-height: 1; }
+.meeting-date b { font-size: 21px; font-weight: 700; color: var(--title); font-variant-numeric: tabular-nums; }
+.meeting-date span { margin-top: 3px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-text); }
+/* Palabras subrayadas (==así==) en las notas del mapa. */
+mark:not([data-color]) { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px; }
 .empty-state { text-align: center; padding: 48px 12px; color: var(--text-2); }
 .empty-state p { margin: 0 0 16px; }
 .empty-state .primary { max-width: 300px; }
@@ -1073,6 +1083,10 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 
 
 /* La Atalaya por pasos */
+/* Pasos y números: se esconden al bajar leyendo y vuelven al subir. */
+.at-bars { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.25s ease, opacity 0.2s ease; }
+.at-bars.hidden { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
+.at-bars-in { overflow: hidden; min-height: 0; }
 .at-steps { display: flex; gap: 2px; padding: 8px calc(var(--sar) + 10px) 8px calc(var(--sal) + 10px); border-bottom: 1px solid var(--line); }
 .at-step { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 0 2px; border-radius: 18px; color: var(--text-3); font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .at-step:disabled { opacity: 0.4; }
@@ -1087,6 +1101,11 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-tip.small { font-size: 13px; color: var(--text-3); margin: 0 0 10px; }
 .at-card { padding: 16px; margin-bottom: 18px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 10px; }
 .at-title { font-family: var(--font-display); font-size: 19px; font-weight: 650; line-height: 1.3; color: var(--title); margin: 0; }
+/* Portada del artículo en el Vistazo. */
+.at-cover { padding: 22px 20px; gap: 12px; border-radius: 20px; }
+.at-cover-kicker { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-text); }
+.at-cover .at-title { font-size: 28px; font-weight: 750; line-height: 1.15; letter-spacing: -0.025em; }
+.at-cover .at-theme { font-size: 18px; padding-left: 12px; border-left: 2px solid var(--line); }
 .at-theme { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.5; color: var(--text); margin: 0; }
 .at-summary { color: var(--text-2); font-size: 15px; line-height: 1.5; margin: 0; }
 .at-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); margin: 22px 0 8px; }
@@ -1096,20 +1115,31 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-list button { text-align: left; color: var(--text); min-height: 32px; font-size: 15px; }
 .at-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .at-progress .progress { flex: 1; }
-.at-sub { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-text); margin: 0 0 8px; }
+/* Subtítulo del artículo: una línea fina arriba y letra marcada, para separar cada sección. */
+.at-sub { font-family: var(--font-display); font-size: 18px; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--title); margin: 4px 0 16px; padding-top: 14px; border-top: 1px solid var(--line); position: relative; }
+.at-sub::before { content: ''; position: absolute; top: -1px; left: 0; width: 36px; height: 2px; border-radius: 1px; background: var(--gold-text); }
 .at-qnum { font-size: 13px; color: var(--text-3); margin: 0 0 4px; }
 .at-question, .sfield-label.at-q { font-size: 17px; font-weight: 600; line-height: 1.4; color: var(--title); margin: 0 0 8px; }
 .sfield-label.at-q { font-size: 15px; }
 .at-text { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.65; color: var(--text-body); margin-bottom: 14px; -webkit-user-select: none; user-select: none; }
 .at-text p { margin: 0 0 12px; }
 .at-word { border-radius: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.at-word.on { background: var(--mark); color: var(--title); box-shadow: 0 0 0 1px var(--mark); }
+/* Palabras clave como con marcatexto amarillo. */
+/* Solo se alarga hacia arriba y abajo: hacia los lados taparía la letra de la palabra de junto. */
+.at-word.on { background: var(--hl); color: var(--title); box-shadow: 0 -2px 0 var(--hl), 0 2px 0 var(--hl); }
+.at-gap.on { background: var(--hl); box-shadow: 0 -2px 0 var(--hl), 0 2px 0 var(--hl); }
 .at-jw { display: inline-flex; align-items: center; min-height: 44px; margin: -6px 0 6px; font-size: 14px; color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
 .at-extras { margin: 0 0 16px; font-size: 14px; color: var(--text-2); line-height: 1.5; }
 .at-extras summary { min-height: 36px; display: flex; align-items: center; color: var(--text-3); font-size: 13px; }
 .at-extras p { margin: 6px 0 10px; white-space: pre-line; }
 .at-keys { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
-.at-keys span { padding: 4px 10px; border-radius: 12px; background: var(--mark); color: var(--title); font-size: 14px; }
+.at-keys span { padding: 4px 10px; border-radius: 6px; background: var(--hl); color: var(--title); font-size: 14px; }
+/* Tu respuesta en una tarjeta, no como cuadro de formulario. */
+.at-answer { display: block; margin: 0 0 18px; padding: 14px 16px 10px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+.at-answer:focus-within { border-color: var(--text-3); }
+.at-answer-label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 6px; }
+.at-answer .input { border: 0; background: transparent; padding: 0; border-radius: 0; box-shadow: none; line-height: 1.5; }
+.at-answer .input:focus { outline: none; box-shadow: none; }
 .at-nav { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
 .at-nav .primary, .at-nav .secondary { margin-top: 0; }
 .at-missing { display: flex; flex-wrap: wrap; gap: 6px; }

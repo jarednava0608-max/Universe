@@ -177,3 +177,43 @@ export function paragraphUrl(enlace, parrafo) {
   if (/^https:\/\/(wol\.jw\.org|www\.jw\.org)\//.test(url)) return start ? `${url}#:~:text=${encodeURIComponent(start)}` : url
   return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(`"${start}"`)}&p=par`
 }
+
+// El artículo con tus palabras clave subrayadas (==así==) para guardarlo en el mapa. Se buscan en el
+// texto original a partir del párrafo de cada pregunta; lo que no se encuentra se deja igual.
+export function highlightArticle(articulo, marcas = {}) {
+  const text = String(articulo ?? '')
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const spots = []
+  for (const b of parseArticle(text).bloques) {
+    const set = new Set(marcas?.[b.key] ?? [])
+    if (!set.size) continue
+    // Grupos de palabras marcadas seguidas, sin cruzar de un párrafo a otro.
+    const runs = []
+    let w = 0
+    for (const p of b.parrafos) {
+      let cur = []
+      for (const word of words(p)) {
+        if (set.has(w++)) cur.push(word)
+        else if (cur.length) { runs.push(cur); cur = [] }
+      }
+      if (cur.length) runs.push(cur)
+    }
+    const head = words(b.parrafos[0]).slice(0, 6)
+    const start = head.length ? new RegExp(head.map(esc).join('\\s+')).exec(text) : null
+    let from = start ? start.index : 0
+    for (const run of runs) {
+      const re = new RegExp(run.map(esc).join('\\s+'), 'g')
+      re.lastIndex = from
+      const m = re.exec(text)
+      if (!m) continue
+      // Sin la puntuación de las orillas: "==conocimiento exacto==," y no "==conocimiento exacto,==".
+      const lead = m[0].match(/^[“"«(¡¿]*/)[0].length
+      const tail = m[0].match(/[”"»).,;:!?]*$/)[0].length
+      if (m[0].length - lead - tail > 0) spots.push([m.index + lead, m.index + m[0].length - tail])
+      from = m.index + m[0].length
+    }
+  }
+  let out = text
+  for (const [a, z] of spots.sort((x, y) => y[0] - x[0])) out = out.slice(0, a) + '==' + out.slice(a, z) + '==' + out.slice(z)
+  return out
+}

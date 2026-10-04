@@ -6,6 +6,9 @@ import { linkRefsMarkdown } from './bible.js'
 import { linkPubsMarkdown } from './pubs.js'
 
 const WIKI_RE = /\[\[([^\]|\n]+)(?:\|([^\]\n]+))?\]\]/g
+// ==texto== = subrayado de marcatexto (las palabras clave que marcaste en La Atalaya).
+const MARK_RE = /==([^=\n]+?)==/g
+const withMarks = (html) => html.replace(MARK_RE, '<mark>$1</mark>')
 
 // Índice para resolver [[...]] por título normalizado o por id.
 export function buildResolver(nodes) {
@@ -61,7 +64,7 @@ export function renderNote(text, resolve) {
       ? `<a class="wl" data-node="${escapeHtml(id)}">${shown}</a>`
       : `<a class="wl missing" data-missing="${escapeHtml(t)}">${shown}</a>`
   })
-  const html = marked.parse(withLinks, { breaks: true, gfm: true })
+  const html = withMarks(marked.parse(withLinks, { breaks: true, gfm: true }))
   return DOMPurify.sanitize(html, { ADD_ATTR: ['data-node', 'data-missing', 'target'] })
 }
 
@@ -70,6 +73,7 @@ export function plainText(text) {
   return String(text ?? '')
     .replace(WIKI_RE, (_, t, l) => (l ?? t))
     .replace(/\[!(jw|yo)\]/gi, '')
+    .replace(MARK_RE, '$1')
     .replace(/^\s*[-+]\s+/gm, ' ') // viñetas de lista (los guiones dentro de palabras y citas se quedan: 38:1-6, Ébed-Mélec)
     .replace(/^\s*-{3,}\s*$/gm, ' ') // líneas separadoras
     .replace(/[#>*_`~]+/g, ' ')
@@ -99,8 +103,7 @@ export function markdownToHtml(text) {
   // [[Título]] → enlace a un nodo del mapa.
   const src = String(text ?? '').trim().replace(WIKI_RE, (_, t) => `<a data-node="${esc(t.trim())}">${esc(t.trim())}</a>`)
   if (!src) return ''
-  return marked
-    .parse(src, { breaks: true, gfm: true })
+  return withMarks(marked.parse(src, { breaks: true, gfm: true }))
     .replace(/<li><input (checked="" )?disabled="" type="checkbox">\s?/g, (_, c) => `<li data-type="taskItem" data-checked="${c ? 'true' : 'false'}">`)
     .replace(/<ul>\s*(?=<li data-type="taskItem")/g, '<ul data-type="taskList">')
 }

@@ -3,6 +3,7 @@
 // añadir una entrada a KINDS.
 import { newId } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
+import { highlightArticle } from './atalaya.js'
 
 export const today = () => {
   const d = new Date()
@@ -239,7 +240,8 @@ export function proposeNode(entry) {
   // Una Atalaya con el artículo pegado pasa completa al mapa, sin resumir.
   if (entry.kind === 'reunion' && String(entry.fields.articulo ?? '').trim()) {
     // Sin clean(): conserva los renglones vacíos entre párrafos.
-    return { title: clip(clean(entry.fields.titulo) || 'La Atalaya', 80), note: String(entry.fields.articulo).trim() }
+    // Las palabras clave que marcaste van subrayadas (==así==).
+    return { title: clip(clean(entry.fields.titulo) || 'La Atalaya', 80), note: highlightArticle(String(entry.fields.articulo).trim(), entry.fields.marcas) }
   }
   const p = KINDS[entry.kind].toNode(entry.fields)
   const parts = []

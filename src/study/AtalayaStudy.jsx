@@ -3,7 +3,7 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
 import { RefChips } from '../components/RefLink.jsx'
 import { findAllRefs } from '../lib/verses.js'
-import { entryForClaude } from './kinds.js'
+import { entryForClaude, formatDate } from './kinds.js'
 import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl } from './atalaya.js'
 
 // La Atalaya por pasos, como recomienda jw.org para prepararse: primero una idea general
@@ -62,7 +62,23 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
   function go(next, i = idx) {
     setStep(next)
     setIdx(i)
+    setBarsHidden(false)
     top.current?.scrollTo({ top: 0 })
+  }
+
+  // Al bajar leyendo se esconden los pasos y los números para dejar más espacio al texto;
+  // al subir un poco (o al llegar arriba) vuelven.
+  const [barsHidden, setBarsHidden] = useState(false)
+  const lastY = useRef(0)
+  function onScroll(e) {
+    const el = e.currentTarget
+    const y = el.scrollTop
+    const dy = y - lastY.current
+    // Si el texto es corto no se esconde (si no, al esconderse cabría todo y volverían a salir).
+    if (y < 40 || el.scrollHeight - el.clientHeight < 200) setBarsHidden(false)
+    else if (dy > 8) setBarsHidden(true)
+    else if (dy < -8) setBarsHidden(false)
+    if (Math.abs(dy) > 8 || y < 40) lastY.current = y
   }
   async function close() {
     await flush()
@@ -90,6 +106,8 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
         <span />
       </header>
 
+      <div className={'at-bars' + (barsHidden ? ' hidden' : '')}>
+      <div className="at-bars-in">
       <nav className="at-steps" aria-label="Pasos">
         {STEPS.map((s) => (
           <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={!canGo(s.key)} onClick={() => go(s.key)}>{s.label}</button>
@@ -111,8 +129,10 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
           ))}
         </nav>
       )}
+      </div>
+      </div>
 
-      <div className="editor-body at-body" ref={top}>
+      <div className="editor-body at-body" ref={top} onScroll={onScroll}>
         {step === 'articulo' && (
           <>
             <h2 className="at-h">Pega el artículo</h2>
@@ -152,7 +172,8 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
           <>
             <h2 className="at-h">Primero, una idea general</h2>
             <p className="at-tip">Antes de leer, fíjate en el título y el texto temático, en cómo cada subtítulo se relaciona con el tema y en las imágenes. Las preguntas de repaso te dicen las ideas principales.</p>
-            <div className="at-card">
+            <div className="at-card at-cover">
+              <p className="at-cover-kicker">La Atalaya{fields.fecha ? ` · ${formatDate(fields.fecha)}` : ''}</p>
               <p className="at-title">{fields.titulo || 'La Atalaya'}</p>
               {article.tema && <p className="at-theme">{article.tema}</p>}
               {article.resumen && <p className="at-summary">{article.resumen}</p>}
@@ -274,16 +295,23 @@ function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, 
   let w = 0
   return (
     <>
-      {b.subtitulo && <p className="at-sub">{b.subtitulo}</p>}
+      {b.subtitulo && <h3 className="at-sub">{b.subtitulo}</h3>}
       <p className="at-qnum">{b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} {b.key}</p>
       {b.pregunta && <p className="at-question">{b.pregunta}</p>}
       <p className="at-tip small">Lee buscando la respuesta y toca 2 o 3 palabras clave para subrayarlas.</p>
       <div className="at-text">
         {b.parrafos.map((p, pi) => (
           <p key={pi}>
-            {words(p).map((word) => {
+            {words(p).map((word, j, list) => {
               const i = w++
-              return <span key={i} className={'at-word' + (marked.has(i) ? ' on' : '')} onClick={() => toggle(i)}>{word} </span>
+              // El espacio entre dos palabras marcadas también se pinta, como con un marcatexto.
+              const joined = marked.has(i) && j < list.length - 1 && marked.has(i + 1)
+              return (
+                <span key={i}>
+                  <span className={'at-word' + (marked.has(i) ? ' on' : '')} onClick={() => toggle(i)}>{word}</span>
+                  <span className={joined ? 'at-gap on' : 'at-gap'}> </span>
+                </span>
+              )
             })}
           </p>
         ))}
@@ -308,8 +336,8 @@ function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, 
           {phrases.map((k, i) => <span key={i}>{k}</span>)}
         </div>
       )}
-      <label className="sfield">
-        <span className="sfield-label">Mi respuesta, con mis palabras</span>
+      <label className="at-answer">
+        <span className="at-answer-label">Mi respuesta, con mis palabras</span>
         <AutoText value={answer} placeholder="Una idea corta, como para comentarla en la reunión" onChange={onAnswer} minRows={3} />
       </label>
       <div className="at-nav">

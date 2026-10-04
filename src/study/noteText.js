@@ -180,6 +180,7 @@ function marked(n) {
     if (m.type === 'bold') t = `**${t}**`
     else if (m.type === 'italic') t = `_${t}_`
     else if (m.type === 'strike') t = `~~${t}~~`
+    else if (m.type === 'highlight') t = `==${t}==` // subrayado de marcatexto (el mapa lo muestra)
   }
   return t
 }
