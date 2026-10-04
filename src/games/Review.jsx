@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { buildCards, citeSteps, dailyMix, initials, triviaToQuestion, memorizeSources } from './logic.js'
+import { buildCards, cardCheck, citeSteps, dailyMix, initials, triviaToQuestion, memorizeSources } from './logic.js'
 import { GameScreen, Result, SwipeCard } from './ui.jsx'
 import { isDue, review } from './progress.js'
 import { CiteQuiz, saveVerseResult } from './Memorize.jsx'
@@ -8,7 +8,7 @@ import RefLink from '../components/RefLink.jsx'
 import { CHARACTERS } from './memoria/characters.js'
 import { whoRound } from './memoria/logic.js'
 
-const LABEL = { card: 'Tarjeta', verse: 'Texto para memorizar', trivia: 'Pregunta', person: 'Personaje' }
+const LABEL = { card: 'Tu mapa', verse: 'Texto para memorizar', trivia: 'Pregunta', person: 'Personaje' }
 
 // Una sola sesión con todo lo que toca hoy: tarjetas, textos y preguntas, alternados.
 export function reviewItems(store) {
@@ -18,6 +18,7 @@ export function reviewItems(store) {
 
 export default function Review({ store, onExit }) {
   const [items] = useState(() => reviewItems(store))
+  const [cards] = useState(() => buildCards(store.nodes, store.entries))
   const [i, setI] = useState(0)
   const [good, setGood] = useState(0)
   const [missed, setMissed] = useState([])
@@ -65,7 +66,7 @@ export default function Review({ store, onExit }) {
             <span className="quiz-count">{i + 1} de {items.length}</span>
             <span className="review-kind">{LABEL[item.type]}</span>
           </div>
-          {item.type === 'card' && <CardStep key={item.key} card={item.item} onAnswer={answer} />}
+          {item.type === 'card' && <CardStep key={item.key} card={item.item} cards={cards} onAnswer={answer} />}
           {item.type === 'verse' && <VerseStep key={item.key} verse={item.item} onAnswer={answer} />}
           {item.type === 'trivia' && <QuestionStep key={item.key} fields={item.item.fields} onAnswer={answer} />}
           {item.type === 'person' && <PersonStep key={item.key} ch={item.item} onAnswer={answer} />}
@@ -75,26 +76,56 @@ export default function Review({ store, onExit }) {
   )
 }
 
-function CardStep({ card, onAnswer }) {
+// Sin trampa: un texto se repasa armando su cita; una idea, eligiendo su título entre 4.
+// Solo si no hay con qué armar la pregunta queda la tarjeta de siempre.
+function CardStep({ card, cards, onAnswer }) {
+  const [check] = useState(() => cardCheck(card, cards))
+  if (check?.type === 'cite') return <CiteStep verse={check.verse} onAnswer={onAnswer} />
+  if (check?.type === 'choice') return <ChoiceStep q={check} onAnswer={onAnswer} />
   return <SwipeCard front={card.front} back={card.back} onAnswer={onAnswer} />
 }
 
-// Los textos se repasan a veces con iniciales y a veces armando su cita (si tiene versículo).
+function CiteStep({ verse, onAnswer }) {
+  const cita = verse.fields.cita
+  return (
+    <CiteQuiz verse={verse} footer={(errors) => (
+      <>
+        <p className={'order-result ' + (errors ? 'bad' : 'ok')}>{errors ? `Con ${errors} ${errors === 1 ? 'error' : 'errores'}: vuelve pronto.` : '¡Perfecto!'}</p>
+        <p className="verse-ref">{findRefs(cita).length ? <RefLink refText={findRefs(cita)[0]} /> : cita}</p>
+        <TwoButtons onAnswer={() => onAnswer(errors === 0)} single="Siguiente" />
+      </>
+    )} />
+  )
+}
+
+function ChoiceStep({ q, onAnswer }) {
+  const [picked, setPicked] = useState(null)
+  const answered = picked != null
+  return (
+    <div className="quiz">
+      <p className="hint">¿De qué nodo es?</p>
+      <p className="quiz-prompt">{q.prompt}</p>
+      <div className="options">
+        {q.options.map((o, k) => (
+          <button key={k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => setPicked(k)}>{o}</button>
+        ))}
+      </div>
+      {answered && (
+        <div className="feedback">
+          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : `Era ${q.options[q.answer]}`}</p>
+          <button className="primary" onClick={() => onAnswer(picked === q.answer)}>Siguiente</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Los textos se repasan armando su cita (no se puede hacer trampa). Si la cita no tiene
+// versículo, con las iniciales.
 function VerseStep({ verse, onAnswer }) {
   const [peek, setPeek] = useState(false)
-  const [asCite] = useState(() => !!citeSteps(verse.fields.cita) && Math.random() < 0.5)
   const cita = verse.fields.cita
-  if (asCite) {
-    return (
-      <CiteQuiz verse={verse} footer={(errors) => (
-        <>
-          <p className={'order-result ' + (errors ? 'bad' : 'ok')}>{errors ? `Con ${errors} ${errors === 1 ? 'error' : 'errores'}: vuelve pronto.` : '¡Perfecto!'}</p>
-          <p className="verse-ref"><RefLink refText={findRefs(cita)[0]} /></p>
-          <TwoButtons onAnswer={() => onAnswer(errors === 0)} single="Siguiente" />
-        </>
-      )} />
-    )
-  }
+  if (citeSteps(cita)) return <CiteStep verse={verse} onAnswer={onAnswer} />
   return (
     <>
       <button className="verse initials" onClick={() => setPeek((p) => !p)}>{peek ? verse.fields.texto : initials(verse.fields.texto)}</button>

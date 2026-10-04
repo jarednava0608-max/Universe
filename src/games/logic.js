@@ -147,6 +147,25 @@ export function buildCards(nodes, entries) {
   return cards
 }
 
+// Repasar hoy: una tarjeta se pregunta de forma que no se pueda hacer trampa.
+// Si su título es una cita con versículo → armar la cita con el texto a la vista.
+// Si no → leer lo de atrás y elegir el título entre 4 (otras tarjetas que no son citas).
+// Devuelve null si no hay con qué armar la pregunta (se queda como tarjeta normal).
+export function cardCheck(card, cards, rnd = Math.random) {
+  if (citeSteps(card.front, rnd) && card.back?.trim()) return { type: 'cite', verse: { fields: { cita: card.front, texto: card.back } } }
+  if (!card.back?.trim()) return null
+  const seen = new Set([normKey(card.front)])
+  const others = shuffle(cards, rnd).filter((c) => {
+    const k = normKey(c.front)
+    if (seen.has(k) || citeSteps(c.front, rnd)) return false
+    seen.add(k)
+    return true
+  }).slice(0, 3)
+  if (!others.length) return null
+  const options = shuffle([card.front, ...others.map((c) => c.front)], rnd)
+  return { type: 'choice', prompt: clipText(maskTitle(card.back, card.front)), options, answer: options.indexOf(card.front) }
+}
+
 // ---------- Memorizar textos ----------
 
 export function makeVerse({ cita = '', texto = '' } = {}) {

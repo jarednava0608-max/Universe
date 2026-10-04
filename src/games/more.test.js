@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { initials, chunkText, buildCiteQuestions, buildBookQuestions, bookRun, sectionOf, timedPoints, dailyMix, mulberry } from './logic.js'
+import { initials, chunkText, buildCiteQuestions, buildBookQuestions, bookRun, sectionOf, timedPoints, dailyMix, mulberry, cardCheck } from './logic.js'
 import { achievements, mergeProgress, withBest, withBestTime, isDue } from './progress.js'
 import { BOOKS } from '../lib/bible.js'
 
@@ -195,5 +195,31 @@ describe('Memorizar sin Texto diario', () => {
       { id: 'm', kind: 'memoria', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna.' } },
     ]
     expect(memorizeSources(entries).map((e) => e.id)).toEqual(['m'])
+  })
+})
+
+describe('cardCheck (Repasar hoy sin trampa)', () => {
+  const cards = [
+    { id: 'v', front: 'Gén. 39:7-9', back: 'Y después de esto la esposa de su amo...' },
+    { id: 'a', front: 'Calumnia', back: 'Decir algo falso que daña la reputación de otro.' },
+    { id: 'b', front: 'Valor', back: 'Hacer lo correcto aunque dé miedo.' },
+    { id: 'c', front: 'Fe', back: 'Confianza basada en pruebas.' },
+    { id: 'd', front: 'Salmo 15:3', back: 'No calumnia con su lengua.' },
+  ]
+  it('una cita con versículo se repasa armando la cita', () => {
+    const r = cardCheck(cards[0], cards)
+    expect(r.type).toBe('cite')
+    expect(r.verse.fields).toEqual({ cita: 'Gén. 39:7-9', texto: cards[0].back })
+  })
+  it('una idea se elige entre opciones que no son citas, sin decir el título', () => {
+    const r = cardCheck(cards[1], cards)
+    expect(r.type).toBe('choice')
+    expect(r.options[r.answer]).toBe('Calumnia')
+    expect(r.options).toHaveLength(3)
+    expect(r.options).not.toContain('Salmo 15:3')
+    expect(r.prompt).not.toMatch(/calumnia/i)
+  })
+  it('sin otras tarjetas queda como tarjeta normal', () => {
+    expect(cardCheck(cards[1], [cards[1]])).toBeNull()
   })
 })
