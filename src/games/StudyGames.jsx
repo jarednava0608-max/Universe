@@ -1,11 +1,10 @@
-import { useMemo, useRef, useState } from 'react'
-import { buildCards, buildGuessQuestions, buildPairs, buildProofQuestions } from './logic.js'
-import { GameScreen, Quiz, Empty, ModeCard, Result, SwipeCard, fmtTime } from './ui.jsx'
-import { byPriority, dueCount, isDue, nextDue, review, withBest, withBestTime } from './progress.js'
-import { formatDate } from '../study/kinds.js'
+import { useRef, useState } from 'react'
+import { buildGuessQuestions, buildPairs, buildProofQuestions } from './logic.js'
+import { GameScreen, Quiz, Empty, ModeCard, Result, fmtTime } from './ui.jsx'
+import { withBest, withBestTime } from './progress.js'
 import { findSavedVerse } from '../lib/verses.js'
 
-// Juegos que usan los nodos del mapa y las notas de Estudio.
+// Juegos que usan los nodos del mapa. Repasar lo que toca hoy (nodos y textos diarios) va en Repasar hoy.
 export default function StudyGames({ store, onExit }) {
   const [mode, setMode] = useState(null)
   const exit = () => setMode(null)
@@ -15,17 +14,14 @@ export default function StudyGames({ store, onExit }) {
   if (mode === 'guess') return <Guess nodes={store.nodes} best={best['que-es'] ?? 0} onBest={save('que-es')} onExit={exit} />
   if (mode === 'proof') return <Proof store={store} best={best.prueba ?? 0} onBest={save('prueba')} onExit={exit} />
   if (mode === 'pairs') return <Pairs nodes={store.nodes} best={best['parejas-tiempo']} onBest={(secs) => store.updateProgress((f) => withBestTime(f, 'parejas-tiempo', secs))} onExit={exit} />
-  if (mode === 'cards') return <Cards store={store} onExit={exit} />
-  const cardsDue = dueCount(buildCards(store.nodes, store.entries).map((c) => 'c:' + c.id), store.progress.srs ?? {})
 
   return (
     <GameScreen title="Con lo que estudio" onExit={onExit}>
-      <p className="hint">Juegos hechos con tus nodos del mapa y tu texto diario. Tus textos bíblicos se practican en Memorizar textos. Entre más estudias, más preguntas hay.</p>
+      <p className="hint">Juegos hechos con tus nodos del mapa. Entre más estudias, más preguntas hay. Lo que toca repasar hoy está en Repasar hoy.</p>
       <div className="mode-list">
         <ModeCard title="¿Qué es?" badge={best['que-es'] ? `Mejor ${best['que-es']} %` : null} desc="Lee una definición y elige qué nodo es." onClick={() => setMode('guess')} />
         <ModeCard title="¿Con qué texto lo pruebas?" badge={best.prueba ? `Mejor ${best.prueba} %` : null} desc="Ve una idea de tu mapa y elige el texto bíblico que la apoya." onClick={() => setMode('proof')} />
         <ModeCard title="Parejas" badge={best['parejas-tiempo'] ? `Récord ${fmtTime(best['parejas-tiempo'])}` : null} desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
-        <ModeCard title="Tarjetas" badge={cardsDue ? `${cardsDue} hoy` : null} desc="Repasa: ve el título y recuerda lo que significa." onClick={() => setMode('cards')} />
       </div>
     </GameScreen>
   )
@@ -137,61 +133,6 @@ function Pairs({ nodes, best, onBest, onExit }) {
               ))}
             </div>
           </div>
-        </>
-      )}
-    </GameScreen>
-  )
-}
-
-function Cards({ store, onExit }) {
-  const all = useMemo(() => buildCards(store.nodes, store.entries), [store.nodes, store.entries])
-  const srs = store.progress.srs ?? {}
-  const keys = all.map((c) => 'c:' + c.id)
-  const due = dueCount(keys, srs)
-
-  // Repaso inteligente: solo lo que toca hoy (lo que fallas vuelve pronto; lo que sabes, cada vez más espaciado).
-  const build = (everything) => {
-    const byKey = new Map(all.map((c) => ['c:' + c.id, c]))
-    const order = byPriority(keys, srs)
-    return (everything ? order : order.filter((k) => isDue(srs[k]))).map((k) => byKey.get(k))
-  }
-  const [deck, setDeck] = useState(() => build(false))
-  const [i, setI] = useState(0)
-  const [known, setKnown] = useState(0)
-  const card = deck[i]
-
-  function answer(knew) {
-    const key = 'c:' + card.id
-    store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [key]: review(f.srs?.[key], knew) } }))
-    if (knew) setKnown((n) => n + 1)
-    else setDeck((d) => [...d, card]) // vuelve al final de esta sesión
-    setI(i + 1)
-  }
-
-  const next = nextDue(keys, srs)
-  return (
-    <GameScreen title="Tarjetas" back="Mi estudio" onExit={onExit}>
-      {!all.length ? (
-        <Empty>Agrega definiciones a tus nodos o textos diarios para repasar con tarjetas.</Empty>
-      ) : !deck.length ? (
-        <div className="result-card">
-          <p className="result-big">¡Al día!</p>
-          <p className="result-msg">No tienes tarjetas para repasar hoy.{next ? ` La próxima toca el ${formatDate(next)}.` : ''}</p>
-          <button className="primary" onClick={() => { setDeck(build(true)); setI(0) }}>Repasar todas igual</button>
-          <button className="secondary" onClick={onExit}>Salir</button>
-        </div>
-      ) : !card ? (
-        <Result
-          pct={Math.round((known / deck.length) * 100)}
-          value={known}
-          unit={known === 1 ? ' tarjeta' : ' tarjetas'}
-          msg={deck.length > known ? 'Las que repasaste otra vez volverán pronto.' : '¡Te las sabías todas!'}
-          onDone={onExit}
-        />
-      ) : (
-        <>
-          <p className="quiz-count">{i + 1} de {deck.length}{due ? ` · ${due} para repasar` : ''}</p>
-          <SwipeCard key={i} front={card.front} back={card.back} onAnswer={answer} />
         </>
       )}
     </GameScreen>

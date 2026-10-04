@@ -162,7 +162,7 @@ export function buildPairs(nodes, count = 4, rnd = Math.random) {
   }
 }
 
-// "Tarjetas": frente y reverso para repasar (nodos y textos diarios).
+// Tarjetas de Repasar hoy: frente y reverso (nodos y textos diarios).
 export function buildCards(nodes, entries) {
   const cards = playableNodes(nodes).map((n) => ({ id: n.id, front: n.title, back: defText(n.note) }))
   for (const e of entries) {

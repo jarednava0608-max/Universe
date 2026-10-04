@@ -9,8 +9,8 @@ import StudyGames from './StudyGames.jsx'
 import Books from './Books.jsx'
 import { CHARACTERS } from './memoria/characters.js'
 import { KEY } from './memoria/logic.js'
-import { buildCards, memorizeSources } from './logic.js'
-import { dueCount, isKnown } from './progress.js'
+import { memorizeSources } from './logic.js'
+import { isKnown } from './progress.js'
 
 const srsOf = (store) => store.progress.srs ?? {}
 const bestOf = (store, k) => store.progress.best?.[k] ?? 0
@@ -56,11 +56,7 @@ export const GAMES = [
     desc: 'Juegos con tus nodos y notas',
     icon: 'M12 12m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0M5 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M19 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M6.5 6.5l3.7 3.7M17.3 7.2l-3.4 3.2',
     Component: StudyGames,
-    stat: (store) => {
-      const keys = buildCards(store.nodes, store.entries).map((c) => 'c:' + c.id)
-      const due = dueCount(keys, srsOf(store))
-      return due ? { text: `${due} hoy`, due: true } : null
-    },
+    stat: (store) => (bestOf(store, 'que-es') ? { text: `${bestOf(store, 'que-es')} %` } : null),
   },
   {
     id: 'libros',
