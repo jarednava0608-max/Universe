@@ -53,6 +53,12 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
     return () => document.removeEventListener('visibilitychange', onHide)
   })
 
+  // El número de la pregunta abierta siempre a la vista en la fila de arriba.
+  const jump = useRef()
+  useEffect(() => {
+    jump.current?.querySelector('.on')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+  }, [idx, step])
+
   function go(next, i = idx) {
     setStep(next)
     setIdx(i)
@@ -89,6 +95,22 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
           <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={!canGo(s.key)} onClick={() => go(s.key)}>{s.label}</button>
         ))}
       </nav>
+
+      {step === 'parrafos' && bloques.length > 1 && (
+        // Ir directo a cualquier pregunta: un número por pregunta (marcado si ya la respondiste).
+        <nav className="at-jump" ref={jump} aria-label="Ir a la pregunta">
+          {bloques.map((b, i) => (
+            <button
+              key={b.key}
+              className={'at-jump-num' + (i === idx ? ' on' : answerOf(fields, b.key).trim() ? ' done' : '')}
+              aria-current={i === idx ? 'step' : undefined}
+              onClick={() => go('parrafos', i)}
+            >
+              {b.key.replace(/,\s*/g, '-')}
+            </button>
+          ))}
+        </nav>
+      )}
 
       <div className="editor-body at-body" ref={top}>
         {step === 'articulo' && (
@@ -252,10 +274,6 @@ function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, 
   let w = 0
   return (
     <>
-      <div className="at-progress">
-        <div className="progress"><span style={{ width: `${((n + 1) / total) * 100}%` }} /></div>
-        <span>{n + 1} de {total}</span>
-      </div>
       {b.subtitulo && <p className="at-sub">{b.subtitulo}</p>}
       <p className="at-qnum">{b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} {b.key}</p>
       {b.pregunta && <p className="at-question">{b.pregunta}</p>}
