@@ -85,12 +85,41 @@ export function playableNodes(nodes) {
 }
 
 // Oculta el título dentro de la definición para no regalar la respuesta.
-export function maskTitle(text, title) {
+// `keep`: palabras que no se ocultan (las que también están en las otras opciones no delatan nada).
+export function maskTitle(text, title, keep = []) {
   const all = title.split(/\s+/).filter(Boolean)
-  const words = all.length === 1 ? all : all.filter((w) => w.length > 3)
+  const kept = new Set(keep.map(foldWord))
+  const words = (all.length === 1 ? all : all.filter((w) => w.length > 3)).filter((w) => !kept.has(foldWord(w)))
   let out = text
   for (const w of words) out = out.replace(new RegExp(`(?<![\\p{L}])${escapeRe(w)}(?![\\p{L}])`, 'giu'), '＿＿＿')
   return out
+}
+
+const foldWord = (w) => w.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\d]/gu, '')
+const sigWords = (t) => t.split(/\s+/).map(foldWord).filter((w) => w.length > 3)
+// Frases; una cita sin punto también corta ("Juan 17:3 Lo dice…" → "Juan 17:3" + "Lo dice…").
+const sentences = (t) => t.split(/\n+|(?<=[.!?…])\s+|(?<=\d)\s+(?=\p{Lu})/u).map((x) => x.trim()).filter(Boolean)
+
+// La pista de "¿De qué nodo es?": la definición sin lo que solo repite el título
+// ("Cualquier decisión que hace feliz a Jehová…" para el nodo "Lo que hace feliz a Jehová…")
+// ni las frases que se repiten igual en muchos nodos ("Conclusión del artículo…", "De <artículo>.").
+// Si sin esas frases queda muy poco, se deja también la que repite el título (oculto).
+export function guessPrompt(text, title, { others = [], texts = [] } = {}) {
+  const keep = others.flatMap((o) => o.split(/\s+/))
+  const masked = (t) => maskTitle(t, title, keep)
+  const tw = sigWords(title)
+  const count = new Map()
+  for (const t of texts) for (const x of new Set(sentences(t))) count.set(x, (count.get(x) ?? 0) + 1)
+  const own = sentences(text).filter((x) => x.length < 20 || (count.get(x) ?? 0) < 3)
+  const repeats = (x) => {
+    if (tw.length < 2) return false
+    const sw = new Set(sigWords(x))
+    return tw.filter((w) => sw.has(w)).length / tw.length >= 0.6
+  }
+  // Lo que da pista de verdad debe tener letras, no solo "Párrafo 4." o una cita.
+  const useful = own.filter((x) => !repeats(x))
+  const best = useful.join(' ').replace(/[^\p{L}]/gu, '').length >= 25 ? useful : own.length ? own : [text]
+  return clipText(masked(best.join(' ')))
 }
 
 // Quita las comillas sueltas al inicio y al final de un trozo de versículo («“‘Pero yo…’.» → «Pero yo….»).
@@ -113,7 +142,7 @@ export function buildGuessQuestions(nodes, count = 10, rnd = Math.random) {
     const others = shuffle(pool.filter((o) => o.id !== n.id), rnd).slice(0, 3)
     const opts = shuffle([n, ...others], rnd)
     return {
-      prompt: clipText(maskTitle(defText(n.note), n.title)),
+      prompt: guessPrompt(defText(n.note), n.title, { others: others.map((o) => o.title), texts: pool.map((o) => defText(o.note)) }),
       options: opts.map((o) => o.title),
       answer: opts.indexOf(n),
       nodeId: n.id,
@@ -163,7 +192,8 @@ export function cardCheck(card, cards, rnd = Math.random) {
   }).slice(0, 3)
   if (!others.length) return null
   const options = shuffle([card.front, ...others.map((c) => c.front)], rnd)
-  return { type: 'choice', prompt: clipText(maskTitle(card.back, card.front)), options, answer: options.indexOf(card.front) }
+  const prompt = guessPrompt(card.back, card.front, { others: others.map((c) => c.front), texts: cards.map((c) => c.back ?? '') })
+  return { type: 'choice', prompt, options, answer: options.indexOf(card.front) }
 }
 
 // ---------- Memorizar textos ----------

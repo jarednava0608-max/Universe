@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseTrivia, triviaToQuestion, buildGuessQuestions, buildPairs, clozeWords, verseSources, parseVerses, mulberry, maskTitle } from './logic.js'
+import { parseTrivia, triviaToQuestion, buildGuessQuestions, buildPairs, clozeWords, verseSources, parseVerses, mulberry, maskTitle, guessPrompt } from './logic.js'
 import { makeNode } from '../lib/model.js'
 
 const nodes = ['Amor', 'Fe', 'Esperanza', 'Paciencia', 'Humildad'].map((t) =>
@@ -51,5 +51,24 @@ describe('Juegos', () => {
     const [v] = verseSources(entries)
     expect(v.fields).toMatchObject({ cita: '1 Juan 4:8', texto: '“Dios es amor”' })
     expect(parseVerses({ textos: [{ cita: 'Juan 17:3', texto: 'Vida eterna' }] })).toEqual([{ cita: 'Juan 17:3', texto: 'Vida eterna' }])
+  })
+})
+
+describe('guessPrompt', () => {
+  const def = (t, f) => `${t}\n\n${f}\n\nConclusión del artículo, basada en la Biblia. De Ayudemos a otros a conocer bien a Jehová.`
+  const texts = [
+    def('Cualquier decisión que hace feliz a Jehová es una buena decisión. Jesús: "Siempre hago lo que a él le agrada".', 'Juan 8:29 (párr. 15).'),
+    def('Si ponemos a Jehová en primer lugar, él cuida de nosotros.', 'Mateo 6:33 (párr. 16).'),
+    def('Si alguien ama a Dios, Jehová lo conoce.', '1 Corintios 8:3 (párr. 18).'),
+  ]
+  it('quita lo que solo repite el título y lo que se repite en todos', () => {
+    const p = guessPrompt(texts[0], 'Lo que hace feliz a Jehová es una buena decisión', { others: ['Integridad', 'Sin conocer a Jehová no se le puede amar'], texts })
+    expect(p).toBe('Jesús: "Siempre hago lo que a él le agrada". Juan 8:29 (párr. 15).')
+  })
+  it('con un título de una palabra lo oculta como antes', () => {
+    expect(guessPrompt('El amor de Dios es grande.', 'Amor')).toBe('El ＿＿＿ de Dios es grande.')
+  })
+  it('no oculta palabras que también están en otras opciones', () => {
+    expect(maskTitle('Conocer bien a Jehová', 'Conocer a Jehová', ['Jehová'])).toBe('＿＿＿ bien a Jehová')
   })
 })
