@@ -1083,10 +1083,11 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 
 
 /* La Atalaya por pasos */
-/* Pasos y números: se esconden al bajar leyendo y vuelven al subir. */
-.at-bars { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.25s ease, opacity 0.2s ease; }
-.at-bars.hidden { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
-.at-bars-in { overflow: hidden; min-height: 0; }
+/* Pasos y números: van pegados arriba del texto y se deslizan hacia arriba al bajar leyendo
+   (no cambian el tamaño de la página, así el texto no brinca). */
+.at-body { padding-top: 0; }
+.at-bars { position: sticky; top: 0; z-index: 3; margin: 0 calc(-1 * (var(--sar) + 20px)) 20px calc(-1 * (var(--sal) + 20px)); background: rgba(var(--bg-rgb), 0.92); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); transition: transform 0.28s var(--ease), opacity 0.2s ease; }
+.at-bars.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
 .at-steps { display: flex; gap: 2px; padding: 8px calc(var(--sar) + 10px) 8px calc(var(--sal) + 10px); border-bottom: 1px solid var(--line); }
 .at-step { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 0 2px; border-radius: 18px; color: var(--text-3); font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .at-step:disabled { opacity: 0.4; }
@@ -1125,9 +1126,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-text p { margin: 0 0 12px; }
 .at-word { border-radius: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* Palabras clave como con marcatexto amarillo. */
-/* Solo se alarga hacia arriba y abajo: hacia los lados taparía la letra de la palabra de junto. */
-.at-word.on { background: var(--hl); color: var(--title); box-shadow: 0 -2px 0 var(--hl), 0 2px 0 var(--hl); }
-.at-gap.on { background: var(--hl); box-shadow: 0 -2px 0 var(--hl), 0 2px 0 var(--hl); }
+/* Palabras clave como con marcatexto: cada frase marcada es una sola pieza (también al partirse en dos renglones). */
+.at-run { background: var(--hl); color: var(--title); border-radius: 3px; padding: 2px 0; margin: 0 -2px; padding-left: 2px; padding-right: 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .at-jw { display: inline-flex; align-items: center; min-height: 44px; margin: -6px 0 6px; font-size: 14px; color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
 .at-extras { margin: 0 0 16px; font-size: 14px; color: var(--text-2); line-height: 1.5; }
 .at-extras summary { min-height: 36px; display: flex; align-items: center; color: var(--text-3); font-size: 13px; }

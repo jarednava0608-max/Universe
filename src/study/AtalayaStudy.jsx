@@ -56,7 +56,10 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
   // El número de la pregunta abierta siempre a la vista en la fila de arriba.
   const jump = useRef()
   useEffect(() => {
-    jump.current?.querySelector('.on')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+    // Solo de lado (scrollIntoView también movería el texto hacia arriba o abajo).
+    const nav = jump.current
+    const on = nav?.querySelector('.on')
+    if (on) nav.scrollTo({ left: on.offsetLeft - nav.clientWidth / 2 + on.offsetWidth / 2, behavior: 'smooth' })
   }, [idx, step])
 
   function go(next, i = idx) {
@@ -66,19 +69,26 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
     top.current?.scrollTo({ top: 0 })
   }
 
-  // Al bajar leyendo se esconden los pasos y los números para dejar más espacio al texto;
-  // al subir un poco (o al llegar arriba) vuelven.
+  // Al bajar leyendo se esconden los pasos y los números (se deslizan hacia arriba sin mover el
+  // texto); al subir un buen tramo o al llegar arriba vuelven, como las barras de Safari.
   const [barsHidden, setBarsHidden] = useState(false)
-  const lastY = useRef(0)
+  const scrollRef = useRef({ last: 0, turn: 0, dir: 0 })
   function onScroll(e) {
     const el = e.currentTarget
-    const y = el.scrollTop
-    const dy = y - lastY.current
-    // Si el texto es corto no se esconde (si no, al esconderse cabría todo y volverían a salir).
-    if (y < 40 || el.scrollHeight - el.clientHeight < 200) setBarsHidden(false)
-    else if (dy > 8) setBarsHidden(true)
-    else if (dy < -8) setBarsHidden(false)
-    if (Math.abs(dy) > 8 || y < 40) lastY.current = y
+    const max = el.scrollHeight - el.clientHeight
+    const y = Math.min(Math.max(el.scrollTop, 0), max) // sin el rebote de iOS en las orillas
+    const r = scrollRef.current
+    if (y < 60) {
+      setBarsHidden(false)
+      Object.assign(r, { last: y, turn: y, dir: 0 })
+      return
+    }
+    const dir = y > r.last ? 1 : y < r.last ? -1 : r.dir
+    if (dir !== r.dir) r.turn = r.last // cambió de sentido: desde aquí se mide
+    r.dir = dir
+    r.last = y
+    if (dir === 1 && y - r.turn > 24) setBarsHidden(true)
+    else if (dir === -1 && r.turn - y > 70) setBarsHidden(false)
   }
   async function close() {
     await flush()
@@ -106,33 +116,31 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
         <span />
       </header>
 
-      <div className={'at-bars' + (barsHidden ? ' hidden' : '')}>
-      <div className="at-bars-in">
-      <nav className="at-steps" aria-label="Pasos">
-        {STEPS.map((s) => (
-          <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={!canGo(s.key)} onClick={() => go(s.key)}>{s.label}</button>
-        ))}
-      </nav>
-
-      {step === 'parrafos' && bloques.length > 1 && (
-        // Ir directo a cualquier pregunta: un número por pregunta (marcado si ya la respondiste).
-        <nav className="at-jump" ref={jump} aria-label="Ir a la pregunta">
-          {bloques.map((b, i) => (
-            <button
-              key={b.key}
-              className={'at-jump-num' + (i === idx ? ' on' : answerOf(fields, b.key).trim() ? ' done' : '')}
-              aria-current={i === idx ? 'step' : undefined}
-              onClick={() => go('parrafos', i)}
-            >
-              {b.key.replace(/,\s*/g, '-')}
-            </button>
+      <div className="editor-body at-body" ref={top} onScroll={onScroll}>
+        <div className={'at-bars' + (barsHidden ? ' hidden' : '')}>
+        <nav className="at-steps" aria-label="Pasos">
+          {STEPS.map((s) => (
+            <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={!canGo(s.key)} onClick={() => go(s.key)}>{s.label}</button>
           ))}
         </nav>
-      )}
-      </div>
-      </div>
 
-      <div className="editor-body at-body" ref={top} onScroll={onScroll}>
+        {step === 'parrafos' && bloques.length > 1 && (
+          // Ir directo a cualquier pregunta: un número por pregunta (marcado si ya la respondiste).
+          <nav className="at-jump" ref={jump} aria-label="Ir a la pregunta">
+            {bloques.map((b, i) => (
+              <button
+                key={b.key}
+                className={'at-jump-num' + (i === idx ? ' on' : answerOf(fields, b.key).trim() ? ' done' : '')}
+                aria-current={i === idx ? 'step' : undefined}
+                onClick={() => go('parrafos', i)}
+              >
+                {b.key.replace(/,\s*/g, '-')}
+              </button>
+            ))}
+          </nav>
+        )}
+        </div>
+
         {step === 'articulo' && (
           <>
             <h2 className="at-h">Pega el artículo</h2>
@@ -292,7 +300,14 @@ function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, 
   const marked = new Set(marks)
   const toggle = (i) => onMarks(marked.has(i) ? marks.filter((x) => x !== i) : [...marks, i])
   const phrases = keyPhrases(b, marks)
-  let w = 0
+  // Palabras de cada párrafo con el número de la primera (las marcas cuentan seguido en todo el bloque).
+  let count = 0
+  const paras = b.parrafos.map((p) => {
+    const ws = words(p)
+    const o = count
+    count += ws.length
+    return { ws, o }
+  })
   return (
     <>
       {b.subtitulo && <h3 className="at-sub">{b.subtitulo}</h3>}
@@ -300,18 +315,15 @@ function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, 
       {b.pregunta && <p className="at-question">{b.pregunta}</p>}
       <p className="at-tip small">Lee buscando la respuesta y toca 2 o 3 palabras clave para subrayarlas.</p>
       <div className="at-text">
-        {b.parrafos.map((p, pi) => (
+        {paras.map(({ ws, o }, pi) => (
           <p key={pi}>
-            {words(p).map((word, j, list) => {
-              const i = w++
-              // El espacio entre dos palabras marcadas también se pinta, como con un marcatexto.
-              const joined = marked.has(i) && j < list.length - 1 && marked.has(i + 1)
-              return (
-                <span key={i}>
-                  <span className={'at-word' + (marked.has(i) ? ' on' : '')} onClick={() => toggle(i)}>{word}</span>
-                  <span className={joined ? 'at-gap on' : 'at-gap'}> </span>
-                </span>
-              )
+            {runsOf(ws, (k) => marked.has(o + k)).map((run) => {
+              // Las palabras marcadas seguidas van en una sola pieza amarilla (sin rayitas entre ellas).
+              const items = run.words.map((word, k) => {
+                const i = o + run.start + k
+                return <span key={i} className="at-word" onClick={() => toggle(i)}>{word}{k < run.words.length - 1 ? ' ' : ''}</span>
+              })
+              return <span key={run.start}>{run.on ? <mark className="at-run">{items}</mark> : items} </span>
             })}
           </p>
         ))}
@@ -346,4 +358,16 @@ function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, 
       </div>
     </>
   )
+}
+
+// Parte las palabras de un párrafo en tramos seguidos marcados / sin marcar.
+function runsOf(list, isOn) {
+  const out = []
+  list.forEach((word, k) => {
+    const on = isOn(k)
+    const last = out[out.length - 1]
+    if (last && last.on === on) last.words.push(word)
+    else out.push({ on, start: k, words: [word] })
+  })
+  return out
 }
