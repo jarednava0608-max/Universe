@@ -3,7 +3,7 @@ import { nodeColor, normKey } from '../lib/model.js'
 import { plainText } from '../lib/markdown.js'
 
 // Barra de búsqueda minimalista: busca en títulos y en el texto de las notas.
-export default function Search({ nodes, onPick, onMenu }) {
+export default function Search({ nodes, onPick, onMenu, alert }) {
   const [q, setQ] = useState('')
   const [focused, setFocused] = useState(false)
 
@@ -56,10 +56,11 @@ export default function Search({ nodes, onPick, onMenu }) {
           />
           {q && <button className="clear" aria-label="Borrar" onMouseDown={(e) => e.preventDefault()} onClick={() => setQ('')}>×</button>}
         </div>
-        <button className="icon-btn" aria-label="Menú" onClick={onMenu}>
+        <button className="icon-btn" aria-label={alert ? 'Menú (conviene hacer un respaldo)' : 'Menú'} onClick={onMenu}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
             <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
+          {alert && <i className="menu-alert" />}
         </button>
       </div>
       {open && (

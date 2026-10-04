@@ -80,3 +80,11 @@ describe('Éxodo (empieza con letra acentuada)', () => {
     expect(linkRefsMarkdown('Lea 1 Corintios 3:5')).toBe('Lea [1 Corintios 3:5](https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/46/3#study=discover&v=46:3:5)')
   })
 })
+
+import { isRefTitle } from './bible.js'
+describe('isRefTitle: el título es solo una cita', () => {
+  it('reconoce citas completas y no ideas con números', () => {
+    for (const t of ['Juan 17:3', 'Jeremías 38', '1 Timoteo 2:3, 4', 'Sal. 83:18', 'Éxodo 34:6, 7.']) expect(isRefTitle(t)).toBe(true)
+    for (const t of ['Jeremías 38 y 39', 'Sedequías', 'Exilio y los 70 años', 'Juan 17:3 y la vida eterna', '']) expect(isRefTitle(t)).toBe(false)
+  })
+})

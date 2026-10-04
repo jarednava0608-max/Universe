@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from './lib/store.js'
 import { useSync } from './lib/useSync.js'
 import { useTheme } from './lib/theme.js'
@@ -12,6 +12,8 @@ import NodeEditor from './components/NodeEditor.jsx'
 import PasteSheet from './components/PasteSheet.jsx'
 import Menu from './components/Menu.jsx'
 import AccountSheet from './components/AccountSheet.jsx'
+import DigList from './components/DigList.jsx'
+import { buildSupport, connectionCount } from './lib/support.js'
 import TabBar from './components/TabBar.jsx'
 import { dailyDone } from './games/daily.js'
 import Icon, { ICONS } from './components/Icon.jsx'
@@ -49,7 +51,7 @@ export default function App() {
   // Último nodo que viste: el mapa abre ahí (preferencia de este teléfono).
   const [startNode] = useState(() => { try { return localStorage.getItem(LAST_NODE) } catch { return null } })
   const [editor, setEditor] = useState(null)
-  const [sheet, setSheet] = useState(null) // 'menu' | 'paste' | 'account'
+  const [sheet, setSheet] = useState(null) // 'menu' | 'paste' | 'account' | 'dig'
   const [pasteText, setPasteText] = useState('')
   const [toastMsg, setToastMsg] = useState('')
   const [persisted, setPersisted] = useState(null)
@@ -162,6 +164,14 @@ export default function App() {
     const n = stack.length
     if (n) history.go(-n)
   }, [stack.length])
+
+  // Sin la nube, todo vive solo en este iPhone: si el último respaldo tiene más de un mes (o nunca), se avisa
+  // con un puntito en el menú del mapa y en "Exportar respaldo".
+  const backupStale = sync.checked && !sync.session && nodes.length > 1 && (!lastExport || Date.now() - lastExport > 30 * 864e5)
+
+  // Ideas que todavía no llegan a ningún texto bíblico (para "Por escarbar" en el menú).
+  const unfounded = useMemo(() => (sheet === 'menu' ? buildSupport(nodes).unfounded().length : 0), [sheet, nodes])
+  const lines = useMemo(() => (sheet === 'menu' ? connectionCount(nodes, edges) : 0), [sheet, nodes, edges])
 
   const currentId = stack.at(-1)
   const current = nodes.find((n) => n.id === currentId)
@@ -281,7 +291,7 @@ export default function App() {
         onBackgroundTap={() => setFocusId(null)}
       />
 
-      <Search nodes={nodes} onPick={openNote} onMenu={() => setSheet('menu')} />
+      <Search nodes={nodes} onPick={openNote} onMenu={() => setSheet('menu')} alert={backupStale} />
 
       {nodes.length === 1 && !current && (
         <p className="welcome">Toca <b>Jehová</b> para escribir su definición,<br />o <b>+</b> para agregar tu primera idea.</p>
@@ -339,13 +349,14 @@ export default function App() {
 
       {sheet === 'menu' && (
         <Menu
-          stats={{ nodes: nodes.length, edges: edges.length, persisted, lastExport }}
+          stats={{ nodes: nodes.length, edges: lines, persisted, lastExport, backupStale, unfounded }}
           sync={sync}
           themeMode={mode}
           onThemeMode={setMode}
           onAccount={() => setSheet('account')}
           onNew={() => startNew()}
           onPaste={() => setSheet('paste')}
+          onDig={() => setSheet('dig')}
           onExport={exportAll}
           onImportFile={importFile}
           onClose={() => setSheet(null)}
@@ -353,6 +364,8 @@ export default function App() {
       )}
 
       {sheet === 'account' && <AccountSheet sync={sync} onClose={() => setSheet(null)} />}
+
+      {sheet === 'dig' && <DigList nodes={nodes} onOpen={(id) => { setSheet(null); openNote(id) }} onClose={() => setSheet(null)} />}
 
       {sheet === 'paste' && (
         <PasteSheet

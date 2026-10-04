@@ -112,3 +112,12 @@ describe('Texto diario', () => {
     expect(dailyTextAppUrl('2026-10-04')).toContain('alias=daily-text&date=20261004')
   })
 })
+
+import { dailyAnalyzed } from './kinds.js'
+describe('Texto diario: ¿ya lo analizaste?', () => {
+  it('solo pegar el texto no cuenta', () => {
+    expect(dailyAnalyzed({ fecha: '2026-10-04', texto: 'Siempre tengo a Jehová delante de mí (Sal. 16:8).' })).toBe(false)
+    expect(dailyAnalyzed({ texto: 'x', principio: 'Confiar en Jehová.' })).toBe(true)
+    expect(dailyAnalyzed({ texto: 'x', resumen: '  ' })).toBe(false)
+  })
+})

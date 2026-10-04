@@ -155,3 +155,12 @@ describe('Palabras clave subrayadas al pasar al mapa', () => {
   })
 })
 
+
+import { answeredCount } from './atalaya.js'
+describe('La Atalaya: cuántas llevas (lista de Reuniones)', () => {
+  it('cuenta las preguntas respondidas del artículo', () => {
+    const fields = withAnswer(withAnswer({ articulo: ARTICULO }, '1', 'Felices.'), '3, 4', '  ')
+    expect(answeredCount(fields)).toEqual({ done: 1, total: 3 })
+    expect(answeredCount({})).toEqual({ done: 0, total: 0 })
+  })
+})

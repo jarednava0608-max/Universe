@@ -3,6 +3,7 @@ import ForceGraph2D from 'react-force-graph-2d'
 import { forceCollide, forceRadial } from 'd3-force-3d'
 import { nodeColor, ROOT_ID } from '../lib/model.js'
 import { buildResolver, extractLinks } from '../lib/markdown.js'
+import { buildSupport } from '../lib/support.js'
 
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif'
 
@@ -42,8 +43,7 @@ function labelBox(ctx, n, scale, focused) {
 // Vista de grafo: canvas con zoom/arrastre táctil y líneas rectas.
 // Margen al ajustar el mapa a la pantalla (90 dejaba el mapa chiquito en el iPhone).
 const FIT_PAD = 58
-// Distancia entre anillos: Jehová en el centro, lo que se enlaza con él en el primer anillo, lo que
-// se enlaza con esos en el segundo… y lo suelto (sin enlaces) en el anillo de afuera, no perdido lejos.
+// Distancia entre anillos (Jehová en el centro; ver `ring` más abajo).
 const RING = 105
 
 const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme, onNodeTap, onBackgroundTap }, ref) {
@@ -96,24 +96,14 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
       }
     }
 
-    // Anillo de cada nodo: cuántos pasos hay desde Jehová siguiendo las líneas.
-    const near = new Map()
-    for (const l of links) {
-      if (!near.has(l.source)) near.set(l.source, [])
-      if (!near.has(l.target)) near.set(l.target, [])
-      near.get(l.source).push(l.target)
-      near.get(l.target).push(l.source)
-    }
-    const depth = new Map([[ROOT_ID, 0]])
-    for (let queue = [ROOT_ID]; queue.length; ) {
-      const id = queue.shift()
-      for (const m of near.get(id) ?? []) {
-        if (depth.has(m)) continue
-        depth.set(m, depth.get(id) + 1)
-        queue.push(m)
-      }
-    }
-    const outer = Math.max(1, ...depth.values())
+    // Anillo de cada nodo según qué tan firme es (src/lib/support.js): Jehová en el centro, luego los
+    // textos bíblicos, las ideas que citan un texto, las que se apoyan en esas… Escarbar = ir hacia el
+    // centro. Lo que todavía no llega a ningún texto va en el anillo de afuera. Los niveles que no
+    // existen no dejan un anillo vacío.
+    const support = buildSupport(nodes)
+    const used = [...new Set(nodes.map((n) => support.level(n.id)).filter((l) => l != null))].sort((a, b) => a - b)
+    const ringOf = new Map(used.map((l, i) => [l, i]))
+    const outer = Math.max(1, used.length)
 
     const gNodes = nodes.map((n) => {
       const g = old.get(n.id) ?? { id: n.id }
@@ -123,7 +113,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
       g.fresh = !g.isRoot && Date.now() - (n.createdAt ?? 0) < 24 * 3600 * 1000 // creado en las últimas 24 h
       g.deg = degree.get(n.id) ?? 0
       g.r = g.isRoot ? 8 : 3.5 + Math.min(5, Math.sqrt(g.deg) * 1.4)
-      g.ring = depth.get(n.id) ?? outer
+      g.ring = ringOf.get(support.level(n.id)) ?? outer
       if (g.isRoot) {
         g.fx = 0
         g.fy = 0
@@ -153,7 +143,8 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
     const f = fg.current
     if (!f) return
     f.d3Force('charge').strength((n) => (n.isRoot ? -300 : -90 - 15 * Math.min(n.deg, 8))).distanceMax(360)
-    f.d3Force('link').distance((l) => (l.source.isRoot || l.target.isRoot ? RING : 60 + 6 * Math.min(8, Math.max(l.source.deg ?? 0, l.target.deg ?? 0))))
+    // Una línea con Jehová mide lo que el anillo del otro nodo (si no, jala hacia el centro lo que no es firme).
+    f.d3Force('link').distance((l) => (l.source.isRoot || l.target.isRoot ? RING * Math.max(1, l.source.isRoot ? l.target.ring : l.source.ring) : 60 + 6 * Math.min(8, Math.max(l.source.deg ?? 0, l.target.deg ?? 0))))
     f.d3Force('collide', forceCollide((n) => n.r + 10).iterations(2))
     f.d3Force('radial', forceRadial((n) => RING * n.ring, 0, 0).strength((n) => (n.isRoot ? 0 : 0.14)))
   }, [data])

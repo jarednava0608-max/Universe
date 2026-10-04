@@ -3,7 +3,8 @@ import PageScroll from '../components/PageScroll.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyTextUrl, dailyTextAppUrl } from './kinds.js'
+import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyTextUrl, dailyTextAppUrl, dailyAnalyzed } from './kinds.js'
+import { answeredCount } from './atalaya.js'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -328,7 +329,7 @@ function TodayCard({ entry, onOpen, onAdd }) {
       {entry ? (
         <button className="today-text" onClick={() => onOpen(entry)}>
           <span className="today-verse">{texto ? (texto.length > 180 ? texto.slice(0, 180).replace(/\s+\S*$/, '') + '…' : texto) : 'Sin texto todavía'}</span>
-          {entry.fields.resumen && <span className="today-sub">{entry.fields.resumen}</span>}
+          {entry.fields.resumen ? <span className="today-sub">{entry.fields.resumen}</span> : !dailyAnalyzed(entry.fields) && texto && <span className="today-sub pending">Falta analizarlo</span>}
         </button>
       ) : (
         <button className="today-add" onClick={onAdd}>
@@ -357,9 +358,13 @@ function EntryList({ items, onOpen, onDelete }) {
         // En Texto diario el título es el texto bíblico de ese día y abajo el resumen.
         const verse = diario && dailyVerse(e.fields.texto)
         const title = verse || def.title(e)
+        // Lo que falta: el texto diario sin analizar y cuántas preguntas de La Atalaya llevas.
+        const pending = diario ? !!verse && !dailyAnalyzed(e.fields) : false
+        const progress = isAtalaya(e) && String(e.fields.articulo ?? '').trim() ? answeredCount(e.fields) : null
         const sub = !day ? def.subtitle(e)
-          : diario ? (verse ? e.fields.resumen : 'Sin texto todavía')
-          : e.fields.tipo === 'entresemana' ? 'Entre semana' : 'La Atalaya'
+          : diario ? (verse ? e.fields.resumen || (pending ? 'Falta analizarlo' : '') : 'Sin texto todavía')
+          : e.fields.tipo === 'entresemana' ? 'Entre semana'
+          : progress?.total ? `La Atalaya · ${progress.done === progress.total ? 'Lista para la reunión' : `${progress.done} de ${progress.total} respondidas`}` : 'La Atalaya'
         // Reuniones y Texto diario: tarjeta con la fecha como en un calendario.
         const row = (
             <button className={'entry-row' + (day ? ' meeting' : '') + (diario ? ' daily' : '')} onClick={() => onOpen(e)}>
@@ -371,7 +376,7 @@ function EntryList({ items, onOpen, onDelete }) {
               )}
               <span className="entry-main">
                 <span className="entry-title">{title}</span>
-                {sub && <span className="entry-sub">{sub}</span>}
+                {sub && <span className={'entry-sub' + (pending ? ' pending' : '')}>{sub}</span>}
               </span>
               {e.mapNodeId && <span className="in-map" title="En el mapa"><Icon d={ICONS.nodo} size={14} /></span>}
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>

@@ -161,6 +161,12 @@ export function keyPhrases(bloque, marks = []) {
   return out.filter(Boolean)
 }
 
+// Cuántas preguntas del artículo ya respondiste (lo mismo que cuenta el paso "Listo").
+export function answeredCount(fields) {
+  const bloques = parseArticle(fields?.articulo).bloques
+  return { done: bloques.filter((b) => answerOf(fields, b.key).trim()).length, total: bloques.length }
+}
+
 // Dónde seguir: el primer bloque sin respuesta.
 export function firstUnanswered(bloques, fields) {
   const i = bloques.findIndex((b) => !answerOf(fields, b.key).trim())

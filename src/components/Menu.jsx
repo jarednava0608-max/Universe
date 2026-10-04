@@ -13,10 +13,17 @@ const ICONS = {
   exportar: 'M12 3v12M7 8l5-5 5 5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4',
   importar: 'M12 15V3M7 10l5 5 5-5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4',
   nube: 'M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.1 9.1 4.5 4.5 0 0 0 7 18z',
+  escarbar: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.8-4.8',
+}
+
+// Cuándo fue el último respaldo exportado ("hoy", "hace 3 días").
+function ago(t) {
+  const days = Math.floor((Date.now() - t) / 864e5)
+  return days <= 0 ? 'hoy' : days === 1 ? 'ayer' : `hace ${days} días`
 }
 
 // Menú: solo lo esencial.
-export default function Menu({ stats, sync, themeMode, onThemeMode, onAccount, onNew, onPaste, onExport, onImportFile, onClose }) {
+export default function Menu({ stats, sync, themeMode, onThemeMode, onAccount, onNew, onPaste, onDig, onExport, onImportFile, onClose }) {
   const file = useRef()
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -25,10 +32,18 @@ export default function Menu({ stats, sync, themeMode, onThemeMode, onAccount, o
         <div className="menu-group">
           <MenuItem icon="nuevo" label="Nuevo nodo" onClick={onNew} />
           <MenuItem icon="pegar" label="Pegar conocimiento" onClick={onPaste} />
+          <MenuItem icon="escarbar" label="Por escarbar" sub={stats.unfounded ? `${stats.unfounded} ${stats.unfounded === 1 ? 'idea' : 'ideas'} sin texto bíblico` : 'Todas llegan a un texto bíblico'} onClick={onDig} />
         </div>
         <div className="menu-group">
           <MenuItem icon="nube" label="Cuenta y nube" sub={<><i className={'sync-dot ' + sync.status.state} />{describe(sync.status)}</>} onClick={onAccount} />
-          <MenuItem icon="exportar" label="Exportar respaldo" onClick={onExport} />
+          <MenuItem
+            icon="exportar"
+            label="Exportar respaldo"
+            sub={stats.backupStale
+              ? <span className="menu-warn">{stats.lastExport ? `El último fue ${ago(stats.lastExport)}. Conviene hacer otro.` : 'Aún no has hecho ninguno y todo está solo en este iPhone.'}</span>
+              : stats.lastExport ? `El último fue ${ago(stats.lastExport)}` : null}
+            onClick={onExport}
+          />
           <MenuItem icon="importar" label="Importar respaldo" onClick={() => file.current.click()} />
         </div>
         <div className="menu-group appearance">
@@ -44,7 +59,6 @@ export default function Menu({ stats, sync, themeMode, onThemeMode, onAccount, o
 
         <p className="stats">
           {stats.nodes} {stats.nodes === 1 ? 'nodo' : 'nodos'} · {stats.edges} {stats.edges === 1 ? 'conexión' : 'conexiones'}
-          {' · '}Último respaldo: {stats.lastExport ? new Date(stats.lastExport).toLocaleDateString('es') : 'nunca'}
         </p>
       </div>
     </div>

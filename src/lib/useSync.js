@@ -6,6 +6,7 @@ import { forgetUser, pendingCount, syncOnce } from './sync.js'
 
 export function useSync(store) {
   const [session, setSession] = useState(null)
+  const [checked, setChecked] = useState(false) // ya se sabe si hay sesión o no
   const [status, setStatus] = useState({ state: 'off', lastSync: null, pending: 0, error: '' })
   const running = useRef(false)
   const again = useRef(false)
@@ -13,7 +14,10 @@ export function useSync(store) {
   const { mergeRemote, ready, rev } = store
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setChecked(true)
+    }).catch(() => setChecked(true))
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => data.subscription.unsubscribe()
   }, [])
@@ -76,5 +80,5 @@ export function useSync(store) {
     await supabase.auth.signOut()
   }
 
-  return { session, status, syncNow: run, signIn, signUp, signOut }
+  return { session, checked, status, syncNow: run, signIn, signUp, signOut }
 }

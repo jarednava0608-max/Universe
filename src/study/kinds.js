@@ -279,6 +279,9 @@ export function dailyVerse(texto) {
   return m ? m[0] : line
 }
 
+// ¿Ya analizaste este texto diario? (algo más que pegar el texto).
+export const dailyAnalyzed = (f = {}) => ['contexto', 'principio', 'relato', 'aplicacion', 'resumen', 'notas'].some((k) => String(f[k] ?? '').trim())
+
 // El texto diario de esa fecha en wol.jw.org ("2026-10-04" → .../dt/r4/lp-s/2026/10/4).
 export function dailyTextUrl(fecha) {
   const [y, m, d] = String(fecha ?? '').split('-').map(Number)

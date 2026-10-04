@@ -2,7 +2,7 @@
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { normKey } from './model.js'
-import { linkRefsMarkdown } from './bible.js'
+import { isRefTitle, linkRefsMarkdown, refUrl } from './bible.js'
 import { linkPubsMarkdown } from './pubs.js'
 
 const WIKI_RE = /\[\[([^\]|\n]+)(?:\|([^\]\n]+))?\]\]/g
@@ -60,9 +60,10 @@ export function renderNote(text, resolve) {
     const t = target.trim()
     const id = resolve(t)
     const shown = escapeHtml((label ?? t).trim())
-    return id
-      ? `<a class="wl" data-node="${escapeHtml(id)}">${shown}</a>`
-      : `<a class="wl missing" data-missing="${escapeHtml(t)}">${shown}</a>`
+    if (id) return `<a class="wl" data-node="${escapeHtml(id)}">${shown}</a>`
+    // Un [[texto bíblico]] que aún no es nodo abre la hoja de Mi Biblia (no un nodo vacío).
+    if (!label && isRefTitle(t)) return `<a href="${refUrl(t)}">${shown}</a>`
+    return `<a class="wl missing" data-missing="${escapeHtml(t)}">${shown}</a>`
   })
   const html = withMarks(marked.parse(withLinks, { breaks: true, gfm: true }))
   return DOMPurify.sanitize(html, { ADD_ATTR: ['data-node', 'data-missing', 'target'] })

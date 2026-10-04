@@ -85,6 +85,13 @@ export function scanRefs(text) {
   return out
 }
 
+// ¿El texto es solo una cita? ("Juan 17:3", "Jeremías 38"; no "Jeremías 38 y 39" ni "Sedequías").
+export function isRefTitle(s) {
+  const t = String(s ?? '').trim().replace(/[.\s]+$/, '')
+  const refs = scanRefs(t)
+  return refs.length === 1 && refs[0].index === 0 && refs[0].ref.trim() === t
+}
+
 // Separa una cita en libro, capítulo y versículo; null si el libro no existe.
 export function parseRef(ref) {
   const m = String(ref).trim().match(/^(.+?)\s(\d{1,3})(?::(\d{1,3}))?/)

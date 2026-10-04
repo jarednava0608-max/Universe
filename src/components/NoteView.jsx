@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ROOT_ID } from '../lib/model.js'
 import { buildResolver, renderNote } from '../lib/markdown.js'
+import { buildSupport, supportLines } from '../lib/support.js'
 import Icon, { ICONS } from './Icon.jsx'
 
 const HALF = 0.5 // la hoja abre mostrando la mitad de la pantalla
@@ -11,6 +12,7 @@ const SNAP = 70 // px de arrastre para cambiar de altura
 // - Arrastrar hacia abajo: de completa a la mitad, y de la mitad se cierra. Tocar fuera también cierra.
 // - Deslizar a la derecha: volver a la nota anterior.
 // - Lápiz arriba a la derecha: editar.
+// - Al final, en texto: en qué se apoya (hasta un texto bíblico) y qué ideas la usan.
 // (Las fuentes se guardan pero no se muestran.)
 export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit, onCreateFromLink }) {
   const sheet = useRef()
@@ -22,6 +24,8 @@ export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit,
 
   const resolve = useMemo(() => buildResolver(nodes), [nodes])
   const html = useMemo(() => renderNote(node.note, resolve), [node.note, resolve])
+  const support = useMemo(() => buildSupport(nodes), [nodes])
+  const lines = useMemo(() => supportLines(node, nodes, support).map((l) => ({ ...l, html: renderNote(l.md, resolve) })), [node, nodes, support, resolve])
 
   const halfOffset = () => Math.round(sheet.current.offsetHeight - window.innerHeight * HALF)
 
@@ -152,6 +156,16 @@ export default function NoteView({ node, nodes, onOpen, onBack, onClose, onEdit,
             <div className="md" onClick={onContentClick} dangerouslySetInnerHTML={{ __html: html }} />
           ) : (
             <p className="empty">Aún no hay definición.</p>
+          )}
+          {lines.length > 0 && (
+            <footer className="note-support" onClick={onContentClick}>
+              {lines.map((l) => (
+                <div key={l.key} className={'ns-row' + (l.missing ? ' missing' : '')}>
+                  <p className="ns-label">{l.label}</p>
+                  <div className="md ns-md" dangerouslySetInnerHTML={{ __html: l.html }} />
+                </div>
+              ))}
+            </footer>
           )}
         </article>
       </div>
