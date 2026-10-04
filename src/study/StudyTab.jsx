@@ -3,7 +3,7 @@ import PageScroll from '../components/PageScroll.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today } from './kinds.js'
+import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse } from './kinds.js'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -321,7 +321,7 @@ function firstSentence(text) {
 // Texto diario de hoy: si ya lo llenaste, el versículo; si no, invitación a agregarlo.
 function TodayCard({ entry, onOpen, onAdd }) {
   const fecha = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
-  const texto = entry?.fields.texto?.trim()
+  const texto = dailyVerse(entry?.fields.texto)
   return (
     <section className={'today-card' + (entry ? ' done' : '')}>
       <span className="today-label">Texto de hoy · {fecha}</span>
@@ -354,8 +354,11 @@ function EntryList({ items, onOpen, onDelete }) {
         const day = e.kind === 'reunion' || e.kind === 'diario' ? meetingDay(e.fields.fecha) : null
         const diario = day && e.kind === 'diario'
         // La fecha ya va en su hoja de calendario: abajo el tipo de reunión o el texto de ese día.
+        // En Texto diario el título es el texto bíblico de ese día y abajo el resumen.
+        const verse = diario && dailyVerse(e.fields.texto)
+        const title = verse || def.title(e)
         const sub = !day ? def.subtitle(e)
-          : diario ? (e.fields.texto?.trim() || 'Sin texto todavía')
+          : diario ? (verse ? e.fields.resumen : 'Sin texto todavía')
           : e.fields.tipo === 'entresemana' ? 'Entre semana' : 'La Atalaya'
         // Reuniones y Texto diario: tarjeta con la fecha como en un calendario.
         const row = (
@@ -367,7 +370,7 @@ function EntryList({ items, onOpen, onDelete }) {
                 </span>
               )}
               <span className="entry-main">
-                <span className="entry-title">{def.title(e)}</span>
+                <span className="entry-title">{title}</span>
                 {sub && <span className="entry-sub">{sub}</span>}
               </span>
               {e.mapNodeId && <span className="in-map" title="En el mapa"><Icon d={ICONS.nodo} size={14} /></span>}

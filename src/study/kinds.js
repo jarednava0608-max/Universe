@@ -271,6 +271,14 @@ function clip(s, n) {
 function lines(s) {
   return String(s ?? '').split('\n').map((l) => l.replace(/^[-•*]\s*/, '').trim()).filter(Boolean)
 }
+// Solo el texto bíblico del Texto diario: el primer renglón, hasta su cita
+// ("No calumnia con su lengua (Sal. 15:3)."), sin el comentario que sigue.
+export function dailyVerse(texto) {
+  const line = String(texto ?? '').split('\n').map((l) => l.trim()).find(Boolean) ?? ''
+  const m = line.match(/^.*?\([^()]*\d[^()]*\)[.»”"]?/)
+  return m ? m[0] : line
+}
+
 function firstLine(s) {
   return lines(s)[0]?.slice(0, 80) ?? ''
 }
