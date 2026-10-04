@@ -665,6 +665,8 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .quiz-run { font-size: 12px; font-weight: 600; color: #fb923c; background: rgba(251, 146, 60, 0.12); padding: 2px 8px; border-radius: 999px; animation: pop 0.35s var(--ease); }
 .quiz-points { margin-left: auto; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .review-kind { margin-left: auto; font-size: 12px; color: var(--text-3); }
+.review-source { margin: 14px 0 0; font-size: 13px; color: var(--text-3); }
+.options.long .option { font-size: 15px; line-height: 1.45; }
 .timer { height: 6px; margin-top: 10px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
 .timer span { display: block; height: 100%; background: var(--ok); transition: width 0.1s linear, background 0.3s; }
 .timer.low span { background: var(--danger); }

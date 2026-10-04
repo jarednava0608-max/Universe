@@ -1,28 +1,53 @@
 import { useMemo, useState } from 'react'
-import { buildCards, cardCheck, citeSteps, dailyMix, initials, triviaToQuestion, memorizeSources } from './logic.js'
+import { atalayaCards, atalayaCheck, buildCards, cardCheck, citeSteps, dailyMix, initials, triviaToQuestion, memorizeSources } from './logic.js'
 import { GameScreen, Result, SwipeCard } from './ui.jsx'
-import { isDue, review } from './progress.js'
+import { NEW_PER_DAY, isDue, newToday, review } from './progress.js'
 import { CiteQuiz, saveVerseResult } from './Memorize.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
 import { CHARACTERS } from './memoria/characters.js'
 import { whoRound } from './memoria/logic.js'
 
-const LABEL = { card: 'Tu mapa', verse: 'Texto para memorizar', trivia: 'Pregunta', person: 'Personaje' }
+const LABEL = { atalaya: 'Tu Atalaya', card: 'Tu mapa', verse: 'Texto para memorizar', trivia: 'Pregunta', person: 'Personaje' }
+export const SESSION = 20
 
-// Una sola sesión con todo lo que toca hoy: tarjetas, textos y preguntas, alternados.
+// Todo lo que puede entrar al repaso: tu Atalaya, tus nodos y textos diarios, tus textos, tus preguntas y los personajes.
+function pools(store) {
+  return {
+    atalaya: atalayaCards(store.entries),
+    cards: buildCards(store.nodes, store.entries),
+    verses: memorizeSources(store.entries),
+    trivia: store.entries.filter((e) => e.kind === 'trivia'),
+    people: CHARACTERS,
+  }
+}
+
+// Las nuevas que aún caben hoy (NEW_PER_DAY por día, contando las que ya empezaste en otros juegos).
+const freshLeft = (srs) => Math.max(0, NEW_PER_DAY - newToday(srs))
+
+// Una sola sesión con lo que toca hoy: primero lo que ya viste, luego unas pocas nuevas.
 export function reviewItems(store) {
-  const trivia = store.entries.filter((e) => e.kind === 'trivia')
-  return dailyMix({ cards: buildCards(store.nodes, store.entries), verses: memorizeSources(store.entries), trivia, people: CHARACTERS }, store.progress.srs ?? {}, (s) => isDue(s))
+  const srs = store.progress.srs ?? {}
+  return dailyMix(pools(store), srs, (s) => isDue(s), SESSION, Math.random, freshLeft(srs))
+}
+
+// Para la tarjeta de Juegos: cuántas toca repasar (todas) y cuántas nuevas hay hoy.
+export function reviewSummary(store) {
+  const srs = store.progress.srs ?? {}
+  const all = dailyMix(pools(store), srs, (s) => isDue(s), Infinity, () => 0.5, freshLeft(srs))
+  const fresh = all.filter((x) => x.fresh).length
+  return { due: all.length - fresh, fresh }
 }
 
 export default function Review({ store, onExit }) {
   const [items] = useState(() => reviewItems(store))
   const [cards] = useState(() => buildCards(store.nodes, store.entries))
+  const [mine] = useState(() => atalayaCards(store.entries))
   const [i, setI] = useState(0)
   const [good, setGood] = useState(0)
   const [missed, setMissed] = useState([])
   const item = items[i]
+  const doneNew = newToday(store.progress.srs ?? {}) > 0
 
   async function answer(knew) {
     if (item.type === 'verse') await saveVerseResult(store, item.item, knew)
@@ -37,7 +62,7 @@ export default function Review({ store, onExit }) {
       {!items.length ? (
         <div className="result-card">
           <p className="result-big">¡Al día!</p>
-          <p className="result-msg">No tienes nada pendiente para hoy. Sigue estudiando y aquí aparecerá lo que toque repasar.</p>
+          <p className="result-msg">{doneNew ? 'Ya repasaste todo lo de hoy y viste tus cosas nuevas. Mañana hay más.' : 'No tienes nada pendiente para hoy. Sigue estudiando y aquí aparecerá lo que toque repasar.'}</p>
           <button className="secondary" onClick={onExit}>Salir</button>
         </div>
       ) : !item ? (
@@ -52,8 +77,8 @@ export default function Review({ store, onExit }) {
               <p className="missed-title">Para repasar</p>
               {missed.map((m) => (
                 <div key={m.key} className="missed-item">
-                  <p className="missed-q">{m.type === 'trivia' ? m.item.fields.pregunta : LABEL[m.type]}</p>
-                  <p className="missed-a">{m.type === 'card' ? m.item.front : m.type === 'verse' ? m.item.fields.cita || m.item.fields.texto.slice(0, 60) : m.type === 'person' ? m.item.n : m.item.fields.opciones[m.item.fields.respuesta]}</p>
+                  <p className="missed-q">{m.type === 'trivia' ? m.item.fields.pregunta : m.type === 'atalaya' ? m.item.front : LABEL[m.type]}</p>
+                  <p className="missed-a">{m.type === 'card' ? m.item.front : m.type === 'atalaya' ? m.item.back : m.type === 'verse' ? m.item.fields.cita || m.item.fields.texto.slice(0, 60) : m.type === 'person' ? m.item.n : m.item.fields.opciones[m.item.fields.respuesta]}</p>
                 </div>
               ))}
             </div>
@@ -64,8 +89,9 @@ export default function Review({ store, onExit }) {
           <div className="progress"><span style={{ width: `${(i / items.length) * 100}%` }} /></div>
           <div className="quiz-meta">
             <span className="quiz-count">{i + 1} de {items.length}</span>
-            <span className="review-kind">{LABEL[item.type]}</span>
+            <span className="review-kind">{LABEL[item.type]}{item.fresh ? ' · Nueva' : ''}</span>
           </div>
+          {item.type === 'atalaya' && <AtalayaStep key={item.key} card={item.item} cards={mine} onAnswer={answer} />}
           {item.type === 'card' && <CardStep key={item.key} card={item.item} cards={cards} onAnswer={answer} />}
           {item.type === 'verse' && <VerseStep key={item.key} verse={item.item} onAnswer={answer} />}
           {item.type === 'trivia' && <QuestionStep key={item.key} fields={item.item.fields} onAnswer={answer} />}
@@ -73,6 +99,34 @@ export default function Review({ store, onExit }) {
         </>
       )}
     </GameScreen>
+  )
+}
+
+// Tu Atalaya: la pregunta y elegir tu propia respuesta entre 4. Solo si no hay con qué armar
+// las opciones queda la tarjeta que se voltea.
+function AtalayaStep({ card, cards, onAnswer }) {
+  const [q] = useState(() => atalayaCheck(card, cards))
+  const [picked, setPicked] = useState(null)
+  const answered = picked != null
+  if (!q) return <SwipeCard front={card.front} back={card.back} onAnswer={onAnswer} />
+  return (
+    <div className="quiz">
+      <p className="review-source">{card.title} · {card.label}</p>
+      <p className="quiz-prompt long">{card.front}</p>
+      <p className="hint">¿Cuál fue tu respuesta?</p>
+      <div className="options long">
+        {q.options.map((o, k) => (
+          <button key={k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => setPicked(k)}>{o}</button>
+        ))}
+      </div>
+      {answered && (
+        <div className="feedback">
+          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : 'Esa no era'}</p>
+          {card.back !== q.options[q.answer] && <p className="explain">{card.back}</p>}
+          <button className="primary" onClick={() => onAnswer(picked === q.answer)}>Siguiente</button>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -166,6 +220,8 @@ function PersonStep({ ch, onAnswer }) {
   const [shown, setShown] = useState(1)
   const [picked, setPicked] = useState(null)
   const answered = picked != null
+  // Con las 3 pistas no cuenta como sabido (vuelve mañana), como en ¿Quién soy?.
+  const result = () => (picked === q.answer ? (shown >= 3 ? 'help' : true) : false)
   return (
     <div className="quiz">
       <div className="mb-clues">
@@ -182,7 +238,7 @@ function PersonStep({ ch, onAnswer }) {
           <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : `Era ${ch.n}`}</p>
           <p className="explain">{ch.t}.</p>
           <p className="ref"><RefLink refText={ch.c} /></p>
-          <button className="primary" onClick={() => onAnswer(picked === q.answer)}>Siguiente</button>
+          <button className="primary" onClick={() => onAnswer(result())}>Siguiente</button>
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
-import { buildCards, buildGuessQuestions, buildPairs } from './logic.js'
+import { buildCards, buildGuessQuestions, buildPairs, buildProofQuestions } from './logic.js'
 import { GameScreen, Quiz, Empty, ModeCard, Result, SwipeCard, fmtTime } from './ui.jsx'
 import { byPriority, dueCount, isDue, nextDue, review, withBest, withBestTime } from './progress.js'
 import { formatDate } from '../study/kinds.js'
+import { findSavedVerse } from '../lib/verses.js'
 
 // Juegos que usan los nodos del mapa y las notas de Estudio.
 export default function StudyGames({ store, onExit }) {
@@ -12,6 +13,7 @@ export default function StudyGames({ store, onExit }) {
   const best = store.progress.best ?? {}
   const save = (k) => (v) => store.updateProgress((f) => withBest(f, k, v))
   if (mode === 'guess') return <Guess nodes={store.nodes} best={best['que-es'] ?? 0} onBest={save('que-es')} onExit={exit} />
+  if (mode === 'proof') return <Proof store={store} best={best.prueba ?? 0} onBest={save('prueba')} onExit={exit} />
   if (mode === 'pairs') return <Pairs nodes={store.nodes} best={best['parejas-tiempo']} onBest={(secs) => store.updateProgress((f) => withBestTime(f, 'parejas-tiempo', secs))} onExit={exit} />
   if (mode === 'cards') return <Cards store={store} onExit={exit} />
   const cardsDue = dueCount(buildCards(store.nodes, store.entries).map((c) => 'c:' + c.id), store.progress.srs ?? {})
@@ -21,6 +23,7 @@ export default function StudyGames({ store, onExit }) {
       <p className="hint">Juegos hechos con tus nodos del mapa y tu texto diario. Tus textos bíblicos se practican en Memorizar textos. Entre más estudias, más preguntas hay.</p>
       <div className="mode-list">
         <ModeCard title="¿Qué es?" badge={best['que-es'] ? `Mejor ${best['que-es']} %` : null} desc="Lee una definición y elige qué nodo es." onClick={() => setMode('guess')} />
+        <ModeCard title="¿Con qué texto lo pruebas?" badge={best.prueba ? `Mejor ${best.prueba} %` : null} desc="Ve una idea de tu mapa y elige el texto bíblico que la apoya." onClick={() => setMode('proof')} />
         <ModeCard title="Parejas" badge={best['parejas-tiempo'] ? `Récord ${fmtTime(best['parejas-tiempo'])}` : null} desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
         <ModeCard title="Tarjetas" badge={cardsDue ? `${cardsDue} hoy` : null} desc="Repasa: ve el título y recuerda lo que significa." onClick={() => setMode('cards')} />
       </div>
@@ -40,6 +43,27 @@ function Guess({ nodes, best, onBest, onExit }) {
         <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(buildGuessQuestions(nodes)); setNonce((x) => x + 1) }} />
       ) : (
         <Empty>{needMore}</Empty>
+      )}
+    </GameScreen>
+  )
+}
+
+// Una idea de tu mapa → el texto bíblico con el que la pruebas (el que enlazaste o citaste en su definición).
+// Al responder se ve el texto si ya está en Mi Biblia.
+function Proof({ store, best, onBest, onExit }) {
+  const build = () => buildProofQuestions(store.nodes).map((q) => {
+    const texto = findSavedVerse(store.entries, q.ref)?.texto
+    const also = q.also.length ? `También la apoya${q.also.length > 1 ? 'n' : ''}: ${q.also.join('; ')}.` : ''
+    return { ...q, explain: [texto && `«${texto.trim()}»`, also].filter(Boolean).join(' ') }
+  })
+  const [round, setRound] = useState(build)
+  const [nonce, setNonce] = useState(0)
+  return (
+    <GameScreen title="¿Con qué texto lo pruebas?" back="Mi estudio" onExit={onExit}>
+      {round.length ? (
+        <Quiz key={nonce} questions={round} best={best} onFinish={(sc, t) => onBest(Math.round((sc / t) * 100))} onDone={onExit} onAgain={() => { setRound(build()); setNonce((x) => x + 1) }} />
+      ) : (
+        <Empty>Este juego usa los textos bíblicos que pones en las definiciones de tus nodos (por ejemplo [[Juan 17:3]]). Necesitas al menos 4 textos distintos en tu mapa.</Empty>
       )}
     </GameScreen>
   )
@@ -166,7 +190,7 @@ function Cards({ store, onExit }) {
         />
       ) : (
         <>
-          <p className="quiz-count">{i + 1} de {deck.length}{due ? ` · ${due} para hoy` : ''}</p>
+          <p className="quiz-count">{i + 1} de {deck.length}{due ? ` · ${due} para repasar` : ''}</p>
           <SwipeCard key={i} front={card.front} back={card.back} onAnswer={answer} />
         </>
       )}

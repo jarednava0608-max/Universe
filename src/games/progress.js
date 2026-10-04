@@ -57,14 +57,38 @@ export function lastWeek(days, today = todayISO()) {
 
 // ---------- Repaso inteligente ----------
 
-// Lo que sabes sube de caja (se repasa cada vez más espaciado); lo que fallas vuelve al inicio.
+// Cosas nuevas por día en el repaso (lo demás es repasar lo que ya viste).
+export const NEW_PER_DAY = 10
+// Desde esta caja algo cuenta como "conocido": lo acertaste en dos días distintos.
+export const KNOWN_BOX = 2
+export const isKnown = (item) => (item?.box ?? 0) >= KNOWN_BOX
+
+// `knew`: true (lo sabías), false (fallaste) o 'help' (acertaste, pero con todas las pistas).
+// - Lo que sabes sube de caja y se repasa cada vez más espaciado. Si aún no tocaba, se queda
+//   igual: así no sube dos veces el mismo día ni por atinarle de suerte a algo ya repasado.
+// - Lo que fallas vuelve hoy y baja 2 cajas (un error no borra todo lo que ya sabías).
+// - Con todas las pistas no sube: vuelve mañana.
+// `first` es el día en que se vio por primera vez (para contar las nuevas de hoy).
 export function review(item, knew, today = todayISO()) {
-  const box = knew ? Math.min((item?.box ?? 0) + 1, INTERVALS.length - 1) : 0
-  return { box, due: addDays(today, knew ? INTERVALS[box] : 0) }
+  if (knew === true && item && !isDue(item, today)) return item
+  const box = item?.box ?? 0
+  const next =
+    knew === true ? { box: Math.min(box + 1, INTERVALS.length - 1) } : knew === 'help' ? { box } : { box: Math.max(box - 2, 0) }
+  next.due = addDays(today, knew === true ? INTERVALS[next.box] : knew === 'help' ? 1 : 0)
+  const first = item ? item.first : today
+  return first ? { ...next, first } : next
 }
 
 export function isDue(item, today = todayISO()) {
   return !item || item.due <= today
+}
+
+// Para repasar: lo que ya viste y hoy toca (lo nunca visto es "nuevo", no cuenta aquí).
+export const isReview = (item, today = todayISO()) => !!item && item.due <= today
+
+// Cosas nuevas que ya empezaste hoy (los personajes no cuentan: al repaso solo entran los ya vistos).
+export function newToday(srs = {}, today = todayISO()) {
+  return Object.entries(srs).filter(([k, s]) => s?.first === today && !k.startsWith('mb:')).length
 }
 
 // Ordena para repasar: primero lo vencido (lo más atrasado y lo nuevo), luego el resto.
@@ -82,8 +106,9 @@ export function byPriority(keys, srs, today = todayISO(), rnd = Math.random) {
     .map((x) => x.k)
 }
 
+// Cuántas toca repasar hoy (solo lo que ya viste).
 export function dueCount(keys, srs, today = todayISO()) {
-  return keys.filter((k) => isDue(srs[k], today)).length
+  return keys.filter((k) => isReview(srs[k], today)).length
 }
 
 export function nextDue(keys, srs) {
@@ -126,7 +151,7 @@ export function withBest(fields, key, value) {
 export function achievements({ days = [], srs = {}, triviaBest = 0, best = {} } = {}, { nodes = 0, memorized = 0 } = {}) {
   const { best: bestStreak } = streak(days)
   const mastered = Object.values(srs).filter((s) => (s?.box ?? 0) >= 4).length
-  const characters = Object.entries(srs).filter(([k, s]) => k.startsWith('mb:') && (s?.box ?? 0) >= 1).length
+  const characters = Object.entries(srs).filter(([k, s]) => k.startsWith('mb:') && isKnown(s)).length
   const worldBest = Math.max(0, ...Object.keys(best).filter((k) => /^mb-w\d+$/.test(k)).map((k) => best[k]))
   const opened = 1 + [1, 2, 3, 4, 5, 6, 7].filter((w) => (best['mb-w' + w] ?? 0) >= 70).length
   // [id, título, descripción, lo que llevas, la meta]

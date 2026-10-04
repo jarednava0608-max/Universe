@@ -95,7 +95,10 @@ describe('récords de tiempo', () => {
     expect(mergeProgress({ best: { 'parejas-tiempo': 31 } }, { best: {} }).best).toEqual({ 'parejas-tiempo': 31 })
   })
   it('logros nuevos de Memoria Bíblica y retos', () => {
-    const srs = Object.fromEntries(Array.from({ length: 64 }, (_, i) => ['mb:' + i, { box: 1, due: '2099-01-01' }]))
+    // "Conocido" = acertado en dos días distintos (caja 2); con un solo acierto aún no cuenta.
+    const once = Object.fromEntries(Array.from({ length: 64 }, (_, i) => ['mb:' + i, { box: 1, due: '2099-01-01' }]))
+    expect(achievements({ srs: once }).find((a) => a.id === 'mb-personajes').done).toBe(false)
+    const srs = Object.fromEntries(Array.from({ length: 64 }, (_, i) => ['mb:' + i, { box: 2, due: '2099-01-01' }]))
     const done = achievements({ srs, best: { 'mb-w2': 100, 'mb-reto': 15, 'trivia-racha': 10, 'mb-linea': 5 } }).filter((a) => a.done).map((a) => a.id)
     expect(done).toEqual(['mb-estrellas', 'mb-personajes', 'reto-15', 'sin-fallar-10', 'linea-5'])
   })

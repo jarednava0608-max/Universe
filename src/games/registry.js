@@ -10,7 +10,7 @@ import Books from './Books.jsx'
 import { CHARACTERS } from './memoria/characters.js'
 import { KEY } from './memoria/logic.js'
 import { buildCards, memorizeSources } from './logic.js'
-import { dueCount } from './progress.js'
+import { dueCount, isKnown } from './progress.js'
 
 const srsOf = (store) => store.progress.srs ?? {}
 const bestOf = (store, k) => store.progress.best?.[k] ?? 0
@@ -23,7 +23,7 @@ export const GAMES = [
     icon: 'M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z',
     Component: MemoriaBiblica,
     stat: (store) => {
-      const known = CHARACTERS.filter((c) => (srsOf(store)[KEY(c)]?.box ?? 0) >= 1).length
+      const known = CHARACTERS.filter((c) => isKnown(srsOf(store)[KEY(c)])).length
       return known ? { text: `${known}/${CHARACTERS.length}` } : null
     },
   },

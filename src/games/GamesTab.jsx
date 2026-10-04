@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
-import { buildCards, memorizeSources } from './logic.js'
-import { achievements, dueCount, lastWeek, streak, todayISO } from './progress.js'
-import Review from './Review.jsx'
+import { memorizeSources } from './logic.js'
+import { achievements, lastWeek, streak, todayISO } from './progress.js'
+import Review, { SESSION, reviewSummary } from './Review.jsx'
 import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
 import { GameScreen, Quiz } from './ui.jsx'
 import Sheet from '../components/Sheet.jsx'
@@ -24,6 +24,7 @@ export default function GamesTab({ store, toast }) {
         <h1 className="page-title">Juegos</h1>
         <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
         <DailyCard store={store} onOpen={() => setDaily(true)} />
+        <p className="section-label">Más juegos</p>
         <div className="game-list">
           {GAMES.map((g) => {
             const st = g.stat?.(store)
@@ -122,17 +123,12 @@ function ProgressCard({ store, onReview, onMedals }) {
   const days = p.days ?? []
   const { current, best } = streak(days)
   const week = lastWeek(days)
-  const srs = p.srs ?? {}
   const { verses, memorized } = useStats(store)
   const medals = achievements(p, { nodes: store.nodes.length, memorized })
   const got = medals.filter((m) => m.done).length
-  const keys = [
-    ...buildCards(store.nodes, store.entries).map((c) => 'c:' + c.id),
-    ...verses.map((v) => 'v:' + v.id),
-    ...store.entries.filter((e) => e.kind === 'trivia').map((e) => 'q:' + e.id),
-    ...Object.keys(srs).filter((k) => k.startsWith('mb:')), // personajes que ya viste
-  ]
-  const due = dueCount(keys, srs)
+  // Lo que ya viste y hoy toca repasar, y las cosas nuevas de hoy (unas pocas por día).
+  const { due, fresh } = useMemo(() => reviewSummary(store), [store.nodes, store.entries, p]) // eslint-disable-line react-hooks/exhaustive-deps
+  const today = Math.min(due + fresh, SESSION)
 
   return (
     <section className="progress-card">
@@ -158,11 +154,11 @@ function ProgressCard({ store, onReview, onMedals }) {
       </div>
       <div className="stats-row">
         <div><b>{due}</b><span>para repasar hoy</span></div>
+        <div><b>{fresh}</b><span>{fresh === 1 ? 'nueva hoy' : 'nuevas hoy'}</span></div>
         <div><b>{memorized}<small>/{verses.length}</small></b><span>textos memorizados</span></div>
-        <div><b>{p.triviaBest ? p.triviaBest + '%' : '—'}</b><span>mejor trivia</span></div>
       </div>
       <div className="progress-actions">
-        <button className="primary" onClick={onReview}>{due ? `Repasar hoy · ${Math.min(due, 20)}` : 'Repasar hoy'}</button>
+        <button className="primary" onClick={onReview}>{today ? `Repasar hoy · ${today}` : 'Repasar hoy'}</button>
         <button className="secondary medals-btn" onClick={onMedals}>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 14.5 6 22l6-3 6 3-2-7.5M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           {got}/{medals.length}

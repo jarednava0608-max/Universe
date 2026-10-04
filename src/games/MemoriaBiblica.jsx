@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { GameScreen, Quiz, ModeCard, OrderPuzzle, Result, Sprint, cheer, fmtTime, toTop } from './ui.jsx'
 import { CHARACTERS, WORLDS } from './memoria/characters.js'
 import { KEY, PASS, inWorld, knownIn, unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, sprintQuestion, stars, trueFalseRound } from './memoria/logic.js'
-import { review, withBest } from './progress.js'
+import { isKnown, review, withBest } from './progress.js'
 import RefLink from '../components/RefLink.jsx'
 import Sheet from '../components/Sheet.jsx'
 
@@ -62,7 +62,7 @@ export default function MemoriaBiblica({ store, onExit }) {
   }
   if (screen.name === 'people') return <People world={screen.world} srs={srs} onBack={() => go('world', { world: screen.world })} />
 
-  const known = CHARACTERS.filter((c) => (srs[KEY(c)]?.box ?? 0) >= 1).length
+  const known = CHARACTERS.filter((c) => isKnown(srs[KEY(c)])).length
   return (
     <GameScreen title="Memoria Bíblica" onExit={onExit}>
       <div className="mb-hero">
@@ -245,7 +245,8 @@ function WhoAmI({ title, back, era, chars, daily, srs, best: bestNow, onAnswer, 
       setMissed((m) => [...m, q.ch])
       setRun(0)
     }
-    onAnswer(q.ch, ok)
+    // Con las 3 pistas (la última dice lo que hizo) no cuenta como sabido: vuelve mañana.
+    onAnswer(q.ch, ok && shown >= 3 ? 'help' : ok)
   }
   function next() {
     if (i + 1 >= round.length) {
@@ -358,8 +359,8 @@ function People({ world, srs, onBack }) {
   const [q, setQ] = useState('')
   const [only, setOnly] = useState('all')
   const fold = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  const isKnown = (c) => (srs[KEY(c)]?.box ?? 0) >= 1
-  const chars = inWorld(world).filter((c) => (!q.trim() || fold(c.n + ' ' + c.t).includes(fold(q.trim()))) && (only === 'all' || (only === 'known') === isKnown(c)))
+  const known = (c) => isKnown(srs[KEY(c)])
+  const chars = inWorld(world).filter((c) => (!q.trim() || fold(c.n + ' ' + c.t).includes(fold(q.trim()))) && (only === 'all' || (only === 'known') === known(c)))
   const idx = open ? chars.findIndex((c) => c.id === open.id) : -1
   return (
     <GameScreen title="Personajes" back={`Mundo ${world}`} era={world} onExit={onBack}>
@@ -374,7 +375,7 @@ function People({ world, srs, onBack }) {
         {chars.map((c) => (
           <li key={c.id}>
             <button className="entry-row" onClick={() => setOpen(c)}>
-              <span className={'mb-dot' + (isKnown(c) ? ' on' : '')} />
+              <span className={'mb-dot' + (known(c) ? ' on' : '')} />
               <span className="entry-main">
                 <span className="entry-title">{c.n}</span>
                 <span className="entry-sub">{c.t}</span>
@@ -396,7 +397,7 @@ function People({ world, srs, onBack }) {
           )}
         >
           <p className="mb-card-t">{open.t}</p>
-          <p className={'mb-status' + (isKnown(open) ? ' on' : '')}>{isKnown(open) ? 'Ya lo conoces' : 'Aún por aprender'}</p>
+          <p className={'mb-status' + (known(open) ? ' on' : '')}>{known(open) ? 'Ya lo conoces' : 'Aún por aprender'}</p>
           {open.p.map((x, k) => <p key={k} className="mb-clue">«{x}»</p>)}
           <p className="mb-clue last">{open.d}</p>
           <p className="ref"><RefLink refText={open.c} /></p>

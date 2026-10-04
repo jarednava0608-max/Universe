@@ -4,8 +4,9 @@ import { definitionText } from '../lib/markdown.js'
 
 // Texto de una definición para los juegos (sin subtítulos).
 export const defText = definitionText
-import { BOOKS, parseRef } from '../lib/bible.js'
-import { cleanVerseText } from '../lib/verses.js'
+import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
+import { cleanVerseText, refKey } from '../lib/verses.js'
+import { answerOf, parseArticle, reviewAnswer } from '../study/atalaya.js'
 
 export function shuffle(list, rnd = Math.random) {
   const a = [...list]
@@ -196,6 +197,79 @@ export function cardCheck(card, cards, rnd = Math.random) {
   return { type: 'choice', prompt, options, answer: options.indexOf(card.front) }
 }
 
+// ---------- Tu Atalaya en el repaso ----------
+
+// Tus respuestas de La Atalaya como tarjetas: cada pregunta de párrafo y cada "¿Qué responderías?"
+// con lo que tú contestaste (solo las que tienen respuesta). Lo más reciente primero, en el orden del artículo.
+export function atalayaCards(entries) {
+  const out = []
+  const list = entries
+    .filter((e) => e.kind === 'reunion' && String(e.fields.articulo ?? '').trim())
+    .sort((a, b) => String(b.fields.fecha ?? '').localeCompare(String(a.fields.fecha ?? '')) || (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+  for (const e of list) {
+    const art = parseArticle(e.fields.articulo)
+    const title = e.fields.titulo || (e.fields.tipo === 'entresemana' ? 'Reunión de entre semana' : 'La Atalaya')
+    const add = (id, label, front, back) => {
+      if (!front.trim() || back.replace(/[^\p{L}]/gu, '').length < 8) return
+      out.push({ id: e.id + ':' + id, group: e.id, title, label, front: front.trim(), back: back.trim() })
+    }
+    for (const b of art.bloques) add(b.key, `Párr. ${b.key}`, b.pregunta, answerOf(e.fields, b.key))
+    art.repaso.forEach((q, i) => add('r' + i, '¿Qué responderías?', q, reviewAnswer(e.fields, q)))
+  }
+  return out
+}
+
+// Sin trampa: la pregunta y elegir tu respuesta entre 4 (las otras son tus respuestas a otras
+// preguntas, primero del mismo artículo). null si no hay con qué armar las opciones.
+export function atalayaCheck(card, cards, rnd = Math.random) {
+  const answer = clipText(card.back, 160)
+  const seen = new Set([fold(answer)])
+  const pool = [...shuffle(cards.filter((c) => c.group === card.group), rnd), ...shuffle(cards.filter((c) => c.group !== card.group), rnd)]
+  const others = []
+  for (const c of pool) {
+    if (others.length >= 3) break
+    const o = clipText(c.back, 160)
+    if (seen.has(fold(o))) continue
+    seen.add(fold(o))
+    others.push(o)
+  }
+  if (others.length < 3) return null
+  const options = shuffle([answer, ...others], rnd)
+  return { options, answer: options.indexOf(answer) }
+}
+
+// ---------- "¿Con qué texto lo pruebas?" ----------
+
+// Una idea de tu mapa y elegir el texto bíblico que la apoya: los que enlaza ([[Juan 17:3]]) o
+// menciona en su definición. Las opciones falsas son textos de tus otras ideas. Los nodos que ya son
+// un texto ("Salmo 15:3") no son preguntas, ni los que citan tantos textos que cualquiera serviría.
+export function buildProofQuestions(nodes, count = 10, rnd = Math.random) {
+  const ideas = []
+  const all = new Map() // clave de la cita → la cita como la escribiste
+  for (const n of nodes) {
+    if (!n.title.trim() || parseRef(n.title)) continue
+    const refs = new Map()
+    for (const r of findRefs(defText(n.note))) {
+      const k = refKey(r)
+      if (k && parseRef(r)?.verse && !refs.has(k)) refs.set(k, r)
+    }
+    if (!refs.size || refs.size > 4) continue
+    ideas.push({ n, refs })
+    for (const [k, r] of refs) if (!all.has(k)) all.set(k, r)
+  }
+  const out = []
+  for (const { n, refs } of shuffle(ideas, rnd)) {
+    if (out.length >= count) break
+    const others = shuffle([...all].filter(([k]) => !refs.has(k)), rnd).slice(0, 3).map(([, r]) => r)
+    if (others.length < 3) continue
+    const mine = [...refs.values()]
+    const right = mine[Math.floor(rnd() * mine.length)]
+    const options = shuffle([right, ...others], rnd)
+    out.push({ prompt: n.title, options, answer: options.indexOf(right), ref: right, also: mine.filter((r) => r !== right), nodeId: n.id })
+  }
+  return out
+}
+
 // ---------- Memorizar textos ----------
 
 export function makeVerse({ cita = '', texto = '' } = {}) {
@@ -380,19 +454,25 @@ export function timedPoints(msLeft, msTotal) {
 
 // ---------- Repasar hoy ----------
 
-// Mezcla lo que toca hoy (tarjetas, textos y preguntas) en una sola sesión, alternando tipos.
-export function dailyMix({ cards = [], verses = [], trivia = [], people = [] }, srs, isDueFn, limit = 20, rnd = Math.random) {
-  const lists = [
-    cards.filter((c) => isDueFn(srs['c:' + c.id])).map((c) => ({ type: 'card', key: 'c:' + c.id, item: c })),
-    verses.filter((v) => isDueFn(srs['v:' + v.id])).map((v) => ({ type: 'verse', key: 'v:' + v.id, item: v })),
-    trivia.filter((t) => isDueFn(srs['q:' + t.id])).map((t) => ({ type: 'trivia', key: 'q:' + t.id, item: t })),
-    // Personajes de Memoria Bíblica: solo los que ya viste alguna vez.
-    people.filter((c) => srs['mb:' + c.id] && isDueFn(srs['mb:' + c.id])).map((c) => ({ type: 'person', key: 'mb:' + c.id, item: c })),
-    // Primero lo que ya toca por fecha; lo nunca visto va revuelto (si no, siempre salían las mismas primeras).
-  ].map((l) => shuffle(l, rnd).sort((a, b) => (srs[a.key]?.due ?? '\uffff').localeCompare(srs[b.key]?.due ?? '\uffff')))
+// Una sesión de repaso: primero lo que ya viste y hoy toca (lo más atrasado primero, alternando tipos);
+// después, si queda lugar, hasta `fresh` cosas nuevas (`fresh: true`). Lo nuevo de tu Atalaya va primero
+// y en orden; lo demás, alternado. Los personajes solo entran si ya los viste en Memoria Bíblica.
+export function dailyMix({ atalaya = [], cards = [], verses = [], trivia = [], people = [] }, srs, isDueFn, limit = 20, rnd = Math.random, fresh = Infinity) {
+  const tag = (type, prefix, list) => list.map((item) => ({ type, key: prefix + item.id, item }))
+  const lists = [tag('atalaya', 'a:', atalaya), tag('card', 'c:', cards), tag('verse', 'v:', verses), tag('trivia', 'q:', trivia), tag('person', 'mb:', people)]
+  const due = lists.map((l) => shuffle(l.filter((x) => srs[x.key] && isDueFn(srs[x.key])), rnd).sort((a, b) => (srs[a.key].due ?? '').localeCompare(srs[b.key].due ?? '')))
+  const out = alternate(due, limit)
+  const [mine, ...rest] = lists.slice(0, 4).map((l) => l.filter((x) => !srs[x.key]).map((x) => ({ ...x, fresh: true })))
+  const news = [...mine, ...alternate(rest.map((l) => shuffle(l, rnd)), Infinity)]
+  return [...out, ...news.slice(0, Math.max(0, Math.min(fresh, limit - out.length)))]
+}
+
+// Toma uno de cada lista por turno hasta llegar a `limit`.
+function alternate(lists, limit) {
+  const ls = lists.map((l) => [...l])
   const out = []
-  while (out.length < limit && lists.some((l) => l.length)) {
-    for (const l of lists) if (l.length && out.length < limit) out.push(l.shift())
+  while (out.length < limit && ls.some((l) => l.length)) {
+    for (const l of ls) if (l.length && out.length < limit) out.push(l.shift())
   }
   return out
 }

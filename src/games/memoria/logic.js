@@ -1,7 +1,7 @@
 // Lógica de Memoria Bíblica (sin interfaz, con pruebas).
 import { CHARACTERS, WORLDS } from './characters.js'
 import { shuffle } from '../logic.js'
-import { isDue } from '../progress.js'
+import { isDue, isKnown } from '../progress.js'
 
 export const KEY = (ch) => 'mb:' + ch.id
 export const ROUND = 10
@@ -19,9 +19,9 @@ export function unlockedWorlds(best = {}) {
   return open
 }
 
-// Cuántos personajes del mundo ya conoces (los acertaste al menos una vez seguida).
+// Cuántos personajes del mundo ya conoces (los acertaste en dos días distintos).
 export function knownIn(w, srs = {}) {
-  return inWorld(w).filter((c) => (srs[KEY(c)]?.box ?? 0) >= 1).length
+  return inWorld(w).filter((c) => isKnown(srs[KEY(c)])).length
 }
 
 // Personajes que no deben salir como opción falsa del otro: lo que hizo uno también lo hizo el otro
