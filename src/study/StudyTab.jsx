@@ -351,12 +351,15 @@ function EntryList({ items, onOpen, onDelete }) {
     <ul className="entry-list">
       {items.map((e) => {
         const def = KINDS[e.kind]
-        const day = e.kind === 'reunion' ? meetingDay(e.fields.fecha) : null
-        // En Reuniones la fecha ya va en su hoja de calendario; abajo solo el tipo.
-        const sub = day ? (e.fields.tipo === 'entresemana' ? 'Entre semana' : 'La Atalaya') : def.subtitle(e)
-        // Reuniones: tarjeta con la fecha como en un calendario, el título completo y el tipo.
+        const day = e.kind === 'reunion' || e.kind === 'diario' ? meetingDay(e.fields.fecha) : null
+        const diario = day && e.kind === 'diario'
+        // La fecha ya va en su hoja de calendario: abajo el tipo de reunión o el texto de ese día.
+        const sub = !day ? def.subtitle(e)
+          : diario ? (e.fields.texto?.trim() || 'Sin texto todavía')
+          : e.fields.tipo === 'entresemana' ? 'Entre semana' : 'La Atalaya'
+        // Reuniones y Texto diario: tarjeta con la fecha como en un calendario.
         const row = (
-            <button className={'entry-row' + (day ? ' meeting' : '')} onClick={() => onOpen(e)}>
+            <button className={'entry-row' + (day ? ' meeting' : '') + (diario ? ' daily' : '')} onClick={() => onOpen(e)}>
               {day && (
                 <span className="meeting-date" aria-hidden="true">
                   <b>{day.d}</b>
