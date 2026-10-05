@@ -39,7 +39,7 @@ export function reviewSummary(store) {
   return { due: all.length - fresh, fresh }
 }
 
-export default function Review({ store, onExit }) {
+export default function Review({ store, onExit, back }) {
   const [items] = useState(() => reviewItems(store))
   const [cards] = useState(() => buildCards(store.nodes, store.entries))
   const [mine] = useState(() => atalayaCards(store.entries))
@@ -58,7 +58,7 @@ export default function Review({ store, onExit }) {
   }
 
   return (
-    <GameScreen title="Repasar hoy" onExit={onExit}>
+    <GameScreen title="Repasar hoy" back={back} onExit={onExit}>
       {!items.length ? (
         <div className="result-card">
           <p className="result-big">¡Al día!</p>

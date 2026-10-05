@@ -1044,6 +1044,26 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .today-sub.pending, .entry-sub.pending { font-style: italic; color: var(--text-3); }
 .today-add { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 500; color: var(--text); background: rgba(var(--fg-rgb), 0.06); border: 1px solid var(--line-strong); }
 .today-add:active { background: rgba(var(--fg-rgb), 0.1); }
+/* "Hoy": los pasos del día */
+.today-card.plan { gap: 8px; padding-bottom: 12px; }
+.plan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.plan-count { flex: none; font-size: 12px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.plan-list { list-style: none; margin: 2px 0 0; padding: 0; }
+.plan-list li + li .plan-row { border-top: 1px solid var(--line); }
+.plan-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 0; text-align: left; }
+.plan-row .chev { color: var(--text-3); display: grid; }
+.plan-check { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--line-strong); color: var(--bg); }
+.plan-row.done .plan-check { background: var(--ok); border-color: var(--ok); }
+.plan-title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.plan-row.done .plan-title { color: var(--text-2); font-weight: 500; }
+.plan-sub { font-size: 13px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-foot { margin: 2px 0 0; font-size: 13px; color: var(--text-3); }
+.plan-change { padding: 12px 6px; margin: -12px 0 -12px 4px; font: inherit; color: var(--link); }
+.plan-setup { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.plan-setup-q { margin: 0; font-size: 14px; color: var(--text-2); line-height: 1.45; }
+.plan-setup-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.plan-setup-row label { display: grid; gap: 4px; min-width: 0; font-size: 12px; color: var(--text-3); }
+.plan-setup-row select { font-size: 16px; min-height: 44px; padding-right: 30px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16'%3E%3Cpath d='m7 10 5 5 5-5' fill='none' stroke='%2391919b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .continue-card { position: relative; display: grid; gap: 2px; width: 100%; padding: 12px 40px 12px 16px; margin-bottom: 16px; text-align: left; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
 .continue-card:active { background: var(--surface-2); }
 .continue-card .chev { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); }

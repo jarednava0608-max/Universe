@@ -18,7 +18,8 @@ import TabBar from './components/TabBar.jsx'
 import { dailyDone } from './games/daily.js'
 import Icon, { ICONS } from './components/Icon.jsx'
 import StudyTab from './study/StudyTab.jsx'
-import GamesTab from './games/GamesTab.jsx'
+import GamesTab, { Daily } from './games/GamesTab.jsx'
+import Review, { reviewSummary } from './games/Review.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import { OPEN_REF } from './lib/verses.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
@@ -45,7 +46,9 @@ export default function App() {
   const { nodes, edges } = store
   const graph = useRef()
 
-  const [tab, setTab] = useState('mapa') // 'mapa' | 'estudio' | 'juegos'
+  // La app abre en Estudio: arriba está "Hoy", lo que toca hacer hoy.
+  const [tab, setTab] = useState('estudio') // 'mapa' | 'estudio' | 'juegos'
+  const [play, setPlay] = useState(null) // 'review' | 'daily': Repasar hoy o el Reto del día, abiertos desde "Hoy"
   const [stack, setStack] = useState([]) // notas abiertas (para volver atrás)
   const [focusId, setFocusId] = useState(null)
   // Último nodo que viste: el mapa abre ahí (preferencia de este teléfono).
@@ -275,6 +278,9 @@ export default function App() {
     setTimeout(() => openNote(id), 50)
   }
 
+  // Para "Hoy" en Estudio: cuánto toca repasar y si ya hiciste el Reto del día.
+  const reviewToday = useMemo(() => (store.ready && tab === 'estudio' ? reviewSummary(store) : { due: 0, fresh: 0 }), [store.ready, tab, store.nodes, store.entries, store.progress]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!store.ready) return <div className="boot" />
 
   return (
@@ -315,8 +321,14 @@ export default function App() {
           onOpenNode={openNodeFromStudy}
           onSaveNode={store.saveNode}
           toast={toast}
+          review={reviewToday}
+          challenge={dailyDone(store.progress)}
+          onReview={() => setPlay('review')}
+          onChallenge={() => setPlay('daily')}
         />
       )}
+      {play === 'review' && <Review store={store} back="Estudio" onExit={() => setPlay(null)} />}
+      {play === 'daily' && <Daily store={store} back="Estudio" onExit={() => setPlay(null)} />}
       {tab === 'juegos' && <GamesTab store={store} toast={toast} />}
 
       {tab !== 'mapa' && (

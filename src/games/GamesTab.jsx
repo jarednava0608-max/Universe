@@ -71,11 +71,11 @@ function DailyCard({ store, onOpen }) {
   )
 }
 
-function Daily({ store, onExit }) {
+export function Daily({ store, onExit, back }) {
   const [questions] = useState(() => dailyQuestions({ nodes: store.nodes, entries: store.entries, best: store.progress.best }))
   const [nonce, setNonce] = useState(0)
   return (
-    <GameScreen title="Reto del día" onExit={onExit}>
+    <GameScreen title="Reto del día" back={back} onExit={onExit}>
       <Quiz
         key={nonce}
         questions={questions}

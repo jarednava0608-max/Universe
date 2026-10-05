@@ -5,6 +5,7 @@ import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyTextUrl, dailyTextAppUrl, dailyAnalyzed } from './kinds.js'
 import { answeredCount } from './atalaya.js'
+import TodayPlan from './TodayPlan.jsx'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -19,7 +20,7 @@ import AtalayaStudy from './AtalayaStudy.jsx'
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
 // Pestaña Estudio: 4 apartados, cada uno con su lista de entradas.
-export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast }) {
+export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
@@ -43,7 +44,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
     ...nodes.map((n) => ({ node: n, at: n.updatedAt || n.createdAt || 0 })),
   ].sort((a, b) => b.at - a.at).slice(0, 6), [entries, nodes])
   const openRecent = (r) => (r.node ? setPeekNode(r.node.id) : setEditing({ entry: r.entry, isNew: false }))
-  // Arriba en Estudio: el Texto diario de hoy y "Seguir donde te quedaste" (lo último que editaste esta semana).
+  // Arriba en Estudio: "Hoy" (lo que toca hacer hoy, en orden) y "Seguir donde te quedaste" (lo último que editaste esta semana).
   const todayEntry = byKind.diario.find((e) => e.fields.fecha === today())
   const last = recent[0] && recent[0].entry?.id !== todayEntry?.id && Date.now() - recent[0].at < 7 * 864e5 ? recent[0] : null
 
@@ -52,7 +53,18 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
       {!section ? (
         <PageScroll title="Estudio">
           <h1 className="page-title">Estudio</h1>
-          <TodayCard entry={todayEntry} onOpen={(e) => setEditing({ entry: e, isNew: false })} onAdd={() => setEditing({ entry: makeEntry('diario'), isNew: true })} />
+          <TodayPlan
+            entries={entries}
+            review={review}
+            challenge={challenge}
+            onOpenEntry={(e) => setEditing({ entry: e, isNew: false })}
+            onCreate={({ kind, fields }) => {
+              const e = makeEntry(kind)
+              setEditing({ entry: { ...e, fields: { ...e.fields, ...fields } }, isNew: true })
+            }}
+            onReview={onReview}
+            onChallenge={onChallenge}
+          />
           {last && (
             <button className="continue-card" onClick={() => openRecent(last)}>
               <span className="continue-label">Seguir donde te quedaste</span>
@@ -317,27 +329,6 @@ function firstSentence(text) {
   const t = (text || '').trim()
   const m = t.match(/^.{12,}?[.!?](\s|$)/)
   return (m ? m[0] : t).trim()
-}
-
-// Texto diario de hoy: si ya lo llenaste, el versículo; si no, invitación a agregarlo.
-function TodayCard({ entry, onOpen, onAdd }) {
-  const fecha = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
-  const texto = dailyVerse(entry?.fields.texto)
-  return (
-    <section className={'today-card' + (entry ? ' done' : '')}>
-      <span className="today-label">Texto de hoy · {fecha}</span>
-      {entry ? (
-        <button className="today-text" onClick={() => onOpen(entry)}>
-          <span className="today-verse">{texto ? (texto.length > 180 ? texto.slice(0, 180).replace(/\s+\S*$/, '') + '…' : texto) : 'Sin texto todavía'}</span>
-          {entry.fields.resumen ? <span className="today-sub">{entry.fields.resumen}</span> : !dailyAnalyzed(entry.fields) && texto && <span className="today-sub pending">Falta analizarlo</span>}
-        </button>
-      ) : (
-        <button className="today-add" onClick={onAdd}>
-          <Icon d={ICONS.plus} size={16} stroke={2} /> Agregar el texto de hoy
-        </button>
-      )}
-    </section>
-  )
 }
 
 // "2026-10-04" → { d: 4, m: 'oct' } para la fecha de cada reunión.
