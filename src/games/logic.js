@@ -238,6 +238,69 @@ export function atalayaCheck(card, cards, rnd = Math.random) {
   return { options, answer: options.indexOf(answer) }
 }
 
+// "¿De qué Atalaya es?": un trozo de un párrafo de tus artículos (hasta 4 por artículo, repartidos)
+// y elegir de qué artículo es (título y fecha). No necesita que hayas respondido nada.
+export const SOURCE_PER_ARTICLE = 4
+export function articleDate(iso) {
+  const [y, m, d] = String(iso ?? '').split('-').map(Number)
+  if (!y || !m || !d) return ''
+  return new Date(y, m - 1, d).toLocaleDateString('es', { day: 'numeric', month: 'long' })
+}
+export function atalayaSourceCards(entries) {
+  const out = []
+  const list = entries
+    .filter((e) => e.kind === 'reunion' && e.fields.tipo !== 'entresemana' && String(e.fields.articulo ?? '').trim())
+    .sort((a, b) => String(b.fields.fecha ?? '').localeCompare(String(a.fields.fecha ?? '')) || (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+  for (const e of list) {
+    const title = e.fields.titulo || 'La Atalaya'
+    const date = articleDate(e.fields.fecha)
+    const blocks = parseArticle(e.fields.articulo).bloques
+      .map((b) => ({ b, s: sentences(b.parrafos.join(' ')).filter((x) => x.split(' ').length >= 8).sort((x, y) => y.length - x.length)[0] }))
+      .filter((x) => x.s)
+    const n = Math.min(SOURCE_PER_ARTICLE, blocks.length)
+    for (let i = 0; i < n; i++) {
+      const { b, s } = blocks[Math.floor(((i + 0.5) * blocks.length) / n)]
+      out.push({ id: e.id + ':de:' + b.key, kind: 'source', group: e.id, title, date, fecha: e.fields.fecha ?? '', label: `Párr. ${b.key}`, front: clipText(s, 200), back: [title, date].filter(Boolean).join(' · ') })
+    }
+  }
+  return out
+}
+
+// Sin trampa: elegir el artículo entre tus otras Atalayas. Con un solo artículo, la semana en que
+// se estudió (su fecha y otras semanas cercanas). null si no hay con qué armar opciones.
+export function atalayaSourceCheck(card, cards, rnd = Math.random) {
+  const seen = new Set([card.group])
+  const others = []
+  for (const c of shuffle(cards, rnd)) {
+    if (others.length >= 3 || seen.has(c.group)) continue
+    seen.add(c.group)
+    others.push(c.back)
+  }
+  if (others.length && !others.includes(card.back)) {
+    const options = shuffle([card.back, ...others], rnd)
+    return { ask: '¿De qué Atalaya es?', options, answer: options.indexOf(card.back) }
+  }
+  if (!card.date) return null
+  const [y, m, d] = card.fecha.split('-').map(Number)
+  const near = shuffle([-21, -14, -7, 7, 14, 21], rnd).slice(0, 3).map((k) => {
+    const t = new Date(y, m - 1, d + k)
+    return articleDate(`${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`)
+  })
+  const options = shuffle([card.date, ...near], rnd)
+  return { ask: '¿Qué semana estudiaste este artículo?', options, answer: options.indexOf(card.date) }
+}
+
+// Junta tus respuestas y los trozos de "¿De qué Atalaya es?": uno de estos cada `every` respuestas.
+export function withSources(answers, sources, every = 3) {
+  const out = []
+  const s = [...sources]
+  answers.forEach((a, i) => {
+    out.push(a)
+    if ((i + 1) % every === 0 && s.length) out.push(s.shift())
+  })
+  return [...out, ...s]
+}
+
 // ---------- "¿Con qué texto lo pruebas?" ----------
 
 // Una idea de tu mapa y elegir el texto bíblico que la apoya: los que enlaza ([[Juan 17:3]]) o

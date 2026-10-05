@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { atalayaCards, atalayaCheck, buildProofQuestions, dailyMix, mulberry } from './logic.js'
+import { atalayaCards, atalayaCheck, atalayaSourceCards, atalayaSourceCheck, withSources, buildProofQuestions, dailyMix, mulberry } from './logic.js'
 import { isDue } from './progress.js'
 
 const ARTICULO = `1. ¿Cómo nos sentimos al ver el progreso de un estudiante?
@@ -47,6 +47,34 @@ describe('Tu Atalaya en el repaso', () => {
     expect(new Set(q.options).size).toBe(4)
     // Sin suficientes respuestas no hay pregunta (queda la tarjeta).
     expect(atalayaCheck(cards[0], cards.slice(0, 2))).toBe(null)
+  })
+})
+
+describe('¿De qué Atalaya es?', () => {
+  const art = (n) => Array.from({ length: n }, (_, i) => `${i + 1}. ¿Pregunta ${i + 1}?\n\n${i + 1} Corto. Esta es la oración más larga del párrafo número ${i + 1} del artículo.`).join('\n\n')
+  const ent = (id, fecha, n) => ({ id, kind: 'reunion', fields: { tipo: 'atalaya', fecha, titulo: 'Artículo ' + id, articulo: art(n) }, updatedAt: 1 })
+
+  it('hasta 4 trozos por artículo, repartidos, sin necesitar respuestas', () => {
+    const cards = atalayaSourceCards([ent('a', '2026-09-26', 12), ent('b', '2026-10-03', 2)])
+    expect(cards.map((c) => c.id)).toEqual(['b:de:1', 'b:de:2', 'a:de:2', 'a:de:5', 'a:de:8', 'a:de:11'])
+    expect(cards[0].front).toBe('Esta es la oración más larga del párrafo número 1 del artículo.')
+    expect(cards[0].back).toBe('Artículo b · 3 de octubre')
+  })
+
+  it('se elige el artículo; con uno solo, la semana', () => {
+    const cards = atalayaSourceCards([ent('a', '2026-09-26', 4), ent('b', '2026-10-03', 4)])
+    const q = atalayaSourceCheck(cards[0], cards, mulberry(2))
+    expect(q.options).toHaveLength(2)
+    expect(q.options[q.answer]).toBe('Artículo b · 3 de octubre')
+    const solo = atalayaSourceCards([ent('a', '2026-09-26', 4)])
+    const w = atalayaSourceCheck(solo[0], solo, mulberry(2))
+    expect(w.options).toHaveLength(4)
+    expect(w.options[w.answer]).toBe('26 de septiembre')
+    expect(new Set(w.options).size).toBe(4)
+  })
+
+  it('se intercalan con tus respuestas', () => {
+    expect(withSources([1, 2, 3, 4], ['x', 'y'], 2)).toEqual([1, 2, 'x', 3, 4, 'y'])
   })
 })
 
