@@ -289,6 +289,22 @@ SEEDS.push({
   }],
 })
 
+// 12) En "Ideas que me ayudan": su usuario del gimnasio, como lo pidió el usuario.
+SEEDS.push({
+  id: 'idea-usuario-gimnasio',
+  entries: [{
+    id: 'idea-usuario-gimnasio',
+    kind: 'idea',
+    fields: {
+      titulo: 'Mi usuario del gimnasio: 1486',
+      para: 'Entrar al gimnasio',
+      como: '',
+      cambia: '',
+      notas: 'Usuario: 1486',
+    },
+  }],
+})
+
 // La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
 // El artículo completo no va aquí (el repositorio es público); el usuario lo pega en su nodo desde la app.
 export const SEED_ATALAYA_CONOCER = {
