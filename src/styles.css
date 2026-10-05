@@ -462,6 +462,8 @@ a { color: inherit; }
 .round-btn:active { transform: scale(0.94); }
 
 .kind-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* Con un número impar de apartados, el último ocupa todo el ancho. */
+.kind-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
 .kind-card {
   position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
   min-height: 132px; padding: 14px; text-align: left;

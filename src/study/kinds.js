@@ -107,9 +107,30 @@ export const KINDS = {
       textos: refsIn(f.texto, f.preguntas),
     }),
   },
+
+  // Ideas que me ayudan: la imagen que traigo en la cabeza cuando algo me sale mejor
+  // ("cantar como Omar Camacho", "jugar como uno de Tigres"). Son personales: no van al mapa.
+  idea: {
+    label: 'Ideas que me ayudan',
+    short: 'Idea',
+    desc: 'La imagen que traes en la cabeza cuando algo te sale mejor',
+    icon: 'M13 2 3 14h9l-1 8 10-12h-9l1-8z',
+    noMap: true,
+    claudeNote: 'Ayúdame a describir la idea con claridad para que me sea fácil traerla a la mente.',
+    fields: [
+      { key: 'titulo', label: 'La idea', type: 'line', hint: 'Ej.: Cantar como Omar Camacho' },
+      { key: 'para', label: 'Para qué me sirve', type: 'line', hint: 'Ej.: Cantar, jugar fútbol, predicar' },
+      { key: 'como', label: 'Cómo me la imagino', type: 'text', hint: 'Ej.: Su timbre alto, su voz se escucha por encima de las demás' },
+      { key: 'cambia', label: 'Qué cambia cuando la traigo', type: 'text', hint: 'Ej.: Canto con más fuerza y afinado' },
+      { key: 'notas', label: 'Notas', type: 'text' },
+    ],
+    title: (e) => e.fields.titulo || 'Idea nueva',
+    subtitle: (e) => e.fields.para || firstLine(e.fields.como),
+    toNode: (f) => ({ title: f.titulo || 'Idea', idea: f.como }),
+  },
 }
 
-export const KIND_ORDER = ['diario', 'reunion', 'estudio', 'reflexion']
+export const KIND_ORDER = ['diario', 'reunion', 'estudio', 'reflexion', 'idea']
 
 export function makeEntry(kind) {
   const def = KINDS[kind]
@@ -153,6 +174,7 @@ const ALIASES = {
   reunion: { type: 'tipo', date: 'fecha', title: 'titulo', título: 'titulo', idea_principal: 'idea', paragraphs: 'parrafos', párrafos: 'parrafos', notes: 'notas', aplicación: 'aplicacion', application: 'aplicacion' },
   estudio: { title: 'titulo', título: 'titulo', idea_central: 'idea', hook: 'gancho', extracción: 'extraccion', golpe_logico: 'golpe', golpe_lógico: 'golpe', aha_extra: 'aha', summary: 'resumen' },
   reflexion: { title: 'titulo', título: 'titulo', nota: 'texto', note: 'texto', notas: 'texto', contenido: 'texto' },
+  idea: { title: 'titulo', título: 'titulo', idea: 'titulo', para_qué: 'para', para_que: 'para', como_me_la_imagino: 'como', cómo: 'como', imagen: 'como', que_cambia: 'cambia', qué_cambia: 'cambia', resultado: 'cambia', notes: 'notas' },
 }
 
 // Devuelve los campos del JSON pegado mezclados sobre los actuales (solo los que vienen con contenido).
@@ -203,7 +225,7 @@ export function claudeFormat(kind) {
 
 ${JSON.stringify(example, null, 2)}
 
-Usa solo información de jw.org y wol.jw.org. Deja vacío ("") lo que no aplique.`
+${def.claudeNote ?? 'Usa solo información de jw.org y wol.jw.org.'} Deja vacío ("") lo que no aplique.`
 }
 
 // ---------- "Copiar para Claude" ----------

@@ -19,7 +19,7 @@ import AtalayaStudy from './AtalayaStudy.jsx'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
-// Pestaña Estudio: 4 apartados, cada uno con su lista de entradas.
+// Pestaña Estudio: 5 apartados, cada uno con su lista de entradas.
 export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
@@ -777,9 +777,11 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, o
           }}>
             <Icon d={ICONS.pegar} size={18} /> Copiar para Claude
           </button>
-          <button className="secondary icon-left" onClick={() => setProposal(proposeNode(draft()))}>
-            <Icon d={ICONS.nodo} size={18} /> Proponer al mapa
-          </button>
+          {!def.noMap && (
+            <button className="secondary icon-left" onClick={() => setProposal(proposeNode(draft()))}>
+              <Icon d={ICONS.nodo} size={18} /> Proponer al mapa
+            </button>
+          )}
           {linked && (
             <button className="link-note" onClick={() => onOpenNode(linked.id)}>
               Ya está en el mapa como «{linked.title}» · Ver
