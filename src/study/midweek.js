@@ -127,3 +127,14 @@ export function midweekNode(fields) {
   if (String(fields?.notas ?? '').trim()) parts.push(`## Notas\n${fields.notas.trim()}`)
   return { title, note: parts.join('\n\n') }
 }
+
+// Las reuniones de esa semana en wol.jw.org ("2026-10-07" → .../meetings/r4/lp-s/2026/41):
+// wol las ordena por año y número de semana (ISO, la semana empieza en lunes).
+export function meetingsUrl(fecha) {
+  const [y, m, d] = String(fecha ?? '').split('-').map(Number)
+  if (!y || !m || !d) return 'https://wol.jw.org/es/wol/h/r4/lp-s'
+  const t = new Date(Date.UTC(y, m - 1, d))
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7)) // el jueves de esa semana
+  const week = Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7)
+  return `https://wol.jw.org/es/wol/meetings/r4/lp-s/${t.getUTCFullYear()}/${week}`
+}

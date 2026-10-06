@@ -4,7 +4,7 @@ import AutoText from '../components/AutoText.jsx'
 import { RefChips } from '../components/RefLink.jsx'
 import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl } from './midweek.js'
 
 // La reunión de entre semana por pasos, como La Atalaya: se pega el programa de la Guía de
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
@@ -128,6 +128,9 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
               <span className="sfield-label">Título</span>
               <input className="input" value={fields.titulo ?? ''} placeholder="La lectura de la semana" onChange={(e) => set({ titulo: e.target.value })} />
             </label>
+            <a className="secondary as-btn" data-direct="1" href={meetingsUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">
+              Ver esta semana en wol.jw.org
+            </a>
             <div className="sfield">
               <span className="sfield-label">La semana completa de la Guía de actividades</span>
               <AutoText value={fields.programa ?? ''} placeholder="En JW Library abre la Guía de actividades, copia toda la semana y pégala aquí" onChange={setProgram} minRows={6} />
@@ -149,6 +152,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
             key={pt.num}
             pt={pt}
             fields={fields}
+            fecha={fields.fecha}
             onAnswer={(k, v) => setFields((f) => withAnswer(f, k, v))}
             last={idx === partes.length - 1}
             onPrev={() => (idx > 0 ? go('partes', idx - 1) : go('programa'))}
@@ -216,7 +220,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
 
 // Una parte del programa: su sección, el texto con las citas tocables y una tarjeta de respuesta
 // debajo de cada pregunta. Si no tiene preguntas (lectura, maestros, estudio bíblico), lleva notas.
-function Part({ pt, fields, onAnswer, last, onPrev, onNext }) {
+function Part({ pt, fields, fecha, onAnswer, last, onPrev, onNext }) {
   const refs = useMemo(() => findAllRefs(pt.titulo, ...pt.lineas.map((l) => l.text)), [pt])
   const asks = pt.lineas.some((l) => l.q)
   return (
@@ -241,6 +245,7 @@ function Part({ pt, fields, onAnswer, last, onPrev, onNext }) {
           <RefChips refs={refs} />
         </div>
       )}
+      <a className="at-jw" data-direct="1" href={meetingsUrl(fecha)} target="_blank" rel="noopener noreferrer">Ver la reunión en wol.jw.org</a>
       {!asks && (
         <label className="at-answer">
           <span className="at-answer-label">Mis notas</span>

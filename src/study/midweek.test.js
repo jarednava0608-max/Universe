@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone } from './midweek.js'
+import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl } from './midweek.js'
 import { entryForClaude, proposeNode } from './kinds.js'
 
 // Tal como se copia de la Guía de actividades en JW Library (5-11 de octubre de 2026, recortado).
@@ -96,6 +96,14 @@ describe('reunión de entre semana', () => {
       '## Busquemos perlas escondidas\n¿Qué perlas espirituales ha encontrado en la lectura bíblica de esta semana?\nQue Jehová cumple lo que promete.',
       '## Cómo lo aplico\nApoyar a las viudas de mi congregación.',
     ].join('\n\n'))
+  })
+
+  it('el enlace a la semana en wol.jw.org usa el número de semana', () => {
+    expect(meetingsUrl('2026-10-05')).toBe('https://wol.jw.org/es/wol/meetings/r4/lp-s/2026/41')
+    expect(meetingsUrl('2026-10-11')).toBe('https://wol.jw.org/es/wol/meetings/r4/lp-s/2026/41')
+    expect(meetingsUrl('2026-10-12')).toBe('https://wol.jw.org/es/wol/meetings/r4/lp-s/2026/42')
+    expect(meetingsUrl('2027-01-01')).toBe('https://wol.jw.org/es/wol/meetings/r4/lp-s/2026/53')
+    expect(meetingsUrl('')).toBe('https://wol.jw.org/es/wol/h/r4/lp-s')
   })
 
   it('un texto sin programa no da partes', () => {
