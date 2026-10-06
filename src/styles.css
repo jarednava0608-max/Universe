@@ -1053,6 +1053,8 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 /* ---------- Avance en la lista de juegos ---------- */
 .game-list > * { min-width: 0; }
 .game-card .entry-main { min-width: 0; }
+.game-card .entry-main { display: grid; gap: 2px; }
+.game-card .game-pill { justify-self: start; margin-top: 6px; }
 .game-pill { flex: none; font-size: 12px; font-weight: 600; color: var(--text-2); background: rgba(var(--fg-rgb), 0.06); border: 1px solid var(--line); padding: 3px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; }
 .game-pill.due { color: var(--ok); background: rgba(134, 239, 172, 0.1); border-color: rgba(134, 239, 172, 0.25); }
 
@@ -1466,3 +1468,22 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mm-stars-h { margin: 12px 0 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #e3b341; }
 .mm-stars .mm-item:last-child { border-bottom: 0; }
 .mm-star { color: #e3b341; }
+
+/* ---------- Estilo "Como JW": pulido general ---------- */
+/* En las listas de un apartado, "‹ Estudio" y el + van en el mismo renglón (el título ya está arriba). */
+:root[data-style='jw'] .back-link { color: var(--accent); }
+:root[data-style='jw'] .back-link + .page-head { margin-top: -44px; margin-bottom: 10px; min-height: 44px; }
+:root[data-style='jw'] .back-link + .page-head .round-btn { width: 36px; height: 36px; margin-bottom: 0; }
+/* Todas las tarjetas con las mismas esquinas casi rectas, fondo liso y un toque que se nota. */
+:root[data-style='jw'] :is(.game-card, .progress-card, .mode-card, .medal, .mb-world, .mb-goal, .result-stats, .order-built, .missed-item) { border-radius: 6px; background: var(--surface); box-shadow: none; }
+:root[data-style='jw'] :is(.game-icon, .kind-icon, .daily-icon, .flame) { border-radius: 6px; }
+:root[data-style='jw'] :is(.game-icon, .kind-icon) { color: var(--accent); background: var(--accent-soft); }
+:root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .today-text, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
+:root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .today-text, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
+:root[data-style='jw'] .continue-label { color: var(--accent); }
+:root[data-style='jw'] .kind-card { min-height: 120px; }
+/* Las etiquetas de los campos un poco más claras y separadas, como en los formularios de JW Library. */
+:root[data-style='jw'] .sfield-label { font-size: 14px; font-weight: 600; color: var(--text-2); }
+:root[data-style='jw'] .input { border-radius: 6px; }
+:root[data-style='jw'] .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+:root[data-style='jw'] .today-add { border-radius: 6px; color: var(--accent); background: var(--accent-soft); border-color: transparent; font-weight: 600; }

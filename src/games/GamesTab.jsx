@@ -34,8 +34,8 @@ export default function GamesTab({ store, toast }) {
                 <span className="entry-main">
                   <span className="game-title">{g.title}{g.soon && <em className="soon-tag">Pronto</em>}</span>
                   <span className="entry-sub">{g.desc}</span>
+                  {st && <span className={'game-pill' + (st.due ? ' due' : '')}>{st.text}</span>}
                 </span>
-                {st && <span className={'game-pill' + (st.due ? ' due' : '')}>{st.text}</span>}
                 <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
               </button>
             )
