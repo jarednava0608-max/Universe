@@ -1177,6 +1177,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-answer .input:focus { outline: none; box-shadow: none; }
 .at-nav { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
 .at-nav .primary, .at-nav .secondary { margin-top: 0; }
+/* Entre semana: el texto de cada parte y sus preguntas. */
+.mw-text { font-size: 16px; line-height: 1.55; color: var(--text-body); margin: 0 0 12px; }
+.at-question.mw-q { font-size: 16px; margin-top: 4px; }
 .at-missing { display: flex; flex-wrap: wrap; gap: 6px; }
 .at-missing button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 14px; }
 .primary:disabled { opacity: 0.4; }

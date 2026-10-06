@@ -33,7 +33,7 @@ function meetingEntry(entries, midweek, day) {
 }
 
 const when = (days, weekday) => (days === 0 ? 'Hoy' : days === 1 ? 'Mañana' : `El ${DAYS[weekday]}`)
-const hasContent = (f) => ['idea', 'aplicacion', 'notas'].some((k) => String(f[k] ?? '').trim()) || (f.parrafos ?? []).some((p) => String(p.nota ?? '').trim())
+const hasContent = (f) => ['idea', 'aplicacion', 'notas'].some((k) => String(f[k] ?? '').trim()) || (f.parrafos ?? []).some((p) => String(p.nota ?? '').trim()) || Object.values(f.respuestas ?? {}).some((v) => String(v ?? '').trim())
 
 // meetings: { semana: 0-6, fin: 0-6 } (días de la semana, 0 = domingo) o null si aún no los eliges.
 // review: { due, fresh } de Repasar hoy. challenge: el resultado del Reto del día de hoy o null.

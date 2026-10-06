@@ -5,6 +5,7 @@ import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyTextUrl, dailyTextAppUrl, dailyAnalyzed } from './kinds.js'
 import { answeredCount } from './atalaya.js'
+import { midweekCount } from './midweek.js'
 import TodayPlan from './TodayPlan.jsx'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
@@ -16,6 +17,7 @@ import { findSavedVerse, findAllRefs, anyRefKey } from '../lib/verses.js'
 import TitleArea from '../components/TitleArea.jsx'
 import AutoText from '../components/AutoText.jsx'
 import AtalayaStudy from './AtalayaStudy.jsx'
+import MidweekStudy from './MidweekStudy.jsx'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -194,6 +196,23 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
 
+      {editing && isMidweek(editing.entry) && (
+        <MidweekStudy
+          key={editing.entry.id}
+          entry={editing.entry}
+          isNew={editing.isNew}
+          toast={toast}
+          onSave={onSaveEntry}
+          onClose={() => setEditing(null)}
+          onDelete={async (id) => {
+            await onDeleteEntry(id)
+            setEditing(null)
+            toast('Reunión eliminada.')
+          }}
+          onSwitchToAtalaya={(e) => setEditing({ entry: e, isNew: editing.isNew })}
+        />
+      )}
+
       {proposal && (
         <ProposeSheet
           initial={proposal.node}
@@ -209,7 +228,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
 
-      {editing && !KINDS[editing.entry.kind].notes && !isAtalaya(editing.entry) && (
+      {editing && !KINDS[editing.entry.kind].notes && editing.entry.kind !== 'reunion' && (
         <EntryEditor
           key={editing.entry.id}
           entry={editing.entry}
@@ -354,7 +373,7 @@ function EntryList({ items, onOpen, onDelete }) {
         const progress = isAtalaya(e) && String(e.fields.articulo ?? '').trim() ? answeredCount(e.fields) : null
         const sub = !day ? def.subtitle(e)
           : diario ? (verse ? e.fields.resumen || (pending ? 'Falta analizarlo' : '') : 'Sin texto todavía')
-          : e.fields.tipo === 'entresemana' ? 'Entre semana'
+          : e.fields.tipo === 'entresemana' ? midweekSub(e.fields)
           : progress?.total ? `La Atalaya · ${progress.done === progress.total ? 'Lista para la reunión' : `${progress.done} de ${progress.total} respondidas`}` : 'La Atalaya'
         // Reuniones y Texto diario: tarjeta con la fecha como en un calendario.
         const row = (
@@ -380,8 +399,13 @@ function EntryList({ items, onOpen, onDelete }) {
 }
 
 
-// La Atalaya se estudia por pasos; la reunión de entre semana usa el formulario.
+// Las dos reuniones se estudian por pasos: La Atalaya y la de entre semana (con el programa pegado).
 const isAtalaya = (e) => e.kind === 'reunion' && e.fields.tipo !== 'entresemana'
+const isMidweek = (e) => e.kind === 'reunion' && e.fields.tipo === 'entresemana'
+function midweekSub(f) {
+  const c = midweekCount(f)
+  return c.total ? `Entre semana · ${c.done === c.total ? 'Lista para la reunión' : `${c.done} de ${c.total} contestadas`}` : 'Entre semana'
+}
 
 // Lo último que tocaste: entradas de Estudio y nodos del mapa.
 function RecentList({ items, onOpen }) {

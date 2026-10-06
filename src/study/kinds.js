@@ -4,6 +4,7 @@
 import { newId } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
 import { highlightArticle } from './atalaya.js'
+import { midweekForClaude } from './midweek.js'
 
 export const today = () => {
   const d = new Date()
@@ -252,6 +253,9 @@ export function entryForClaude(entry) {
   // Repaso de La Atalaya por pasos: cada pregunta con mi respuesta.
   const repaso = (f.repaso ?? []).filter((r) => String(r.nota ?? '').trim())
   if (repaso.length) parts.push(`Repaso:\n${repaso.map((r) => `${r.pregunta}\n${String(r.nota).trim()}`).join('\n')}`)
+  // Reunión de entre semana: cada parte con sus preguntas y lo que contesté.
+  const semana = f.programa ? midweekForClaude(f) : ''
+  if (semana) parts.push(`Mis respuestas:\n${semana}`)
   return `Esto es lo que llevo en mi apartado "${def.label}" de la app. Revísalo conmigo:\n\n${parts.join('\n\n')}`
 }
 
