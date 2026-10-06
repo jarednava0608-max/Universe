@@ -4,7 +4,8 @@ import AutoText from '../components/AutoText.jsx'
 import RefLink from '../components/RefLink.jsx'
 import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, meetingItems } from './midweek.js'
+import MeetingMode from './MeetingMode.jsx'
 import { useMeetings } from './meetings.js'
 import { DAYS } from './today.js'
 
@@ -32,6 +33,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
   const jump = useRef()
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
   const [editingProgram, setEditingProgram] = useState(false)
+  const [meeting, setMeeting] = useState(false)
 
   const hasContent = (f) => Boolean(String(f.programa ?? '').trim() || ['idea', 'aplicacion', 'notas'].some((k) => String(f[k] ?? '').trim()))
   async function flush() {
@@ -154,6 +156,9 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
               <p className="mw-cover-title">{fields.titulo || prog.lectura || 'Reunión de entre semana'}</p>
               <p className="at-summary">{meetingDay(fields.fecha)}{count.total ? ` · ${count.done} de ${count.total} contestadas` : ''}</p>
             </div>
+            {count.done > 0 && (
+              <button className="secondary mm-open" onClick={() => setMeeting(true)}>Modo reunión: solo mis respuestas</button>
+            )}
             {readingChapters(prog.lectura).length > 0 && (
               <div className="mw-reading">
                 <p className="at-label">Lectura de la semana</p>
@@ -308,6 +313,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
               <AutoText value={fields.notas ?? ''} placeholder="Lo que quieras recordar" onChange={(v) => set({ notas: v })} />
             </label>
             <div className="action-stack">
+              {count.done > 0 && <button className="secondary" onClick={() => setMeeting(true)}>Modo reunión: solo mis respuestas</button>}
               <button className="secondary icon-left" onClick={async () => {
                 try { await navigator.clipboard.writeText(entryForClaude({ ...base.current, fields })); toast('Copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
               }}>
@@ -324,6 +330,14 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
           </>
         )}
       </div>
+      {meeting && (
+        <MeetingMode
+          kicker={['Vida y Ministerio', prog.semana].filter(Boolean).join(' · ')}
+          title={fields.titulo || prog.lectura || 'Reunión de entre semana'}
+          items={meetingItems(fields)}
+          onClose={() => setMeeting(false)}
+        />
+      )}
     </div>
   )
 }

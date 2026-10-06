@@ -4,7 +4,8 @@ import AutoText from '../components/AutoText.jsx'
 import { RefChips } from '../components/RefLink.jsx'
 import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude, formatDate } from './kinds.js'
-import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl } from './atalaya.js'
+import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
+import MeetingMode from './MeetingMode.jsx'
 
 // La Atalaya por pasos, como recomienda jw.org para prepararse: primero una idea general
 // (título, subtítulos y preguntas de repaso), luego cada párrafo buscando la respuesta y
@@ -29,6 +30,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
   const exists = useRef(!isNew)
   const top = useRef()
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
+  const [meeting, setMeeting] = useState(false)
 
   const hasContent = (f) => Boolean(String(f.articulo ?? '').trim() || String(f.titulo ?? '').trim() || (f.parrafos ?? []).some((p) => p.nota?.trim()))
   async function flush(extra = {}) {
@@ -179,6 +181,10 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
         {step === 'vistazo' && (
           <>
             <h2 className="at-h">Primero, una idea general</h2>
+            {answered > 0 && (
+              <button className="secondary icon-left mm-open" onClick={() => setMeeting(true)}>Modo reunión: solo mis respuestas</button>
+            )}
+
             <p className="at-tip">Antes de leer, fíjate en el título y el texto temático, en cómo cada subtítulo se relaciona con el tema y en las imágenes. Las preguntas de repaso te dicen las ideas principales.</p>
             <div className="at-card at-cover">
               <p className="at-cover-kicker">La Atalaya{fields.fecha ? ` · ${formatDate(fields.fecha)}` : ''}</p>
@@ -273,6 +279,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
               </>
             )}
             <div className="action-stack">
+              {answered > 0 && <button className="secondary" onClick={() => setMeeting(true)}>Modo reunión: solo mis respuestas</button>}
               <button className="secondary icon-left" onClick={async () => {
                 try { await navigator.clipboard.writeText(entryForClaude({ ...base.current, fields })); toast('Copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
               }}>
@@ -289,6 +296,14 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
           </>
         )}
       </div>
+      {meeting && (
+        <MeetingMode
+          kicker={['La Atalaya', fields.fecha && formatDate(fields.fecha)].filter(Boolean).join(' · ')}
+          title={fields.titulo || 'La Atalaya'}
+          items={meetingItems(fields)}
+          onClose={() => setMeeting(false)}
+        />
+      )}
     </div>
   )
 }

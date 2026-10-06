@@ -223,3 +223,16 @@ export function highlightArticle(articulo, marcas = {}) {
   for (const [a, z] of spots.sort((x, y) => y[0] - x[0])) out = out.slice(0, a) + '==' + out.slice(a, z) + '==' + out.slice(z)
   return out
 }
+
+// Para el modo reunión: cada pregunta en orden (con su subtítulo como sección) y tu respuesta,
+// y al final los "¿Qué responderías?".
+export function meetingItems(fields) {
+  const art = parseArticle(fields?.articulo)
+  let section = ''
+  const out = art.bloques.map((b) => {
+    if (b.subtitulo) section = b.subtitulo
+    return { section, label: `${b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} ${b.key}`, question: b.pregunta, answer: answerOf(fields, b.key) }
+  })
+  for (const q of art.repaso) out.push({ section: '¿Qué responderías?', label: 'Repaso', question: q, answer: reviewAnswer(fields, q) })
+  return out
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseArticle, questionNums, withAnswer, answerOf, keyPhrases, firstUnanswered, withReview, reviewAnswer, paragraphUrl, highlightArticle } from './atalaya.js'
+import { parseArticle, questionNums, withAnswer, answerOf, keyPhrases, firstUnanswered, withReview, reviewAnswer, paragraphUrl, highlightArticle, meetingItems } from './atalaya.js'
 import { proposeNode } from './kinds.js'
 import { markdownToHtml } from '../lib/markdown.js'
 
@@ -162,5 +162,18 @@ describe('La Atalaya: cuántas llevas (lista de Reuniones)', () => {
     const fields = withAnswer(withAnswer({ articulo: ARTICULO }, '1', 'Felices.'), '3, 4', '  ')
     expect(answeredCount(fields)).toEqual({ done: 1, total: 3 })
     expect(answeredCount({})).toEqual({ done: 0, total: 0 })
+  })
+
+  it('modo reunión: cada pregunta con su subtítulo y tu respuesta, y el repaso al final', () => {
+    const f = withAnswer({ articulo: ARTICULO }, '2', 'Que todos lo conozcan.')
+    const items = meetingItems(f)
+    expect(items.map((x) => [x.section, x.label])).toEqual([
+      ['', 'Párrafo 1'],
+      ['', 'Párrafo 2'],
+      ['Enseñemos cómo es Jehová', 'Párrafos 3, 4'],
+      ['¿Qué responderías?', 'Repaso'],
+      ['¿Qué responderías?', 'Repaso'],
+    ])
+    expect(items[1]).toMatchObject({ question: '¿Cuál es la voluntad de Jehová? (1 Timoteo 2:3, 4).', answer: 'Que todos lo conozcan.' })
   })
 })

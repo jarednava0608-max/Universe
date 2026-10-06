@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate, splitAsides, splitRefs, readingChapters, keysOf, midweekAnswers } from './midweek.js'
+import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate, splitAsides, splitRefs, readingChapters, keysOf, midweekAnswers, meetingItems } from './midweek.js'
 import { entryForClaude, proposeNode } from './kinds.js'
 
 // Tal como se copia de la Guía de actividades en JW Library (5-11 de octubre de 2026, recortado).
@@ -152,6 +152,16 @@ describe('reunión de entre semana', () => {
     expect(midweekCount(f).done).toBe(1)
     expect(midweekAnswers(f).at(-1).rows).toEqual([{ key: 'e:1', pregunta: '¿Qué aprendemos?', respuesta: 'Que Jehová nos cuida.' }])
     expect(midweekForClaude(f)).toContain('6. Estudio bíblico de la congregación\n¿Qué aprendemos?\nQue Jehová nos cuida.')
+  })
+
+  it('modo reunión: las preguntas en orden con tu respuesta', () => {
+    let f = { programa: PROGRAMA }
+    f = withAnswer(f, '1-0', 'Mediante la congregación.')
+    f = withAnswer(f, '3', 'Leer despacio.')
+    const items = meetingItems(f)
+    expect(items.map((x) => x.label)).toEqual(['Parte 1', 'Parte 2', 'Parte 2', 'Parte 3', 'Parte 5'])
+    expect(items[0]).toMatchObject({ section: 'Tesoros de la Biblia', sec: 'tesoros', question: 'Para meditar: ¿Cómo nos protege Jehová a cada uno de nosotros hoy en día? (Pr 4:5, 6; 1Te 5:14).', answer: 'Mediante la congregación.' })
+    expect(items[3]).toMatchObject({ question: 'Lectura de la Biblia', answer: 'Leer despacio.' })
   })
 
   it('un texto sin programa no da partes', () => {

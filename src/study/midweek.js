@@ -242,3 +242,18 @@ export function splitRefs(text, refs) {
   if (rest) out.push({ text: rest })
   return out
 }
+
+// Para el modo reunión: cada pregunta en orden con su sección y tu respuesta; las del estudio
+// bíblico si pegaste el capítulo; y las notas de las partes sin preguntas, solo si escribiste algo.
+export function meetingItems(fields) {
+  const out = []
+  for (const pt of parseProgram(fields?.programa).partes) {
+    const base = { section: pt.seccion, sec: pt.sec }
+    for (const l of pt.lineas) if (l.q) out.push({ ...base, label: `Parte ${pt.num}`, question: qText(l), answer: answerOf(fields, l.key) })
+    const study = isStudyPart(pt) ? studyBlocks(fields) : []
+    for (const b of study) out.push({ ...base, label: `Estudio bíblico · ${b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} ${b.key}`, question: b.pregunta, answer: answerOf(fields, studyKey(b)) })
+    const nota = !pt.lineas.some((l) => l.q) && !study.length ? answerOf(fields, String(pt.num)).trim() : ''
+    if (nota) out.push({ ...base, label: `Parte ${pt.num}`, question: pt.titulo, answer: nota })
+  }
+  return out
+}
