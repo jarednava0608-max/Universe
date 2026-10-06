@@ -823,6 +823,12 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .ref-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .ref-sheet-title { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
 .ref-sheet-text p { margin: 0; font-family: var(--font-display); font-size: 19px; line-height: 1.6; color: var(--text-body); white-space: pre-line; }
+/* Texto bíblico como en JW Library: letra de libro, capítulo grande y números de versículo en azul. */
+:root { --verse-num: #8fa2e8; --font-book: 'Iowan Old Style', 'Palatino', 'Book Antiqua', Georgia, serif; }
+:root[data-theme='light'] { --verse-num: #4a64b8; }
+.ref-sheet-text .bible-text { font-family: var(--font-book); font-size: 21px; line-height: 1.62; color: var(--title); white-space: normal; -webkit-hyphens: none; hyphens: none; }
+.bible-chap { float: left; font-family: var(--font-display); font-weight: 700; font-size: 52px; line-height: 0.9; color: var(--verse-num); margin: 6px 12px 0 0; }
+.bible-v { font-family: var(--font-display); font-weight: 700; font-size: 0.86em; color: var(--verse-num); margin: 0 6px 0 4px; }
 .ref-sheet-source { display: block; margin-top: 8px; font-size: 12.5px; color: var(--text-3); }
 .ref-sheet-input { margin: 4px 0 8px; resize: vertical; line-height: 1.5; }
 .ref-sheet-links { display: grid; gap: 8px; margin-top: 16px; }

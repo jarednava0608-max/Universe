@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { refUrl, parseRef } from '../lib/bible.js'
 import { findSavedVerse, jwLibraryUrl, makeBibleEntry, cleanVerseText, isPub, splitChapter, chapterCheck, chapterSaved, refKey } from '../lib/verses.js'
 import { pubTitle, pubUrl } from '../lib/pubs.js'
@@ -18,6 +18,11 @@ export default function RefSheet({ refText, entries, onSave, onSaveMany, onClose
   const [text, setText] = useState(saved?.texto ?? '')
   // Capítulo pegado que no salió completo: se avisa cuáles faltan antes de guardar.
   const [incomplete, setIncomplete] = useState(null)
+  // Al guardar, la hoja vuelve al principio del texto (si no, se queda abajo donde estaba el cuadro).
+  const textTop = useRef()
+  useEffect(() => {
+    if (!editing) textTop.current?.scrollIntoView({ block: 'nearest' })
+  }, [editing])
 
   async function saveVerses(verses) {
     const list = verses.map(({ v, texto }) => {
@@ -106,8 +111,8 @@ export default function RefSheet({ refText, entries, onSave, onSaveMany, onClose
           )}
         </>
       ) : (
-        <div className="ref-sheet-text">
-          <p>{saved.texto}</p>
+        <div className="ref-sheet-text" ref={textTop}>
+          {pub ? <p>{saved.texto}</p> : <VerseText text={saved.texto} multi={saved.source === 'capitulo' || saved.source === 'versos'} verse={parsed?.verse} chapter={parsed?.chapter} />}
           {saved.source === 'capitulo' && chapter ? (
             <span className="ref-sheet-source">{chapterNote(chapterSaved(entries, refText))}</span>
           ) : SOURCE[saved.source] && <span className="ref-sheet-source">{SOURCE[saved.source]}</span>}
@@ -129,4 +134,23 @@ function listNums(nums) {
 function chapterNote({ saved, expected }) {
   if (!expected) return SOURCE.capitulo
   return saved >= expected ? `Capítulo completo: los ${expected} versículos guardados` : `Tienes ${saved} de ${expected} versículos de este capítulo`
+}
+
+// El texto bíblico como en JW Library: corrido, con letra de libro, el número del capítulo grande
+// en lugar del versículo 1 y los demás números chicos en azul. Lo guardado de varios versículos
+// viene un versículo por renglón ("2 Ismael hijo de…").
+function VerseText({ text, multi, verse, chapter }) {
+  const verses = multi
+    ? String(text).split('\n').map((l) => l.match(/^(\d{1,3})\s+(.*)$/)).filter(Boolean).map((m) => ({ v: Number(m[1]), t: m[2] }))
+    : [{ v: verse, t: String(text).trim() }]
+  return (
+    <p className="bible-text">
+      {verses.map(({ v, t }, i) => (
+        <span key={i}>
+          {v === 1 && chapter ? <span className="bible-chap">{chapter}</span> : v ? <span className="bible-v">{v}</span> : null}
+          {t}{' '}
+        </span>
+      ))}
+    </p>
+  )
 }
