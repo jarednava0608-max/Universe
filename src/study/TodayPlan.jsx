@@ -2,20 +2,21 @@ import { useState } from 'react'
 import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { DAYS, todayPlan, looksLikeDailyText } from './today.js'
+import { openRef } from '../lib/verses.js'
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
 const clip = (s, n = 160) => (s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s)
 
 // "Hoy": el texto de hoy arriba y, abajo, los pasos del día en orden. Cada paso se toca para hacerlo
 // y se marca solo cuando ya está hecho (ver today.js).
-export default function TodayPlan({ entries, review, challenge, onOpenEntry, onCreate, onPasteDaily, onReview, onChallenge, toast }) {
+export default function TodayPlan({ entries, review, challenge, leidos, plan, onBible, onOpenEntry, onCreate, onPasteDaily, onReview, onChallenge, toast }) {
   const [meetings, setMeetings] = useMeetings()
   const [changing, setChanging] = useState(false)
-  const items = todayPlan({ entries, review, challenge, meetings })
+  const items = todayPlan({ entries, review, challenge, meetings, leidos, plan })
   const diario = items[0]
   const done = items.filter((x) => x.done).length
   const fecha = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
-  const act = (it) => (it.key === 'repaso' ? onReview() : it.key === 'reto' ? onChallenge() : it.entry ? onOpenEntry(it.entry) : onCreate(it.create))
+  const act = (it) => (it.key === 'lectura' ? (it.ref ? openRef(it.ref) : onBible()) : it.key === 'repaso' ? onReview() : it.key === 'reto' ? onChallenge() : it.entry ? onOpenEntry(it.entry) : onCreate(it.create))
   const setup = changing || meetings?.semana == null || meetings?.fin == null
 
   async function pasteDaily() {

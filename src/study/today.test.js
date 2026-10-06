@@ -69,3 +69,38 @@ describe('Hoy: lo que toca según tu rutina', () => {
     expect(looksLikeDailyText('Una lista del súper con pan, leche y huevos para la semana')).toBe(false)
   })
 })
+
+describe('Hoy: lectura de la Biblia con meta', () => {
+  const MON = new Date(2026, 9, 5, 9, 0)
+  const plan = { start: '2026-10-05', end: '2027-10-04', t: 1 }
+
+  it('sin meta no sale', () => {
+    expect(todayPlan({ now: MON }).some((x) => x.key === 'lectura')).toBe(false)
+  })
+
+  it('con meta dice qué capítulos tocan y se marca al leerlos', () => {
+    const it0 = todayPlan({ now: MON, plan }).find((x) => x.key === 'lectura')
+    expect(it0).toMatchObject({ sub: 'Génesis 1, 2, 3, 4', done: false, ref: 'Génesis 1' })
+    const t = new Date(2026, 9, 5, 8).getTime()
+    const leidos = Object.fromEntries([1, 2, 3, 4].map((c) => [`1:${c}`, { on: true, t }]))
+    expect(todayPlan({ now: MON, plan, leidos }).find((x) => x.key === 'lectura')).toMatchObject({ sub: 'Hecho: Génesis 1, 2, 3, 4', done: true })
+  })
+})
+
+describe('Hoy: tu asignación', () => {
+  const MON = new Date(2026, 9, 5, 9, 0)
+  const e = { id: 'x', kind: 'asignacion', fields: { fecha: '2026-10-08', parte: 'lectura', titulo: '' } }
+
+  it('sale desde 7 días antes y se marca al practicarla hoy', () => {
+    expect(todayPlan({ now: MON, entries: [e] }).find((x) => x.key === 'asignacion')).toMatchObject({ sub: 'El jueves · Practica: Lectura de la Biblia', done: false })
+    const t = new Date(2026, 9, 5, 8).getTime()
+    const hecha = { ...e, fields: { ...e.fields, ensayos: [{ t, secs: 236 }] } }
+    expect(todayPlan({ now: MON, entries: [hecha] }).find((x) => x.key === 'asignacion')).toMatchObject({ sub: 'El jueves · Practicada hoy (3:56)', done: true })
+  })
+
+  it('no sale si falta más de una semana o ya pasó', () => {
+    const lejos = { ...e, fields: { ...e.fields, fecha: '2026-10-20' } }
+    const paso = { ...e, fields: { ...e.fields, fecha: '2026-10-01' } }
+    expect(todayPlan({ now: MON, entries: [lejos, paso] }).some((x) => x.key === 'asignacion')).toBe(false)
+  })
+})

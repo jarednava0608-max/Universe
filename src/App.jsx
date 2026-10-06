@@ -50,6 +50,8 @@ export default function App() {
 
   // La app abre en Estudio: arriba está "Hoy", lo que toca hacer hoy.
   const [tab, setTab] = useState('estudio') // 'mapa' | 'estudio' | 'juegos'
+  const [searchOpen, setSearchOpen] = useState(false) // Buscar en todo (lupa en Estudio)
+  const [studyHome, setStudyHome] = useState(true) // la lupa solo sale en el inicio de Estudio (en las listas el título es largo)
   const [play, setPlay] = useState(null) // 'review' | 'daily': Repasar hoy o el Reto del día, abiertos desde "Hoy"
   const [stack, setStack] = useState([]) // notas abiertas (para volver atrás)
   const [focusId, setFocusId] = useState(null)
@@ -340,7 +342,12 @@ export default function App() {
           onReview={() => setPlay('review')}
           onChallenge={() => setPlay('daily')}
           leidos={store.progress.leidos}
+          readingPlan={store.progress.plan}
+          onSetPlan={(plan) => store.updateProgress((f) => ({ ...f, plan }))}
           onToggleRead={toggleRead}
+          searchOpen={searchOpen}
+          onCloseSearch={() => setSearchOpen(false)}
+          onHome={setStudyHome}
         />
       )}
       {play === 'review' && <Review store={store} back="Estudio" onExit={() => setPlay(null)} />}
@@ -349,6 +356,11 @@ export default function App() {
 
       {tab !== 'mapa' && (
         <div className="top-actions">
+          {tab === 'estudio' && studyHome && (
+            <button className="account-btn" aria-label="Buscar en todo" onClick={() => setSearchOpen(true)}>
+              <Icon d={ICONS.buscar} size={19} />
+            </button>
+          )}
           <button className="account-btn" aria-label={theme === 'dark' ? 'Modo claro' : 'Modo noche'} onClick={() => setMode(theme === 'dark' ? 'light' : 'dark')}>
             <Icon d={theme === 'dark' ? ICONS.sol : ICONS.luna} size={19} />
           </button>
@@ -359,7 +371,7 @@ export default function App() {
         </div>
       )}
 
-      <TabBar tab={tab} onChange={setTab} dots={{ juegos: store.ready && !dailyDone(store.progress) }} />
+      <TabBar tab={tab} onChange={(t) => { setTab(t); setSearchOpen(false) }} dots={{ juegos: store.ready && !dailyDone(store.progress) }} />
 
       {store.error && <p className="banner">{store.error}</p>}
 

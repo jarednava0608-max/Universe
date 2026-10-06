@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyTextUrl, dailyTextAppUrl } from './kinds.js'
+import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyTextUrl, dailyTextAppUrl, partMinutes, clock } from './kinds.js'
 
 describe('Estudio', () => {
   it('detecta citas bíblicas sin repetir', () => {
@@ -119,5 +119,23 @@ describe('Texto diario: ¿ya lo analizaste?', () => {
     expect(dailyAnalyzed({ fecha: '2026-10-04', texto: 'Siempre tengo a Jehová delante de mí (Sal. 16:8).' })).toBe(false)
     expect(dailyAnalyzed({ texto: 'x', principio: 'Confiar en Jehová.' })).toBe(true)
     expect(dailyAnalyzed({ texto: 'x', resumen: '  ' })).toBe(false)
+  })
+})
+
+describe('Mis asignaciones', () => {
+  it('Pegar de Claude reconoce la parte por su nombre', () => {
+    const f = fieldsFromJson('asignacion', { parte: 'Haga revisitas', tema: 'De casa en casa', minutos: 4 }, makeEntry('asignacion').fields)
+    expect(f).toMatchObject({ parte: 'revisita', titulo: 'De casa en casa', minutos: '4' })
+    expect(fieldsFromJson('asignacion', { parte: 'lectura de la biblia' }, {}).parte).toBe('lectura')
+  })
+
+  it('los minutos: los que escribiste o los de costumbre', () => {
+    expect(partMinutes({ parte: 'conversacion' })).toBe(3)
+    expect(partMinutes({ parte: 'lectura', minutos: '4,5' })).toBe(4.5)
+    expect(clock(236)).toBe('3:56')
+  })
+
+  it('la reunión sigue reconociendo La Atalaya y entre semana', () => {
+    expect(fieldsFromJson('reunion', { tipo: 'Vida y Ministerio' }, {}).tipo).toBe('entresemana')
   })
 })

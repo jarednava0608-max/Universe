@@ -3,7 +3,7 @@ import PageScroll from '../components/PageScroll.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyTextUrl, dailyTextAppUrl, dailyAnalyzed } from './kinds.js'
+import { KINDS, KIND_ORDER, partLabel, partMinutes, clock, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyTextUrl, dailyTextAppUrl, dailyAnalyzed } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { midweekCount } from './midweek.js'
 import { readMeetings } from './meetings.js'
@@ -11,13 +11,14 @@ import { nextDay } from './today.js'
 import BibleHome from '../components/BibleHome.jsx'
 import { readCount, TOTAL_CHAPTERS } from '../lib/reading.js'
 import TodayPlan from './TodayPlan.jsx'
+import SearchAll from './SearchAll.jsx'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
 import NodePeek from '../components/NodePeek.jsx'
 import { definitionText, markdownToHtml, unwrapCallouts } from '../lib/markdown.js'
 import { docToText, docToMarkdown, docToNodeMarkdown, tidyDoc, enrichDoc, relatedIds, claudeTidyPrompt, capRefs } from './noteText.js'
-import { findSavedVerse, findAllRefs, anyRefKey } from '../lib/verses.js'
+import { findSavedVerse, findAllRefs, anyRefKey, openRef } from '../lib/verses.js'
 import TitleArea from '../components/TitleArea.jsx'
 import AutoText from '../components/AutoText.jsx'
 import AtalayaStudy from './AtalayaStudy.jsx'
@@ -26,7 +27,7 @@ import MidweekStudy from './MidweekStudy.jsx'
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
 // Pestaña Estudio: 5 apartados, cada uno con su lista de entradas.
-export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge, leidos, onToggleRead }) {
+export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
@@ -35,6 +36,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   const [proposal, setProposal] = useState(null) // { entry, node } desde La Atalaya por pasos
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
   const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
+  useEffect(() => { onHome?.(!section) }, [section]) // eslint-disable-line react-hooks/exhaustive-deps
   // Entrada borrada deslizando, con "Deshacer".
   const undoDel = useUndoDelete((e) => onDeleteEntry(e.id), (e) => onSaveEntry(e))
 
@@ -64,6 +66,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             entries={entries}
             review={review}
             challenge={challenge}
+            leidos={leidos}
+            plan={readingPlan}
+            onBible={() => setBibleOpen(true)}
             onOpenEntry={(e) => setEditing({ entry: e, isNew: false })}
             onCreate={({ kind, fields }) => {
               const e = makeEntry(kind)
@@ -162,6 +167,15 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         </PageScroll>
       )}
 
+      {searchOpen && (
+        <SearchAll
+          nodes={nodes}
+          entries={entries}
+          onClose={onCloseSearch}
+          onPick={(r) => (r.type === 'node' ? setPeekNode(r.id) : r.type === 'verse' ? openRef(r.item.fields.cita) : setEditing({ entry: r.item, isNew: false }))}
+        />
+      )}
+
       {peekNode && nodes.some((n) => n.id === peekNode) && (
         <NodeNote
           key={peekNode}
@@ -214,7 +228,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
 
-      {bibleOpen && <BibleHome leidos={leidos} entries={entries} onClose={() => setBibleOpen(false)} />}
+      {bibleOpen && <BibleHome leidos={leidos} plan={readingPlan} onSetPlan={onSetPlan} entries={entries} onClose={() => setBibleOpen(false)} />}
 
       {editing && isMidweek(editing.entry) && (
         <MidweekStudy
@@ -265,6 +279,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             setEditing(null)
             toast('Guardado.')
           }}
+          onSaveQuiet={onSaveEntry}
           onDelete={async () => {
             await onDeleteEntry(editing.entry.id)
             setEditing(null)
@@ -386,7 +401,7 @@ function EntryList({ items, onOpen, onDelete }) {
     <ul className="entry-list">
       {items.map((e) => {
         const def = KINDS[e.kind]
-        const day = e.kind === 'reunion' || e.kind === 'diario' ? meetingDay(e.fields.fecha) : null
+        const day = e.kind === 'reunion' || e.kind === 'diario' || e.kind === 'asignacion' ? meetingDay(e.fields.fecha) : null
         const diario = day && e.kind === 'diario'
         // La fecha ya va en su hoja de calendario: abajo el tipo de reunión o el texto de ese día.
         // En Texto diario el título es el texto bíblico de ese día y abajo el resumen.
@@ -396,6 +411,7 @@ function EntryList({ items, onOpen, onDelete }) {
         const pending = diario ? !!verse && !dailyAnalyzed(e.fields) : false
         const progress = isAtalaya(e) && String(e.fields.articulo ?? '').trim() ? answeredCount(e.fields) : null
         const sub = !day ? def.subtitle(e)
+          : e.kind === 'asignacion' ? assignmentSub(e.fields)
           : diario ? (verse ? e.fields.resumen || (pending ? 'Falta analizarlo' : '') : 'Sin texto todavía')
           : e.fields.tipo === 'entresemana' ? midweekSub(e.fields)
           : progress?.total ? `La Atalaya · ${progress.done === progress.total ? 'Lista para la reunión' : `${progress.done} de ${progress.total} respondidas`}` : 'La Atalaya'
@@ -423,12 +439,22 @@ function EntryList({ items, onOpen, onDelete }) {
 }
 
 
+// "Lectura de la Biblia · 4 min · Practicada 3 veces"
+function assignmentSub(f) {
+  const n = (f.ensayos ?? []).length
+  // Sin tema, el título ya es la parte: no se repite.
+  return [f.titulo ? partLabel(f.parte) : '', `${partMinutes(f)} min`, n ? `Practicada ${n === 1 ? '1 vez' : `${n} veces`}` : 'Sin practicar'].filter(Boolean).join(' · ')
+}
+
 // Una entrada nueva. La Atalaya empieza con la fecha de tu próxima reunión del fin de semana
 // (la de entre semana la toma del programa que pegas).
 function newEntry(kind) {
   const e = makeEntry(kind)
   const fin = readMeetings()?.fin
   if (kind === 'reunion' && fin != null) e.fields.fecha = nextDay(fin).iso
+  // Las asignaciones casi siempre son en la reunión de entre semana.
+  const semana = readMeetings()?.semana
+  if (kind === 'asignacion' && semana != null) e.fields.fecha = nextDay(semana).iso
   return e
 }
 
@@ -783,7 +809,7 @@ function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onC
   )
 }
 
-function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, onPropose, onOpenNode }) {
+function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onSaveQuiet, onDelete, onPropose, onOpenNode }) {
   const def = KINDS[entry.kind]
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const [paste, setPaste] = useState(false)
@@ -804,6 +830,19 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, o
         {def.fields.map((f) => (
           <Field key={f.key} field={f} value={fields[f.key]} onChange={(v) => set(f.key, v)} />
         ))}
+
+        {entry.kind === 'asignacion' && (
+          <PracticeTimer
+            fields={fields}
+            onSave={(secs) => {
+              const next = { ...fields, ensayos: [...(fields.ensayos ?? []), { t: Date.now(), secs }].slice(-30) }
+              setFields(next)
+              // La práctica se guarda de una vez, aunque luego salgas con "Cancelar".
+              onSaveQuiet?.({ ...entry, fields: next })
+              toast(`Práctica guardada: ${clock(secs)}.`)
+            }}
+          />
+        )}
 
         {(() => {
           const refs = findAllRefs(...Object.values(fields).flatMap((v) => (Array.isArray(v) ? v.map((p) => p.nota) : [v])))
@@ -876,6 +915,56 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onDelete, o
   )
 }
 
+// Cronómetro para practicar la asignación: cuenta hacia arriba con el tiempo de la parte como meta,
+// avisa al pasarse y guarda cada práctica. La pantalla no se apaga mientras corre.
+function PracticeTimer({ fields, onSave }) {
+  const goal = Math.round(partMinutes(fields) * 60)
+  const [secs, setSecs] = useState(0)
+  const [running, setRunning] = useState(false)
+  const started = useRef(0)
+  useEffect(() => {
+    if (!running) return
+    started.current = Date.now() - secs * 1000
+    const id = setInterval(() => setSecs(Math.floor((Date.now() - started.current) / 1000)), 250)
+    let lock = null
+    const ask = async () => { try { lock = await navigator.wakeLock?.request('screen') } catch { /* sin permiso */ } }
+    ask()
+    const onShow = () => document.visibilityState === 'visible' && ask()
+    document.addEventListener('visibilitychange', onShow)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onShow)
+      lock?.release?.().catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running])
+  const over = secs > goal
+  const near = !over && goal - secs <= 30 && secs > 0
+  const last = (fields.ensayos ?? []).slice(-3).reverse()
+  return (
+    <div className="sfield practice">
+      <span className="sfield-label">Practicar · {partMinutes(fields)} min</span>
+      <div className={'practice-clock' + (over ? ' over' : near ? ' near' : '')}>{clock(secs)}</div>
+      <p className="practice-state">
+        {over ? `Te pasaste ${clock(secs - goal)}` : secs ? `Te quedan ${clock(goal - secs)}` : 'Di tu parte en voz alta, como en la reunión.'}
+      </p>
+      <div className="progress"><span style={{ width: `${Math.min(100, (secs / goal) * 100)}%` }} /></div>
+      <div className="practice-btns">
+        <button className="primary" onClick={() => setRunning((r) => !r)}>{running ? 'Pausar' : secs ? 'Seguir' : 'Empezar'}</button>
+        {!running && secs > 0 && (
+          <>
+            <button className="secondary" onClick={() => { onSave(secs); setSecs(0) }}>Guardar práctica</button>
+            <button className="secondary" onClick={() => setSecs(0)}>Reiniciar</button>
+          </>
+        )}
+      </div>
+      {last.length > 0 && (
+        <p className="practice-log">Últimas prácticas: {last.map((x) => `${clock(x.secs)} (${noteDate(x.t)})`).join(' · ')}</p>
+      )}
+    </div>
+  )
+}
+
 function Field({ field, value, onChange }) {
   if (field.type === 'paragraphs') return <Paragraphs field={field} value={value ?? []} onChange={onChange} />
   return (
@@ -883,6 +972,10 @@ function Field({ field, value, onChange }) {
       <span className="sfield-label">{field.label}</span>
       {field.type === 'date' ? (
         <input className="input" type="date" value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
+      ) : field.type === 'choice' && field.options.length > 3 ? (
+        <select className="input" value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
+          {field.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
       ) : field.type === 'choice' ? (
         <div className="seg2">
           {field.options.map(([v, l]) => (

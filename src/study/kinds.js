@@ -131,7 +131,52 @@ export const KINDS = {
   },
 }
 
-export const KIND_ORDER = ['diario', 'reunion', 'estudio', 'reflexion', 'idea']
+// Partes de la reunión que te pueden asignar, con sus minutos de costumbre (se pueden cambiar).
+export const PARTS = [
+  ['lectura', 'Lectura de la Biblia', 4],
+  ['conversacion', 'Empiece conversaciones', 3],
+  ['revisita', 'Haga revisitas', 4],
+  ['discipulos', 'Haga discípulos', 5],
+  ['creencias', 'Explique sus creencias', 5],
+  ['discurso', 'Discurso', 5],
+  ['otra', 'Otra', 5],
+]
+export const partLabel = (k) => PARTS.find((p) => p[0] === k)?.[1] ?? ''
+// Los minutos de la asignación: los que escribiste o los de costumbre de esa parte.
+export const partMinutes = (f = {}) => {
+  const n = parseFloat(String(f.minutos ?? '').replace(',', '.'))
+  return n > 0 ? n : PARTS.find((p) => p[0] === f.parte)?.[2] ?? 5
+}
+
+KINDS.asignacion = {
+  label: 'Mis asignaciones',
+  short: 'Asignación',
+  desc: 'Prepara tu parte y practícala con cronómetro',
+  icon: 'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3',
+  noMap: true,
+  claudeNote: 'Ayúdame a prepararla con información de jw.org y wol.jw.org, y que quepa en el tiempo de la parte.',
+  fields: [
+    { key: 'fecha', label: 'Fecha', type: 'date', default: today },
+    { key: 'parte', label: 'Parte', type: 'choice', options: PARTS.map(([k, l]) => [k, l]), default: () => 'lectura' },
+    { key: 'minutos', label: 'Minutos', type: 'line', hint: 'Si lo dejas vacío, los de costumbre' },
+    { key: 'titulo', label: 'Tema o escenario', type: 'line', hint: 'Ej.: De casa en casa, hablar de la esperanza' },
+    { key: 'texto', label: 'Texto o lectura', type: 'line', hint: 'Ej.: Jeremías 40:1-10' },
+    { key: 'leccion', label: 'Lección para mejorar', type: 'line', hint: 'La lección del folleto que te toca' },
+    { key: 'ayudante', label: 'Ayudante', type: 'line' },
+    { key: 'bosquejo', label: 'Lo que voy a decir', type: 'text', hint: 'Tu introducción, las preguntas y la conclusión' },
+    { key: 'notas', label: 'Notas', type: 'text' },
+  ],
+  title: (e) => e.fields.titulo || partLabel(e.fields.parte) || 'Asignación',
+  subtitle: (e) => [partLabel(e.fields.parte), formatDate(e.fields.fecha)].filter(Boolean).join(' · '),
+  toNode: (f) => ({ title: f.titulo || partLabel(f.parte), idea: f.bosquejo }),
+}
+
+// Prácticas guardadas con el cronómetro: fields.ensayos = [{ t, secs }].
+export const practicedOn = (f = {}, day) => (f.ensayos ?? []).filter((x) => x?.t && isoOf(new Date(x.t)) === day)
+const isoOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+export const clock = (secs) => `${Math.floor(Math.abs(secs) / 60)}:${String(Math.floor(Math.abs(secs) % 60)).padStart(2, '0')}`
+
+export const KIND_ORDER = ['diario', 'reunion', 'estudio', 'reflexion', 'idea', 'asignacion']
 
 export function makeEntry(kind) {
   const def = KINDS[kind]
@@ -175,6 +220,7 @@ const ALIASES = {
   reunion: { type: 'tipo', date: 'fecha', title: 'titulo', título: 'titulo', idea_principal: 'idea', paragraphs: 'parrafos', párrafos: 'parrafos', notes: 'notas', aplicación: 'aplicacion', application: 'aplicacion' },
   estudio: { title: 'titulo', título: 'titulo', idea_central: 'idea', hook: 'gancho', extracción: 'extraccion', golpe_logico: 'golpe', golpe_lógico: 'golpe', aha_extra: 'aha', summary: 'resumen' },
   reflexion: { title: 'titulo', título: 'titulo', nota: 'texto', note: 'texto', notas: 'texto', contenido: 'texto' },
+  asignacion: { date: 'fecha', part: 'parte', tipo: 'parte', minutes: 'minutos', title: 'titulo', título: 'titulo', tema: 'titulo', escenario: 'titulo', lectura: 'texto', cita: 'texto', lección: 'leccion', helper: 'ayudante', outline: 'bosquejo', lo_que_voy_a_decir: 'bosquejo', notes: 'notas' },
   idea: { title: 'titulo', título: 'titulo', idea: 'titulo', para_qué: 'para', para_que: 'para', como_me_la_imagino: 'como', cómo: 'como', imagen: 'como', que_cambia: 'cambia', qué_cambia: 'cambia', resultado: 'cambia', notes: 'notas' },
 }
 
@@ -196,9 +242,14 @@ export function fieldsFromJson(kind, data, current) {
       next[key] = list
         .map((p, i) => (typeof p === 'string' ? { num: String(i + 1), nota: p } : { num: String(p.num ?? p.parrafo ?? p.párrafo ?? p.n ?? i + 1), nota: String(p.nota ?? p.notas ?? p.texto ?? p.note ?? '') }))
         .filter((p) => p.nota.trim())
-    } else if (field.type === 'choice') {
+    } else if (field.type === 'choice' && field.options.some((o) => o[0] === 'atalaya')) {
       const v = String(value).toLowerCase()
       next[key] = /semana|vida|ministerio|tesoros/.test(v) ? 'entresemana' : 'atalaya'
+    } else if (field.type === 'choice') {
+      const v = foldText(value)
+      const opt = field.options.find(([k, l]) => foldText(k) === v || foldText(l) === v) ?? field.options.find(([k, l]) => v.includes(foldText(k)) || foldText(l).includes(v) || v.includes(foldText(l)))
+      if (!opt) continue
+      next[key] = opt[0]
     } else if (field.type === 'date') {
       const m = String(value).match(/\d{4}-\d{2}-\d{2}/)
       if (!m) continue
@@ -286,6 +337,8 @@ export function refsIn(...texts) {
 }
 
 // ---------- utilidades ----------
+
+const foldText = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 
 function clean(s) {
   return String(s ?? '').replace(/\s+\n/g, '\n').trim()

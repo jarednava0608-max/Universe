@@ -1,19 +1,23 @@
 // "Hoy" (arriba en Estudio): lo que toca hacer hoy según tu rutina, en orden, para que al abrir la app
 // sepas qué sigue. Cada paso se marca solo cuando lo haces:
 //   1. Texto diario (pegarlo y analizarlo).
+//      Lectura de la Biblia, si te pusiste una meta (los capítulos que tocan hoy).
 //   2. La Atalaya, desde 3 días antes de la reunión del fin de semana (cuántas preguntas llevas).
 //   3. La reunión de entre semana, desde 2 días antes.
+//      Tu asignación, desde 7 días antes (se marca hecha si ya la practicaste hoy).
 //   4. Repasar hoy (lo que toca y las nuevas).
 //   5. Reto del día.
-import { dailyAnalyzed, dailyVerse } from './kinds.js'
+import { clock, dailyAnalyzed, dailyVerse, partLabel, practicedOn } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { addDays } from '../games/progress.js'
 import { midweekCount } from './midweek.js'
-import { findRefs } from '../lib/bible.js'
+import { BOOKS, findRefs } from '../lib/bible.js'
+import { chaptersLabel, readingToday } from '../lib/reading.js'
 
 export const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 const ATALAYA_FROM = 3 // días antes de la reunión en que empieza a salir
 const MIDWEEK_FROM = 2
+const ASSIGNMENT_FROM = 7
 
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
@@ -39,7 +43,8 @@ const hasContent = (f) => ['idea', 'aplicacion', 'notas'].some((k) => String(f[k
 
 // meetings: { semana: 0-6, fin: 0-6 } (días de la semana, 0 = domingo) o null si aún no los eliges.
 // review: { due, fresh } de Repasar hoy. challenge: el resultado del Reto del día de hoy o null.
-export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challenge = null, meetings = null, now = new Date() } = {}) {
+// leidos / plan: capítulos leídos y la meta de lectura (del progreso).
+export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challenge = null, meetings = null, leidos = {}, plan = null, now = new Date() } = {}) {
   const day = iso(now)
   const items = []
 
@@ -54,6 +59,20 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     entry: diario ?? null,
     create: diario ? null : { kind: 'diario', fields: { fecha: day } },
   })
+
+  const lectura = readingToday(leidos, plan, now)
+  if (lectura && !lectura.finished) {
+    items.push({
+      key: 'lectura',
+      title: 'Lectura de la Biblia',
+      sub: lectura.expired ? 'Tu meta ya pasó · Elige otra'
+        : lectura.ok ? `Hecho: ${chaptersLabel(lectura.done, BOOKS)}`
+        : chaptersLabel(lectura.next, BOOKS),
+      done: lectura.ok,
+      // El primer capítulo que toca (para abrirlo en el lector).
+      ref: lectura.next[0] ? `${BOOKS[lectura.next[0][0] - 1]} ${lectura.next[0][1]}` : null,
+    })
+  }
 
   if (meetings?.fin != null) {
     const { iso: date, days } = nextDay(meetings.fin, now)
@@ -92,6 +111,24 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
         create: e ? null : { kind: 'reunion', fields: { tipo: 'entresemana', fecha: date } },
       })
     }
+  }
+
+  // Tu asignación más cercana de esta semana: practicarla cada día hasta la reunión.
+  const asignacion = entries
+    .filter((e) => e.kind === 'asignacion' && e.fields.fecha >= day && e.fields.fecha <= addDays(day, ASSIGNMENT_FROM))
+    .sort((a, b) => a.fields.fecha.localeCompare(b.fields.fecha))[0]
+  if (asignacion) {
+    const [y, m, d] = asignacion.fields.fecha.split('-').map(Number)
+    const date = new Date(y, m - 1, d)
+    const days = Math.round((date - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5)
+    const hoy = practicedOn(asignacion.fields, day)
+    items.push({
+      key: 'asignacion',
+      title: 'Tu asignación',
+      sub: `${when(days, date.getDay())} · ${hoy.length ? `Practicada hoy (${clock(hoy.at(-1).secs)})` : `Practica: ${asignacion.fields.titulo || partLabel(asignacion.fields.parte)}`}`,
+      done: hoy.length > 0,
+      entry: asignacion,
+    })
   }
 
   const n = Math.min(review.due + review.fresh, 20)

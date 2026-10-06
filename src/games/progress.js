@@ -1,4 +1,4 @@
-import { mergeLeidos } from '../lib/reading.js'
+import { mergeLeidos, mergePlan } from '../lib/reading.js'
 // Racha, progreso y repaso inteligente (repetición espaciada tipo Leitner).
 // Todo vive en una sola entrada `kind: 'progreso'` (id fijo), que se sincroniza como las demás.
 
@@ -141,7 +141,9 @@ export function mergeProgress(a = {}, b = {}) {
   const daily = !da ? db : !db ? da : da.day !== db.day ? (da.day > db.day ? da : db) : (da.score >= db.score ? da : db)
   // Capítulos leídos de la Biblia: por capítulo gana el cambio más reciente.
   const leidos = a.leidos || b.leidos ? { leidos: mergeLeidos(a.leidos, b.leidos) } : {}
-  return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos }
+  // Meta de lectura: gana el cambio más reciente.
+  const plan = mergePlan(a.plan, b.plan)
+  return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}) }
 }
 
 // Guarda un récord solo si supera el anterior. Devuelve los campos nuevos (o los mismos).
