@@ -153,6 +153,7 @@ export default function MidweekStudy({ entry, entries = [], isNew, toast, onSave
           <>
             <div className="at-card mw-cover">
               <p className="at-cover-kicker">Vida y Ministerio{prog.semana ? ` · ${prog.semana}` : ''}</p>
+              {prog.semana && <p className="mw-week">{prog.semana}</p>}
               <p className="mw-cover-title">{fields.titulo || prog.lectura || 'Reunión de entre semana'}</p>
               <p className="at-summary">{meetingDay(fields.fecha)}{count.total ? ` · ${count.done} de ${count.total} contestadas` : ''}</p>
             </div>
@@ -351,8 +352,9 @@ function Part({ pt, fields, fecha, onAnswer, onSet, onMarks, last, onPrev, onNex
   return (
     <>
       <p className={'mw-sec ' + pt.sec}>{pt.seccion}</p>
-      <p className="at-qnum">Parte {pt.num}{pt.minutos ? ` · ${pt.minutos} min` : ''}</p>
-      <h2 className="mw-title">{pt.titulo}</h2>
+      <p className="at-qnum mw-meta">Parte {pt.num}{pt.minutos ? ` · ${pt.minutos} min` : ''}</p>
+      <h2 className={'mw-title ' + pt.sec} data-num={pt.num}>{pt.titulo}</h2>
+      {pt.minutos > 0 && <p className="mw-mins">({pt.minutos} mins.)</p>}
       {pt.lineas.some((l) => !l.q && !l.media) && <p className="at-tip small">Toca 2 o 3 palabras clave para subrayarlas.</p>}
       {pt.lineas.map((l, i) => {
         if (l.q) return (
