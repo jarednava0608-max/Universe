@@ -104,3 +104,26 @@ export function midweekForClaude(fields) {
   }
   return out.join('\n\n')
 }
+
+// Para "Proponer al mapa": solo lo que tú escribiste (cada pregunta con tu respuesta y tus notas
+// de cada parte), cómo lo aplicas y los textos de la semana. El texto del programa no se copia.
+export function midweekNode(fields) {
+  const prog = parseProgram(fields?.programa)
+  const year = String(fields?.fecha ?? '').slice(0, 4)
+  const title = prog.semana ? `Vida y Ministerio, ${prog.semana}${year ? ` de ${year}` : ''}` : String(fields?.titulo ?? '').trim() || 'Reunión de entre semana'
+  const parts = []
+  if (prog.lectura) parts.push(`Lectura de la semana: ${prog.lectura}`)
+  for (const pt of prog.partes) {
+    const rows = []
+    for (const l of pt.lineas) {
+      const a = l.q && answerOf(fields, l.key).trim()
+      if (a) rows.push(`${l.text}\n${a}`)
+    }
+    const nota = !pt.lineas.some((l) => l.q) && answerOf(fields, String(pt.num)).trim()
+    if (nota) rows.push(nota)
+    if (rows.length) parts.push(`## ${pt.titulo}\n${rows.join('\n\n')}`)
+  }
+  if (String(fields?.aplicacion ?? '').trim()) parts.push(`## Cómo lo aplico\n${fields.aplicacion.trim()}`)
+  if (String(fields?.notas ?? '').trim()) parts.push(`## Notas\n${fields.notas.trim()}`)
+  return { title, note: parts.join('\n\n') }
+}

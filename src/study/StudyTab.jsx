@@ -210,6 +210,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             toast('Reunión eliminada.')
           }}
           onSwitchToAtalaya={(e) => setEditing({ entry: e, isNew: editing.isNew })}
+          onPropose={(e) => setProposal({ entry: e, node: proposeNode(e) })}
         />
       )}
 

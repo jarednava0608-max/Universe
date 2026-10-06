@@ -4,7 +4,7 @@
 import { newId } from '../lib/model.js'
 import { findRefs } from '../lib/bible.js'
 import { highlightArticle } from './atalaya.js'
-import { midweekForClaude } from './midweek.js'
+import { midweekForClaude, midweekNode } from './midweek.js'
 
 export const today = () => {
   const d = new Date()
@@ -269,6 +269,8 @@ export function proposeNode(entry) {
     // Las palabras clave que marcaste van subrayadas (==así==).
     return { title: clip(clean(entry.fields.titulo) || 'La Atalaya', 80), note: highlightArticle(String(entry.fields.articulo).trim(), entry.fields.marcas) }
   }
+  // La reunión de entre semana: tus respuestas de cada parte, no el programa.
+  if (entry.kind === 'reunion' && entry.fields.tipo === 'entresemana' && String(entry.fields.programa ?? '').trim()) return midweekNode(entry.fields)
   const p = KINDS[entry.kind].toNode(entry.fields)
   const parts = []
   if (clean(p.idea)) parts.push(clip(clean(p.idea), 420))

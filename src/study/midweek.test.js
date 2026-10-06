@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone } from './midweek.js'
-import { entryForClaude } from './kinds.js'
+import { entryForClaude, proposeNode } from './kinds.js'
 
 // Tal como se copia de la Guía de actividades en JW Library (5-11 de octubre de 2026, recortado).
 const PROGRAMA = `00
@@ -84,6 +84,18 @@ describe('reunión de entre semana', () => {
     expect(text).toContain('Que Jehová cumple lo que promete.')
     expect(text).toContain('3. Lectura de la Biblia\nLeer despacio.')
     expect(entryForClaude({ kind: 'reunion', fields: f })).toContain('Mis respuestas:\n2. Busquemos perlas escondidas')
+  })
+
+  it('propone al mapa solo lo que contesté, con la semana como título', () => {
+    let f = { tipo: 'entresemana', fecha: '2026-10-07', programa: PROGRAMA, aplicacion: 'Apoyar a las viudas de mi congregación.' }
+    f = withAnswer(f, '2-1', 'Que Jehová cumple lo que promete.')
+    const node = proposeNode({ kind: 'reunion', fields: f })
+    expect(node.title).toBe('Vida y Ministerio, 5-11 de octubre de 2026')
+    expect(node.note).toBe([
+      'Lectura de la semana: Jeremías 40, 41',
+      '## Busquemos perlas escondidas\n¿Qué perlas espirituales ha encontrado en la lectura bíblica de esta semana?\nQue Jehová cumple lo que promete.',
+      '## Cómo lo aplico\nApoyar a las viudas de mi congregación.',
+    ].join('\n\n'))
   })
 
   it('un texto sin programa no da partes', () => {

@@ -8,8 +8,8 @@ import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midw
 
 // La reunión de entre semana por pasos, como La Atalaya: se pega el programa de la Guía de
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
-// final cómo lo aplico. Se guarda sola y al volver sigue en la parte donde te quedaste.
-export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, onClose, onSwitchToAtalaya }) {
+// final cómo lo aplico y, si quieres, tus respuestas pasan al mapa. Se guarda sola y al volver sigue en la parte donde te quedaste.
+export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, onClose, onPropose, onSwitchToAtalaya }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const prog = useMemo(() => parseProgram(fields.programa), [fields.programa])
   const partes = prog.partes
@@ -198,6 +198,9 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
                 try { await navigator.clipboard.writeText(entryForClaude({ ...base.current, fields })); toast('Copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
               }}>
                 <Icon d={ICONS.pegar} size={18} /> Copiar para Claude
+              </button>
+              <button className="secondary icon-left" disabled={!count.done && !String(fields.aplicacion ?? '').trim()} onClick={async () => { await flush(); onPropose({ ...base.current, fields }) }}>
+                <Icon d={ICONS.nodo} size={18} /> Proponer al mapa
               </button>
               <button className="primary" onClick={close}>Guardar y salir</button>
             </div>
