@@ -4,7 +4,9 @@ import AutoText from '../components/AutoText.jsx'
 import { RefChips } from '../components/RefLink.jsx'
 import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday } from './midweek.js'
+import { useMeetings } from './meetings.js'
+import { DAYS } from './today.js'
 
 // La reunión de entre semana por pasos, como La Atalaya: se pega el programa de la Guía de
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
@@ -77,6 +79,16 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
     set(patch)
   }
 
+  // La fecha de la reunión sale sola: la semana del programa + el día de tu reunión entre semana.
+  // Si la cambias a mano (por ejemplo, la semana de la visita del superintendente), se respeta.
+  const [meetings, setMeetings] = useMeetings()
+  const auto = programDate(prog.semana, meetings?.semana, fields.fecha)
+  useEffect(() => {
+    if (!fields.fechaManual && auto && auto !== fields.fecha) set({ fecha: auto })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto, fields.fechaManual])
+  const linkDate = fields.fechaManual ? fields.fecha : auto ?? programMonday(prog.semana, fields.fecha) ?? fields.fecha
+
   const count = midweekCount(fields)
   const pt = partes[idx]
 
@@ -122,13 +134,22 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
             </div>
             <label className="sfield">
               <span className="sfield-label">Fecha de la reunión</span>
-              <input className="input" type="date" value={fields.fecha ?? ''} onChange={(e) => set({ fecha: e.target.value })} />
+              <input className="input" type="date" value={fields.fecha ?? ''} onChange={(e) => set({ fecha: e.target.value, fechaManual: true })} />
             </label>
+            {prog.semana && meetings?.semana == null && (
+              <label className="sfield">
+                <span className="sfield-label">¿Qué día es tu reunión entre semana?</span>
+                <select className="input" value="" onChange={(e) => setMeetings({ ...(meetings ?? {}), semana: Number(e.target.value) })}>
+                  <option value="" disabled>Elegir</option>
+                  {[1, 2, 3, 4, 5].map((d) => <option key={d} value={d}>{DAYS[d]}</option>)}
+                </select>
+              </label>
+            )}
             <label className="sfield">
               <span className="sfield-label">Título</span>
               <input className="input" value={fields.titulo ?? ''} placeholder="La lectura de la semana" onChange={(e) => set({ titulo: e.target.value })} />
             </label>
-            <a className="secondary as-btn" data-direct="1" href={meetingsUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">
+            <a className="secondary as-btn" data-direct="1" href={meetingsUrl(linkDate)} target="_blank" rel="noopener noreferrer">
               Ver esta semana en wol.jw.org
             </a>
             <div className="sfield">
@@ -152,7 +173,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
             key={pt.num}
             pt={pt}
             fields={fields}
-            fecha={fields.fecha}
+            fecha={linkDate}
             onAnswer={(k, v) => setFields((f) => withAnswer(f, k, v))}
             last={idx === partes.length - 1}
             onPrev={() => (idx > 0 ? go('partes', idx - 1) : go('programa'))}

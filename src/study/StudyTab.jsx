@@ -6,6 +6,8 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 import { KINDS, KIND_ORDER, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyTextUrl, dailyTextAppUrl, dailyAnalyzed } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { midweekCount } from './midweek.js'
+import { readMeetings } from './meetings.js'
+import { nextDay } from './today.js'
 import TodayPlan from './TodayPlan.jsx'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
@@ -123,7 +125,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           </button>
           <div className="page-head">
             <h1 className="page-title">{KINDS[section].label}</h1>
-            <button className="round-btn" aria-label="Nueva entrada" onClick={() => setEditing({ entry: makeEntry(section), isNew: true })}>
+            <button className="round-btn" aria-label="Nueva entrada" onClick={() => setEditing({ entry: newEntry(section), isNew: true })}>
               <Icon d={ICONS.plus} size={20} stroke={2} />
             </button>
           </div>
@@ -399,6 +401,15 @@ function EntryList({ items, onOpen, onDelete }) {
   )
 }
 
+
+// Una entrada nueva. La Atalaya empieza con la fecha de tu próxima reunión del fin de semana
+// (la de entre semana la toma del programa que pegas).
+function newEntry(kind) {
+  const e = makeEntry(kind)
+  const fin = readMeetings()?.fin
+  if (kind === 'reunion' && fin != null) e.fields.fecha = nextDay(fin).iso
+  return e
+}
 
 // Las dos reuniones se estudian por pasos: La Atalaya y la de entre semana (con el programa pegado).
 const isAtalaya = (e) => e.kind === 'reunion' && e.fields.tipo !== 'entresemana'

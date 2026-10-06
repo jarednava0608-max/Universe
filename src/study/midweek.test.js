@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl } from './midweek.js'
+import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate } from './midweek.js'
 import { entryForClaude, proposeNode } from './kinds.js'
 
 // Tal como se copia de la Guía de actividades en JW Library (5-11 de octubre de 2026, recortado).
@@ -104,6 +104,20 @@ describe('reunión de entre semana', () => {
     expect(meetingsUrl('2026-10-12')).toBe('https://wol.jw.org/es/wol/meetings/r4/lp-s/2026/42')
     expect(meetingsUrl('2027-01-01')).toBe('https://wol.jw.org/es/wol/meetings/r4/lp-s/2026/53')
     expect(meetingsUrl('')).toBe('https://wol.jw.org/es/wol/h/r4/lp-s')
+  })
+
+  it('la fecha de la reunión sale de la semana del programa y del día de la reunión', () => {
+    expect(programMonday('5-11 de octubre', '2026-10-05')).toBe('2026-10-05')
+    expect(programDate('5-11 de octubre', 3, '2026-10-05')).toBe('2026-10-07') // miércoles
+    expect(programDate('5-11 de octubre', 4, '2026-10-05')).toBe('2026-10-08') // jueves
+    // Semana que empieza en un mes y termina en otro.
+    expect(programDate('28 de septiembre a 4 de octubre', 3, '2026-10-01')).toBe('2026-09-30')
+    // Cambio de año: el más cercano a la fecha de la entrada.
+    expect(programMonday('29 de diciembre a 4 de enero', '2026-01-02')).toBe('2025-12-29')
+    expect(programMonday('29 de diciembre a 4 de enero', '2025-12-20')).toBe('2025-12-29')
+    // Sin día de reunión o sin semana no adivina.
+    expect(programDate('5-11 de octubre', null, '2026-10-05')).toBe(null)
+    expect(programDate('', 3, '2026-10-05')).toBe(null)
   })
 
   it('un texto sin programa no da partes', () => {

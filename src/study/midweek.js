@@ -138,3 +138,29 @@ export function meetingsUrl(fecha) {
   const week = Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7)
   return `https://wol.jw.org/es/wol/meetings/r4/lp-s/${t.getUTCFullYear()}/${week}`
 }
+
+const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+const isoOf = (d) => d.toISOString().slice(0, 10)
+
+// El lunes de la semana del programa ("5-11 de octubre", "28 de septiembre a 4 de octubre").
+// El programa no trae el año: se toma el más cercano a `ref` (la fecha de la entrada o la de hoy).
+export function programMonday(semana, ref = isoOf(new Date())) {
+  const m = plain(String(semana ?? '').replace(/setiembre/i, 'septiembre')).match(/^(\d{1,2})(?:\s+de\s+([a-z]+))?\b.*?\bde\s+([a-z]+)$/)
+  const month = m ? MONTHS.indexOf(m[2] || m[3]) : -1
+  if (month < 0) return null
+  const r = Date.parse(ref) || Date.now()
+  const y = new Date(r).getUTCFullYear()
+  const start = [y - 1, y, y + 1].map((yy) => Date.UTC(yy, month, Number(m[1]))).sort((a, b) => Math.abs(a - r) - Math.abs(b - r))[0]
+  const d = new Date(start)
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7))
+  return isoOf(d)
+}
+
+// La fecha de la reunión: el día de tu reunión entre semana (0 = domingo) en la semana del programa.
+export function programDate(semana, weekday, ref) {
+  const monday = programMonday(semana, ref)
+  if (!monday || weekday == null) return null
+  const d = new Date(monday + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + ((Number(weekday) + 6) % 7))
+  return isoOf(d)
+}

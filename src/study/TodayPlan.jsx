@@ -1,19 +1,7 @@
 import { useState } from 'react'
+import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { DAYS, todayPlan } from './today.js'
-
-// Días de tus reuniones ({ semana, fin }, 0 = domingo): preferencia de este teléfono.
-const KEY = 'universe-meetings'
-function useMeetings() {
-  const [value, setValue] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(KEY)) } catch { return null }
-  })
-  const save = (next) => {
-    setValue(next)
-    try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* sin almacenamiento */ }
-  }
-  return [value, save]
-}
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
 const clip = (s, n = 160) => (s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s)
