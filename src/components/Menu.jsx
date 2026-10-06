@@ -23,7 +23,7 @@ function ago(t) {
 }
 
 // Menú: solo lo esencial.
-export default function Menu({ stats, sync, themeMode, onThemeMode, onAccount, onNew, onPaste, onDig, onExport, onImportFile, onClose }) {
+export default function Menu({ stats, sync, themeMode, onThemeMode, styleMode, onStyleMode, onAccount, onNew, onPaste, onDig, onExport, onImportFile, onClose }) {
   const file = useRef()
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -51,6 +51,12 @@ export default function Menu({ stats, sync, themeMode, onThemeMode, onAccount, o
           <div className="seg2">
             {[['dark', 'Negro'], ['light', 'Blanco']].map(([v, l]) => (
               <button key={v} className={themeMode === v ? 'on' : ''} onClick={() => onThemeMode(v)}>{l}</button>
+            ))}
+          </div>
+          <span className="appearance-label">Estilo</span>
+          <div className="seg2">
+            {[['jw', 'Como JW'], ['original', 'Original']].map(([v, l]) => (
+              <button key={v} className={styleMode === v ? 'on' : ''} onClick={() => onStyleMode(v)}>{l}</button>
             ))}
           </div>
         </div>

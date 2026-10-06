@@ -42,7 +42,7 @@ export default function App() {
     if (memoria) await store.saveEntry(memoria)
     if (node) await store.saveNode(node)
   }
-  const { mode, theme, setMode } = useTheme()
+  const { mode, theme, setMode, style, setStyle } = useTheme()
   const { nodes, edges } = store
   const graph = useRef()
 
@@ -365,6 +365,8 @@ export default function App() {
           sync={sync}
           themeMode={mode}
           onThemeMode={setMode}
+          styleMode={style}
+          onStyleMode={setStyle}
           onAccount={() => setSheet('account')}
           onNew={() => startNew()}
           onPaste={() => setSheet('paste')}

@@ -92,6 +92,62 @@
   color-scheme: light;
 }
 
+/* Estilo "Como JW": se parece a JW Library (acento lavanda, barras grises, citas y números en azul,
+   letra de libro para leer). Funciona en negro y en blanco; se apaga en el menú del mapa (Estilo).
+   Jehová sigue siendo el único nodo dorado del mapa. */
+:root[data-style='jw'] {
+  --bg: #000000;
+  --bg-rgb: 0, 0, 0;
+  --bg-raise: #111113;
+  --surface: #1c1c1e;
+  --surface-rgb: 28, 28, 30;
+  --surface-2: #2c2c2e;
+  --glass: rgba(28, 28, 30, 0.9);
+  --bar-rgb: 28, 28, 30;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --text: #f2f2f7;
+  --title: #ffffff;
+  --text-body: #e5e5ea;
+  --text-2: #aeaeb2;
+  --text-3: #6e6e73;
+  --accent: #b9a8f4;
+  --accent-soft: rgba(185, 168, 244, 0.16);
+  --link: #8fa2e8;
+  --link-rgb: 143, 162, 232;
+  --btn: #b9a8f4;
+  --btn-press: #a493e4;
+  --btn-ink: #16112b;
+  --gold-text: #b9a8f4;
+  --graph-bg: #000000;
+}
+:root[data-style='jw'][data-theme='light'] {
+  --bg: #ffffff;
+  --bg-rgb: 255, 255, 255;
+  --bg-raise: #f6f6f8;
+  --surface: #f4f3f8;
+  --surface-rgb: 244, 243, 248;
+  --surface-2: #e9e7f1;
+  --glass: rgba(248, 248, 250, 0.92);
+  --bar-rgb: 248, 248, 250;
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.15);
+  --text: #1c1c1e;
+  --title: #000000;
+  --text-body: #2c2c2e;
+  --text-2: #636366;
+  --text-3: #a1a1a6;
+  --accent: #5e48a8;
+  --accent-soft: rgba(94, 72, 168, 0.12);
+  --link: #4a64b8;
+  --link-rgb: 74, 100, 184;
+  --btn: #5e48a8;
+  --btn-press: #4d3a91;
+  --btn-ink: #ffffff;
+  --gold-text: #5e48a8;
+  --graph-bg: #ffffff;
+}
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body, #root { height: 100%; margin: 0; }
 body {
@@ -1258,3 +1314,27 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .cite-gap { color: var(--text-3); font-weight: 500; border-bottom: 2px solid var(--line-strong); padding: 0 4px; }
 .cite-blank { display: block; min-height: var(--tap); margin: 0 0 22px; padding: 0 14px; font-size: 15px; color: var(--text-2); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 12px; }
 .next-mode { margin: -4px 0 14px; }
+
+/* ---------- Estilo "Como JW": barras y pestañas como en JW Library ---------- */
+:root[data-style='jw'] .bar,
+:root[data-style='jw'] .at-bars { background: rgba(var(--bar-rgb), 0.94); }
+:root[data-style='jw'] .tabbar { background: rgb(var(--bar-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-style='jw'] .tab { margin: 6px 3px; border-radius: 14px; }
+:root[data-style='jw'] .tab.on { color: var(--accent); background: var(--accent-soft); }
+:root[data-style='jw'] .bar-btn.back,
+:root[data-style='jw'] .back-link,
+:root[data-style='jw'] .bar-btn.strong { color: var(--accent); }
+:root[data-style='jw'] .account-btn { color: var(--accent); }
+:root[data-style='jw'] .at-step.on { background: var(--accent); color: var(--btn-ink); }
+:root[data-style='jw'] .at-jump-num.on { background: var(--accent); border-color: var(--accent); color: var(--btn-ink); }
+:root[data-style='jw'] .seg2 button.on { color: var(--accent); }
+:root[data-style='jw'] .mw-edit, :root[data-style='jw'] .at-jw { color: var(--accent); }
+/* Lo que se lee va con letra de libro, como en JW Library. */
+:root[data-style='jw'] .at-text,
+:root[data-style='jw'] .mw-text,
+:root[data-style='jw'] .mw-para p,
+:root[data-style='jw'] .ref-sheet-text p,
+:root[data-style='jw'] .today-verse,
+:root[data-style='jw'] .at-theme,
+:root[data-style='jw'] .entry-row.daily .entry-title { font-family: var(--font-book); }
+:root[data-style='jw'] .mw-text { font-size: 18px; line-height: 1.6; }
