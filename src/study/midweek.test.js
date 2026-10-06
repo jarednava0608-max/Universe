@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate, splitAsides, splitRefs } from './midweek.js'
+import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate, splitAsides, splitRefs, readingChapters, keysOf, midweekAnswers } from './midweek.js'
 import { entryForClaude, proposeNode } from './kinds.js'
 
 // Tal como se copia de la Guía de actividades en JW Library (5-11 de octubre de 2026, recortado).
@@ -132,6 +132,26 @@ describe('reunión de entre semana', () => {
     expect(splitRefs('(Pr 4:5, 6; 1Te 5:14)', ['Pr 4:5, 6', '1Te 5:14'])).toEqual([
       { text: '(' }, { text: 'Pr 4:5, 6', ref: true }, { text: '; ' }, { text: '1Te 5:14', ref: true }, { text: ')' },
     ])
+  })
+
+  it('la lectura de la semana, capítulo por capítulo', () => {
+    expect(readingChapters('Jeremías 40, 41')).toEqual(['Jeremías 40', 'Jeremías 41'])
+    expect(readingChapters('Jeremías 42-44')).toEqual(['Jeremías 42', 'Jeremías 43', 'Jeremías 44'])
+    expect(readingChapters('1 Reyes 3')).toEqual(['1 Reyes 3'])
+    expect(readingChapters('')).toEqual([])
+  })
+
+  it('el estudio bíblico se contesta por párrafo si pegas el capítulo', () => {
+    const estudio = parseProgram(PROGRAMA).partes.at(-1)
+    let f = { tipo: 'entresemana', programa: PROGRAMA }
+    expect(keysOf(f, estudio)).toEqual(['6'])
+    f = { ...f, estudio: '1. ¿Qué aprendemos?\n\n1 Mucho.\n\n2, 3. ¿Y luego?\n\n2 Más.\n\n3 Todavía más.' }
+    expect(keysOf(f, estudio)).toEqual(['e:1', 'e:2, 3'])
+    expect(midweekCount(f)).toEqual({ done: 0, total: 6 })
+    f = withAnswer(f, 'e:1', 'Que Jehová nos cuida.')
+    expect(midweekCount(f).done).toBe(1)
+    expect(midweekAnswers(f).at(-1).rows).toEqual([{ key: 'e:1', pregunta: '¿Qué aprendemos?', respuesta: 'Que Jehová nos cuida.' }])
+    expect(midweekForClaude(f)).toContain('6. Estudio bíblico de la congregación\n¿Qué aprendemos?\nQue Jehová nos cuida.')
   })
 
   it('un texto sin programa no da partes', () => {

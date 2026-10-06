@@ -39,6 +39,13 @@ describe('Tu Atalaya en el repaso', () => {
     expect(cards[2]).toMatchObject({ front: '¿Cómo podemos enseñarles?', label: '¿Qué responderías?' })
   })
 
+  it('también tus respuestas de la reunión de entre semana', () => {
+    const programa = 'TESOROS DE LA BIBLIA\n1. Busquemos perlas escondidas\n(10 mins.)\n¿Qué perlas encontró?\nRespuesta\n¿Otra pregunta?\nRespuesta'
+    const mw = { id: 'm', kind: 'reunion', fields: { tipo: 'entresemana', fecha: '2026-10-08', titulo: 'Jeremías 40, 41', programa, respuestas: { '1-0': 'Que Jehová cumple lo que promete.', '1-1': 'No' } }, updatedAt: 1 }
+    const cards = atalayaCards([mw])
+    expect(cards).toEqual([{ id: 'm:1-0', group: 'm', title: 'Jeremías 40, 41', label: 'Parte 1', midweek: true, front: '¿Qué perlas encontró?', back: 'Que Jehová cumple lo que promete.' }])
+  })
+
   it('se repasa eligiendo tu respuesta entre 4 (primero del mismo artículo)', () => {
     const cards = atalayaCards(entries)
     const q = atalayaCheck(cards[0], cards, mulberry(3))

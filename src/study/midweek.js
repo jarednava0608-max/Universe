@@ -1,3 +1,5 @@
+import { parseArticle } from './atalaya.js'
+
 // Lee el programa de la reunión de entre semana (Vida y Ministerio Cristianos) tal como se copia
 // de la Guía de actividades en JW Library: la semana, la lectura, las tres secciones y cada parte
 // numerada ("1. Título" y abajo "(10 mins.)"). Cada renglón seguido de "Respuesta" es una pregunta
@@ -90,27 +92,71 @@ const qText = (l) => (l.meditar ? 'Para meditar: ' : '') + l.text
 export const answerOf = (fields, key) => String(fields?.respuestas?.[key] ?? '')
 export const withAnswer = (fields, key, v) => ({ ...fields, respuestas: { ...(fields.respuestas ?? {}), [key]: v } })
 
-// Una parte está lista si contestaste todas sus preguntas (o escribiste algo en sus notas).
-export const partDone = (fields, pt) => pt.keys.every((k) => answerOf(fields, k).trim())
+// El estudio bíblico de la congregación: se puede pegar el capítulo del libro y contestarlo
+// pregunta por pregunta, como La Atalaya (mismo lector, `parseArticle`). Sus respuestas van en
+// `respuestas` con la clave "e:<párrafo>".
+export const isStudyPart = (pt) => /estudio b[ií]blico de la congregaci[oó]n/i.test(pt.titulo)
+export const studyBlocks = (fields) => parseArticle(fields?.estudio).bloques.filter((b) => b.pregunta)
+const studyKey = (b) => 'e:' + b.key
 
-// Cuántas preguntas contestaste (solo las que son preguntas, no las notas de las partes).
+// Las claves que hay que llenar en una parte: sus preguntas; el capítulo del estudio si lo pegaste;
+// si no tiene preguntas, sus notas.
+export function keysOf(fields, pt) {
+  if (isStudyPart(pt)) {
+    const bs = studyBlocks(fields)
+    if (bs.length) return bs.map(studyKey)
+  }
+  return pt.keys
+}
+
+// Una parte está lista si contestaste todas sus preguntas (o escribiste algo en sus notas).
+export const partDone = (fields, pt) => keysOf(fields, pt).every((k) => answerOf(fields, k).trim())
+
+// Cuántas preguntas contestaste (las del programa y las del estudio bíblico; no las notas).
 export function midweekCount(fields) {
-  const keys = parseProgram(fields?.programa).partes.flatMap((pt) => pt.lineas.filter((l) => l.q).map((l) => l.key))
+  const keys = [
+    ...parseProgram(fields?.programa).partes.flatMap((pt) => pt.lineas.filter((l) => l.q).map((l) => l.key)),
+    ...studyBlocks(fields).map(studyKey),
+  ]
   return { done: keys.filter((k) => answerOf(fields, k).trim()).length, total: keys.length }
+}
+
+// Cada pregunta con tu respuesta, por parte: [{ pt, rows: [{ key, pregunta, respuesta }] , nota }].
+// Lo usan "Copiar para Claude", "Proponer al mapa" y Repasar hoy.
+export function midweekAnswers(fields) {
+  const out = []
+  for (const pt of parseProgram(fields?.programa).partes) {
+    const rows = pt.lineas.filter((l) => l.q).map((l) => ({ key: l.key, pregunta: qText(l), respuesta: answerOf(fields, l.key).trim() }))
+    if (isStudyPart(pt)) for (const b of studyBlocks(fields)) rows.push({ key: studyKey(b), pregunta: b.pregunta, respuesta: answerOf(fields, studyKey(b)).trim() })
+    const nota = !pt.lineas.some((l) => l.q) ? answerOf(fields, String(pt.num)).trim() : ''
+    out.push({ pt, rows: rows.filter((r) => r.respuesta), nota })
+  }
+  return out
+}
+
+// La lectura de la semana, capítulo por capítulo: "Jeremías 40, 41" → ["Jeremías 40", "Jeremías 41"];
+// también "Jeremías 40-42".
+export function readingChapters(lectura) {
+  const m = String(lectura ?? '').trim().match(/^((?:\d\s*)?\p{L}[\p{L}\s.]*?)\s+(\d[\d\s,–-]*)$/u)
+  if (!m) return []
+  const out = []
+  for (const part of m[2].split(',')) {
+    const [a, b] = part.split(/[–-]/).map((x) => Number(x.trim()))
+    if (!a) continue
+    for (let c = a; c <= (b && b >= a && b - a < 30 ? b : a); c++) out.push(`${m[1].trim()} ${c}`)
+  }
+  return out
 }
 
 // Para "Copiar para Claude": cada parte con sus preguntas y lo que contesté.
 export function midweekForClaude(fields) {
-  const prog = parseProgram(fields?.programa)
-  const out = []
-  for (const pt of prog.partes) {
-    const rows = []
-    for (const l of pt.lineas) if (l.q && answerOf(fields, l.key).trim()) rows.push(`${qText(l)}\n${answerOf(fields, l.key).trim()}`)
-    const nota = !pt.lineas.some((l) => l.q) && answerOf(fields, String(pt.num)).trim()
-    if (nota) rows.push(nota)
-    if (rows.length) out.push(`${pt.num}. ${pt.titulo}\n${rows.join('\n')}`)
-  }
-  return out.join('\n\n')
+  return midweekAnswers(fields)
+    .map(({ pt, rows, nota }) => {
+      const lines = [...rows.map((r) => `${r.pregunta}\n${r.respuesta}`), ...(nota ? [nota] : [])]
+      return lines.length ? `${pt.num}. ${pt.titulo}\n${lines.join('\n')}` : ''
+    })
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 // Para "Proponer al mapa": solo lo que tú escribiste (cada pregunta con tu respuesta y tus notas
@@ -121,15 +167,9 @@ export function midweekNode(fields) {
   const title = prog.semana ? `Vida y Ministerio, ${prog.semana}${year ? ` de ${year}` : ''}` : String(fields?.titulo ?? '').trim() || 'Reunión de entre semana'
   const parts = []
   if (prog.lectura) parts.push(`Lectura de la semana: ${prog.lectura}`)
-  for (const pt of prog.partes) {
-    const rows = []
-    for (const l of pt.lineas) {
-      const a = l.q && answerOf(fields, l.key).trim()
-      if (a) rows.push(`${qText(l)}\n${a}`)
-    }
-    const nota = !pt.lineas.some((l) => l.q) && answerOf(fields, String(pt.num)).trim()
-    if (nota) rows.push(nota)
-    if (rows.length) parts.push(`## ${pt.titulo}\n${rows.join('\n\n')}`)
+  for (const { pt, rows, nota } of midweekAnswers(fields)) {
+    const lines = [...rows.map((r) => `${r.pregunta}\n${r.respuesta}`), ...(nota ? [nota] : [])]
+    if (lines.length) parts.push(`## ${pt.titulo}\n${lines.join('\n\n')}`)
   }
   if (String(fields?.aplicacion ?? '').trim()) parts.push(`## Cómo lo aplico\n${fields.aplicacion.trim()}`)
   if (String(fields?.notas ?? '').trim()) parts.push(`## Notas\n${fields.notas.trim()}`)

@@ -7,6 +7,7 @@ export const defText = definitionText
 import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
 import { cleanVerseText, refKey } from '../lib/verses.js'
 import { answerOf, parseArticle, reviewAnswer } from '../study/atalaya.js'
+import { midweekAnswers } from '../study/midweek.js'
 
 export function shuffle(list, rnd = Math.random) {
   const a = [...list]
@@ -215,6 +216,19 @@ export function atalayaCards(entries) {
     }
     for (const b of art.bloques) add(b.key, `Párr. ${b.key}`, b.pregunta, answerOf(e.fields, b.key))
     art.repaso.forEach((q, i) => add('r' + i, '¿Qué responderías?', q, reviewAnswer(e.fields, q)))
+  }
+  // La reunión de entre semana: cada pregunta del programa (y del estudio bíblico) con tu respuesta.
+  const midweek = entries
+    .filter((e) => e.kind === 'reunion' && e.fields.tipo === 'entresemana' && String(e.fields.programa ?? '').trim())
+    .sort((a, b) => String(b.fields.fecha ?? '').localeCompare(String(a.fields.fecha ?? '')) || (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+  for (const e of midweek) {
+    const title = e.fields.titulo || 'Entre semana'
+    for (const { pt, rows } of midweekAnswers(e.fields)) {
+      for (const r of rows) {
+        if (!r.pregunta.trim() || r.respuesta.replace(/[^\p{L}]/gu, '').length < 8) continue
+        out.push({ id: e.id + ':' + r.key, group: e.id, title, label: `Parte ${pt.num}`, midweek: true, front: r.pregunta.trim(), back: r.respuesta })
+      }
+    }
   }
   return out
 }

@@ -90,7 +90,7 @@ export default function Review({ store, onExit, back }) {
           <div className="progress"><span style={{ width: `${(i / items.length) * 100}%` }} /></div>
           <div className="quiz-meta">
             <span className="quiz-count">{i + 1} de {items.length}</span>
-            <span className="review-kind">{LABEL[item.type]}{item.fresh ? ' · Nueva' : ''}</span>
+            <span className="review-kind">{item.item?.midweek ? 'Tu reunión entre semana' : LABEL[item.type]}{item.fresh ? ' · Nueva' : ''}</span>
           </div>
           {item.type === 'atalaya' && item.item.kind === 'source' && <SourceStep key={item.key} card={item.item} cards={sources} onAnswer={answer} />}
           {item.type === 'atalaya' && item.item.kind !== 'source' && <AtalayaStep key={item.key} card={item.item} cards={mine} onAnswer={answer} />}

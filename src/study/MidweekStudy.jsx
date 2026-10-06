@@ -4,7 +4,7 @@ import AutoText from '../components/AutoText.jsx'
 import RefLink from '../components/RefLink.jsx'
 import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks } from './midweek.js'
 import { useMeetings } from './meetings.js'
 import { DAYS } from './today.js'
 
@@ -62,7 +62,29 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
     if (on) nav.scrollTo({ left: on.offsetLeft - nav.clientWidth / 2 + on.offsetWidth / 2, behavior: 'smooth' })
   }, [idx, step])
 
+  // Al bajar leyendo se esconden los pasos y los números; al subir un buen tramo o al llegar
+  // arriba vuelven (igual que en La Atalaya).
+  const [barsHidden, setBarsHidden] = useState(false)
+  const scrollRef = useRef({ last: 0, turn: 0, dir: 0 })
+  function onScroll(e) {
+    const el = e.currentTarget
+    const y = Math.min(Math.max(el.scrollTop, 0), el.scrollHeight - el.clientHeight)
+    const r = scrollRef.current
+    if (y < 60) {
+      setBarsHidden(false)
+      Object.assign(r, { last: y, turn: y, dir: 0 })
+      return
+    }
+    const dir = y > r.last ? 1 : y < r.last ? -1 : r.dir
+    if (dir !== r.dir) r.turn = r.last
+    r.dir = dir
+    r.last = y
+    if (dir === 1 && y - r.turn > 24) setBarsHidden(true)
+    else if (dir === -1 && r.turn - y > 70) setBarsHidden(false)
+  }
+
   function go(next, i = idx) {
+    setBarsHidden(false)
     setEditingProgram(false)
     setStep(next)
     setIdx(i)
@@ -102,8 +124,8 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
         <span />
       </header>
 
-      <div className="editor-body at-body" ref={top}>
-        <div className="at-bars">
+      <div className="editor-body at-body" ref={top} onScroll={onScroll}>
+        <div className={'at-bars' + (barsHidden ? ' hidden' : '')}>
           <nav className="at-steps" aria-label="Pasos">
             {STEPS.map((s) => (
               <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={s.key !== 'programa' && !partes.length} onClick={() => go(s.key)}>{s.label}</button>
@@ -132,6 +154,27 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
               <p className="mw-cover-title">{fields.titulo || prog.lectura || 'Reunión de entre semana'}</p>
               <p className="at-summary">{meetingDay(fields.fecha)}{count.total ? ` · ${count.done} de ${count.total} contestadas` : ''}</p>
             </div>
+            {readingChapters(prog.lectura).length > 0 && (
+              <div className="mw-reading">
+                <p className="at-label">Lectura de la semana</p>
+                {readingChapters(prog.lectura).map((c) => {
+                  const read = (fields.leidos ?? []).includes(c)
+                  return (
+                    <div key={c} className={'mw-read-row' + (read ? ' on' : '')}>
+                      <button
+                        className="mw-check"
+                        aria-label={read ? `${c}: leído` : `Marcar ${c} como leído`}
+                        onClick={() => set({ leidos: read ? (fields.leidos ?? []).filter((x) => x !== c) : [...(fields.leidos ?? []), c] })}
+                      >
+                        <span className="plan-check">{read && <Check />}</span>
+                      </button>
+                      <RefLink refText={c} className="mw-read-link" />
+                      <span className="mw-read-state">{read ? 'Leído' : 'Abrir'}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             {prog.semana && meetings?.semana == null && !fields.fechaManual && (
               <label className="sfield">
                 <span className="sfield-label">¿Qué día es tu reunión entre semana? Así pongo la fecha sola.</span>
@@ -219,6 +262,8 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
             fields={fields}
             fecha={linkDate}
             onAnswer={(k, v) => setFields((f) => withAnswer(f, k, v))}
+            onSet={set}
+            onMarks={(k, m) => setFields((f) => ({ ...f, marcas: { ...(f.marcas ?? {}), [k]: m } }))}
             last={idx === partes.length - 1}
             onPrev={() => (idx > 0 ? go('partes', idx - 1) : go('programa'))}
             onNext={() => (idx < partes.length - 1 ? go('partes', idx + 1) : go('listo'))}
@@ -286,23 +331,35 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
 // Una parte del programa con el color de su sección. Lo que va entre paréntesis (citas y
 // publicaciones) va más tenue y se toca ahí mismo; cada pregunta va en una tarjeta con su
 // respuesta. Si la parte no tiene preguntas (lectura, maestros, estudio bíblico), lleva notas.
-function Part({ pt, fields, fecha, onAnswer, last, onPrev, onNext }) {
+function Part({ pt, fields, fecha, onAnswer, onSet, onMarks, last, onPrev, onNext }) {
   const asks = pt.lineas.some((l) => l.q)
+  const study = isStudyPart(pt)
   return (
     <>
       <p className={'mw-sec ' + pt.sec}>{pt.seccion}</p>
       <p className="at-qnum">Parte {pt.num}{pt.minutos ? ` · ${pt.minutos} min` : ''}</p>
       <h2 className="mw-title">{pt.titulo}</h2>
-      {pt.lineas.map((l, i) => (l.q ? (
-        <label key={i} className="at-answer mw-qcard">
-          <span className="at-answer-label">{l.meditar ? 'Para meditar' : 'Pregunta'}</span>
-          <span className="mw-q"><Rich text={l.text} /></span>
-          <AutoText value={answerOf(fields, l.key)} placeholder="Mi respuesta, con mis palabras" onChange={(v) => onAnswer(l.key, v)} minRows={2} />
-        </label>
-      ) : (
-        <p key={i} className={l.media ? 'mw-media' : 'mw-text'}><Rich text={l.text} /></p>
-      )))}
-      {!asks && (
+      {pt.lineas.some((l) => !l.q && !l.media) && <p className="at-tip small">Toca 2 o 3 palabras clave para subrayarlas.</p>}
+      {pt.lineas.map((l, i) => {
+        if (l.q) return (
+          <label key={i} className="at-answer mw-qcard">
+            <span className="at-answer-label">{l.meditar ? 'Para meditar' : 'Pregunta'}</span>
+            <span className="mw-q"><Rich text={l.text} /></span>
+            <AutoText value={answerOf(fields, l.key)} placeholder="Mi respuesta, con mis palabras" onChange={(v) => onAnswer(l.key, v)} minRows={2} />
+          </label>
+        )
+        if (l.media) return <p key={i} className="mw-media"><Rich text={l.text} /></p>
+        const k = `${pt.num}-${i}`
+        const marks = fields.marcas?.[k] ?? []
+        const on = new Set(marks)
+        return (
+          <p key={i} className="mw-text">
+            <Rich text={l.text} marks={on} onToggle={(w) => onMarks(k, on.has(w) ? marks.filter((x) => x !== w) : [...marks, w])} />
+          </p>
+        )
+      })}
+      {study && <StudyChapter fields={fields} onSet={onSet} onAnswer={onAnswer} />}
+      {!asks && !(study && studyBlocks(fields).length) && (
         <label className="at-answer">
           <span className="at-answer-label">Mis notas</span>
           <AutoText value={answerOf(fields, String(pt.num))} placeholder="Lo que aprendí o quiero recordar de esta parte" onChange={(v) => onAnswer(String(pt.num), v)} minRows={2} />
@@ -317,16 +374,101 @@ function Part({ pt, fields, fecha, onAnswer, last, onPrev, onNext }) {
   )
 }
 
-// Texto con lo de entre paréntesis más tenue y las citas tocables.
-function Rich({ text }) {
+// El estudio bíblico de la congregación: pegas el capítulo del libro y lo contestas pregunta por
+// pregunta (el párrafo se abre al tocarlo para no llenar la pantalla).
+function StudyChapter({ fields, onSet, onAnswer }) {
+  const blocks = studyBlocks(fields)
+  const [editing, setEditing] = useState(!blocks.length)
+  const done = blocks.filter((b) => answerOf(fields, 'e:' + b.key).trim()).length
+  return (
+    <div className="mw-study">
+      {editing ? (
+        <div className="sfield">
+          <span className="sfield-label">Pega el capítulo para contestarlo por párrafo</span>
+          <AutoText value={fields.estudio ?? ''} placeholder="En JW Library abre el libro del estudio, copia el capítulo con sus preguntas y pégalo aquí" onChange={(v) => onSet({ estudio: v })} minRows={4} />
+          {String(fields.estudio ?? '').trim() && !blocks.length && (
+            <p className="hint warn">No encontré las preguntas. Revisa que vengan con su número, como «1. ¿Pregunta?».</p>
+          )}
+          {blocks.length > 0 && (
+            <button className="primary" onClick={() => setEditing(false)}>Listo: {blocks.length} {blocks.length === 1 ? 'pregunta' : 'preguntas'}</button>
+          )}
+        </div>
+      ) : (
+        <>
+          <p className="at-label">Capítulo del estudio · {done} de {blocks.length} contestadas</p>
+          {blocks.map((b) => (
+            <div key={b.key} className="at-answer mw-qcard">
+              <span className="at-answer-label">{b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} {b.key}</span>
+              <span className="mw-q"><Rich text={b.pregunta} /></span>
+              {b.parrafos.length > 0 && (
+                <details className="mw-para">
+                  <summary>Leer el párrafo</summary>
+                  {b.parrafos.map((t, i) => <p key={i}><Rich text={t} /></p>)}
+                </details>
+              )}
+              <AutoText value={answerOf(fields, 'e:' + b.key)} placeholder="Mi respuesta, con mis palabras" onChange={(v) => onAnswer('e:' + b.key, v)} minRows={2} />
+            </div>
+          ))}
+          <button className="mw-edit" onClick={() => setEditing(true)}>Cambiar el capítulo pegado</button>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Texto con lo de entre paréntesis más tenue y las citas tocables. Con `onToggle`, las palabras
+// (fuera de los paréntesis) se tocan para subrayarlas como palabras clave; las marcadas seguidas
+// van en una sola pieza amarilla.
+function Rich({ text, marks, onToggle }) {
+  let n = 0
   return splitAsides(text).map((piece, i) => {
     const refs = findAllRefs(piece.text)
-    const inner = refs.length
-      ? splitRefs(piece.text, refs).map((x, k) => (x.ref ? <RefLink key={k} refText={x.text} /> : x.text))
-      : piece.text
+    const parts = refs.length ? splitRefs(piece.text, refs) : [{ text: piece.text }]
+    const inner = parts.map((x, k) => {
+      if (x.ref) return <RefLink key={k} refText={x.text} />
+      if (!onToggle || piece.aside) return x.text
+      const r = markable(x.text, n, marks, onToggle)
+      n = r.next
+      return <span key={k}>{r.nodes}</span>
+    })
     return piece.aside ? <span key={i} className="mw-aside">{inner}</span> : <span key={i}>{inner}</span>
   })
 }
+
+function markable(text, start, marks, onToggle) {
+  const out = []
+  let run = null
+  let n = start
+  const flush = () => {
+    if (!run) return
+    const tail = typeof run.at(-1) === 'string' ? run.pop() : null
+    out.push(<mark key={'m' + out.length} className="at-run">{run}</mark>)
+    if (tail) out.push(tail)
+    run = null
+  }
+  for (const t of text.split(/(\s+)/)) {
+    if (!t) continue
+    if (/^\s+$/.test(t)) {
+      ;(run ?? out).push(t)
+      continue
+    }
+    const i = n++
+    const el = <span key={'w' + i} className="at-word" onClick={() => onToggle(i)}>{t}</span>
+    if (marks.has(i)) (run ??= []).push(el)
+    else {
+      flush()
+      out.push(el)
+    }
+  }
+  flush()
+  return { nodes: out, next: n }
+}
+
+const Check = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+    <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
 
 // Las partes agrupadas por sección, en orden: [[nombre, clave, partes]].
 function sections(partes) {

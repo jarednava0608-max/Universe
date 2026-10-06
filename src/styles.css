@@ -1210,6 +1210,24 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mw-media { font-size: 14px; line-height: 1.5; font-style: italic; color: var(--text-3); margin: 0 0 12px; }
 .mw-aside { font-size: 0.86em; color: var(--text-3); }
 .mw-aside .ref-link { color: var(--link); }
+/* Lectura de la semana: cada capítulo con su palomita. */
+.mw-reading { margin: 0 0 18px; }
+.mw-reading .at-label { margin-top: 4px; }
+.mw-read-row { display: flex; align-items: center; gap: 4px; min-height: 48px; border-bottom: 1px solid var(--line); }
+.mw-read-row:last-child { border-bottom: 0; }
+.mw-check { flex: none; width: 44px; height: 44px; display: grid; place-items: center; margin-left: -10px; }
+.mw-read-row.on .plan-check { background: var(--ok); border-color: var(--ok); }
+.mw-read-link { flex: 1; font-size: 16px; color: var(--title); text-decoration: none; min-height: 44px; display: flex; align-items: center; }
+.mw-read-state { font-size: 13px; color: var(--text-3); }
+.mw-read-row.on .mw-read-link { color: var(--text-2); }
+/* Las palabras que se tocan en el texto de cada parte (sin la seleccion de iOS). */
+.mw-text { -webkit-user-select: none; user-select: none; }
+.mw-text .at-word { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* Estudio bíblico: el párrafo se abre al tocarlo. */
+.mw-study { margin: 6px 0 4px; }
+.mw-para { margin: 0 0 10px; font-size: 15px; line-height: 1.55; color: var(--text-body); }
+.mw-para summary { min-height: 36px; display: flex; align-items: center; color: var(--text-2); font-size: 14px; cursor: pointer; }
+.mw-para p { font-family: Georgia, 'Times New Roman', serif; font-size: 17px; margin: 0 0 10px; }
 .mw-qcard .mw-q { display: block; font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--title); margin: 0 0 10px; }
 .at-missing { display: flex; flex-wrap: wrap; gap: 6px; }
 .at-missing button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 14px; }

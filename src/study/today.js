@@ -8,6 +8,7 @@
 import { dailyAnalyzed, dailyVerse } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { addDays } from '../games/progress.js'
+import { midweekCount } from './midweek.js'
 
 export const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 const ATALAYA_FROM = 3 // días antes de la reunión en que empieza a salir
@@ -74,11 +75,17 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     const { iso: date, days } = nextDay(meetings.semana, now)
     if (days <= MIDWEEK_FROM) {
       const e = meetingEntry(entries, true, date)
-      const ready = !!e && hasContent(e.fields)
+      // Con el programa pegado cuenta las preguntas; sin él, basta con haber escrito algo.
+      const progress = e && String(e.fields.programa ?? '').trim() ? midweekCount(e.fields) : null
+      const ready = progress?.total ? progress.done === progress.total : !!e && hasContent(e.fields)
+      const state = ready ? 'Lista para la reunión'
+        : progress?.total ? `${progress.done} de ${progress.total} contestadas`
+        : e ? (String(e.fields.programa ?? '').trim() ? 'Sigue preparándola' : 'Pega el programa')
+        : 'Prepárala'
       items.push({
         key: 'entresemana',
         title: 'Reunión de entre semana',
-        sub: `${when(days, meetings.semana)} · ${ready ? 'Preparada' : e ? 'Sigue preparándola' : 'Prepárala'}`,
+        sub: `${when(days, meetings.semana)} · ${state}`,
         done: ready,
         entry: e,
         create: e ? null : { kind: 'reunion', fields: { tipo: 'entresemana', fecha: date } },

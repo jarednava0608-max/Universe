@@ -32,6 +32,14 @@ describe('Hoy: lo que toca según tu rutina', () => {
     expect(todayPlan({ now: MON, entries: [hecho] })[0]).toMatchObject({ sub: 'Jehová delante', done: true })
   })
 
+  it('la de entre semana con el programa pegado dice cuántas llevas', () => {
+    const programa = 'TESOROS DE LA BIBLIA\n1. Perlas\n(10 mins.)\n¿Pregunta uno?\nRespuesta\n¿Pregunta dos?\nRespuesta'
+    const e = { id: 'm', kind: 'reunion', fields: { tipo: 'entresemana', fecha: '2026-10-07', programa, respuestas: { '1-0': 'Algo' } }, updatedAt: 1 }
+    expect(todayPlan({ now: MON, meetings, entries: [e] }).find((x) => x.key === 'entresemana')).toMatchObject({ sub: 'El miércoles · 1 de 2 contestadas', done: false })
+    const lista = { ...e, fields: { ...e.fields, respuestas: { '1-0': 'Algo', '1-1': 'Otra' } } }
+    expect(todayPlan({ now: MON, meetings, entries: [lista] }).find((x) => x.key === 'entresemana')).toMatchObject({ sub: 'El miércoles · Lista para la reunión', done: true })
+  })
+
   it('la reunión de entre semana sale 2 días antes; La Atalaya 3 días antes', () => {
     expect(keys(todayPlan({ now: MON, meetings }))).toEqual(['diario', 'entresemana', 'repaso', 'reto'])
     const mon = todayPlan({ now: MON, meetings }).find((x) => x.key === 'entresemana')
