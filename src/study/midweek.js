@@ -9,10 +9,11 @@ export const STEPS = [
   { key: 'listo', label: 'Listo' },
 ]
 
+// [cómo viene, nombre, clave para su color]
 const SECTIONS = [
-  [/^tesoros de la biblia$/, 'Tesoros de la Biblia'],
-  [/^seamos mejores maestros$/, 'Seamos mejores maestros'],
-  [/^nuestra vida cristiana$/, 'Nuestra vida cristiana'],
+  [/^tesoros de la biblia$/, 'Tesoros de la Biblia', 'tesoros'],
+  [/^seamos mejores maestros$/, 'Seamos mejores maestros', 'maestros'],
+  [/^nuestra vida cristiana$/, 'Nuestra vida cristiana', 'vida'],
 ]
 
 const plain = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
@@ -23,15 +24,17 @@ const titleCase = (s) => s.toLowerCase().replace(/(^|[\s(])(\p{L})/gu, (_, a, b)
 export function parseProgram(text) {
   const out = { semana: '', lectura: '', partes: [] }
   let seccion = ''
+  let sec = ''
   let part = null
   let ended = false
   for (const raw of String(text ?? '').split('\n')) {
     const line = raw.replace(/\s+/g, ' ').trim()
     if (!line || ended) continue
     const p = plain(line)
-    const sec = SECTIONS.find(([re]) => re.test(p))
-    if (sec) {
-      seccion = sec[1]
+    const found = SECTIONS.find(([re]) => re.test(p))
+    if (found) {
+      seccion = found[1]
+      sec = found[2]
       part = null
       continue
     }
@@ -49,7 +52,7 @@ export function parseProgram(text) {
     }
     const start = line.match(/^(\d{1,2})\.\s+(.+)$/)
     if (start && Number(start[1]) === (out.partes.at(-1)?.num ?? 0) + 1) {
-      part = { num: Number(start[1]), titulo: start[2], seccion, minutos: 0, lineas: [] }
+      part = { num: Number(start[1]), titulo: start[2], seccion, sec, minutos: 0, lineas: [] }
       out.partes.push(part)
       continue
     }
@@ -65,7 +68,10 @@ export function parseProgram(text) {
       if (last) last.q = true
       continue
     }
-    part.lineas.push(/^para meditar:/.test(p) ? { text: line, q: true } : { text: line })
+    if (/^para meditar:/.test(p)) part.lineas.push({ text: line.replace(/^para meditar:\s*/i, ''), q: true, meditar: true })
+    // Lo que describe imágenes y videos va aparte, más tenue.
+    else if (/^(imagenes del video|serie de imagenes|ponga el video)/.test(p)) part.lineas.push({ text: line, media: true })
+    else part.lineas.push({ text: line })
   }
   // Cada pregunta con su clave ("1-0", "8-2"…); una parte sin preguntas tiene sus notas ("3").
   for (const pt of out.partes) {
@@ -78,6 +84,8 @@ export function parseProgram(text) {
 
 // Título para la lista de Reuniones: la lectura de la semana ("Jeremías 40, 41").
 export const programTitle = (prog) => prog.lectura || (prog.semana ? `Semana del ${prog.semana}` : '')
+
+const qText = (l) => (l.meditar ? 'Para meditar: ' : '') + l.text
 
 export const answerOf = (fields, key) => String(fields?.respuestas?.[key] ?? '')
 export const withAnswer = (fields, key, v) => ({ ...fields, respuestas: { ...(fields.respuestas ?? {}), [key]: v } })
@@ -97,7 +105,7 @@ export function midweekForClaude(fields) {
   const out = []
   for (const pt of prog.partes) {
     const rows = []
-    for (const l of pt.lineas) if (l.q && answerOf(fields, l.key).trim()) rows.push(`${l.text}\n${answerOf(fields, l.key).trim()}`)
+    for (const l of pt.lineas) if (l.q && answerOf(fields, l.key).trim()) rows.push(`${qText(l)}\n${answerOf(fields, l.key).trim()}`)
     const nota = !pt.lineas.some((l) => l.q) && answerOf(fields, String(pt.num)).trim()
     if (nota) rows.push(nota)
     if (rows.length) out.push(`${pt.num}. ${pt.titulo}\n${rows.join('\n')}`)
@@ -117,7 +125,7 @@ export function midweekNode(fields) {
     const rows = []
     for (const l of pt.lineas) {
       const a = l.q && answerOf(fields, l.key).trim()
-      if (a) rows.push(`${l.text}\n${a}`)
+      if (a) rows.push(`${qText(l)}\n${a}`)
     }
     const nota = !pt.lineas.some((l) => l.q) && answerOf(fields, String(pt.num)).trim()
     if (nota) rows.push(nota)
@@ -163,4 +171,34 @@ export function programDate(semana, weekday, ref) {
   const d = new Date(monday + 'T00:00:00Z')
   d.setUTCDate(d.getUTCDate() + ((Number(weekday) + 6) % 7))
   return isoOf(d)
+}
+
+// Parte un texto en trozos normales y los que van entre paréntesis (citas y publicaciones),
+// que se muestran más tenues: "Jehová protegió a Jeremías (Jer 40:2-4)." →
+// [{ text: 'Jehová protegió a Jeremías ' }, { text: '(Jer 40:2-4)', aside: true }, { text: '.' }]
+export function splitAsides(text) {
+  const out = []
+  let last = 0
+  for (const m of String(text ?? '').matchAll(/\([^()]*\)/g)) {
+    if (m.index > last) out.push({ text: text.slice(last, m.index) })
+    out.push({ text: m[0], aside: true })
+    last = m.index + m[0].length
+  }
+  if (last < String(text ?? '').length) out.push({ text: text.slice(last) })
+  return out
+}
+
+// Parte un texto en trozos y citas tocables (en el orden en que aparecen).
+export function splitRefs(text, refs) {
+  const out = []
+  let rest = String(text ?? '')
+  for (const r of refs) {
+    const i = rest.indexOf(r)
+    if (i < 0) continue
+    if (i) out.push({ text: rest.slice(0, i) })
+    out.push({ text: r, ref: true })
+    rest = rest.slice(i + r.length)
+  }
+  if (rest) out.push({ text: rest })
+  return out
 }

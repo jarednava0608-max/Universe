@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
-import { RefChips } from '../components/RefLink.jsx'
+import RefLink from '../components/RefLink.jsx'
 import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs } from './midweek.js'
 import { useMeetings } from './meetings.js'
 import { DAYS } from './today.js'
 
@@ -31,6 +31,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
   const top = useRef()
   const jump = useRef()
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
+  const [editingProgram, setEditingProgram] = useState(false)
 
   const hasContent = (f) => Boolean(String(f.programa ?? '').trim() || ['idea', 'aplicacion', 'notas'].some((k) => String(f[k] ?? '').trim()))
   async function flush() {
@@ -62,6 +63,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
   }, [idx, step])
 
   function go(next, i = idx) {
+    setEditingProgram(false)
     setStep(next)
     setIdx(i)
     top.current?.scrollTo({ top: 0 })
@@ -112,7 +114,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
               {partes.map((p, i) => (
                 <button
                   key={p.num}
-                  className={'at-jump-num' + (i === idx ? ' on' : partDone(fields, p) ? ' done' : '')}
+                  className={'at-jump-num ' + p.sec + (i === idx ? ' on' : partDone(fields, p) ? ' done' : '')}
                   aria-current={i === idx ? 'step' : undefined}
                   onClick={() => go('partes', i)}
                 >
@@ -123,15 +125,55 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
           )}
         </div>
 
-        {step === 'programa' && (
+        {step === 'programa' && partes.length > 0 && !editingProgram && (
           <>
-            <h2 className="at-h">Pega el programa</h2>
-            <div className="sfield">
-              <div className="seg2">
-                <button type="button" onClick={() => onSwitchToAtalaya({ ...base.current, fields: { ...fields, tipo: 'atalaya' } })}>La Atalaya</button>
-                <button type="button" className="on">Entre semana</button>
-              </div>
+            <div className="at-card mw-cover">
+              <p className="at-cover-kicker">Vida y Ministerio{prog.semana ? ` · ${prog.semana}` : ''}</p>
+              <p className="mw-cover-title">{fields.titulo || prog.lectura || 'Reunión de entre semana'}</p>
+              <p className="at-summary">{meetingDay(fields.fecha)}{count.total ? ` · ${count.done} de ${count.total} contestadas` : ''}</p>
             </div>
+            {prog.semana && meetings?.semana == null && !fields.fechaManual && (
+              <label className="sfield">
+                <span className="sfield-label">¿Qué día es tu reunión entre semana? Así pongo la fecha sola.</span>
+                <select className="input" value="" onChange={(e) => setMeetings({ ...(meetings ?? {}), semana: Number(e.target.value) })}>
+                  <option value="" disabled>Elegir</option>
+                  {[1, 2, 3, 4, 5].map((d) => <option key={d} value={d}>{DAYS[d]}</option>)}
+                </select>
+              </label>
+            )}
+            {sections(partes).map(([name, sec, list]) => (
+              <section key={name} className="mw-outline">
+                <p className={'mw-sec ' + sec}>{name}</p>
+                {list.map((p) => (
+                  <button key={p.num} className="mw-row" onClick={() => go('partes', partes.indexOf(p))}>
+                    <span className={'mw-num ' + p.sec + (partDone(fields, p) ? ' done' : '')}>{p.num}</span>
+                    <span className="mw-row-title">{p.titulo}{kindOf(p) && <span className="mw-row-sub">{kindOf(p)}</span>}</span>
+                    {p.minutos > 0 && <span className="mw-min">{p.minutos} min</span>}
+                  </button>
+                ))}
+              </section>
+            ))}
+            <button className="primary" onClick={() => go('partes', Math.max(0, partes.findIndex((p) => !partDone(fields, p))))}>
+              {Object.values(fields.respuestas ?? {}).some((v) => String(v).trim()) ? 'Seguir donde me quedé' : 'Empezar'}
+            </button>
+            <a className="secondary as-btn" data-direct="1" href={meetingsUrl(linkDate)} target="_blank" rel="noopener noreferrer">
+              Ver esta semana en wol.jw.org
+            </a>
+            <button className="mw-edit" onClick={() => setEditingProgram(true)}>Cambiar fecha, título o programa</button>
+          </>
+        )}
+
+        {step === 'programa' && (!partes.length || editingProgram) && (
+          <>
+            <h2 className="at-h">{partes.length ? 'Fecha y programa' : 'Pega el programa'}</h2>
+            {!partes.length && (
+              <div className="sfield">
+                <div className="seg2">
+                  <button type="button" onClick={() => onSwitchToAtalaya({ ...base.current, fields: { ...fields, tipo: 'atalaya' } })}>La Atalaya</button>
+                  <button type="button" className="on">Entre semana</button>
+                </div>
+              </div>
+            )}
             <label className="sfield">
               <span className="sfield-label">Fecha de la reunión</span>
               <input className="input" type="date" value={fields.fecha ?? ''} onChange={(e) => set({ fecha: e.target.value, fechaManual: true })} />
@@ -149,12 +191,14 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
               <span className="sfield-label">Título</span>
               <input className="input" value={fields.titulo ?? ''} placeholder="La lectura de la semana" onChange={(e) => set({ titulo: e.target.value })} />
             </label>
-            <a className="secondary as-btn" data-direct="1" href={meetingsUrl(linkDate)} target="_blank" rel="noopener noreferrer">
-              Ver esta semana en wol.jw.org
-            </a>
+            {!partes.length && (
+              <a className="secondary as-btn" data-direct="1" href={meetingsUrl(linkDate)} target="_blank" rel="noopener noreferrer">
+                Ver esta semana en wol.jw.org
+              </a>
+            )}
             <div className="sfield">
               <span className="sfield-label">La semana completa de la Guía de actividades</span>
-              <AutoText value={fields.programa ?? ''} placeholder="En JW Library abre la Guía de actividades, copia toda la semana y pégala aquí" onChange={setProgram} minRows={6} />
+              <AutoText value={fields.programa ?? ''} placeholder="En JW Library abre la Guía de actividades, copia toda la semana y pégala aquí" onChange={setProgram} minRows={partes.length ? 4 : 6} />
             </div>
             {partes.length > 0 && (
               <p className="hint">Encontré {partes.length} partes y {count.total} {count.total === 1 ? 'pregunta' : 'preguntas'}.</p>
@@ -162,8 +206,8 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
             {String(fields.programa ?? '').trim() && !partes.length && (
               <p className="hint warn">No encontré las partes. Revisa que vengan las secciones (TESOROS DE LA BIBLIA…) y cada parte con su número, como «1. Título».</p>
             )}
-            <button className="primary" disabled={!partes.length} onClick={() => go('partes', Math.max(0, partes.findIndex((p) => !partDone(fields, p))))}>
-              Siguiente: las partes
+            <button className="primary" disabled={!partes.length} onClick={() => setEditingProgram(false)}>
+              Listo
             </button>
           </>
         )}
@@ -239,44 +283,74 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
   )
 }
 
-// Una parte del programa: su sección, el texto con las citas tocables y una tarjeta de respuesta
-// debajo de cada pregunta. Si no tiene preguntas (lectura, maestros, estudio bíblico), lleva notas.
+// Una parte del programa con el color de su sección. Lo que va entre paréntesis (citas y
+// publicaciones) va más tenue y se toca ahí mismo; cada pregunta va en una tarjeta con su
+// respuesta. Si la parte no tiene preguntas (lectura, maestros, estudio bíblico), lleva notas.
 function Part({ pt, fields, fecha, onAnswer, last, onPrev, onNext }) {
-  const refs = useMemo(() => findAllRefs(pt.titulo, ...pt.lineas.map((l) => l.text)), [pt])
   const asks = pt.lineas.some((l) => l.q)
   return (
     <>
-      <h3 className="at-sub">{pt.seccion}</h3>
+      <p className={'mw-sec ' + pt.sec}>{pt.seccion}</p>
       <p className="at-qnum">Parte {pt.num}{pt.minutos ? ` · ${pt.minutos} min` : ''}</p>
-      <p className="at-question">{pt.titulo}</p>
+      <h2 className="mw-title">{pt.titulo}</h2>
       {pt.lineas.map((l, i) => (l.q ? (
-        <div key={i}>
-          <p className="at-question mw-q">{l.text}</p>
-          <label className="at-answer">
-            <span className="at-answer-label">Mi respuesta</span>
-            <AutoText value={answerOf(fields, l.key)} placeholder="Con mis palabras, como para comentarla" onChange={(v) => onAnswer(l.key, v)} minRows={2} />
-          </label>
-        </div>
+        <label key={i} className="at-answer mw-qcard">
+          <span className="at-answer-label">{l.meditar ? 'Para meditar' : 'Pregunta'}</span>
+          <span className="mw-q"><Rich text={l.text} /></span>
+          <AutoText value={answerOf(fields, l.key)} placeholder="Mi respuesta, con mis palabras" onChange={(v) => onAnswer(l.key, v)} minRows={2} />
+        </label>
       ) : (
-        <p key={i} className="mw-text">{l.text}</p>
+        <p key={i} className={l.media ? 'mw-media' : 'mw-text'}><Rich text={l.text} /></p>
       )))}
-      {refs.length > 0 && (
-        <div className="sfield">
-          <span className="sfield-label">Textos y publicaciones</span>
-          <RefChips refs={refs} />
-        </div>
-      )}
-      <a className="at-jw" data-direct="1" href={meetingsUrl(fecha)} target="_blank" rel="noopener noreferrer">Ver la reunión en wol.jw.org</a>
       {!asks && (
         <label className="at-answer">
           <span className="at-answer-label">Mis notas</span>
           <AutoText value={answerOf(fields, String(pt.num))} placeholder="Lo que aprendí o quiero recordar de esta parte" onChange={(v) => onAnswer(String(pt.num), v)} minRows={2} />
         </label>
       )}
+      <a className="at-jw" data-direct="1" href={meetingsUrl(fecha)} target="_blank" rel="noopener noreferrer">Ver la reunión en wol.jw.org</a>
       <div className="at-nav">
         <button className="secondary" onClick={onPrev}>Anterior</button>
         <button className="primary" onClick={onNext}>{last ? 'Terminar' : 'Siguiente'}</button>
       </div>
     </>
   )
+}
+
+// Texto con lo de entre paréntesis más tenue y las citas tocables.
+function Rich({ text }) {
+  return splitAsides(text).map((piece, i) => {
+    const refs = findAllRefs(piece.text)
+    const inner = refs.length
+      ? splitRefs(piece.text, refs).map((x, k) => (x.ref ? <RefLink key={k} refText={x.text} /> : x.text))
+      : piece.text
+    return piece.aside ? <span key={i} className="mw-aside">{inner}</span> : <span key={i}>{inner}</span>
+  })
+}
+
+// Las partes agrupadas por sección, en orden: [[nombre, clave, partes]].
+function sections(partes) {
+  const out = []
+  for (const p of partes) {
+    const last = out.at(-1)
+    if (last && last[0] === p.seccion) last[2].push(p)
+    else out.push([p.seccion, p.sec, [p]])
+  }
+  return out
+}
+
+// "jueves 8 de octubre"
+function meetingDay(iso) {
+  const [y, m, d] = String(iso ?? '').split('-').map(Number)
+  if (!y) return 'Sin fecha'
+  const s = new Date(y, m - 1, d).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '')
+  return s[0].toUpperCase() + s.slice(1)
+}
+
+// Las partes de maestros dicen dónde es ("DE CASA EN CASA." → "De casa en casa").
+function kindOf(p) {
+  const m = p.lineas[0]?.text.match(/^([A-ZÁÉÍÓÚÑ ]{4,})\./)
+  if (!m) return ''
+  const t = m[1].trim().toLowerCase()
+  return t[0].toUpperCase() + t.slice(1)
 }

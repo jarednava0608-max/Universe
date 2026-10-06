@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate } from './midweek.js'
+import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate, splitAsides, splitRefs } from './midweek.js'
 import { entryForClaude, proposeNode } from './kinds.js'
 
 // Tal como se copia de la Guía de actividades en JW Library (5-11 de octubre de 2026, recortado).
@@ -61,7 +61,9 @@ describe('reunión de entre semana', () => {
 
   it('las preguntas son los renglones antes de "Respuesta" y PARA MEDITAR', () => {
     const qs = (n) => prog.partes[n].lineas.filter((l) => l.q).map((l) => l.text.slice(0, 20))
-    expect(qs(0)).toEqual(['PARA MEDITAR: ¿Cómo '])
+    expect(qs(0)).toEqual(['¿Cómo nos protege Je'])
+    expect(prog.partes[0].lineas.find((l) => l.q).meditar).toBe(true)
+    expect(prog.partes.map((p) => p.sec)).toEqual(['tesoros', 'tesoros', 'tesoros', 'maestros', 'vida', 'vida'])
     expect(qs(1)).toEqual(['Jer 40:12. ¿Cómo dem', '¿Qué perlas espiritu'])
     expect(qs(4)).toEqual(['¿Cómo podemos honrar'])
     expect(prog.partes[1].keys).toEqual(['2-0', '2-1'])
@@ -118,6 +120,18 @@ describe('reunión de entre semana', () => {
     // Sin día de reunión o sin semana no adivina.
     expect(programDate('5-11 de octubre', null, '2026-10-05')).toBe(null)
     expect(programDate('', 3, '2026-10-05')).toBe(null)
+  })
+
+  it('separa lo que va entre paréntesis y las citas tocables', () => {
+    expect(splitAsides('Jehová protegió a Jeremías (Jer 40:2-4; jr 189 párr. 16).')).toEqual([
+      { text: 'Jehová protegió a Jeremías ' },
+      { text: '(Jer 40:2-4; jr 189 párr. 16)', aside: true },
+      { text: '.' },
+    ])
+    expect(splitAsides('Sin citas')).toEqual([{ text: 'Sin citas' }])
+    expect(splitRefs('(Pr 4:5, 6; 1Te 5:14)', ['Pr 4:5, 6', '1Te 5:14'])).toEqual([
+      { text: '(' }, { text: 'Pr 4:5, 6', ref: true }, { text: '; ' }, { text: '1Te 5:14', ref: true }, { text: ')' },
+    ])
   })
 
   it('un texto sin programa no da partes', () => {
