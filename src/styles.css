@@ -1426,3 +1426,43 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .voice-row.on { border-color: var(--accent, var(--text)); color: var(--accent, var(--text)); font-weight: 600; }
 .voice-lang { font-size: 13px; color: var(--text-3); font-weight: 400; }
 .voice-tip { margin-top: 12px; line-height: 1.5; }
+
+/* Leer la Biblia: libros en cuadros como en JW Library y capítulos con los leídos marcados. */
+.bible-card .progress { grid-column: 1 / -1; margin-top: 6px; }
+.bh-progress { margin-bottom: 8px; }
+.bh-count { margin: 0 0 8px; font-size: 16px; color: var(--text-2); }
+.bh-count b { color: var(--title); font-size: 22px; }
+.bh-h { font-family: var(--font-display); font-size: 18px; font-weight: 800; letter-spacing: 0.01em; text-transform: uppercase; color: var(--title); margin: 24px 0 10px; }
+.bh-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.bh-book { aspect-ratio: 1; display: flex; align-items: flex-end; padding: 0 0 8px 8px; font-size: 15px; font-weight: 600; color: var(--title); background: rgba(var(--link-rgb), 0.12); }
+.bh-book.lv1 { background: rgba(var(--link-rgb), 0.26); }
+.bh-book.lv2 { background: rgba(var(--link-rgb), 0.42); }
+.bh-book.lv3 { background: rgba(var(--link-rgb), 0.62); }
+:root[data-style='jw'] .bh-book { background: #3a3448; color: #fff; }
+:root[data-style='jw'] .bh-book.lv1 { background: #4c4560; }
+:root[data-style='jw'] .bh-book.lv2 { background: #5f5778; }
+:root[data-style='jw'] .bh-book.lv3 { background: #77708a; }
+:root[data-style='jw'][data-theme='light'] .bh-book { background: #e6e2f0; color: #1c1c1e; }
+:root[data-style='jw'][data-theme='light'] .bh-book.lv1 { background: #d3cce6; }
+:root[data-style='jw'][data-theme='light'] .bh-book.lv2 { background: #b9aed8; }
+:root[data-style='jw'][data-theme='light'] .bh-book.lv3 { background: #9a8cc6; }
+.bh-chapters { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 14px; }
+.bh-ch { position: relative; aspect-ratio: 1; display: grid; place-items: center; font-size: 17px; font-weight: 600; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line); color: var(--text); }
+.bh-ch.read { background: var(--accent, var(--btn)); border-color: transparent; color: var(--btn-ink); }
+.bh-ch.saved::after { content: ''; position: absolute; right: 6px; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--link); }
+.bh-ch.read.saved::after { background: var(--btn-ink); }
+.reader-read { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px; margin-top: 24px; border-radius: var(--r); border: 1px solid var(--line-strong); font-size: 16px; font-weight: 600; color: var(--text); }
+.reader-read.on { color: var(--ok); border-color: var(--ok); }
+.reader-read.on .plan-check { background: var(--ok); border-color: var(--ok); }
+
+/* Estrellita: las respuestas que vas a comentar (salen primero en el modo reunión). */
+.at-answer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.at-answer-head .at-answer-label { margin-bottom: 0; }
+.star-btn { flex: none; display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 2px 0 8px; font-size: 13px; font-weight: 600; color: var(--text-3); }
+.star-btn.on { color: var(--gold-text); }
+:root[data-style='jw'] .star-btn.on { color: #e3b341; }
+.at-answer .at-answer-head { margin-bottom: 6px; }
+.mm-stars { margin: 0 0 18px; padding: 4px 14px 0; border-radius: var(--r); background: var(--surface); border-left: 3px solid #e3b341; }
+.mm-stars-h { margin: 12px 0 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #e3b341; }
+.mm-stars .mm-item:last-child { border-bottom: 0; }
+.mm-star { color: #e3b341; }

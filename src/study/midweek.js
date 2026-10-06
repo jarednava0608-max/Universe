@@ -249,11 +249,15 @@ export function meetingItems(fields) {
   const out = []
   for (const pt of parseProgram(fields?.programa).partes) {
     const base = { section: pt.seccion, sec: pt.sec }
-    for (const l of pt.lineas) if (l.q) out.push({ ...base, label: `Parte ${pt.num}`, question: qText(l), answer: answerOf(fields, l.key) })
+    for (const l of pt.lineas) if (l.q) out.push({ ...base, key: l.key, label: `Parte ${pt.num}`, question: qText(l), answer: answerOf(fields, l.key) })
     const study = isStudyPart(pt) ? studyBlocks(fields) : []
-    for (const b of study) out.push({ ...base, label: `Estudio bíblico · ${b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} ${b.key}`, question: b.pregunta, answer: answerOf(fields, studyKey(b)) })
+    for (const b of study) out.push({ ...base, key: studyKey(b), label: `Estudio bíblico · ${b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} ${b.key}`, question: b.pregunta, answer: answerOf(fields, studyKey(b)) })
     const nota = !pt.lineas.some((l) => l.q) && !study.length ? answerOf(fields, String(pt.num)).trim() : ''
-    if (nota) out.push({ ...base, label: `Parte ${pt.num}`, question: pt.titulo, answer: nota })
+    if (nota) out.push({ ...base, key: String(pt.num), label: `Parte ${pt.num}`, question: pt.titulo, answer: nota })
   }
   return out
 }
+
+// Las respuestas que marcaste con estrellita para comentarlas (La Atalaya y entre semana).
+export const isStarred = (fields, key) => (fields?.comentar ?? []).includes(key)
+export const withStar = (fields, key) => ({ ...fields, comentar: isStarred(fields, key) ? fields.comentar.filter((k) => k !== key) : [...(fields.comentar ?? []), key] })

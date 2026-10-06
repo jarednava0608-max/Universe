@@ -22,6 +22,7 @@ import GamesTab, { Daily } from './games/GamesTab.jsx'
 import Review, { reviewSummary } from './games/Review.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import ChapterReader from './components/ChapterReader.jsx'
+import { isRead, withRead } from './lib/reading.js'
 import { OPEN_REF } from './lib/verses.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
@@ -68,6 +69,9 @@ export default function App() {
   }, [])
 
   // Tocar una cita bíblica en cualquier parte abre la hoja con el texto (en vez de salir a wol.jw.org).
+  // Leer toda la Biblia: marcar un capítulo como leído (se guarda en el progreso y se sincroniza).
+  const toggleRead = (book, chapter, on) => store.updateProgress((f) => withRead(f, book, chapter, on))
+
   const [refOpen, setRefOpen] = useState(null)
   // Un capítulo entero ("Jeremías 40") se abre a pantalla completa, como la Biblia de JW Library.
   const [reader, setReader] = useState(null) // { book, chapter, verse? }
@@ -335,6 +339,8 @@ export default function App() {
           challenge={dailyDone(store.progress)}
           onReview={() => setPlay('review')}
           onChallenge={() => setPlay('daily')}
+          leidos={store.progress.leidos}
+          onToggleRead={toggleRead}
         />
       )}
       {play === 'review' && <Review store={store} back="Estudio" onExit={() => setPlay(null)} />}
@@ -419,6 +425,8 @@ export default function App() {
         <ChapterReader
           {...reader}
           entries={store.entries}
+          read={isRead(store.progress.leidos, reader.book, reader.chapter)}
+          onToggleRead={() => toggleRead(reader.book, reader.chapter, !isRead(store.progress.leidos, reader.book, reader.chapter))}
           onGo={(to) => setReader(to)}
           onPaste={(ref) => setRefOpen(ref)}
           onClose={() => setReader(null)}

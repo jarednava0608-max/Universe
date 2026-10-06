@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nextDay, todayPlan } from './today.js'
+import { nextDay, todayPlan, looksLikeDailyText } from './today.js'
 
 // Lunes 5 de octubre de 2026. Reuniones: miércoles (3) y domingo (0).
 const MON = new Date(2026, 9, 5, 9, 0)
@@ -61,5 +61,11 @@ describe('Hoy: lo que toca según tu rutina', () => {
   it('repasar y reto se marcan hechos', () => {
     const items = todayPlan({ now: MON, review: { due: 0, fresh: 0 }, challenge: { day: '2026-10-05', score: 4 } })
     expect(items.slice(1).map((x) => [x.sub, x.done])).toEqual([['Al día', true], ['Hecho: 4 de 5', true]])
+  })
+
+  it('reconoce el texto diario copiado de JW Library', () => {
+    expect(looksLikeDailyText('Martes 6 de octubre\nLa Ley tiene una sombra de las cosas buenas por venir (Heb. 10:1).\n\nComentario.')).toBe(true)
+    expect(looksLikeDailyText('hola')).toBe(false)
+    expect(looksLikeDailyText('Una lista del súper con pan, leche y huevos para la semana')).toBe(false)
   })
 })

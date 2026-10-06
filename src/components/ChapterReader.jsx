@@ -12,7 +12,7 @@ const nameOf = (book, chapter) => `${BOOKS[book - 1]} ${chapter}`
 // poesía en sus renglones, el capítulo anterior y el siguiente (botones o deslizar) y "Escuchar",
 // que lo lee en voz alta con la voz del iPhone marcando el versículo que va.
 // Si el capítulo no está guardado completo, se ofrece pegarlo (abre la hoja de Mi Biblia).
-export default function ChapterReader({ book, chapter, verse, entries, onGo, onPaste, onClose }) {
+export default function ChapterReader({ book, chapter, verse, entries, read, onToggleRead, onGo, onPaste, onClose }) {
   const verses = useMemo(() => savedChapterVerses(entries, book, chapter), [entries, book, chapter])
   const { saved, expected } = chapterSaved(entries, nameOf(book, chapter))
   const prev = neighborChapter(book, chapter, -1)
@@ -83,6 +83,12 @@ export default function ChapterReader({ book, chapter, verse, entries, onGo, onP
             <button className="primary" onClick={() => onPaste(nameOf(book, chapter))}>Pegar el capítulo</button>
             <a className="secondary as-btn" data-direct="1" href={jwLibraryUrl(nameOf(book, chapter))} target="_blank" rel="noopener noreferrer">Abrir en JW Library</a>
           </div>
+        )}
+        {verses.length > 0 && onToggleRead && (
+          <button className={'reader-read' + (read ? ' on' : '')} onClick={onToggleRead}>
+            <span className="plan-check">{read && <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>}</span>
+            {read ? 'Leído' : 'Marcar como leído'}
+          </button>
         )}
         <nav className="reader-nav">
           <button className="secondary" disabled={!prev} onClick={() => onGo(prev)}>{prev ? `‹ ${nameOf(prev.book, prev.chapter)}` : ' '}</button>

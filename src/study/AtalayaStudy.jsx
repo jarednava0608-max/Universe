@@ -6,6 +6,8 @@ import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude, formatDate } from './kinds.js'
 import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
 import MeetingMode from './MeetingMode.jsx'
+import StarButton from '../components/StarButton.jsx'
+import { isStarred, withStar } from './midweek.js'
 import { canSpeak, useSpeech } from '../lib/speech.js'
 
 // La Atalaya por pasos, como recomienda jw.org para prepararse: primero una idea general
@@ -233,6 +235,8 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
             marks={fields.marcas?.[bloques[idx].key] ?? []}
             onAnswer={(v) => setFields((f) => withAnswer(f, bloques[idx].key, v))}
             onMarks={(m) => setFields((f) => ({ ...f, marcas: { ...(f.marcas ?? {}), [bloques[idx].key]: m } }))}
+            starred={isStarred(fields, bloques[idx].key)}
+            onStar={() => setFields((f) => withStar(f, bloques[idx].key))}
             onPrev={() => (idx > 0 ? go('parrafos', idx - 1) : go('vistazo'))}
             onNext={() => (idx < bloques.length - 1 ? go('parrafos', idx + 1) : go('repaso'))}
           />
@@ -242,9 +246,12 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
           <>
             <h2 className="at-h">Repaso</h2>
             <p className="at-tip">Contesta con tus palabras, sin mirar el artículo. Si no te sale, vuelve a ese párrafo.</p>
-            {article.repaso.map((q) => (
+            {article.repaso.map((q, ri) => (
               <label className="sfield" key={q}>
-                <span className="sfield-label at-q">{q}</span>
+                <span className="at-answer-head">
+                  <span className="sfield-label at-q">{q}</span>
+                  <StarButton on={isStarred(fields, 'r' + ri)} onClick={() => setFields((f) => withStar(f, 'r' + ri))} />
+                </span>
                 <AutoText value={reviewAnswer(fields, q)} placeholder="Mi respuesta" onChange={(v) => setFields((f) => withReview(f, q, v))} />
               </label>
             ))}
@@ -305,6 +312,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
           kicker={['La Atalaya', fields.fecha && formatDate(fields.fecha)].filter(Boolean).join(' · ')}
           title={fields.titulo || 'La Atalaya'}
           items={meetingItems(fields)}
+          starred={fields.comentar ?? []}
           onClose={() => setMeeting(false)}
         />
       )}
@@ -314,7 +322,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
 
 // Una pregunta con sus párrafos: tocar palabras las subraya (palabras clave), los textos
 // se abren con un toque y abajo va la respuesta con tus palabras.
-function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, onNext }) {
+function Block({ b, enlace, n, total, answer, marks, starred, onStar, onAnswer, onMarks, onPrev, onNext }) {
   const speech = useSpeech()
   const refs = useMemo(() => findAllRefs(b.pregunta, ...b.parrafos), [b])
   const marked = new Set(marks)
@@ -376,7 +384,10 @@ function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, 
         </div>
       )}
       <label className="at-answer">
-        <span className="at-answer-label">Mi respuesta, con mis palabras</span>
+        <span className="at-answer-head">
+          <span className="at-answer-label">Mi respuesta, con mis palabras</span>
+          <StarButton on={starred} onClick={onStar} />
+        </span>
         <AutoText value={answer} placeholder="Una idea corta, como para comentarla en la reunión" onChange={onAnswer} minRows={3} />
       </label>
       <div className="at-nav">

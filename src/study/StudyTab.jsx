@@ -8,6 +8,8 @@ import { answeredCount } from './atalaya.js'
 import { midweekCount } from './midweek.js'
 import { readMeetings } from './meetings.js'
 import { nextDay } from './today.js'
+import BibleHome from '../components/BibleHome.jsx'
+import { readCount, TOTAL_CHAPTERS } from '../lib/reading.js'
 import TodayPlan from './TodayPlan.jsx'
 import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
@@ -24,11 +26,12 @@ import MidweekStudy from './MidweekStudy.jsx'
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
 // Pestaña Estudio: 5 apartados, cada uno con su lista de entradas.
-export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge }) {
+export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge, leidos, onToggleRead }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
+  const [bibleOpen, setBibleOpen] = useState(false)
   const [proposal, setProposal] = useState(null) // { entry, node } desde La Atalaya por pasos
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
   const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
@@ -66,6 +69,13 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               const e = makeEntry(kind)
               setEditing({ entry: { ...e, fields: { ...e.fields, ...fields } }, isNew: true })
             }}
+            onPasteDaily={async (texto, existing) => {
+              const e = existing ?? makeEntry('diario')
+              const saved = await onSaveEntry({ ...e, fields: { ...e.fields, fecha: today(), texto } })
+              toast('Texto de hoy guardado. Ahora analízalo.')
+              setEditing({ entry: saved ?? e, isNew: false })
+            }}
+            toast={toast}
             onReview={onReview}
             onChallenge={onChallenge}
           />
@@ -77,6 +87,12 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
           )}
+          <button className="continue-card bible-card" onClick={() => setBibleOpen(true)}>
+            <span className="continue-label">Leer la Biblia</span>
+            <span className="continue-title">{readCount(leidos)} de {TOTAL_CHAPTERS} capítulos</span>
+            <span className="progress"><span style={{ width: `${(readCount(leidos) / TOTAL_CHAPTERS) * 100}%` }} /></span>
+            <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+          </button>
           <div className="kind-grid">
             {KIND_ORDER.map((k) => (
               <button key={k} className="kind-card" onClick={() => setSection(k)}>
@@ -198,11 +214,15 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
 
+      {bibleOpen && <BibleHome leidos={leidos} entries={entries} onClose={() => setBibleOpen(false)} />}
+
       {editing && isMidweek(editing.entry) && (
         <MidweekStudy
           key={editing.entry.id}
           entry={editing.entry}
           entries={entries}
+          leidos={leidos}
+          onToggleRead={onToggleRead}
           isNew={editing.isNew}
           toast={toast}
           onSave={onSaveEntry}

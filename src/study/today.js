@@ -9,6 +9,7 @@ import { dailyAnalyzed, dailyVerse } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { addDays } from '../games/progress.js'
 import { midweekCount } from './midweek.js'
+import { findRefs } from '../lib/bible.js'
 
 export const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 const ATALAYA_FROM = 3 // días antes de la reunión en que empieza a salir
@@ -109,4 +110,10 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
   })
 
   return items
+}
+
+// ¿Lo copiado parece el texto diario? (un texto con su cita entre paréntesis: "… (Heb. 10:1).").
+export function looksLikeDailyText(text) {
+  const t = String(text ?? '').trim()
+  return t.length >= 20 && t.length <= 6000 && findRefs(t.slice(0, 600)).length > 0
 }

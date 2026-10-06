@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { DAYS, todayPlan } from './today.js'
+import { DAYS, todayPlan, looksLikeDailyText } from './today.js'
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
 const clip = (s, n = 160) => (s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s)
 
 // "Hoy": el texto de hoy arriba y, abajo, los pasos del día en orden. Cada paso se toca para hacerlo
 // y se marca solo cuando ya está hecho (ver today.js).
-export default function TodayPlan({ entries, review, challenge, onOpenEntry, onCreate, onReview, onChallenge }) {
+export default function TodayPlan({ entries, review, challenge, onOpenEntry, onCreate, onPasteDaily, onReview, onChallenge, toast }) {
   const [meetings, setMeetings] = useMeetings()
   const [changing, setChanging] = useState(false)
   const items = todayPlan({ entries, review, challenge, meetings })
@@ -17,6 +17,21 @@ export default function TodayPlan({ entries, review, challenge, onOpenEntry, onC
   const fecha = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
   const act = (it) => (it.key === 'repaso' ? onReview() : it.key === 'reto' ? onChallenge() : it.entry ? onOpenEntry(it.entry) : onCreate(it.create))
   const setup = changing || meetings?.semana == null || meetings?.fin == null
+
+  async function pasteDaily() {
+    let text = ''
+    try {
+      text = await navigator.clipboard.readText()
+    } catch {
+      // Sin permiso para leer lo copiado: se abre la entrada para pegarlo a mano.
+      return onCreate(diario.create ?? { kind: 'diario', fields: {} })
+    }
+    if (!looksLikeDailyText(text)) {
+      toast?.('Primero copia el texto de hoy en JW Library (con su cita) y vuelve a tocar aquí.')
+      return
+    }
+    onPasteDaily(text.trim(), diario.entry)
+  }
 
   return (
     <section className="today-card plan">
@@ -27,6 +42,12 @@ export default function TodayPlan({ entries, review, challenge, onOpenEntry, onC
       {diario.verse && (
         <button className="today-text" onClick={() => onOpenEntry(diario.entry)}>
           <span className="today-verse">{clip(diario.verse)}</span>
+        </button>
+      )}
+      {!diario.verse && onPasteDaily && (
+        // Copias el texto de hoy en JW Library y con un toque queda guardado con su fecha.
+        <button className="today-add" onClick={pasteDaily}>
+          <Icon d={ICONS.pegar} size={17} /> Pegar el texto de hoy
         </button>
       )}
       <ul className="plan-list">

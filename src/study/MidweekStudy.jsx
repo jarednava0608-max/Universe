@@ -3,16 +3,19 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
 import RefLink from '../components/RefLink.jsx'
 import { findAllRefs, chapterSaved } from '../lib/verses.js'
+import { parseRef } from '../lib/bible.js'
+import { isRead } from '../lib/reading.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, meetingItems } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, meetingItems, isStarred, withStar } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
+import StarButton from '../components/StarButton.jsx'
 import { useMeetings } from './meetings.js'
 import { DAYS } from './today.js'
 
 // La reunión de entre semana por pasos, como La Atalaya: se pega el programa de la Guía de
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
 // final cómo lo aplico y, si quieres, tus respuestas pasan al mapa. Se guarda sola y al volver sigue en la parte donde te quedaste.
-export default function MidweekStudy({ entry, entries = [], isNew, toast, onSave, onDelete, onClose, onPropose, onSwitchToAtalaya }) {
+export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead, isNew, toast, onSave, onDelete, onClose, onPropose, onSwitchToAtalaya }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const prog = useMemo(() => parseProgram(fields.programa), [fields.programa])
   const partes = prog.partes
@@ -164,13 +167,20 @@ export default function MidweekStudy({ entry, entries = [], isNew, toast, onSave
               <div className="mw-reading">
                 <p className="at-label">Lectura de la semana</p>
                 {readingChapters(prog.lectura).map((c) => {
-                  const read = (fields.leidos ?? []).includes(c)
+                  // Leído cuenta para "Leer la Biblia" (el progreso de todos tus capítulos).
+                  const r = parseRef(c)
+                  const read = r ? isRead(leidos, r.book, r.chapter) || (fields.leidos ?? []).includes(c) : (fields.leidos ?? []).includes(c)
+                  const toggle = () => {
+                    const on = !read
+                    if (r && onToggleRead) onToggleRead(r.book, r.chapter, on)
+                    set({ leidos: on ? [...new Set([...(fields.leidos ?? []), c])] : (fields.leidos ?? []).filter((x) => x !== c) })
+                  }
                   return (
                     <div key={c} className={'mw-read-row' + (read ? ' on' : '')}>
                       <button
                         className="mw-check"
                         aria-label={read ? `${c}: leído` : `Marcar ${c} como leído`}
-                        onClick={() => set({ leidos: read ? (fields.leidos ?? []).filter((x) => x !== c) : [...(fields.leidos ?? []), c] })}
+                        onClick={toggle}
                       >
                         <span className="plan-check">{read && <Check />}</span>
                       </button>
@@ -269,6 +279,7 @@ export default function MidweekStudy({ entry, entries = [], isNew, toast, onSave
             fecha={linkDate}
             onAnswer={(k, v) => setFields((f) => withAnswer(f, k, v))}
             onSet={set}
+            onStar={(k) => setFields((f) => withStar(f, k))}
             onMarks={(k, m) => setFields((f) => ({ ...f, marcas: { ...(f.marcas ?? {}), [k]: m } }))}
             last={idx === partes.length - 1}
             onPrev={() => (idx > 0 ? go('partes', idx - 1) : go('programa'))}
@@ -336,6 +347,7 @@ export default function MidweekStudy({ entry, entries = [], isNew, toast, onSave
           kicker={['Vida y Ministerio', prog.semana].filter(Boolean).join(' · ')}
           title={fields.titulo || prog.lectura || 'Reunión de entre semana'}
           items={meetingItems(fields)}
+          starred={fields.comentar ?? []}
           onClose={() => setMeeting(false)}
         />
       )}
@@ -346,7 +358,7 @@ export default function MidweekStudy({ entry, entries = [], isNew, toast, onSave
 // Una parte del programa con el color de su sección. Lo que va entre paréntesis (citas y
 // publicaciones) va más tenue y se toca ahí mismo; cada pregunta va en una tarjeta con su
 // respuesta. Si la parte no tiene preguntas (lectura, maestros, estudio bíblico), lleva notas.
-function Part({ pt, fields, fecha, onAnswer, onSet, onMarks, last, onPrev, onNext }) {
+function Part({ pt, fields, fecha, onAnswer, onSet, onStar, onMarks, last, onPrev, onNext }) {
   const asks = pt.lineas.some((l) => l.q)
   const study = isStudyPart(pt)
   return (
@@ -359,7 +371,10 @@ function Part({ pt, fields, fecha, onAnswer, onSet, onMarks, last, onPrev, onNex
       {pt.lineas.map((l, i) => {
         if (l.q) return (
           <label key={i} className="at-answer mw-qcard">
-            <span className="at-answer-label">{l.meditar ? 'Para meditar' : 'Pregunta'}</span>
+            <span className="at-answer-head">
+              <span className="at-answer-label">{l.meditar ? 'Para meditar' : 'Pregunta'}</span>
+              <StarButton on={isStarred(fields, l.key)} onClick={() => onStar(l.key)} />
+            </span>
             <span className="mw-q"><Rich text={l.text} /></span>
             <AutoText value={answerOf(fields, l.key)} placeholder="Mi respuesta, con mis palabras" onChange={(v) => onAnswer(l.key, v)} minRows={2} />
           </label>
@@ -374,7 +389,7 @@ function Part({ pt, fields, fecha, onAnswer, onSet, onMarks, last, onPrev, onNex
           </p>
         )
       })}
-      {study && <StudyChapter fields={fields} onSet={onSet} onAnswer={onAnswer} />}
+      {study && <StudyChapter fields={fields} onSet={onSet} onAnswer={onAnswer} onStar={onStar} />}
       {!asks && !(study && studyBlocks(fields).length) && (
         <label className="at-answer">
           <span className="at-answer-label">Mis notas</span>
@@ -392,7 +407,7 @@ function Part({ pt, fields, fecha, onAnswer, onSet, onMarks, last, onPrev, onNex
 
 // El estudio bíblico de la congregación: pegas el capítulo del libro y lo contestas pregunta por
 // pregunta (el párrafo se abre al tocarlo para no llenar la pantalla).
-function StudyChapter({ fields, onSet, onAnswer }) {
+function StudyChapter({ fields, onSet, onAnswer, onStar }) {
   const blocks = studyBlocks(fields)
   const [editing, setEditing] = useState(!blocks.length)
   const done = blocks.filter((b) => answerOf(fields, 'e:' + b.key).trim()).length
@@ -414,7 +429,10 @@ function StudyChapter({ fields, onSet, onAnswer }) {
           <p className="at-label">Capítulo del estudio · {done} de {blocks.length} contestadas</p>
           {blocks.map((b) => (
             <div key={b.key} className="at-answer mw-qcard">
-              <span className="at-answer-label">{b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} {b.key}</span>
+              <span className="at-answer-head">
+                <span className="at-answer-label">{b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} {b.key}</span>
+                <StarButton on={isStarred(fields, 'e:' + b.key)} onClick={() => onStar('e:' + b.key)} />
+              </span>
               <span className="mw-q"><Rich text={b.pregunta} /></span>
               {b.parrafos.length > 0 && (
                 <details className="mw-para">
