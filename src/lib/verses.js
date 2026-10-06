@@ -3,7 +3,7 @@
 import { parseRef, refUrl, findRefs, canonRef } from './bible.js'
 import { findPubs, isPubRef, pubUrl } from './pubs.js'
 import { newId } from './model.js'
-import { chapterVerses } from './verseCounts.js'
+import { chapterVerses, VERSE_COUNTS } from './verseCounts.js'
 import { verseSources } from '../games/logic.js'
 
 // Clave para comparar citas escritas de formas distintas ("Sal. 83:18" = "Salmo 83:18").
@@ -70,7 +70,7 @@ function joinVerses(entries, ref) {
   const parts = []
   for (const v of nums) {
     const texto = index.get(`${r.book}:${r.chapter}:${v}`)
-    if (texto) parts.push(`${v} ${texto.trim()}`)
+    if (texto) parts.push(`${v} ${texto.trim().replace(/\s*\n\s*/g, ' ')}`)
     else if (spec) return null // falta un versículo del rango: mejor no mostrar algo incompleto
   }
   if (!parts.length) return null
@@ -141,7 +141,9 @@ export function splitChapter(text, chapter, book) {
     start = pick.end
     i = j
   }
-  const verses = out.map((x) => ({ v: x.v, texto: x.texto.replace(/\s+/g, ' ').trim() })).filter((x) => x.texto)
+  // Se conservan los renglones (la poesía de Salmos, Isaías…); solo se limpian los espacios de más.
+  const tidy = (t) => t.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{2,}/g, '\n').trim()
+  const verses = out.map((x) => ({ v: x.v, texto: tidy(x.texto) })).filter((x) => x.texto)
   return verses.length >= 2 ? verses : null
 }
 
@@ -189,4 +191,30 @@ export function jwLibraryUrl(ref) {
 export const OPEN_REF = 'universe:open-ref'
 export function openRef(ref) {
   window.dispatchEvent(new CustomEvent(OPEN_REF, { detail: ref }))
+}
+
+// Los versículos guardados en Mi Biblia de un capítulo, en orden: [{ v, texto }] (con sus renglones).
+export function savedChapterVerses(entries, book, chapter) {
+  const map = new Map()
+  for (const v of verseSources(entries)) {
+    const r = v.fields?.cita && parseRef(canonRef(v.fields.cita))
+    if (r && r.book === book && r.chapter === chapter && r.verse != null && !/[-,]/.test(String(v.fields.cita).split(':')[1] ?? '') && v.fields.texto?.trim()) map.set(r.verse, v.fields.texto.trim())
+  }
+  for (const e of entries) {
+    if (e.kind !== 'biblia' || !e.fields?.texto?.trim()) continue
+    const r = parseRef(canonRef(e.fields.cita))
+    if (r && r.book === book && r.chapter === chapter && r.verse != null && !/[-,]/.test(String(e.fields.cita).split(':')[1] ?? '')) map.set(r.verse, e.fields.texto.trim())
+  }
+  return [...map].sort((a, b) => a[0] - b[0]).map(([v, texto]) => ({ v, texto }))
+}
+
+// El capítulo anterior y el siguiente ({ book, chapter } o null), pasando de un libro a otro.
+export function neighborChapter(book, chapter, dir) {
+  const count = (b) => VERSE_COUNTS[b - 1]?.length ?? 0
+  if (dir < 0) {
+    if (chapter > 1) return { book, chapter: chapter - 1 }
+    return book > 1 ? { book: book - 1, chapter: count(book - 1) } : null
+  }
+  if (chapter < count(book)) return { book, chapter: chapter + 1 }
+  return book < 66 ? { book: book + 1, chapter: 1 } : null
 }

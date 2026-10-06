@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { refKey, findSavedVerse, jwLibraryUrl, makeBibleEntry, splitChapter, chapterCheck, chapterSaved } from './verses.js'
+import { refKey, findSavedVerse, jwLibraryUrl, makeBibleEntry, splitChapter, chapterCheck, chapterSaved, savedChapterVerses, neighborChapter } from './verses.js'
 import * as seedVerses from './seedVerses.js'
 
 const ALL_SEED_VERSES = Object.values(seedVerses).filter(Array.isArray).flat()
@@ -62,7 +62,7 @@ porque solo de él son la sabiduría y el poder.+
     const v = splitChapter(text, 2)
     expect(v.map((x) => x.v)).toEqual([1, 2, 3, 4, 5, 6])
     expect(v[0].texto).toBe('En el segundo año de su reinado, Nabucodonosor tuvo varios sueños, y él se inquietó tanto que no conseguía dormir.')
-    expect(v[3].texto).toBe('Daniel dijo: “Alabado sea el nombre de Dios, porque solo de él son la sabiduría y el poder.')
+    expect(v[3].texto).toBe('Daniel dijo:\n“Alabado sea el nombre de Dios,\nporque solo de él son la sabiduría y el poder.')
     expect(v[5].texto).toBe('”Oh, rey, cuando estabas acostado en tu cama.')
     expect(splitChapter('Solo un versículo sin números.', 2)).toBe(null)
     const entries = v.map(({ v, texto }) => makeBibleEntry(`Daniel 2:${v}`, texto))
@@ -86,7 +86,7 @@ describe('capítulos completos con los números de la TNM', () => {
     for (const [name, book, chapter] of [['Jeremías', 24, 38], ['Jeremías', 24, 39], ['Daniel', 27, 2]]) {
       const list = ALL_SEED_VERSES.filter(([c]) => c.startsWith(`${name} ${chapter}:`))
       const v = splitChapter(asPasted(name, chapter, list), chapter, book)
-      expect(v.map((x) => [`${name} ${chapter}:${x.v}`, x.texto])).toEqual(list.map(([c, t]) => [c, t.replace(/\s+/g, ' ').trim()]))
+      expect(v.map((x) => [`${name} ${chapter}:${x.v}`, x.texto])).toEqual(list.map(([c, t]) => [c, t.trim()]))
       expect(chapterCheck(v, book, chapter)).toEqual({ expected: list.length, got: list.length, missing: [] })
     }
   })
@@ -126,5 +126,16 @@ describe('capítulos completos con los números de la TNM', () => {
     const entries = [makeBibleEntry('Jeremías 40:1', 'a'), makeBibleEntry('Jer. 40:2', 'b'), makeBibleEntry('Jeremías 41:1', 'c')]
     expect(chapterSaved(entries, 'Jeremías 40')).toEqual({ saved: 2, expected: 16 })
     expect(chapterSaved(entries, 'Jeremías 42')).toEqual({ saved: 0, expected: 22 })
+  })
+
+  it('el capítulo guardado en orden y los capítulos vecinos', () => {
+    const entries = [makeBibleEntry('Jeremías 40:2', 'Dos'), makeBibleEntry('Jer. 40:1', 'Uno\ncon poesía'), makeBibleEntry('Jeremías 41:1', 'Otro')]
+    expect(savedChapterVerses(entries, 24, 40)).toEqual([{ v: 1, texto: 'Uno\ncon poesía' }, { v: 2, texto: 'Dos' }])
+    expect(findSavedVerse(entries, 'Jeremías 40:1-2').texto).toBe('1 Uno con poesía\n2 Dos')
+    expect(neighborChapter(24, 40, 1)).toEqual({ book: 24, chapter: 41 })
+    expect(neighborChapter(24, 52, 1)).toEqual({ book: 25, chapter: 1 })
+    expect(neighborChapter(25, 1, -1)).toEqual({ book: 24, chapter: 52 })
+    expect(neighborChapter(1, 1, -1)).toBe(null)
+    expect(neighborChapter(66, 22, 1)).toBe(null)
   })
 })

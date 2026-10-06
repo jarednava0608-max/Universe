@@ -6,6 +6,7 @@ import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude, formatDate } from './kinds.js'
 import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
 import MeetingMode from './MeetingMode.jsx'
+import { canSpeak, useSpeech } from '../lib/speech.js'
 
 // La Atalaya por pasos, como recomienda jw.org para prepararse: primero una idea general
 // (título, subtítulos y preguntas de repaso), luego cada párrafo buscando la respuesta y
@@ -101,7 +102,8 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
   function setArticle(v) {
     const patch = { articulo: v }
     if (!String(fields.titulo ?? '').trim()) {
-      const first = String(v).split('\n').map((l) => l.replace(/^#+\s*/, '').trim()).find(Boolean) ?? ''
+      // Se saltan "ARTÍCULO DE ESTUDIO 40" y la canción, que van antes del título.
+      const first = String(v).split('\n').map((l) => l.replace(/^#+\s*/, '').trim()).find((l) => l && !/^(art[ií]culo de estudio|canci[oó]n)\b/i.test(l)) ?? ''
       if (first.length < 90 && !/^la atalaya\b|[“"«]|\d+:\d+/i.test(first) && !/[.?]$/.test(first)) patch.titulo = first
     }
     set(patch)
@@ -188,6 +190,8 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
             <p className="at-tip">Antes de leer, fíjate en el título y el texto temático, en cómo cada subtítulo se relaciona con el tema y en las imágenes. Las preguntas de repaso te dicen las ideas principales.</p>
             <div className="at-card at-cover">
               <p className="at-cover-kicker">La Atalaya{fields.fecha ? ` · ${formatDate(fields.fecha)}` : ''}</p>
+              {articleNumber(fields.articulo) && <p className="at-art-num">Artículo de estudio {articleNumber(fields.articulo)}</p>}
+              {article.canciones[0] && <p className="at-song">{songLine(article.canciones[0])}</p>}
               <p className="at-title">{fields.titulo || 'La Atalaya'}</p>
               {article.tema && <p className="at-theme">{article.tema}</p>}
               {article.resumen && <p className="at-summary">{article.resumen}</p>}
@@ -311,6 +315,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
 // Una pregunta con sus párrafos: tocar palabras las subraya (palabras clave), los textos
 // se abren con un toque y abajo va la respuesta con tus palabras.
 function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, onNext }) {
+  const speech = useSpeech()
   const refs = useMemo(() => findAllRefs(b.pregunta, ...b.parrafos), [b])
   const marked = new Set(marks)
   const toggle = (i) => onMarks(marked.has(i) ? marks.filter((x) => x !== i) : [...marks, i])
@@ -344,7 +349,14 @@ function Block({ b, enlace, n, total, answer, marks, onAnswer, onMarks, onPrev, 
         ))}
       </div>
       {b.parrafos[0] && (
-        <a className="at-jw" data-direct="1" href={paragraphUrl(enlace, b.parrafos[0])} target="_blank" rel="noopener noreferrer">Ver este párrafo en jw.org</a>
+        <div className="at-links">
+          <a className="at-jw" data-direct="1" href={paragraphUrl(enlace, b.parrafos[0])} target="_blank" rel="noopener noreferrer">Ver este párrafo en jw.org</a>
+          {canSpeak && (
+            <button className="at-listen" onClick={() => (speech.speaking ? speech.stop() : speech.start([b.pregunta, ...b.parrafos].filter(Boolean)))}>
+              <Icon d={speech.speaking ? ICONS.parar : ICONS.audio} size={18} /> {speech.speaking ? 'Parar' : 'Escuchar'}
+            </button>
+          )}
+        </div>
       )}
       {b.extras?.length > 0 && (
         <details className="at-extras">
@@ -385,4 +397,15 @@ function runsOf(list, isOn) {
     else out.push({ on, start: k, words: [word] })
   })
   return out
+}
+
+// "ARTÍCULO DE ESTUDIO 40" del artículo pegado (si viene).
+function articleNumber(text) {
+  return String(text ?? '').match(/art[ií]culo de estudio\s+(\d{1,3})/i)?.[1] ?? ''
+}
+
+// "CANCIÓN 84 Servimos donde se nos necesite" → "Canción 84 · Servimos donde se nos necesite"
+function songLine(s) {
+  const m = String(s).match(/canci[oó]n\s+(\d+)\s*(.*)/i)
+  return m ? `Canción ${m[1]}${m[2] ? ' · ' + m[2].trim() : ''}` : s
 }

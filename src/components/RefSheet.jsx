@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { refUrl, parseRef } from '../lib/bible.js'
-import { findSavedVerse, jwLibraryUrl, makeBibleEntry, cleanVerseText, isPub, splitChapter, chapterCheck, chapterSaved, refKey } from '../lib/verses.js'
+import { findSavedVerse, jwLibraryUrl, makeBibleEntry, cleanVerseText, isPub, splitChapter, chapterCheck, chapterSaved, savedChapterVerses, refKey } from '../lib/verses.js'
 import { pubTitle, pubUrl } from '../lib/pubs.js'
 import Sheet from './Sheet.jsx'
+import BibleText from './BibleText.jsx'
 
 const SOURCE = { memoria: 'De Memorizar textos', diario: 'De tu Texto diario', capitulo: 'Los versículos que tienes guardados de este capítulo' }
 
 // Hoja que se abre al tocar una cita: el texto guardado (o para pegarlo una vez)
 // y botones para abrir la cita en JW Library o en wol.jw.org.
-export default function RefSheet({ refText, entries, onSave, onSaveMany, onClose, toast }) {
+export default function RefSheet({ refText, entries, onSave, onSaveMany, onRead, onClose, toast }) {
   const pub = isPub(refText)
   // Capítulo entero ("Daniel 2"): lo pegado se guarda versículo por versículo.
   const parsed = pub ? null : parseRef(refText)
@@ -78,7 +79,12 @@ export default function RefSheet({ refText, entries, onSave, onSaveMany, onClose
       className="ref-sheet"
       onClose={onClose}
       actions={saved && !editing && (saved.source === 'biblia' || saved.source === 'capitulo') && <button className="bar-btn" onClick={() => setEditing(true)}>Editar</button>}
-      footer={links}
+      footer={<>
+        {!pub && parsed && onRead && savedChapterVerses(entries, parsed.book, parsed.chapter).length > 0 && (
+          <button className="secondary reader-open" onClick={() => onRead({ book: parsed.book, chapter: parsed.chapter, verse: parsed.verse })}>Leer el capítulo completo</button>
+        )}
+        {links}
+      </>}
     >
       {editing ? (
         <>
@@ -112,7 +118,7 @@ export default function RefSheet({ refText, entries, onSave, onSaveMany, onClose
         </>
       ) : (
         <div className="ref-sheet-text" ref={textTop}>
-          {pub ? <p>{saved.texto}</p> : <VerseText text={saved.texto} multi={saved.source === 'capitulo' || saved.source === 'versos'} verse={parsed?.verse} chapter={parsed?.chapter} />}
+          {pub ? <p>{saved.texto}</p> : <BibleText verses={sheetVerses(saved, parsed, entries)} chapter={parsed?.chapter} />}
           {saved.source === 'capitulo' && chapter ? (
             <span className="ref-sheet-source">{chapterNote(chapterSaved(entries, refText))}</span>
           ) : SOURCE[saved.source] && <span className="ref-sheet-source">{SOURCE[saved.source]}</span>}
@@ -136,21 +142,11 @@ function chapterNote({ saved, expected }) {
   return saved >= expected ? `Capítulo completo: los ${expected} versículos guardados` : `Tienes ${saved} de ${expected} versículos de este capítulo`
 }
 
-// El texto bíblico como en JW Library: corrido, con letra de libro, el número del capítulo grande
-// en lugar del versículo 1 y los demás números chicos en azul. Lo guardado de varios versículos
-// viene un versículo por renglón ("2 Ismael hijo de…").
-function VerseText({ text, multi, verse, chapter }) {
-  const verses = multi
-    ? String(text).split('\n').map((l) => l.match(/^(\d{1,3})\s+(.*)$/)).filter(Boolean).map((m) => ({ v: Number(m[1]), t: m[2] }))
-    : [{ v: verse, t: String(text).trim() }]
-  return (
-    <p className="bible-text">
-      {verses.map(({ v, t }, i) => (
-        <span key={i}>
-          {v === 1 && chapter ? <span className="bible-chap">{chapter}</span> : v ? <span className="bible-v">{v}</span> : null}
-          {t}{' '}
-        </span>
-      ))}
-    </p>
-  )
+// Los versículos para mostrar: el capítulo guardado, un rango ("2 Ismael…" por renglón) o uno solo.
+function sheetVerses(saved, parsed, entries) {
+  if (saved.source === 'capitulo' && parsed) return savedChapterVerses(entries, parsed.book, parsed.chapter)
+  if (saved.source === 'versos') {
+    return String(saved.texto).split('\n').map((l) => l.match(/^(\d{1,3})\s+(.*)$/)).filter(Boolean).map((m) => ({ v: Number(m[1]), texto: m[2] }))
+  }
+  return [{ v: parsed?.verse ?? null, texto: saved.texto }]
 }

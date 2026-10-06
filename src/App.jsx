@@ -21,6 +21,7 @@ import StudyTab from './study/StudyTab.jsx'
 import GamesTab, { Daily } from './games/GamesTab.jsx'
 import Review, { reviewSummary } from './games/Review.jsx'
 import RefSheet from './components/RefSheet.jsx'
+import ChapterReader from './components/ChapterReader.jsx'
 import { OPEN_REF } from './lib/verses.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
@@ -68,8 +69,17 @@ export default function App() {
 
   // Tocar una cita bíblica en cualquier parte abre la hoja con el texto (en vez de salir a wol.jw.org).
   const [refOpen, setRefOpen] = useState(null)
+  // Un capítulo entero ("Jeremías 40") se abre a pantalla completa, como la Biblia de JW Library.
+  const [reader, setReader] = useState(null) // { book, chapter, verse? }
+  const readerRef = useRef(null)
+  readerRef.current = reader
   useEffect(() => {
-    const onOpen = (e) => setRefOpen(e.detail)
+    const openAny = (ref) => {
+      const r = !isPubRef(ref) && parseRef(ref)
+      if (r && r.verse == null) setReader({ book: r.book, chapter: r.chapter })
+      else setRefOpen(ref)
+    }
+    const onOpen = (e) => openAny(e.detail)
     const onClick = (e) => {
       const a = e.target.closest?.('a[href^="https://wol.jw.org/es/wol/"]')
       if (!a || a.dataset.direct) return
@@ -77,7 +87,7 @@ export default function App() {
       if (!parseRef(ref) && !isPubRef(ref)) return
       e.preventDefault()
       e.stopPropagation()
-      setRefOpen(ref)
+      openAny(ref)
     }
     window.addEventListener(OPEN_REF, onOpen)
     document.addEventListener('click', onClick, true)
@@ -405,7 +415,31 @@ export default function App() {
         />
       )}
 
-      {refOpen && <RefSheet key={refOpen} refText={refOpen} entries={store.entries} onSave={saveVerse} onSaveMany={store.saveEntries} onClose={() => setRefOpen(null)} toast={toast} />}
+      {reader && (
+        <ChapterReader
+          {...reader}
+          entries={store.entries}
+          onGo={(to) => setReader(to)}
+          onPaste={(ref) => setRefOpen(ref)}
+          onClose={() => setReader(null)}
+        />
+      )}
+
+      {refOpen && (
+        <RefSheet
+          key={refOpen}
+          refText={refOpen}
+          entries={store.entries}
+          onSave={saveVerse}
+          onSaveMany={async (list) => {
+            await store.saveEntries(list)
+            if (readerRef.current) setRefOpen(null) // se pegó desde el lector: vuelve a él con el capítulo
+          }}
+          onRead={(r) => { setRefOpen(null); setReader(r) }}
+          onClose={() => setRefOpen(null)}
+          toast={toast}
+        />
+      )}
 
       {toastMsg && <div className="toast">{toastMsg}</div>}
     </div>
