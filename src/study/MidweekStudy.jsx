@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
 import RefLink from '../components/RefLink.jsx'
-import { findAllRefs } from '../lib/verses.js'
+import { findAllRefs, chapterSaved } from '../lib/verses.js'
 import { entryForClaude } from './kinds.js'
 import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, meetingItems } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
@@ -12,7 +12,7 @@ import { DAYS } from './today.js'
 // La reunión de entre semana por pasos, como La Atalaya: se pega el programa de la Guía de
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
 // final cómo lo aplico y, si quieres, tus respuestas pasan al mapa. Se guarda sola y al volver sigue en la parte donde te quedaste.
-export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, onClose, onPropose, onSwitchToAtalaya }) {
+export default function MidweekStudy({ entry, entries = [], isNew, toast, onSave, onDelete, onClose, onPropose, onSwitchToAtalaya }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const prog = useMemo(() => parseProgram(fields.programa), [fields.programa])
   const partes = prog.partes
@@ -174,7 +174,7 @@ export default function MidweekStudy({ entry, isNew, toast, onSave, onDelete, on
                         <span className="plan-check">{read && <Check />}</span>
                       </button>
                       <RefLink refText={c} className="mw-read-link" />
-                      <span className="mw-read-state">{read ? 'Leído' : 'Abrir'}</span>
+                      <span className="mw-read-state">{savedLabel(chapterSaved(entries, c))}</span>
                     </div>
                   )
                 })}
@@ -509,4 +509,10 @@ function kindOf(p) {
   if (!m) return ''
   const t = m[1].trim().toLowerCase()
   return t[0].toUpperCase() + t.slice(1)
+}
+
+// Si ya pegaste ese capítulo en Mi Biblia: "Guardado", "9 de 16" o "Pegar".
+function savedLabel({ saved, expected }) {
+  if (expected && saved >= expected) return 'Guardado'
+  return saved ? `${saved} de ${expected}` : 'Pegar'
 }

@@ -3,6 +3,7 @@
 import { parseRef, refUrl, findRefs, canonRef } from './bible.js'
 import { findPubs, isPubRef, pubUrl } from './pubs.js'
 import { newId } from './model.js'
+import { chapterVerses } from './verseCounts.js'
 import { verseSources } from '../games/logic.js'
 
 // Clave para comparar citas escritas de formas distintas ("Sal. 83:18" = "Salmo 83:18").
@@ -96,28 +97,74 @@ export function cleanVerseText(s) {
 
 // Un capítulo entero pegado de JW Library ("Daniel\n2 En el segundo año… 2 Así que…") en versículos:
 // el número del capítulo ocupa el lugar del versículo 1 y los demás números van en orden.
+// Con el libro (`book`, 1-66) se sabe qué números esperar: cuántos versículos tiene el capítulo y
+// cuáles se salta la TNM (Mateo 17:21, Juan 8 empieza en el 12…), y si un número del texto
+// ("los 10 hombres") se parece al del versículo que sigue, se prefiere el que empieza con mayúscula.
 // Devuelve [{ v, texto }] o null si no se encuentran al menos 2 versículos.
-export function splitChapter(text, chapter) {
+export function splitChapter(text, chapter, book) {
   let s = cleanVerseText(text)
   const lines = s.split('\n')
   if (lines.length > 1 && !/\d\s+\S/.test(lines[0].replace(/^\d\s+/, '')) && lines[0].length < 40) s = lines.slice(1).join('\n') // renglón del libro
   s = s.trim()
+  const seq = (book && chapterVerses(book, chapter)) || null
   const lead = s.match(/^(\d{1,3})\s+(?=\D)/)
-  if (lead && (Number(lead[1]) === chapter || lead[1] === '1')) s = s.slice(lead[0].length)
-  const out = []
-  let v = 1
-  let start = 0
-  for (;;) {
-    const re = new RegExp(`(^|[\\s“”"(])${v + 1}(?:\\s+(?=\\D)|(?=[”“"]))`, 'g')
-    re.lastIndex = start
-    const m = re.exec(s)
-    out.push({ v, texto: s.slice(start, m ? m.index : s.length).replace(/\s+/g, ' ').trim() })
-    if (!m) break
-    start = m.index + m[0].length
-    v++
+  if (lead && (Number(lead[1]) === chapter || lead[1] === '1' || Number(lead[1]) === seq?.[0])) s = s.slice(lead[0].length)
+  const marks = (n, from) => {
+    const re = new RegExp(`(^|[\\s“”"(])${n}(?:\\s+(?=\\D)|(?=[”“"]))`, 'g')
+    re.lastIndex = from
+    const found = []
+    let m
+    while ((m = re.exec(s))) found.push({ index: m.index, end: m.index + m[0].length })
+    return found
   }
-  const verses = out.filter((x) => x.texto)
+  const nums = seq ?? Array.from({ length: 999 }, (_, i) => i + 1)
+  const out = []
+  let start = 0
+  for (let i = 0; i < nums.length; ) {
+    // El número que sigue; si no está (se quedó fuera al copiar), se busca el siguiente, hasta 3 más
+    // adelante, para que lo demás no se quede pegado a este versículo.
+    let j = i + 1
+    let cands = []
+    for (; j < nums.length && j <= i + (seq ? 4 : 1); j++) {
+      cands = marks(nums[j], start)
+      if (cands.length) break
+    }
+    if (!cands.length) {
+      out.push({ v: nums[i], texto: s.slice(start) })
+      break
+    }
+    // Solo cuentan los que van antes del número que sigue después (si no, se saltaría un versículo).
+    const after = nums[j + 1] ? marks(nums[j + 1], cands[0].end)[0]?.index ?? Infinity : Infinity
+    const inWindow = cands.filter((c) => c.index < after)
+    const pick = (seq && inWindow.find((c) => /^[A-ZÁÉÍÓÚÑ¿¡«“"(]/.test(s.slice(c.end)))) || cands[0]
+    out.push({ v: nums[i], texto: s.slice(start, pick.index) })
+    start = pick.end
+    i = j
+  }
+  const verses = out.map((x) => ({ v: x.v, texto: x.texto.replace(/\s+/g, ' ').trim() })).filter((x) => x.texto)
   return verses.length >= 2 ? verses : null
+}
+
+// ¿Salió completo? Compara lo que se separó con los versículos que tiene el capítulo en la TNM.
+// { expected, got, missing: [números] }; expected = 0 si no se conoce el capítulo.
+export function chapterCheck(verses, book, chapter) {
+  const seq = chapterVerses(book, chapter) ?? []
+  const have = new Set((verses ?? []).map((x) => x.v))
+  return { expected: seq.length, got: (verses ?? []).length, missing: seq.filter((v) => !have.has(v)) }
+}
+
+// Cuántos versículos de un capítulo ("Jeremías 40") tienes guardados en Mi Biblia, y cuántos tiene.
+export function chapterSaved(entries, ref) {
+  const r = parseRef(canonRef(ref))
+  if (!r || r.verse != null) return { saved: 0, expected: 0 }
+  const seq = chapterVerses(r.book, r.chapter) ?? []
+  const have = new Set()
+  for (const e of entries) {
+    if (e.kind !== 'biblia' || !String(e.fields?.texto ?? '').trim()) continue
+    const x = parseRef(canonRef(e.fields.cita))
+    if (x && x.book === r.book && x.chapter === r.chapter && x.verse != null && !String(e.fields.cita).includes('-')) have.add(x.verse)
+  }
+  return { saved: seq.filter((v) => have.has(v)).length, expected: seq.length }
 }
 
 export function makeBibleEntry(cita, texto) {

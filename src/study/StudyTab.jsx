@@ -202,6 +202,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         <MidweekStudy
           key={editing.entry.id}
           entry={editing.entry}
+          entries={entries}
           isNew={editing.isNew}
           toast={toast}
           onSave={onSaveEntry}
