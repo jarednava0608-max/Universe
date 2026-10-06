@@ -1417,3 +1417,12 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .at-cover .at-title { font-size: 30px; font-weight: 800; line-height: 1.15; }
 :root[data-style='jw'] .at-cover .at-theme { font-style: italic; color: var(--text); }
 :root[data-style='jw'] .at-cover .at-summary { padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--surface); }
+
+/* Elegir la voz para escuchar. */
+.voice-btn { padding: 0 6px; font-size: 15px; color: var(--accent, var(--text-2)); }
+.voice-label { margin-top: 18px; }
+.voice-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; }
+.voice-row { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); text-align: left; }
+.voice-row.on { border-color: var(--accent, var(--text)); color: var(--accent, var(--text)); font-weight: 600; }
+.voice-lang { font-size: 13px; color: var(--text-3); font-weight: 400; }
+.voice-tip { margin-top: 12px; line-height: 1.5; }

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from './Icon.jsx'
 import BibleText from './BibleText.jsx'
 import { BOOKS } from '../lib/bible.js'
 import { savedChapterVerses, neighborChapter, chapterSaved, jwLibraryUrl } from '../lib/verses.js'
 import { canSpeak, useSpeech } from '../lib/speech.js'
+import VoiceSheet from './VoiceSheet.jsx'
 
 const nameOf = (book, chapter) => `${BOOKS[book - 1]} ${chapter}`
 
@@ -17,6 +18,7 @@ export default function ChapterReader({ book, chapter, verse, entries, onGo, onP
   const prev = neighborChapter(book, chapter, -1)
   const next = neighborChapter(book, chapter, 1)
   const speech = useSpeech()
+  const [voices, setVoices] = useState(false)
   const body = useRef()
   const marks = useRef({})
 
@@ -61,6 +63,9 @@ export default function ChapterReader({ book, chapter, verse, entries, onGo, onP
         </span>
         <span className="reader-actions">
           {canSpeak && verses.length > 0 && (
+            <button className="bar-btn voice-btn" onClick={() => { speech.stop(); setVoices(true) }}>Voz</button>
+          )}
+          {canSpeak && verses.length > 0 && (
             <button className="bar-btn icon" aria-label={speech.speaking ? 'Dejar de escuchar' : 'Escuchar'} onClick={listen}>
               <Icon d={speech.speaking ? ICONS.parar : ICONS.audio} size={22} />
             </button>
@@ -84,6 +89,7 @@ export default function ChapterReader({ book, chapter, verse, entries, onGo, onP
           <button className="secondary" disabled={!next} onClick={() => onGo(next)}>{next ? `${nameOf(next.book, next.chapter)} ›` : ' '}</button>
         </nav>
       </div>
+      {voices && <VoiceSheet onClose={() => setVoices(false)} />}
     </div>
   )
 }
