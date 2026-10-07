@@ -96,7 +96,61 @@ export const withAnswer = (fields, key, v) => ({ ...fields, respuestas: { ...(fi
 // pregunta por pregunta, como La Atalaya (mismo lector, `parseArticle`). Sus respuestas van en
 // `respuestas` con la clave "e:<párrafo>".
 export const isStudyPart = (pt) => /estudio b[ií]blico de la congregaci[oó]n/i.test(pt.titulo)
-export const studyBlocks = (fields) => parseArticle(fields?.estudio).bloques.filter((b) => b.pregunta)
+export const studyBlocks = (fields) => studyChapter(fields).bloques
+
+// El capítulo pegado: con párrafos numerados lo lee `parseArticle` (como La Atalaya); los libros de
+// relatos ("11 MOISÉS", el relato, "Lea el relato bíblico", "¿Qué diría?", "Investigue un poco
+// más"…) los lee `parseStory`. Cada bloque lleva `label` ("Párrafo 3" o "Investigue un poco más · 2").
+export function studyChapter(fields) {
+  const text = String(fields?.estudio ?? '')
+  if (isStoryChapter(text)) return parseStory(text)
+  const bloques = parseArticle(text).bloques.filter((b) => b.pregunta)
+    .map((b) => ({ ...b, label: `${b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} ${b.key}`, seccion: '' }))
+  return { titulo: '', tema: '', relato: [], lectura: [], bloques }
+}
+
+const STORY_SECTIONS = /^(¿qu[eé] dir[ií]a\??|investigue un poco m[aá]s|piense en las lecciones|vea el cuadro completo|para saber m[aá]s|lea el relato b[ií]blico)$/i
+const ANSWER_LINE = /^respuesta$/i
+const IMAGE_LINE = /^(imagen\b|serie de im[aá]genes|.*\bstock photo$|.*\/alamy\b)/i
+const capSection = (l) => l.replace(/^¿qu[eé] dir[ií]a\??$/i, '¿Qué diría?')
+
+export const isStoryChapter = (text) => String(text ?? '').split('\n').some((l) => STORY_SECTIONS.test(l.trim()) || ANSWER_LINE.test(l.trim()))
+
+export function parseStory(text) {
+  const lines = String(text ?? '').replace(/\r/g, '').split('\n').map((l) => l.trim()).filter(Boolean)
+  const out = { titulo: '', tema: '', relato: [], lectura: [], bloques: [] }
+  const hasAnswers = lines.some((l) => ANSWER_LINE.test(l))
+  let section = 'relato'
+  let start = 0
+  // Arriba: "11 MOISÉS" y el tema entre comillas.
+  if (/^\d{1,3}\s+\S/.test(lines[0] ?? '') && lines[0].length < 60) {
+    out.titulo = lines[0].replace(/^(\d+)\s+/, '$1. ').replace(/\p{Lu}+/gu, (w) => w[0] + w.slice(1).toLowerCase())
+    start = 1
+    if (/^[“"«]/.test(lines[1] ?? '') && lines[1].length < 120) { out.tema = lines[1]; start = 2 }
+  }
+  const add = (pregunta) => {
+    const m = pregunta.match(/^(\d+)\.\s+(.+)$/)
+    const q = (m ? m[2] : pregunta).replace(/(\)\.?|\?)\s+[A-Z]$/, '$1').trim()
+    const n = m ? m[1] : String(out.bloques.filter((b) => b.seccion === section).length + 1)
+    out.bloques.push({ key: 'c' + (out.bloques.length + 1), nums: [], n, pregunta: q, parrafos: [], subtitulo: '', extras: [], seccion: section })
+  }
+  for (let i = start; i < lines.length; i++) {
+    const l = lines[i]
+    if (STORY_SECTIONS.test(l)) {
+      section = /^lea/i.test(l) ? 'lectura' : /^para saber/i.test(l) ? 'fin' : capSection(l)
+      continue
+    }
+    if (section === 'fin' || ANSWER_LINE.test(l)) continue
+    if (section === 'relato') { out.relato.push(l); continue }
+    if (section === 'lectura') { out.lectura.push(l); continue }
+    if (IMAGE_LINE.test(l)) continue
+    // Con "Respuesta" debajo de cada pregunta, la pregunta es el renglón de arriba; sin él, los que preguntan.
+    if (hasAnswers ? ANSWER_LINE.test(lines[i + 1] ?? '') : /¿.+\?/.test(l)) add(l)
+  }
+  // "Investigue un poco más · 2"; si la sección tiene una sola pregunta, solo su nombre.
+  for (const b of out.bloques) b.label = out.bloques.filter((x) => x.seccion === b.seccion).length > 1 ? `${b.seccion} · ${b.n}` : b.seccion
+  return out
+}
 const studyKey = (b) => 'e:' + b.key
 
 // Las claves que hay que llenar en una parte: sus preguntas; el capítulo del estudio si lo pegaste;
@@ -251,7 +305,7 @@ export function meetingItems(fields) {
     const base = { section: pt.seccion, sec: pt.sec }
     for (const l of pt.lineas) if (l.q) out.push({ ...base, key: l.key, label: `Parte ${pt.num}`, question: qText(l), answer: answerOf(fields, l.key) })
     const study = isStudyPart(pt) ? studyBlocks(fields) : []
-    for (const b of study) out.push({ ...base, key: studyKey(b), label: `Estudio bíblico · ${b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} ${b.key}`, question: b.pregunta, answer: answerOf(fields, studyKey(b)) })
+    for (const b of study) out.push({ ...base, key: studyKey(b), label: `Estudio bíblico · ${b.label}`, question: b.pregunta, answer: answerOf(fields, studyKey(b)) })
     const nota = !pt.lineas.some((l) => l.q) && !study.length ? answerOf(fields, String(pt.num)).trim() : ''
     if (nota) out.push({ ...base, key: String(pt.num), label: `Parte ${pt.num}`, question: pt.titulo, answer: nota })
   }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
 import RefLink from '../components/RefLink.jsx'
@@ -6,7 +6,7 @@ import { findAllRefs, chapterSaved } from '../lib/verses.js'
 import { parseRef } from '../lib/bible.js'
 import { isRead } from '../lib/reading.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, meetingItems, isStarred, withStar } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { useMeetings } from './meetings.js'
@@ -408,17 +408,18 @@ function Part({ pt, fields, fecha, onAnswer, onSet, onStar, onMarks, last, onPre
 // El estudio bíblico de la congregación: pegas el capítulo del libro y lo contestas pregunta por
 // pregunta (el párrafo se abre al tocarlo para no llenar la pantalla).
 function StudyChapter({ fields, onSet, onAnswer, onStar }) {
-  const blocks = studyBlocks(fields)
+  const chap = studyChapter(fields)
+  const blocks = chap.bloques
   const [editing, setEditing] = useState(!blocks.length)
   const done = blocks.filter((b) => answerOf(fields, 'e:' + b.key).trim()).length
   return (
     <div className="mw-study">
       {editing ? (
         <div className="sfield">
-          <span className="sfield-label">Pega el capítulo para contestarlo por párrafo</span>
-          <AutoText value={fields.estudio ?? ''} placeholder="En JW Library abre el libro del estudio, copia el capítulo con sus preguntas y pégalo aquí" onChange={(v) => onSet({ estudio: v })} minRows={4} />
+          <span className="sfield-label">Pega el capítulo para contestarlo pregunta por pregunta</span>
+          <AutoText value={fields.estudio ?? ''} placeholder="En JW Library abre el libro del estudio, copia el capítulo completo con sus preguntas y pégalo aquí" onChange={(v) => onSet({ estudio: v })} minRows={4} />
           {String(fields.estudio ?? '').trim() && !blocks.length && (
-            <p className="hint warn">No encontré las preguntas. Revisa que vengan con su número, como «1. ¿Pregunta?».</p>
+            <p className="hint warn">No encontré las preguntas. Copia el capítulo completo, con las preguntas del final.</p>
           )}
           {blocks.length > 0 && (
             <button className="primary" onClick={() => setEditing(false)}>Listo: {blocks.length} {blocks.length === 1 ? 'pregunta' : 'preguntas'}</button>
@@ -426,22 +427,39 @@ function StudyChapter({ fields, onSet, onAnswer, onStar }) {
         </div>
       ) : (
         <>
-          <p className="at-label">Capítulo del estudio · {done} de {blocks.length} contestadas</p>
-          {blocks.map((b) => (
-            <div key={b.key} className="at-answer mw-qcard">
-              <span className="at-answer-head">
-                <span className="at-answer-label">{b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} {b.key}</span>
-                <StarButton on={isStarred(fields, 'e:' + b.key)} onClick={() => onStar('e:' + b.key)} />
-              </span>
-              <span className="mw-q"><Rich text={b.pregunta} /></span>
-              {b.parrafos.length > 0 && (
-                <details className="mw-para">
-                  <summary>Leer el párrafo</summary>
-                  {b.parrafos.map((t, i) => <p key={i}><Rich text={t} /></p>)}
-                </details>
-              )}
-              <AutoText value={answerOf(fields, 'e:' + b.key)} placeholder="Mi respuesta, con mis palabras" onChange={(v) => onAnswer('e:' + b.key, v)} minRows={2} />
+          {chap.titulo && <h3 className="mw-chap">{chap.titulo}</h3>}
+          {chap.tema && <p className="mw-chap-tema">{chap.tema}</p>}
+          {chap.relato.length > 0 && (
+            <details className="mw-para mw-relato">
+              <summary>Leer el relato del capítulo</summary>
+              {chap.relato.map((t, i) => <p key={i} className={t.length < 120 ? 'mw-media' : ''}><Rich text={t} /></p>)}
+            </details>
+          )}
+          {chap.lectura.length > 0 && (
+            <div className="mw-lectura">
+              <p className="at-label">Lea el relato bíblico</p>
+              {chap.lectura.map((t, i) => <p key={i}><Rich text={t} /></p>)}
             </div>
+          )}
+          <p className="at-label">Preguntas · {done} de {blocks.length} contestadas</p>
+          {blocks.map((b, i) => (
+            <Fragment key={b.key}>
+              {b.seccion && b.seccion !== blocks[i - 1]?.seccion && <p className="mw-study-sec">{b.seccion}</p>}
+              <div className="at-answer mw-qcard">
+                <span className="at-answer-head">
+                  <span className="at-answer-label">{b.seccion ? (b.label === b.seccion ? 'Pregunta' : `Pregunta ${b.n}`) : b.label}</span>
+                  <StarButton on={isStarred(fields, 'e:' + b.key)} onClick={() => onStar('e:' + b.key)} />
+                </span>
+                <span className="mw-q"><Rich text={b.pregunta} /></span>
+                {b.parrafos.length > 0 && (
+                  <details className="mw-para">
+                    <summary>Leer el párrafo</summary>
+                    {b.parrafos.map((t, k) => <p key={k}><Rich text={t} /></p>)}
+                  </details>
+                )}
+                <AutoText value={answerOf(fields, 'e:' + b.key)} placeholder="Mi respuesta, con mis palabras" onChange={(v) => onAnswer('e:' + b.key, v)} minRows={2} />
+              </div>
+            </Fragment>
           ))}
           <button className="mw-edit" onClick={() => setEditing(true)}>Cambiar el capítulo pegado</button>
         </>

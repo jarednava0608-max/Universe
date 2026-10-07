@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate, splitAsides, splitRefs, readingChapters, keysOf, midweekAnswers, meetingItems } from './midweek.js'
+import { parseProgram, programTitle, withAnswer, midweekCount, midweekForClaude, partDone, meetingsUrl, programMonday, programDate, splitAsides, splitRefs, readingChapters, keysOf, midweekAnswers, meetingItems, studyChapter } from './midweek.js'
 import { entryForClaude, proposeNode } from './kinds.js'
 
 // Tal como se copia de la Guía de actividades en JW Library (5-11 de octubre de 2026, recortado).
@@ -152,6 +152,29 @@ describe('reunión de entre semana', () => {
     expect(midweekCount(f).done).toBe(1)
     expect(midweekAnswers(f).at(-1).rows).toEqual([{ key: 'e:1', pregunta: '¿Qué aprendemos?', respuesta: 'Que Jehová nos cuida.' }])
     expect(midweekForClaude(f)).toContain('6. Estudio bíblico de la congregación\n¿Qué aprendemos?\nQue Jehová nos cuida.')
+  })
+
+  it('el estudio bíblico de un libro de relatos: el relato, la lectura y las preguntas por sección', () => {
+    const cap = ['11 MOISÉS', '“Preséntate ante el faraón”', 'MOISÉS había cambiado por completo.', '', 'Moisés y Aarón ante el faraón.',
+      'Lea el relato bíblico', 'Éxodo 2:15-5:23', '¿Qué diría?', '¿De qué maneras demostró valor Moisés?', '', 'Respuesta',
+      'Investigue un poco más', '1. ¿Qué razones tenemos para creer en este relato? (g04 8/4 7-9).', '', 'Respuesta',
+      '2. ¿Por qué la gente le tenía miedo al faraón? (w14 15/4 8 párr. 1). A', '', 'Respuesta', '', 'PRISMA ARCHIVO/Alamy Stock Photo', '',
+      'Imagen A: Antiguo relieve de un faraón.', 'Piense en las lecciones', 'Igual que Aarón ayudó a Moisés, ¿cómo ayudamos a otros? (Éx. 4:14-16). C', '', 'Respuesta',
+      'Imagen C', '¿Cómo puede imitar su valor?', '', 'Respuesta', 'Para saber más', '¿Qué aprendió Moisés sobre Jehová?'].join('\n')
+    const ch = studyChapter({ estudio: cap })
+    expect(ch.titulo).toBe('11. Moisés')
+    expect(ch.tema).toBe('“Preséntate ante el faraón”')
+    expect(ch.relato).toHaveLength(2)
+    expect(ch.lectura).toEqual(['Éxodo 2:15-5:23'])
+    expect(ch.bloques.map((b) => [b.label, b.pregunta])).toEqual([
+      ['¿Qué diría?', '¿De qué maneras demostró valor Moisés?'],
+      ['Investigue un poco más · 1', '¿Qué razones tenemos para creer en este relato? (g04 8/4 7-9).'],
+      ['Investigue un poco más · 2', '¿Por qué la gente le tenía miedo al faraón? (w14 15/4 8 párr. 1).'],
+      ['Piense en las lecciones · 1', 'Igual que Aarón ayudó a Moisés, ¿cómo ayudamos a otros? (Éx. 4:14-16).'],
+      ['Piense en las lecciones · 2', '¿Cómo puede imitar su valor?'],
+    ])
+    const estudio = parseProgram(PROGRAMA).partes.at(-1)
+    expect(keysOf({ programa: PROGRAMA, estudio: cap }, estudio)).toEqual(['e:c1', 'e:c2', 'e:c3', 'e:c4', 'e:c5'])
   })
 
   it('modo reunión: las preguntas en orden con tu respuesta', () => {

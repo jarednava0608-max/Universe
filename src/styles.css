@@ -1362,6 +1362,12 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mw-para { margin: 0 0 10px; font-size: 15px; line-height: 1.55; color: var(--text-body); }
 .mw-para summary { min-height: 36px; display: flex; align-items: center; color: var(--text-2); font-size: 14px; cursor: pointer; }
 .mw-para p { font-family: Georgia, 'Times New Roman', serif; font-size: 17px; margin: 0 0 10px; }
+.mw-chap { margin: 8px 0 2px; font-size: 22px; font-weight: 700; color: var(--title); }
+.mw-chap-tema { margin: 0 0 12px; font-style: italic; color: var(--text-2); }
+.mw-relato summary { font-size: 15px; color: var(--accent, var(--title)); }
+.mw-lectura { margin: 4px 0 14px; }
+.mw-lectura p { margin: 0 0 4px; }
+.mw-study-sec { margin: 18px 0 8px; font-size: 18px; font-weight: 700; color: var(--title); }
 .mw-qcard .mw-q { display: block; font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--title); margin: 0 0 10px; }
 .at-missing { display: flex; flex-wrap: wrap; gap: 6px; }
 .at-missing button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 14px; }
