@@ -1,7 +1,7 @@
 // Estado en memoria + escritura en IndexedDB.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as db from './db.js'
-import { makeEdge, makeRoot, ROOT_ID } from './model.js'
+import { DEFAULT_GALAXY, isGalaxy, makeEdge, makeRoot, ROOT_ID, sameGalaxy } from './model.js'
 import { renameLinks } from './markdown.js'
 import { PROGRESS_ID, makeProgress, withDay } from '../games/progress.js'
 
@@ -19,6 +19,15 @@ export function useStore() {
           const root = makeRoot()
           await db.commit({ putNodes: [root] }, { track: false })
           nodes = [root, ...nodes]
+        }
+        // Galaxias: los nodos que existían antes no tienen galaxia; pasan a Escuela.
+        // Solo en este teléfono y sin cambiar la fecha (en la nube la columna ya vale 'escuela').
+        const old = nodes.filter((n) => !isGalaxy(n.galaxy))
+        if (old.length) {
+          const fixed = old.map((n) => ({ ...n, galaxy: DEFAULT_GALAXY }))
+          await db.commit({ putNodes: fixed }, { track: false })
+          const byId = new Map(fixed.map((n) => [n.id, n]))
+          nodes = nodes.map((n) => byId.get(n.id) ?? n)
         }
         setState({ nodes, edges, entries, ready: true, error: null })
       } catch (e) {
@@ -89,6 +98,11 @@ export function useStore() {
   const addEdge = useCallback(
     async ({ source, target, rel }) => {
       if (!source || !target || source === target) return null
+      // No se conectan nodos de galaxias distintas.
+      const { nodes } = stateRef.current
+      const a = nodes.find((n) => n.id === source)
+      const b = nodes.find((n) => n.id === target)
+      if (a && b && !sameGalaxy(a, b)) return null
       const edge = makeEdge({ source, target, rel })
       const dup = stateRef.current.edges.find((e) => e.source === edge.source && e.target === edge.target && e.rel === edge.rel)
       if (dup) return dup

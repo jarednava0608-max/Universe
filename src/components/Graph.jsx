@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { forceCollide, forceRadial } from 'd3-force-3d'
-import { nodeColor, ROOT_ID } from '../lib/model.js'
+import { galaxyOf, GALAXIES, nodeColor, ROOT_ID } from '../lib/model.js'
 import { buildResolver, extractLinks } from '../lib/markdown.js'
 import { buildSupport } from '../lib/support.js'
 
@@ -18,6 +18,8 @@ function readPalette() {
     label: v('--graph-label', 'rgba(228,228,231,0.78)'),
     focus: v('--graph-focus', '#fafafa'),
     rootLabel: v('--graph-root-label', '#f5d27a'),
+    // Cada galaxia pinta sus nodos de su color (--gx-english, --gx-escuela, --gx-espiritual).
+    gx: Object.fromEntries(GALAXIES.map((g) => [g.id, v('--gx-' + g.id, g.color)])),
     link: `rgba(${fg},0.13)`,
     linkDim: `rgba(${fg},0.04)`,
     linkHi: `rgba(${fg},0.55)`,
@@ -109,6 +111,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
       const g = old.get(n.id) ?? { id: n.id }
       g.title = n.title
       g.color = nodeColor(n)
+      g.galaxy = galaxyOf(n)
       g.isRoot = n.id === ROOT_ID
       g.fresh = !g.isRoot && Date.now() - (n.createdAt ?? 0) < 24 * 3600 * 1000 // creado en las últimas 24 h
       g.deg = degree.get(n.id) ?? 0
@@ -278,7 +281,7 @@ const Graph = forwardRef(function Graph({ nodes, edges, focusId, startId, theme,
 
           ctx.beginPath()
           ctx.arc(n.x, n.y, r, 0, 2 * Math.PI)
-          ctx.fillStyle = n.isRoot ? n.color : pal.node
+          ctx.fillStyle = n.isRoot ? n.color : pal.gx[n.galaxy] ?? pal.node
           ctx.fill()
 
           if (focused) {

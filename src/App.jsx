@@ -4,7 +4,7 @@ import { useSync } from './lib/useSync.js'
 import { useTheme } from './lib/theme.js'
 import { getMeta, loadAll, requestPersistence, setMeta } from './lib/db.js'
 import { buildExport, planImport } from './lib/importer.js'
-import { makeNode } from './lib/model.js'
+import { currentGalaxy, galaxyOf, GALAXIES, makeNode, setCurrentGalaxy } from './lib/model.js'
 import Graph from './components/Graph.jsx'
 import Search from './components/Search.jsx'
 import NoteView from './components/NoteView.jsx'
@@ -56,7 +56,24 @@ export default function App() {
   const [stack, setStack] = useState([]) // notas abiertas (para volver atrás)
   const [focusId, setFocusId] = useState(null)
   // Último nodo que viste: el mapa abre ahí (preferencia de este teléfono).
-  const [startNode] = useState(() => { try { return localStorage.getItem(LAST_NODE) } catch { return null } })
+  const [startNode, setStartNode] = useState(() => { try { return localStorage.getItem(LAST_NODE) } catch { return null } })
+  // Galaxias: el mapa muestra solo los nodos y conexiones de la elegida (se recuerda en este teléfono).
+  const [galaxy, setGalaxy] = useState(currentGalaxy)
+  const galaxyRef = useRef(galaxy)
+  galaxyRef.current = galaxy
+  const nodesRef = useRef(nodes)
+  nodesRef.current = nodes
+  const changeGalaxy = useCallback((id, start = null) => {
+    setCurrentGalaxy(id)
+    setGalaxy(id)
+    setStartNode(start)
+    setFocusId(start)
+  }, [])
+  const galNodes = useMemo(() => nodes.filter((n) => galaxyOf(n) === galaxy), [nodes, galaxy])
+  const galEdges = useMemo(() => {
+    const ids = new Set(galNodes.map((n) => n.id))
+    return edges.filter((e) => ids.has(e.source) && ids.has(e.target))
+  }, [galNodes, edges])
   const [editor, setEditor] = useState(null)
   const [sheet, setSheet] = useState(null) // 'menu' | 'paste' | 'account' | 'dig'
   const [pasteText, setPasteText] = useState('')
@@ -167,6 +184,10 @@ export default function App() {
   const stackRef = useRef(stack)
   stackRef.current = stack
   const openNote = useCallback((id) => {
+    // Un nodo de otra galaxia (desde Estudio o Buscar en todo): primero se cambia a su galaxia.
+    const node = nodesRef.current.find((n) => n.id === id)
+    const switching = node && galaxyOf(node) !== galaxyRef.current
+    if (switching) changeGalaxy(galaxyOf(node), id)
     const s = stackRef.current
     if (s.at(-1) !== id) {
       const next = [...s, id]
@@ -175,9 +196,9 @@ export default function App() {
       history.pushState({ note: id, depth: next.length }, '')
     }
     setFocusId(id)
-    graph.current?.focus(id)
+    if (!switching) graph.current?.focus(id)
     try { localStorage.setItem(LAST_NODE, id) } catch { /* sin almacenamiento */ }
-  }, [])
+  }, [changeGalaxy])
   const back = useCallback(() => history.back(), [])
   const closeAll = useCallback(() => {
     const n = stack.length
@@ -189,8 +210,8 @@ export default function App() {
   const backupStale = sync.checked && !sync.session && nodes.length > 1 && (!lastExport || Date.now() - lastExport > 30 * 864e5)
 
   // Ideas que todavía no llegan a ningún texto bíblico (para "Por escarbar" en el menú).
-  const unfounded = useMemo(() => (sheet === 'menu' ? buildSupport(nodes).unfounded().length : 0), [sheet, nodes])
-  const lines = useMemo(() => (sheet === 'menu' ? connectionCount(nodes, edges) : 0), [sheet, nodes, edges])
+  const unfounded = useMemo(() => (sheet === 'menu' ? buildSupport(galNodes).unfounded().length : 0), [sheet, galNodes])
+  const lines = useMemo(() => (sheet === 'menu' ? connectionCount(galNodes, galEdges) : 0), [sheet, galNodes, galEdges])
 
   const currentId = stack.at(-1)
   const current = nodes.find((n) => n.id === currentId)
@@ -206,7 +227,7 @@ export default function App() {
 
   function startNew(partial = {}) {
     setSheet(null)
-    setEditor({ node: makeNode({ origin: 'propio', ...partial, title: partial.title ?? '' }), isNew: true })
+    setEditor({ node: makeNode({ origin: 'propio', galaxy, ...partial, title: partial.title ?? '' }), isNew: true })
   }
 
   async function saveEditor(node, { removed, added }) {
@@ -303,9 +324,10 @@ export default function App() {
     <div className="app">
       <div className={'tab-map' + (tab === 'mapa' ? '' : ' tab-hidden')}>
       <Graph
+        key={galaxy}
         ref={graph}
-        nodes={nodes}
-        edges={edges}
+        nodes={galNodes}
+        edges={galEdges}
         focusId={focusId}
         startId={startNode}
         theme={theme}
@@ -313,10 +335,39 @@ export default function App() {
         onBackgroundTap={() => setFocusId(null)}
       />
 
-      <Search nodes={nodes} onPick={openNote} onMenu={() => setSheet('menu')} alert={backupStale} />
+      <Search
+        nodes={galNodes}
+        onPick={openNote}
+        onMenu={() => setSheet('menu')}
+        alert={backupStale}
+        below={
+          <div className="galaxies" role="tablist" aria-label="Galaxias">
+            {GALAXIES.map((g) => (
+              <button
+                key={g.id}
+                role="tab"
+                aria-selected={g.id === galaxy}
+                className={g.id === galaxy ? 'on' : ''}
+                style={{ '--gx': `var(--gx-${g.id})` }}
+                onClick={() => {
+                  if (g.id === galaxy) return
+                  closeAll()
+                  changeGalaxy(g.id)
+                }}
+              >
+                <i />
+                {g.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
-      {nodes.length === 1 && !current && (
+      {nodes.length === 1 && galNodes.length === 1 && !current && (
         <p className="welcome">Toca <b>Jehová</b> para escribir su definición,<br />o <b>+</b> para agregar tu primera idea.</p>
+      )}
+      {galNodes.length === 0 && !current && (
+        <p className="welcome">Esta galaxia está vacía.<br />Toca <b>+</b> para agregar tu primera idea.</p>
       )}
 
       <button className="fab" aria-label="Nuevo nodo" onClick={() => startNew()}>
@@ -378,7 +429,7 @@ export default function App() {
       {current && (
         <NoteView
           node={current}
-          nodes={nodes}
+          nodes={galNodes}
           onOpen={openNote}
           onBack={back}
           onClose={closeAll}
@@ -389,7 +440,7 @@ export default function App() {
 
       {sheet === 'menu' && (
         <Menu
-          stats={{ nodes: nodes.length, edges: lines, persisted, lastExport, backupStale, unfounded }}
+          stats={{ nodes: galNodes.length, edges: lines, persisted, lastExport, backupStale, unfounded }}
           sync={sync}
           themeMode={mode}
           onThemeMode={setMode}
@@ -407,7 +458,7 @@ export default function App() {
 
       {sheet === 'account' && <AccountSheet sync={sync} onClose={() => setSheet(null)} />}
 
-      {sheet === 'dig' && <DigList nodes={nodes} onOpen={(id) => { setSheet(null); openNote(id) }} onClose={() => setSheet(null)} />}
+      {sheet === 'dig' && <DigList nodes={galNodes} onOpen={(id) => { setSheet(null); openNote(id) }} onClose={() => setSheet(null)} />}
 
       {sheet === 'paste' && (
         <PasteSheet
@@ -425,7 +476,8 @@ export default function App() {
           key={editor.node.id}
           node={editor.node}
           isNew={editor.isNew}
-          nodes={nodes}
+          nodes={galNodes}
+          allNodes={nodes}
 
           onSave={saveEditor}
           onCancel={() => setEditor(null)}

@@ -3,7 +3,7 @@ import { nodeColor, normKey } from '../lib/model.js'
 import { plainText } from '../lib/markdown.js'
 
 // Barra de búsqueda minimalista: busca en títulos y en el texto de las notas.
-export default function Search({ nodes, onPick, onMenu, alert }) {
+export default function Search({ nodes, onPick, onMenu, alert, below }) {
   const [q, setQ] = useState('')
   const [focused, setFocused] = useState(false)
 
@@ -38,6 +38,7 @@ export default function Search({ nodes, onPick, onMenu, alert }) {
 
   return (
     <>
+      <div className="topbar-wrap">
       <div className="topbar">
         <div className="search">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -62,6 +63,8 @@ export default function Search({ nodes, onPick, onMenu, alert }) {
           </svg>
           {alert && <i className="menu-alert" />}
         </button>
+      </div>
+      {below}
       </div>
       {open && (
         <div className="search-results">

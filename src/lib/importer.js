@@ -1,6 +1,6 @@
 // "Pegar conocimiento": convierte un JSON en un plan de cambios que se muestra
 // como vista previa y solo se guarda cuando el usuario confirma.
-import { makeNode, makeEdge, normKey, normRel, cleanSources, NODE_TYPES, ORIGINS, ROOT_ID, makeRoot, SCHEMA_VERSION } from './model.js'
+import { makeNode, makeEdge, normKey, normRel, cleanSources, NODE_TYPES, ORIGINS, ROOT_ID, makeRoot, SCHEMA_VERSION, sameGalaxy } from './model.js'
 
 export function parseJsonLoose(text) {
   let t = String(text ?? '').trim()
@@ -78,6 +78,7 @@ export function planImport(data, state, opts = {}) {
       origin: pickOrigin(raw.origin ?? raw.origen),
       note: String(raw.note ?? raw.nota ?? raw.content ?? ''),
       sources: cleanSources(raw.sources ?? raw.fuentes),
+      galaxy: raw.galaxy ?? raw.galaxia,
     }
 
     const match =
@@ -114,6 +115,7 @@ export function planImport(data, state, opts = {}) {
     return refs.get('id:' + s) ?? refs.get(normKey(s)) ?? null
   }
 
+  const nodeById = (id) => created.get(id) ?? updated.get(id) ?? existingById.get(id)
   const edgeKey = (e) => `${e.source}|${e.target}|${e.rel}`
   const existingEdgeKeys = new Set(base.edges.map(edgeKey))
   const newEdges = []
@@ -127,6 +129,7 @@ export function planImport(data, state, opts = {}) {
       return warnings.push(`Conexión #${i + 1} ignorada: no existe el nodo "${missing ?? '?'}".`)
     }
     if (s === t) return warnings.push(`Conexión #${i + 1} ignorada: un nodo no se conecta consigo mismo.`)
+    if (!sameGalaxy(nodeById(s), nodeById(t))) return warnings.push(`Conexión #${i + 1} ignorada: "${from}" y "${to}" están en galaxias distintas.`)
     const edge = makeEdge({ id: replace ? raw.id : undefined, source: s, target: t, rel: normRel(raw.rel ?? raw.relacion ?? raw.relación ?? raw.type ?? raw.tipo) })
     const k = edgeKey(edge)
     if (existingEdgeKeys.has(k)) return

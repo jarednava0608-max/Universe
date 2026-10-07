@@ -2,6 +2,7 @@
 // IndexedDB sigue siendo la fuente local; aquí solo se sube lo pendiente (outbox)
 // y se baja lo que cambió en la nube. Conflictos: gana el cambio más reciente.
 import * as db from './db.js'
+import { galaxyOf } from './model.js'
 import { PROGRESS_ID, mergeProgress } from '../games/progress.js'
 
 const TABLE = { nodes: 'universe_nodes', edges: 'universe_edges', entries: 'universe_entries' }
@@ -20,6 +21,7 @@ const toRow = {
     origin: n.origin,
     note: n.note,
     sources: n.sources ?? [],
+    galaxy: galaxyOf(n),
     created_at: n.createdAt ?? 0,
     updated_at: n.updatedAt ?? 0,
     deleted: false,
@@ -60,6 +62,7 @@ const fromRow = {
     origin: r.origin,
     note: r.note ?? '',
     sources: Array.isArray(r.sources) ? r.sources : [],
+    galaxy: galaxyOf(r),
     createdAt: Number(r.created_at),
     updatedAt: Number(r.updated_at),
   }),

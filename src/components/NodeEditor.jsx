@@ -7,7 +7,7 @@ import TitleArea from './TitleArea.jsx'
 // Crear / editar un nodo: solo título y definición.
 // Para conectar ideas se enlaza otro nodo dentro del texto con [[Título]].
 // (Tipo, origen, fuentes y conexiones se conservan en los datos pero no se editan aquí.)
-export default function NodeEditor({ node, isNew, nodes, onSave, onCancel, onDelete }) {
+export default function NodeEditor({ node, isNew, nodes, allNodes = nodes, onSave, onCancel, onDelete }) {
   // Las marcas antiguas [!jw] / [!yo] se limpian al editar.
   // Un nodo nuevo empieza con el título vacío (no "Sin título"), así el cursor queda listo para escribirlo.
   const [draft, setDraft] = useState(() => ({ ...node, title: isNew && node.title === 'Sin título' ? '' : node.title, note: unwrapCallouts(node.note) }))
@@ -42,8 +42,8 @@ export default function NodeEditor({ node, isNew, nodes, onSave, onCancel, onDel
   function save() {
     const title = draft.title.trim()
     if (!title) return setError('Escribe un título.')
-    const clash = nodes.find((n) => n.id !== node.id && normKey(n.title) === normKey(title))
-    if (clash) return setError(`Ya existe un nodo llamado «${clash.title}».`)
+    const clash = allNodes.find((n) => n.id !== node.id && normKey(n.title) === normKey(title))
+    if (clash) return setError(`Ya existe un nodo llamado «${clash.title}»${nodes.includes(clash) ? '' : ' en otra galaxia'}.`)
     onSave({ ...draft, title }, { removed: [], added: [] })
   }
 

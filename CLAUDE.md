@@ -17,6 +17,7 @@ Tiene **3 pestañas abajo**: **Mapa**, **Estudio** y **Juegos**. **La app abre e
 - **Nunca emojis**: ni en la app ni en el contenido que se le propone (definiciones, nodos, notas).
 
 ## 1) Pestaña Mapa
+- **Galaxias** (el usuario las pidió): el mapa se separa en 3 mapas independientes, **English** (azul), **Escuela** (verde) y **Espiritual** (dorado) (`GALAXIES` en `model.js`; colores `--gx-*` en `styles.css`). Cada nodo tiene `galaxy`; los que no la tienen son de Escuela (`galaxyOf`; al abrir la app se les escribe solo en este teléfono, y en Supabase la columna `universe_nodes.galaxy` vale `'escuela'` por defecto). Selector de 3 pastillas debajo del buscador del mapa: el mapa, Buscar, "Por escarbar", las notas y el conteo del menú usan solo los nodos y líneas de la elegida (`galNodes`/`galEdges` en `App.jsx`). Se recuerda en `universe-galaxy` (`currentGalaxy`); `makeNode` asigna esa galaxia a todo nodo nuevo. No se conectan nodos de galaxias distintas (`sameGalaxy` en `addEdge` y en `planImport`; los `[[enlaces]]` a otra galaxia no se dibujan). Abrir un nodo de otra galaxia desde Estudio cambia a su galaxia. Los nodos se pintan del color de su galaxia; Jehová conserva su dorado con halo.
 - Mapa tipo Obsidian: cada idea es un nodo. Un nodo es solo **título + definición**. La interfaz NO muestra tipo, origen, fuentes, la palabra "raíz" ni etiquetas "JW / mi razonamiento", y el editor no tiene secciones de fuentes ni conexiones. Los campos `type`, `origin`, `sources` y las conexiones importadas se conservan en los datos por si el usuario los pide después.
 - **Conectar ideas** = enlazar otro nodo en el texto con `[[Título]]` (botón "Enlazar otro nodo"). Se dibujan como líneas rectas sin flecha, pero la app sabe la dirección: si la nota de A escribe [[B]], **A se apoya en B**. Un `[[texto bíblico]]` que aún no es nodo ("[[Juan 17:3]]") abre la hoja de Mi Biblia, no un nodo vacío (`isRefTitle` en `bible.js`). Las conexiones con relación (`ENSEÑA`…) solo llegan por "Pegar conocimiento".
 - Los bloques antiguos `> [!jw]` / `> [!yo]` se muestran como texto normal y se limpian al editar (`unwrapCallouts`).
@@ -88,7 +89,7 @@ Seis apartados, definidos en `src/study/kinds.js` (`KINDS`; `notes: true` usa el
 
 ## Modelo de datos
 ```js
-Node  = { id, title, note /* markdown */, type, origin, sources, createdAt, updatedAt }
+Node  = { id, title, note /* markdown */, type, origin, sources, galaxy /* 'english'|'escuela'|'espiritual' */, createdAt, updatedAt }
 Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
 Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'idea' | 'asignacion' | 'trivia'|'memoria'|'progreso' | 'biblia', fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
