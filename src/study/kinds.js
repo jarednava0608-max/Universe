@@ -2,7 +2,7 @@
 // cómo se resume en un nodo del mapa). Para agregar un apartado nuevo basta con
 // añadir una entrada a KINDS.
 import { newId } from '../lib/model.js'
-import { findRefs } from '../lib/bible.js'
+import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
 import { highlightArticle } from './atalaya.js'
 import { midweekForClaude, midweekNode } from './midweek.js'
 
@@ -358,6 +358,57 @@ export function dailyVerse(texto) {
   const line = String(texto ?? '').split('\n').map((l) => l.trim()).find(Boolean) ?? ''
   const m = line.match(/^.*?\([^()]*\d[^()]*\)[.»”"]?/)
   return m ? m[0] : line
+}
+
+// El Texto diario por pasos (DailyStudy.jsx): una pregunta a la vez, con preguntas guía para
+// que no tengas que pensar qué escribir. Cada paso llena un campo de la entrada.
+export const DAILY_STEPS = [
+  { key: 'texto', label: 'Texto' },
+  {
+    key: 'contexto', label: 'Contexto', q: '¿Qué sabes de este texto?',
+    guide: [
+      '¿Quién lo escribió o lo dijo?',
+      '¿A quién se lo dijo y qué estaba pasando?',
+      '¿Qué pasa antes y después? Lee unos versículos de alrededor.',
+      '¿Qué ya sabes de ese libro, de esa época o de esa persona?',
+    ],
+    hint: 'Lo escribió… se lo dijo a… estaba pasando…',
+  },
+  {
+    key: 'principio', label: 'Principio', q: '¿Qué enseña?',
+    guide: [
+      '¿Qué me dice de Jehová o de Jesús?',
+      '¿Qué sigue siendo cierto hoy, para cualquier persona?',
+      'Dilo en una sola oración.',
+    ],
+    hint: 'Jehová… / Cuando uno… entonces…',
+  },
+  {
+    key: 'relato', label: 'Relato', q: '¿Quién de la Biblia lo vivió?',
+    guide: [
+      '¿Qué personaje vivió este principio, bien o mal?',
+      '¿Qué hizo y qué resultado tuvo?',
+      'Si no se te ocurre nadie, busca en el mismo capítulo del texto.',
+    ],
+    hint: 'Nombre, qué hizo y qué pasó',
+  },
+  {
+    key: 'aplicacion', label: 'Aplicación', q: '¿Qué hago hoy?',
+    guide: [
+      '¿Dónde me va a servir hoy? En casa, en el trabajo o la escuela, en la predicación.',
+      '¿Qué voy a hacer o decir distinto, en concreto?',
+      '¿A quién le puede servir que se lo cuente?',
+    ],
+    hint: 'Hoy voy a…',
+  },
+  { key: 'listo', label: 'Listo' },
+]
+export const DAILY_QUESTIONS = DAILY_STEPS.filter((s) => s.q)
+
+// El capítulo del texto del día ("No calumnia… (Sal. 15:3)" → "Salmos 15"), para leer alrededor.
+export function dailyChapter(texto) {
+  const r = parseRef(refsIn(dailyVerse(texto))[0] ?? refsIn(texto)[0] ?? '')
+  return r ? `${BOOKS[r.book - 1]} ${r.chapter}` : ''
 }
 
 // ¿Ya analizaste este texto diario? (algo más que pegar el texto).

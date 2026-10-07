@@ -53,7 +53,7 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
   items.push({
     key: 'diario',
     title: 'Texto diario',
-    sub: !diario ? 'Pégalo y analízalo' : analyzed ? diario.fields.resumen?.trim() || 'Analizado' : 'Falta analizarlo',
+    sub: !diario ? 'Pégalo y contesta 4 preguntas' : analyzed ? diario.fields.resumen?.trim() || 'Analizado' : 'Contesta 4 preguntas · unos 5 min',
     done: analyzed,
     verse: diario ? dailyVerse(diario.fields.texto) : '',
     entry: diario ?? null,
@@ -148,6 +148,10 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
 
   return items
 }
+
+// Lo que sigue: el primer paso del día sin hacer (null si ya terminaste). Así al abrir la app
+// solo tocas un botón, sin pensar qué hacer.
+export const nextStep = (items) => items.find((it) => !it.done) ?? null
 
 // ¿Lo copiado parece el texto diario? (un texto con su cita entre paréntesis: "… (Heb. 10:1).").
 export function looksLikeDailyText(text) {

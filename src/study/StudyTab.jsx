@@ -3,7 +3,7 @@ import PageScroll from '../components/PageScroll.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { KINDS, KIND_ORDER, partLabel, partMinutes, clock, makeEntry, entrySortKey, fieldsFromJson, claudeFormat, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyTextUrl, dailyTextAppUrl, dailyAnalyzed } from './kinds.js'
+import { KINDS, KIND_ORDER, partLabel, partMinutes, clock, makeEntry, entrySortKey, fieldsFromJson, entryForClaude, proposeNode, noteBody, noteDate, today, dailyVerse, dailyAnalyzed } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { midweekCount } from './midweek.js'
 import { readMeetings } from './meetings.js'
@@ -12,7 +12,6 @@ import BibleHome from '../components/BibleHome.jsx'
 import { readCount, TOTAL_CHAPTERS } from '../lib/reading.js'
 import TodayPlan from './TodayPlan.jsx'
 import SearchAll from './SearchAll.jsx'
-import { parseJsonLoose } from '../lib/importer.js'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
 import NodePeek from '../components/NodePeek.jsx'
@@ -23,6 +22,8 @@ import TitleArea from '../components/TitleArea.jsx'
 import AutoText from '../components/AutoText.jsx'
 import AtalayaStudy from './AtalayaStudy.jsx'
 import MidweekStudy from './MidweekStudy.jsx'
+import DailyStudy from './DailyStudy.jsx'
+import PasteFields from './PasteFields.jsx'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -77,7 +78,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             onPasteDaily={async (texto, existing) => {
               const e = existing ?? makeEntry('diario')
               const saved = await onSaveEntry({ ...e, fields: { ...e.fields, fecha: today(), texto } })
-              toast('Texto de hoy guardado. Ahora analízalo.')
+              toast('Texto de hoy guardado. Ahora, 4 preguntas.')
               setEditing({ entry: saved ?? e, isNew: false })
             }}
             toast={toast}
@@ -251,6 +252,25 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
 
+      {editing && editing.entry.kind === 'diario' && (
+        <DailyStudy
+          key={editing.entry.id}
+          entry={editing.entry}
+          isNew={editing.isNew}
+          toast={toast}
+          onSave={onSaveEntry}
+          onClose={() => setEditing(null)}
+          onDelete={async () => {
+            await onDeleteEntry(editing.entry.id)
+            setEditing(null)
+            toast('Entrada eliminada.')
+          }}
+          onPropose={(e) => setProposal({ entry: e, node: proposeNode(e) })}
+          linked={editing.entry.mapNodeId && nodes.find((n) => n.id === editing.entry.mapNodeId)}
+          onOpenNode={onOpenNode}
+        />
+      )}
+
       {proposal && (
         <ProposeSheet
           initial={proposal.node}
@@ -266,7 +286,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
 
-      {editing && !KINDS[editing.entry.kind].notes && editing.entry.kind !== 'reunion' && (
+      {editing && !KINDS[editing.entry.kind].notes && editing.entry.kind !== 'reunion' && editing.entry.kind !== 'diario' && (
         <EntryEditor
           key={editing.entry.id}
           entry={editing.entry}
@@ -855,16 +875,6 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onSaveQuiet
         })()}
 
         <div className="action-stack">
-          {entry.kind === 'diario' && (
-            <>
-              <a className="secondary as-btn" data-direct="1" href={dailyTextAppUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">
-                Abrir este texto en JW Library
-              </a>
-              <a className="secondary as-btn" data-direct="1" href={dailyTextUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">
-                Ver en wol.jw.org
-              </a>
-            </>
-          )}
           <button className="secondary icon-left" onClick={() => setPaste(true)}>
             <Icon d={ICONS.pegar} size={18} /> Pegar de Claude
           </button>
@@ -1016,40 +1026,6 @@ function Paragraphs({ field, value, onChange }) {
       <button className="add-row" onClick={() => onChange([...value, { num: nextNum(), nota: '' }])}>
         <Icon d={ICONS.plus} size={16} stroke={2} /> Agregar párrafo
       </button>
-    </div>
-  )
-}
-
-function PasteFields({ kind, toast, onCancel, onApply }) {
-  const [text, setText] = useState('')
-  const [error, setError] = useState('')
-  function apply() {
-    try {
-      onApply(parseJsonLoose(text))
-    } catch (e) {
-      setError(e.message)
-    }
-  }
-  return (
-    <div className="overlay picker">
-      <header className="bar">
-        <button className="bar-btn" onClick={onCancel}>Cancelar</button>
-        <span className="bar-title">Pegar de Claude</span>
-        <button className="bar-btn strong" disabled={!text.trim()} onClick={apply}>Llenar</button>
-      </header>
-      <div className="editor-body">
-        <p className="hint">Pega el JSON que te dio Claude. Se llenan los campos y tú revisas antes de guardar.</p>
-        {error && <p className="error">{error}</p>}
-        <textarea className="input paste-input" value={text} placeholder="{ … }" autoCapitalize="off" autoCorrect="off" spellCheck={false} onChange={(e) => setText(e.target.value)} />
-        <div className="stack">
-          <button className="secondary" onClick={async () => {
-            try { setText(await navigator.clipboard.readText()) } catch { setError('No se pudo leer el portapapeles. Mantén presionado el cuadro y elige “Pegar”.') }
-          }}>Pegar del portapapeles</button>
-          <button className="secondary" onClick={async () => {
-            try { await navigator.clipboard.writeText(claudeFormat(kind)); toast('Formato copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
-          }}>Copiar formato para Claude</button>
-        </div>
-      </div>
     </div>
   )
 }

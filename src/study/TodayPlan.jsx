@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { DAYS, todayPlan, looksLikeDailyText } from './today.js'
+import { DAYS, nextStep, todayPlan, looksLikeDailyText } from './today.js'
 import { openRef } from '../lib/verses.js'
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
@@ -17,6 +17,9 @@ export default function TodayPlan({ entries, review, challenge, leidos, plan, on
   const done = items.filter((x) => x.done).length
   const fecha = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
   const act = (it) => (it.key === 'lectura' ? (it.ref ? openRef(it.ref) : onBible()) : it.key === 'repaso' ? onReview() : it.key === 'reto' ? onChallenge() : it.entry ? onOpenEntry(it.entry) : onCreate(it.create))
+  const next = nextStep(items)
+  // El botón grande hace lo que sigue; sin texto de hoy, lo pega de lo copiado.
+  const doNext = () => (next.key === 'diario' && !diario.verse && onPasteDaily ? pasteDaily() : act(next))
   const setup = changing || meetings?.semana == null || meetings?.fin == null
 
   async function pasteDaily() {
@@ -45,10 +48,16 @@ export default function TodayPlan({ entries, review, challenge, leidos, plan, on
           <span className="today-verse">{clip(diario.verse)}</span>
         </button>
       )}
-      {!diario.verse && onPasteDaily && (
+      {!diario.verse && onPasteDaily && next?.key !== 'diario' && (
         // Copias el texto de hoy en JW Library y con un toque queda guardado con su fecha.
         <button className="today-add" onClick={pasteDaily}>
           <Icon d={ICONS.pegar} size={17} /> Pegar el texto de hoy
+        </button>
+      )}
+      {next && (
+        <button className="primary plan-next" onClick={doNext}>
+          <span className="plan-next-label">{done ? 'Sigue' : 'Empieza'}: {next.title}</span>
+          <span className="plan-next-sub">{next.key === 'diario' && !diario.verse ? 'Copia el texto en JW Library y toca aquí' : next.sub}</span>
         </button>
       )}
       <ul className="plan-list">

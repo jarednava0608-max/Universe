@@ -139,3 +139,11 @@ describe('Mis asignaciones', () => {
     expect(fieldsFromJson('reunion', { tipo: 'Vida y Ministerio' }, {}).tipo).toBe('entresemana')
   })
 })
+
+describe('dailyChapter', () => {
+  it('da el capítulo del texto del día', async () => {
+    const { dailyChapter } = await import('./kinds.js')
+    expect(dailyChapter('No calumnia con su lengua (Sal. 15:3).\nComentario…')).toMatch(/^Salmo?s? 15$/)
+    expect(dailyChapter('')).toBe('')
+  })
+})
