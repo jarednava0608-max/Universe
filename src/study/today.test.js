@@ -112,3 +112,29 @@ describe('nextStep', () => {
     expect(nextStep([{ key: 'reto', done: true }])).toBeNull()
   })
 })
+
+describe('Hoy: por momentos del día, como en tu calendario', () => {
+  // Jueves y sábado, como en el calendario.
+  const cal = { semana: 4, fin: 6 }
+  it('se prepara la reunión que sigue', () => {
+    const sun = todayPlan({ now: new Date(2026, 9, 11, 9), meetings: cal })
+    expect(sun.find((x) => x.key === 'entresemana')).toMatchObject({ moment: 'tarde' })
+    expect(sun.some((x) => x.key === 'atalaya')).toBe(false)
+    const fri = todayPlan({ now: new Date(2026, 9, 9, 7), meetings: cal })
+    expect(fri.find((x) => x.key === 'atalaya')).toMatchObject({ moment: 'manana', sub: 'El sábado · Prepárala por pasos' })
+    expect(fri.some((x) => x.key === 'entresemana')).toBe(false)
+  })
+
+  it('lectura y reto en la noche; el botón da lo de ahora o avisa que es para más tarde', async () => {
+    const { nextStep } = await import('./today.js')
+    const plan = { start: '2026-10-05', end: '2027-10-04', t: 1 }
+    const morning = new Date(2026, 9, 7, 7)
+    const items = todayPlan({ now: morning, plan, review: { due: 0, fresh: 0 } })
+    expect(items.map((x) => [x.key, x.moment])).toEqual([['diario', 'manana'], ['repaso', 'manana'], ['lectura', 'noche'], ['reto', 'noche']])
+    expect(nextStep(items, morning)).toMatchObject({ key: 'diario' })
+    const done = items.map((x) => (x.moment === 'manana' ? { ...x, done: true } : x))
+    expect(nextStep(done, morning)).toMatchObject({ key: 'lectura', later: true })
+    expect(nextStep(done, new Date(2026, 9, 7, 21))).toMatchObject({ key: 'lectura' })
+    expect(nextStep(done, new Date(2026, 9, 7, 21)).later).toBeUndefined()
+  })
+})

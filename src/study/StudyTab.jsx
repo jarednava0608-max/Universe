@@ -35,6 +35,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
   const [bibleOpen, setBibleOpen] = useState(false)
   const [proposal, setProposal] = useState(null) // { entry, node } desde La Atalaya por pasos
+  const [chain, setChain] = useState(null) // { from, t }: al terminar un paso, "Hoy" abre el que sigue
+  const [libOpen, setLibOpen] = useState(() => { try { return localStorage.getItem('universe-library-open') === '1' } catch { return false } })
+  const toggleLib = () => setLibOpen((o) => { try { localStorage.setItem('universe-library-open', o ? '0' : '1') } catch { /* sin almacenamiento */ } return !o })
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
   const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
   useEffect(() => { onHome?.(!section) }, [section]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -64,6 +67,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         <PageScroll title="Estudio">
           <h1 className="page-title">Estudio</h1>
           <TodayPlan
+            chain={chain}
             entries={entries}
             review={review}
             challenge={challenge}
@@ -93,50 +97,58 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
           )}
-          <button className="continue-card bible-card" onClick={() => setBibleOpen(true)}>
-            <span className="continue-label">Leer la Biblia</span>
-            <span className="continue-title">{readCount(leidos)} de {TOTAL_CHAPTERS} capítulos</span>
-            <span className="progress"><span style={{ width: `${(readCount(leidos) / TOTAL_CHAPTERS) * 100}%` }} /></span>
+          <button className={'library-toggle' + (libOpen ? ' open' : '')} onClick={toggleLib} aria-expanded={libOpen}>
+            <span>Mi biblioteca</span>
             <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
           </button>
-          <div className="kind-grid">
-            {KIND_ORDER.map((k) => (
-              <button key={k} className="kind-card" onClick={() => setSection(k)}>
-                <span className={'kind-icon k-' + k}><Icon d={KINDS[k].icon} size={20} /></span>
-                <span className="kind-label">{KINDS[k].label}</span>
-                <span className="kind-desc">{KINDS[k].desc}</span>
-                <span className="kind-count">{byKind[k].length || 'Vacío'}</span>
+          {libOpen && (
+            <>
+              <button className="continue-card bible-card" onClick={() => setBibleOpen(true)}>
+                <span className="continue-label">Leer la Biblia</span>
+                <span className="continue-title">{readCount(leidos)} de {TOTAL_CHAPTERS} capítulos</span>
+                <span className="progress"><span style={{ width: `${(readCount(leidos) / TOTAL_CHAPTERS) * 100}%` }} /></span>
+                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
               </button>
-            ))}
-          </div>
+              <div className="kind-grid">
+                {KIND_ORDER.map((k) => (
+                  <button key={k} className="kind-card" onClick={() => setSection(k)}>
+                    <span className={'kind-icon k-' + k}><Icon d={KINDS[k].icon} size={20} /></span>
+                    <span className="kind-label">{KINDS[k].label}</span>
+                    <span className="kind-desc">{KINDS[k].desc}</span>
+                    <span className="kind-count">{byKind[k].length || 'Vacío'}</span>
+                  </button>
+                ))}
+              </div>
 
-          {recent.length > 0 && (
-            <>
-              <h2 className="section-label">Recientes</h2>
-              <RecentList items={recent} onOpen={openRecent} />
-            </>
-          )}
+              {recent.length > 0 && (
+                <>
+                  <h2 className="section-label">Recientes</h2>
+                  <RecentList items={recent} onOpen={openRecent} />
+                </>
+              )}
 
-          {allNodes.length > 0 && (
-            <>
-              <h2 className="section-label">Tus nodos · {allNodes.length}</h2>
-              <ul className="entry-list">
-                {allNodes.map((n) => {
-                  const def = firstSentence(definitionText(n.note))
-                  return (
-                    <li key={n.id}>
-                      <button className="entry-row" onClick={() => setPeekNode(n.id)}>
-                        <span className={'node-dot' + (n.id === ROOT_ID ? ' root' : '')} />
-                        <span className="entry-main">
-                          <span className="entry-title">{n.title}</span>
-                          <span className="entry-sub">{def || 'Sin definición todavía'}</span>
-                        </span>
-                        <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
+              {allNodes.length > 0 && (
+                <>
+                  <h2 className="section-label">Tus nodos · {allNodes.length}</h2>
+                  <ul className="entry-list">
+                    {allNodes.map((n) => {
+                      const def = firstSentence(definitionText(n.note))
+                      return (
+                        <li key={n.id}>
+                          <button className="entry-row" onClick={() => setPeekNode(n.id)}>
+                            <span className={'node-dot' + (n.id === ROOT_ID ? ' root' : '')} />
+                            <span className="entry-main">
+                              <span className="entry-title">{n.title}</span>
+                              <span className="entry-sub">{def || 'Sin definición todavía'}</span>
+                            </span>
+                            <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </>
+              )}
             </>
           )}
         </PageScroll>
@@ -255,6 +267,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
       {editing && editing.entry.kind === 'diario' && (
         <DailyStudy
           key={editing.entry.id}
+          onDone={() => { setEditing(null); setChain({ from: 'diario', t: Date.now() }) }}
           entry={editing.entry}
           isNew={editing.isNew}
           toast={toast}

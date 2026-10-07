@@ -5,8 +5,10 @@ import { useEffect, useState } from 'react'
 const KEY = 'universe-meetings'
 const EVENT = 'universe-meetings'
 
+// Si en este teléfono aún no los eliges, los de tu calendario: jueves y sábado.
+export const DEFAULT_MEETINGS = { semana: 4, fin: 6 }
 export function readMeetings() {
-  try { return JSON.parse(localStorage.getItem(KEY)) } catch { return null }
+  try { return JSON.parse(localStorage.getItem(KEY)) ?? DEFAULT_MEETINGS } catch { return DEFAULT_MEETINGS }
 }
 
 export function useMeetings() {

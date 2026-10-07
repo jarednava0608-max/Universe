@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { DAYS, nextStep, todayPlan, looksLikeDailyText } from './today.js'
+import { DAYS, MOMENTS, momentLabel, nextStep, todayPlan, looksLikeDailyText } from './today.js'
 import { openRef } from '../lib/verses.js'
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
@@ -9,7 +9,7 @@ const clip = (s, n = 160) => (s.length > n ? s.slice(0, n).replace(/\s+\S*$/, ''
 
 // "Hoy": el texto de hoy arriba y, abajo, los pasos del día en orden. Cada paso se toca para hacerlo
 // y se marca solo cuando ya está hecho (ver today.js).
-export default function TodayPlan({ entries, review, challenge, leidos, plan, onBible, onOpenEntry, onCreate, onPasteDaily, onReview, onChallenge, toast }) {
+export default function TodayPlan({ chain, entries, review, challenge, leidos, plan, onBible, onOpenEntry, onCreate, onPasteDaily, onReview, onChallenge, toast }) {
   const [meetings, setMeetings] = useMeetings()
   const [changing, setChanging] = useState(false)
   const items = todayPlan({ entries, review, challenge, meetings, leidos, plan })
@@ -18,6 +18,14 @@ export default function TodayPlan({ entries, review, challenge, leidos, plan, on
   const fecha = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
   const act = (it) => (it.key === 'lectura' ? (it.ref ? openRef(it.ref) : onBible()) : it.key === 'repaso' ? onReview() : it.key === 'reto' ? onChallenge() : it.entry ? onOpenEntry(it.entry) : onCreate(it.create))
   const next = nextStep(items)
+  // Al terminar un paso (chain cambia), se abre solo el que sigue, si es de este momento del día.
+  const lastChain = useRef(chain)
+  useEffect(() => {
+    if (!chain || chain === lastChain.current || Date.now() - chain.t > 4000) return
+    if (next?.key === chain.from) return // aún no llega lo guardado
+    lastChain.current = chain
+    if (next && !next.later) doNext()
+  }) // eslint-disable-line react-hooks/exhaustive-deps
   // El botón grande hace lo que sigue; sin texto de hoy, lo pega de lo copiado.
   const doNext = () => (next.key === 'diario' && !diario.verse && onPasteDaily ? pasteDaily() : act(next))
   const setup = changing || meetings?.semana == null || meetings?.fin == null
@@ -55,31 +63,39 @@ export default function TodayPlan({ entries, review, challenge, leidos, plan, on
         </button>
       )}
       {next && (
-        <button className="primary plan-next" onClick={doNext}>
-          <span className="plan-next-label">{done ? 'Sigue' : 'Empieza'}: {next.title}</span>
+        <button className={'primary plan-next' + (next.later ? ' later' : '')} onClick={doNext}>
+          <span className="plan-next-label">{next.later ? `Para la ${next.moment === 'noche' ? 'noche' : 'tarde'}` : done ? 'Sigue' : 'Empieza'}: {next.title}</span>
           <span className="plan-next-sub">{next.key === 'diario' && !diario.verse ? 'Copia el texto en JW Library y toca aquí' : next.sub}</span>
         </button>
       )}
-      <ul className="plan-list">
-        {items.map((it) => (
-          <li key={it.key}>
-            <button className={'plan-row' + (it.done ? ' done' : '')} onClick={() => act(it)}>
-              <span className="plan-check" aria-label={it.done ? 'Hecho' : 'Pendiente'}>
-                {it.done && (
-                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                    <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-              <span className="entry-main">
-                <span className="plan-title">{it.title}</span>
-                <span className="plan-sub">{it.sub}</span>
-              </span>
-              <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {MOMENTS.map((m) => {
+        const group = items.filter((it) => it.moment === m.key)
+        return group.length > 0 && (
+          <div key={m.key} className="plan-group">
+            <p className="plan-moment">{momentLabel(m.key)}</p>
+            <ul className="plan-list">
+              {group.map((it) => (
+                <li key={it.key}>
+                  <button className={'plan-row' + (it.done ? ' done' : '')} onClick={() => act(it)}>
+                    <span className="plan-check" aria-label={it.done ? 'Hecho' : 'Pendiente'}>
+                      {it.done && (
+                        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                          <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="entry-main">
+                      <span className="plan-title">{it.title}</span>
+                      <span className="plan-sub">{it.sub}</span>
+                    </span>
+                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      })}
       {setup ? (
         <MeetingDays value={meetings} onChange={(next) => { setMeetings(next); if (next.semana != null && next.fin != null) setChanging(false) }} />
       ) : (

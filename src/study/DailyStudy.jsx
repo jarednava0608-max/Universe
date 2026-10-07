@@ -12,7 +12,7 @@ const filled = (v) => !!String(v ?? '').trim()
 // El Texto diario por pasos: el texto arriba y una pregunta a la vez con sus preguntas guía
 // (Contexto → Principio → Relato → Aplicación), y al final el resumen. Se guarda sola y al
 // volver sigue en el paso donde te quedaste (fields.paso).
-export default function DailyStudy({ entry, isNew, toast, onSave, onDelete, onClose, onPropose, onOpenNode, linked }) {
+export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDelete, onClose, onPropose, onOpenNode, linked }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const [step, setStep] = useState(() => {
     if (!filled(entry.fields.texto)) return 'texto'
@@ -162,7 +162,7 @@ export default function DailyStudy({ entry, isNew, toast, onSave, onDelete, onCl
               </div>
             )}
             <div className="action-stack">
-              <button className="primary" onClick={close}>Guardar y seguir con mi día</button>
+              <button className="primary" onClick={async () => { await flush(); (onDone ?? onClose)() }}>Listo · sigue con lo demás</button>
               <button className="secondary icon-left" onClick={async () => {
                 try { await navigator.clipboard.writeText(entryForClaude({ ...base.current, fields })); toast('Copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
               }}>
