@@ -28,13 +28,12 @@ import PasteFields from './PasteFields.jsx'
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
 // Pestaña Estudio: 5 apartados, cada uno con su lista de entradas.
-export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
+export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
   const [bibleOpen, setBibleOpen] = useState(false)
-  const [proposal, setProposal] = useState(null) // { entry, node } desde La Atalaya por pasos
   const [chain, setChain] = useState(null) // { from, t }: al terminar un paso, "Hoy" abre el que sigue
   const [libOpen, setLibOpen] = useState(() => { try { return localStorage.getItem('universe-library-open') === '1' } catch { return false } })
   const toggleLib = () => setLibOpen((o) => { try { localStorage.setItem('universe-library-open', o ? '0' : '1') } catch { /* sin almacenamiento */ } return !o })
@@ -237,7 +236,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             toast('Estudio eliminado.')
           }}
           onSwitchToForm={(e) => setEditing({ entry: e, isNew: editing.isNew })}
-          onPropose={(e) => setProposal({ entry: e, node: proposeNode(e) })}
+          nodes={nodes}
+          onToMap={onConceptsToMap}
+          onOpenNode={onOpenNode}
         />
       )}
 
@@ -260,7 +261,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             toast('Reunión eliminada.')
           }}
           onSwitchToAtalaya={(e) => setEditing({ entry: e, isNew: editing.isNew })}
-          onPropose={(e) => setProposal({ entry: e, node: proposeNode(e) })}
+          nodes={nodes}
+          onToMap={onConceptsToMap}
+          onOpenNode={onOpenNode}
         />
       )}
 
@@ -278,24 +281,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             setEditing(null)
             toast('Entrada eliminada.')
           }}
-          onPropose={(e) => setProposal({ entry: e, node: proposeNode(e) })}
-          linked={editing.entry.mapNodeId && nodes.find((n) => n.id === editing.entry.mapNodeId)}
-          onOpenNode={onOpenNode}
-        />
-      )}
-
-      {proposal && (
-        <ProposeSheet
-          initial={proposal.node}
           nodes={nodes}
-          onCancel={() => setProposal(null)}
-          onApprove={async (node) => {
-            const saved = await onSaveEntry(proposal.entry)
-            const nodeId = await onProposeToMap(node)
-            if (nodeId) await onSaveEntry({ ...saved, mapNodeId: nodeId })
-            setProposal(null)
-            setEditing(null)
-          }}
+          onToMap={onConceptsToMap}
+          onOpenNode={onOpenNode}
         />
       )}
 

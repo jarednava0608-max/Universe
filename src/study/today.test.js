@@ -21,7 +21,7 @@ describe('Hoy: lo que toca según tu rutina', () => {
     const items = todayPlan({ now: MON, review: { due: 4, fresh: 5 } })
     expect(keys(items)).toEqual(['diario', 'repaso', 'reto'])
     expect(items[0]).toMatchObject({ sub: 'Pégalo y contesta 4 preguntas', done: false, create: { kind: 'diario', fields: { fecha: '2026-10-05' } } })
-    expect(items[1]).toMatchObject({ sub: '9 cosas · unos 3 min', done: false })
+    expect(items[1]).toMatchObject({ sub: '8 cosas · unos 3 min', done: false })
     expect(items[2]).toMatchObject({ sub: '5 preguntas · 1 min', done: false })
   })
 

@@ -9,6 +9,7 @@ export const STEPS = [
   { key: 'vistazo', label: 'Vistazo' },
   { key: 'parrafos', label: 'Párrafos' },
   { key: 'repaso', label: 'Repaso' },
+  { key: 'conceptos', label: 'Conceptos' },
   { key: 'listo', label: 'Listo' },
 ]
 

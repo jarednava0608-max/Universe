@@ -1371,6 +1371,19 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mw-qcard .mw-q { display: block; font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--title); margin: 0 0 10px; }
 .at-missing { display: flex; flex-wrap: wrap; gap: 6px; }
 .at-missing button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 14px; }
+/* Paso "Conceptos": un concepto por tarjeta (título corto, qué es y en qué se apoya). */
+.cx-ideas { margin-bottom: 18px; }
+.cx-ideas button { display: inline-flex; align-items: center; gap: 4px; }
+.cx-card { display: grid; gap: 6px; }
+.cx-head { display: flex; align-items: center; justify-content: space-between; }
+.cx-head .at-answer-label { margin: 0; }
+.cx-remove { min-height: 36px; padding: 0 4px; font-size: 14px; color: var(--text-3); }
+.cx-title { font-size: 18px !important; font-weight: 650; color: var(--title); }
+.cx-sub { margin: 10px 0 0; }
+.cx-tip { margin: 0; font-size: 13px; color: var(--warn, #f59e0b); }
+.cx-refs { margin-top: 4px; }
+.cx-note { margin-top: 10px; }
+.cx-nav { margin-top: 22px; }
 .primary:disabled { opacity: 0.4; }
 @media (max-width: 374px) { .at-step { font-size: 12px; } }
 

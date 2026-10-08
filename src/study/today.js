@@ -138,7 +138,7 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     })
   }
 
-  const n = Math.min(review.due + review.fresh, 20)
+  const n = Math.min(review.due + review.fresh, 8) // una ronda de Repasar hoy (SESSION en Review.jsx)
   items.push({
     key: 'repaso',
     title: 'Repasar hoy',

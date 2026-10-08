@@ -138,3 +138,21 @@ describe('¿Con qué texto lo pruebas?', () => {
     expect(buildProofQuestions(nodes.slice(0, 2))).toEqual([])
   })
 })
+
+describe('Repasar hoy: tus textos diarios', async () => {
+  const { dailyCards, dailyCheck } = await import('./logic.js')
+  const day = (id, fecha, principio) => ({ id, kind: 'diario', fields: { fecha, texto: `Siempre tengo a Jehová delante de mí (Sal. 16:8).\n\nComentario`, principio } })
+  it('solo los analizados, con el versículo y tu principio', () => {
+    const cards = dailyCards([day('a', '2026-10-04', 'Jehová me sostiene'), { id: 'b', kind: 'diario', fields: { texto: 'x (Juan 3:16)' } }])
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toMatchObject({ id: 'a', front: 'Siempre tengo a Jehová delante de mí (Sal. 16:8).', cita: 'Sal. 16:8', back: 'Jehová me sostiene' })
+  })
+  it('elige tu principio entre 4; con pocos días, arma la cita', () => {
+    const cards = dailyCards([day('a', '1', 'Uno'), day('b', '2', 'Dos'), day('c', '3', 'Tres'), day('d', '4', 'Cuatro')])
+    const q = dailyCheck(cards[0], cards.slice(1), mulberry(3))
+    expect(q.type).toBe('choice')
+    expect(q.options[q.answer]).toBe(cards[0].back)
+    const cite = dailyCheck(cards[0], [], mulberry(3))
+    expect(cite).toMatchObject({ type: 'cite', verse: { fields: { cita: 'Sal. 16:8', texto: 'Siempre tengo a Jehová delante de mí' } } })
+  })
+})

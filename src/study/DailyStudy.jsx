@@ -4,6 +4,7 @@ import AutoText from '../components/AutoText.jsx'
 import { RefChips } from '../components/RefLink.jsx'
 import { findAllRefs, openRef } from '../lib/verses.js'
 import { refUrl } from '../lib/bible.js'
+import ConceptsStep from './ConceptsStep.jsx'
 import PasteFields from './PasteFields.jsx'
 import { DAILY_STEPS, DAILY_QUESTIONS, dailyChapter, dailyVerse, dailyTextUrl, dailyTextAppUrl, entryForClaude, fieldsFromJson, formatDate, refsIn } from './kinds.js'
 
@@ -12,7 +13,7 @@ const filled = (v) => !!String(v ?? '').trim()
 // El Texto diario por pasos: el texto arriba y una pregunta a la vez con sus preguntas guía
 // (Contexto → Principio → Relato → Aplicación), y al final el resumen. Se guarda sola y al
 // volver sigue en el paso donde te quedaste (fields.paso).
-export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDelete, onClose, onPropose, onOpenNode, linked }) {
+export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const [step, setStep] = useState(() => {
     if (!filled(entry.fields.texto)) return 'texto'
@@ -128,9 +129,13 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
             </label>
             <div className="at-nav">
               <button className="secondary" onClick={() => go(prev.key)}>Anterior</button>
-              <button className="primary" onClick={() => go(next.key)}>{next.key === 'listo' ? 'Terminar' : 'Siguiente'}</button>
+              <button className="primary" onClick={() => go(next.key)}>Siguiente</button>
             </div>
           </>
+        )}
+
+        {step === 'conceptos' && (
+          <ConceptsStep entry={base.current} fields={fields} set={set} nodes={nodes} onToMap={(list) => onToMap(list, { ...base.current, fields })} onOpenNode={onOpenNode} onPrev={() => go(prev.key)} onNext={() => go('listo')} />
         )}
 
         {step === 'listo' && (
@@ -171,10 +176,9 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
               <button className="secondary icon-left" onClick={() => setPaste(true)}>
                 <Icon d={ICONS.pegar} size={18} /> Pegar de Claude
               </button>
-              <button className="secondary icon-left" onClick={async () => { await flush(); onPropose({ ...base.current, fields }) }}>
-                <Icon d={ICONS.nodo} size={18} /> Proponer al mapa
+              <button className="secondary icon-left" onClick={() => go('conceptos')}>
+                <Icon d={ICONS.nodo} size={18} /> Concepto para el mapa{fields.conceptos?.length ? ` (${fields.conceptos.length})` : ''}
               </button>
-              {linked && <button className="link-note" onClick={() => onOpenNode(linked.id)}>Ya está en el mapa como «{linked.title}» · Ver</button>}
               <a className="secondary as-btn" data-direct="1" href={dailyTextUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">Ver en wol.jw.org</a>
             </div>
             {exists.current && (

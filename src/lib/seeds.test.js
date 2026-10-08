@@ -2,8 +2,11 @@ import { describe, it, expect } from 'vitest'
 import { SEEDS, SEED_BIO, planSeed } from './seeds.js'
 import { makeRoot } from './model.js'
 
+// Los paquetes hasta antes del mapa en blanco (para probar los anteriores).
+const BEFORE_WIPE = SEEDS.slice(0, SEEDS.findIndex((s) => s.wipe))
+
 // Aplica los paquetes en orden sobre una lista de nodos (como lo hace App).
-function run(nodes, seeds = SEEDS) {
+function run(nodes, seeds = BEFORE_WIPE) {
   let cur = nodes
   for (const seed of seeds) {
     const { put, del } = planSeed(seed, cur)
@@ -119,18 +122,16 @@ describe('La Atalaya del 3 de octubre de 2026', () => {
 })
 
 describe('Textos pegados', () => {
-  it('un texto nuevo va a Memorizar y a un nodo; no se repite; las publicaciones no', async () => {
+  it('un texto nuevo va a Memorizar (sin nodo); no se repite; las publicaciones no', async () => {
     const { planVerseSave, cleanSavedVerses } = await import('./verseSave.js')
     const { makeBibleEntry } = await import('./verses.js')
     const e = makeBibleEntry('Juan 17:3', 'Esto significa vida eterna+')
-    const first = planVerseSave(e, [], [])
+    const first = planVerseSave(e, [])
     expect(first.memoria.kind).toBe('memoria')
     expect(first.memoria.fields.texto).toBe('Esto significa vida eterna')
-    expect(first.node.title).toBe('Juan 17:3')
-    expect(first.node.note).toBe('Esto significa vida eterna')
-    const again = planVerseSave(e, [first.node], [first.memoria])
-    expect(again).toEqual({ memoria: null, node: null })
-    expect(planVerseSave(makeBibleEntry('Seamos valientes, cap. 3', 'Un párrafo'), [], [])).toEqual({ memoria: null, node: null })
+    expect(first.node).toBeUndefined()
+    expect(planVerseSave(e, [first.memoria])).toEqual({ memoria: null })
+    expect(planVerseSave(makeBibleEntry('Seamos valientes, cap. 3', 'Un párrafo'), [])).toEqual({ memoria: null })
     const sucio = { id: 'x', kind: 'biblia', fields: { cita: 'Salmo 83:18', texto: 'Para que sepan+ que tú*' } }
     const limpio = { id: 'y', kind: 'memoria', fields: { cita: 'Juan 3:16', texto: 'Ya limpio' } }
     expect(cleanSavedVerses([sucio, limpio]).map((x) => x.fields.texto)).toEqual(['Para que sepan que tú'])
@@ -158,5 +159,25 @@ describe('Paquete de verdades de La Atalaya', () => {
     const base = run([makeRoot()], SEEDS.filter((s) => s.data))
     expect(base.map((n) => n.title)).toContain('Jehová es el Gran Instructor')
     expect(planSeed(seed, base).put.length).toBe(0)
+  })
+})
+
+describe('Mapa en blanco y conceptos de la reunión del 8 de octubre', () => {
+  const wipe = SEEDS.find((s) => s.id === 'mapa-en-blanco-2026-10-08')
+  it('con todos los paquetes queda solo Jehová y los conceptos cortos, en Espiritual', () => {
+    const out = run([makeRoot()], SEEDS)
+    expect(out.map((n) => n.title).sort()).toEqual(['Bondad inmerecida', 'Cuidar a las viudas', 'Jehová', 'Las 10 plagas', 'Moisés', 'Orgullo', 'Promesas de Jehová', 'Valor'])
+    for (const n of out.filter((n) => n.id !== 'jehova')) {
+      expect(n.galaxy).toBe('espiritual')
+      expect(n.title.length).toBeLessThanOrEqual(32)
+      expect(n.note).toMatch(/Se apoya en /)
+    }
+  })
+  it('no borra lo que se editó después ni repite los conceptos', () => {
+    const later = { ...makeRoot(), id: 'nuevo', title: 'Fe', note: 'Mía', updatedAt: wipe.wipe.before + 1000 }
+    const once = run([makeRoot(), later], [wipe])
+    expect(once.map((n) => n.title)).toContain('Fe')
+    expect(planSeed(wipe, once).put).toHaveLength(0)
+    expect(planSeed(wipe, once).del).toHaveLength(0)
   })
 })

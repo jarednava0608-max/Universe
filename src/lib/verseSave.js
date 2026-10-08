@@ -1,23 +1,19 @@
-// Al guardar un texto bíblico (Mi Biblia) también entra a Memorizar textos y se crea un nodo con su
-// texto, una sola vez por cita. Las publicaciones (pub:…) no: no son texto bíblico.
-import { makeNode, normKey } from './model.js'
+// Al guardar un texto bíblico (Mi Biblia) también entra a Memorizar textos, una sola vez por cita.
+// Ya no se crea un nodo con el texto: el mapa es solo para conceptos con definiciones propias.
+// Las publicaciones (pub:…) no: no son texto bíblico.
 import { makeVerse } from '../games/logic.js'
 import { cleanVerseText, refKey } from './verses.js'
 import { isPubRef } from './pubs.js'
 import { parseRef } from './bible.js'
 
-export function planVerseSave(entry, nodes = [], entries = []) {
-  const none = { memoria: null, node: null }
+export function planVerseSave(entry, entries = []) {
+  const none = { memoria: null }
   if (entry?.kind !== 'biblia' || isPubRef(entry.fields.cita)) return none
   const key = refKey(entry.fields.cita)
   const texto = entry.fields.texto?.trim()
   if (!key || !texto) return none
   const hasMemoria = entries.some((e) => e.kind === 'memoria' && e.fields.cita && refKey(e.fields.cita) === key)
-  const hasNode = nodes.some((n) => normKey(n.title) === normKey(entry.fields.cita))
-  return {
-    memoria: hasMemoria ? null : makeVerse({ cita: entry.fields.cita, texto }),
-    node: hasNode ? null : makeNode({ title: entry.fields.cita.trim(), note: texto }),
-  }
+  return { memoria: hasMemoria ? null : makeVerse({ cita: entry.fields.cita, texto }) }
 }
 
 // Limpia las marcas + y * de los textos ya guardados (Mi Biblia y Memorizar). Devuelve solo los que cambian.

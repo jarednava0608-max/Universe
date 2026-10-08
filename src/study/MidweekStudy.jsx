@@ -8,6 +8,7 @@ import { isRead } from '../lib/reading.js'
 import { entryForClaude } from './kinds.js'
 import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
+import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { useMeetings } from './meetings.js'
 import { DAYS } from './today.js'
@@ -15,7 +16,7 @@ import { DAYS } from './today.js'
 // La reunión de entre semana por pasos, como La Atalaya: se pega el programa de la Guía de
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
 // final cómo lo aplico y, si quieres, tus respuestas pasan al mapa. Se guarda sola y al volver sigue en la parte donde te quedaste.
-export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead, isNew, toast, onSave, onDelete, onClose, onPropose, onSwitchToAtalaya }) {
+export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToAtalaya }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const prog = useMemo(() => parseProgram(fields.programa), [fields.programa])
   const partes = prog.partes
@@ -283,8 +284,12 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
             onMarks={(k, m) => setFields((f) => ({ ...f, marcas: { ...(f.marcas ?? {}), [k]: m } }))}
             last={idx === partes.length - 1}
             onPrev={() => (idx > 0 ? go('partes', idx - 1) : go('programa'))}
-            onNext={() => (idx < partes.length - 1 ? go('partes', idx + 1) : go('listo'))}
+            onNext={() => (idx < partes.length - 1 ? go('partes', idx + 1) : go('conceptos'))}
           />
+        )}
+
+        {step === 'conceptos' && (
+          <ConceptsStep entry={base.current} fields={fields} set={set} nodes={nodes} onToMap={(list) => onToMap(list, { ...base.current, fields })} onOpenNode={onOpenNode} onPrev={() => go('partes', Math.max(0, partes.length - 1))} onNext={() => go('listo')} />
         )}
 
         {step === 'listo' && (
@@ -331,8 +336,8 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
               }}>
                 <Icon d={ICONS.pegar} size={18} /> Copiar para Claude
               </button>
-              <button className="secondary icon-left" disabled={!count.done && !String(fields.aplicacion ?? '').trim()} onClick={async () => { await flush(); onPropose({ ...base.current, fields }) }}>
-                <Icon d={ICONS.nodo} size={18} /> Proponer al mapa
+              <button className="secondary icon-left" onClick={() => go('conceptos')}>
+                <Icon d={ICONS.nodo} size={18} /> Conceptos para el mapa{fields.conceptos?.length ? ` (${fields.conceptos.length})` : ''}
               </button>
               <button className="primary" onClick={close}>Guardar y salir</button>
             </div>

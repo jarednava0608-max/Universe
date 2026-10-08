@@ -5,7 +5,7 @@
 //   no la editó); si la editó, la nueva se agrega abajo sin borrar nada (o se deja igual con keepIfEdited).
 // - remove: [{ title, ifNote }] borra el nodo solo si su nota sigue igual a ifNote.
 import { planImport } from './importer.js'
-import { makeNode, normKey } from './model.js'
+import { makeNode, normKey, ROOT_ID } from './model.js'
 import { anyRefKey, makeBibleEntry } from './verses.js'
 import { TRIVIA_JEREMIAS_38_39, TRIVIA_BIBLIA } from './seedTrivia.js'
 import { JEREMIAS_38_39, DANIEL_2 } from './seedVerses.js'
@@ -305,6 +305,30 @@ SEEDS.push({
   }],
 })
 
+// 13) Mapa en blanco (el usuario lo pidió el 8 de octubre de 2026: quiere hacer su mapa con calma, con
+// definiciones suyas y no copiando y pegando). Se borran todos los nodos menos Jehová, solo los que no se
+// tocaron después de este día (así no se borra lo que haga después en otro teléfono). Antes se guarda una
+// copia en este teléfono (meta `backup:mapa-2026-10-08`). Luego solo los conceptos de la reunión de
+// entre semana del 8 de octubre (Jeremías 40, 41 y el estudio bíblico de Moisés), con títulos cortos y
+// sus respuestas como definición. Ids fijos para que no se dupliquen entre Safari y la app.
+const VM = 'Lo vi en: Vida y Ministerio, 5-11 de octubre de 2026 (Jeremías 40, 41).'
+const MOISES_CAP = 'Lo vi en: Vida y Ministerio, 5-11 de octubre de 2026, estudio bíblico de la congregación (Moisés).'
+const concepto = (id, title, def, cita, fuente) => ({ id, title, note: `${def}\n\nSe apoya en ${cita}.\n\n${fuente}`, galaxy: 'espiritual' })
+export const CONCEPTOS_REUNION_8_OCT = [
+  concepto('c-valor', 'Valor', 'No es hacer las cosas sin miedo, sino hacerlas aunque sientas que no eres capaz. Así fue el valor de [[Moisés]].', 'Éxodo 4:10; 7:6, 7', MOISES_CAP),
+  concepto('c-moises', 'Moisés', 'Enfrentó una y otra vez al faraón, el rey más poderoso, aunque temía perder la vida y no se sentía capaz de hablar. No lo logró por su poder: fue [[Jehová]]. Ver [[Valor]] y [[Las 10 plagas]].', 'Éxodo 4:10-16', MOISES_CAP),
+  concepto('c-plagas', 'Las 10 plagas', 'Cada una humilló a los dioses de Egipto. Por ejemplo, la oscuridad humilló a Ra, el dios del sol.', 'Éxodo 12:12', MOISES_CAP),
+  concepto('c-bondad-inmerecida', 'Bondad inmerecida', '[[Jehová]] ayuda a su pueblo aunque no lo merezca, y hasta dejó salir con ellos a egipcios que no eran de su pueblo.', 'Éxodo 12:38', MOISES_CAP),
+  concepto('c-promesas', 'Promesas de Jehová', '[[Jehová]] siempre cumple sus promesas cuando su nombre está en ellas: "Yo Seré lo que Yo Decida Ser".', 'Éxodo 3:14', MOISES_CAP),
+  concepto('c-orgullo', 'Orgullo', 'Te hace creer tus propias mentiras. Ismael se convenció de que tenía razón, pero actuaba por egoísmo y envidia; al final solo destruyó lo bueno que había y se quedó solo.', 'Jeremías 41:1, 2', VM),
+  concepto('c-viudas', 'Cuidar a las viudas', '[[Jehová]] siempre está al tanto de las viudas, pero nos usa a nosotros para cubrir sus necesidades: hay que dejarnos usar, por ejemplo con ayuda material.', 'Salmo 68:5; Santiago 1:27; Hechos 6:1-6', VM),
+]
+SEEDS.push({
+  id: 'mapa-en-blanco-2026-10-08',
+  wipe: { before: Date.UTC(2026, 9, 9, 5) }, // hasta el 8 de octubre de 2026 (medianoche en México)
+  fixed: CONCEPTOS_REUNION_8_OCT,
+})
+
 // La Atalaya del 3 de octubre de 2026 (borrador): se agrega a SEEDS cuando el usuario lo apruebe.
 // El artículo completo no va aquí (el repositorio es público); el usuario lo pega en su nodo desde la app.
 export const SEED_ATALAYA_CONOCER = {
@@ -323,6 +347,17 @@ export function planSeed(seed, nodes, edges = [], entries = []) {
   const byKey = new Map(nodes.map((n) => [normKey(n.title), n]))
   const put = []
   const del = []
+  // wipe: borra todos los nodos (menos Jehová y los del propio paquete) que no se tocaron después de `before`.
+  if (seed.wipe) {
+    const own = new Set((seed.fixed ?? []).map((n) => n.id))
+    for (const n of nodes) if (n.id !== ROOT_ID && !own.has(n.id) && (n.updatedAt ?? 0) < seed.wipe.before) del.push(n.id)
+  }
+  // fixed: nodos con id fijo; se crean solo si no existe ese id ni (después del borrado) ese título.
+  const left = new Set(nodes.filter((n) => !del.includes(n.id)).map((n) => normKey(n.title)))
+  for (const n of seed.fixed ?? []) {
+    if (nodes.some((x) => x.id === n.id) || left.has(normKey(n.title))) continue
+    put.push(makeNode(n))
+  }
   for (const r of seed.replace ?? []) {
     const cur = byKey.get(normKey(r.title))
     if (!cur) {

@@ -6,6 +6,7 @@ import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude, formatDate } from './kinds.js'
 import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
 import MeetingMode from './MeetingMode.jsx'
+import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { isStarred, withStar } from './midweek.js'
 import { canSpeak, useSpeech } from '../lib/speech.js'
@@ -14,7 +15,7 @@ import { canSpeak, useSpeech } from '../lib/speech.js'
 // (título, subtítulos y preguntas de repaso), luego cada párrafo buscando la respuesta y
 // subrayando solo palabras clave, y al final el repaso. Se guarda sola y al volver
 // sigue en el paso y la pregunta donde te quedaste.
-export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, onClose, onPropose, onSwitchToForm }) {
+export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToForm }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const article = useMemo(() => parseArticle(fields.articulo), [fields.articulo])
   const bloques = article.bloques
@@ -267,8 +268,12 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
               <span className="sfield-label">Notas</span>
               <AutoText value={fields.notas ?? ''} placeholder="Lo que quieras recordar" onChange={(v) => set({ notas: v })} />
             </label>
-            <button className="primary" onClick={() => go('listo')}>Terminar</button>
+            <button className="primary" onClick={() => go('conceptos')}>Siguiente</button>
           </>
+        )}
+
+        {step === 'conceptos' && (
+          <ConceptsStep entry={base.current} fields={fields} set={set} nodes={nodes} onToMap={(list) => onToMap(list, { ...base.current, fields })} onOpenNode={onOpenNode} onPrev={() => go('repaso')} onNext={() => go('listo')} />
         )}
 
         {step === 'listo' && (
@@ -296,8 +301,8 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
               }}>
                 <Icon d={ICONS.pegar} size={18} /> Copiar para Claude
               </button>
-              <button className="secondary icon-left" onClick={async () => { await flush(); onPropose({ ...base.current, fields }) }}>
-                <Icon d={ICONS.nodo} size={18} /> Proponer al mapa
+              <button className="secondary icon-left" onClick={() => go('conceptos')}>
+                <Icon d={ICONS.nodo} size={18} /> Conceptos para el mapa{fields.conceptos?.length ? ` (${fields.conceptos.length})` : ''}
               </button>
               <button className="primary" onClick={close}>Guardar y salir</button>
             </div>

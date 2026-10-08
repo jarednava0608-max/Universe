@@ -95,6 +95,17 @@ export function useStore() {
     [apply],
   )
 
+  // Varios nodos de una vez (con sus líneas), en un solo guardado.
+  const deleteNodes = useCallback(
+    async (ids) => {
+      const set = new Set(ids.filter((id) => id !== ROOT_ID))
+      if (!set.size) return
+      const delEdges = stateRef.current.edges.filter((e) => set.has(e.source) || set.has(e.target)).map((e) => e.id)
+      await apply({ delNodes: [...set], delEdges })
+    },
+    [apply],
+  )
+
   const addEdge = useCallback(
     async ({ source, target, rel }) => {
       if (!source || !target || source === target) return null
@@ -145,7 +156,7 @@ export function useStore() {
     [apply],
   )
 
-  return { ...state, rev, progress: progress.fields, updateProgress, mergeRemote: mergeState, saveEntry, deleteEntry, saveEntries, deleteEntries, saveNode, deleteNode, addEdge, deleteEdge, applyImport }
+  return { ...state, rev, progress: progress.fields, updateProgress, mergeRemote: mergeState, saveEntry, deleteEntry, saveEntries, deleteEntries, saveNode, deleteNode, deleteNodes, addEdge, deleteEdge, applyImport }
 }
 
 // Agrega el día de hoy a la racha dentro del mismo guardado (una sola vez por día).

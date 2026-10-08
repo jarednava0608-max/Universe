@@ -8,6 +8,7 @@ import { parseArticle } from './atalaya.js'
 export const STEPS = [
   { key: 'programa', label: 'Programa' },
   { key: 'partes', label: 'Partes' },
+  { key: 'conceptos', label: 'Conceptos' },
   { key: 'listo', label: 'Listo' },
 ]
 

@@ -8,6 +8,7 @@ import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
 import { cleanVerseText, refKey } from '../lib/verses.js'
 import { answerOf, parseArticle, reviewAnswer } from '../study/atalaya.js'
 import { midweekAnswers } from '../study/midweek.js'
+import { dailyVerse } from '../study/kinds.js'
 
 export function shuffle(list, rnd = Math.random) {
   const a = [...list]
@@ -163,19 +164,41 @@ export function buildPairs(nodes, count = 4, rnd = Math.random) {
   }
 }
 
-// Tarjetas de Repasar hoy: frente y reverso (nodos y textos diarios).
-export function buildCards(nodes, entries) {
-  const cards = playableNodes(nodes).map((n) => ({ id: n.id, front: n.title, back: defText(n.note) }))
-  for (const e of entries) {
-    if (e.kind === 'diario' && (e.fields.resumen || e.fields.texto) && (e.fields.principio || e.fields.aplicacion)) {
-      cards.push({
-        id: e.id,
-        front: e.fields.resumen || e.fields.texto,
-        back: [e.fields.texto, e.fields.principio, e.fields.aplicacion].filter(Boolean).join('\n\n'),
-      })
-    }
+// Tarjetas de Repasar hoy con los nodos de tu mapa (tus conceptos): frente y reverso.
+export function buildCards(nodes) {
+  return playableNodes(nodes).map((n) => ({ id: n.id, front: n.title, back: defText(n.note) }))
+}
+
+// Tus textos diarios ya analizados: el versículo y lo que tú dijiste que enseña. Lo más reciente primero.
+export function dailyCards(entries) {
+  return entries
+    .filter((e) => e.kind === 'diario' && String(e.fields.texto ?? '').trim() && String(e.fields.principio ?? '').trim())
+    .sort((a, b) => String(b.fields.fecha ?? '').localeCompare(String(a.fields.fecha ?? '')))
+    .map((e) => {
+      const verse = dailyVerse(e.fields.texto)
+      return { id: e.id, front: verse, cita: findRefs(verse).at(-1) ?? '', back: e.fields.principio.trim(), aplicacion: String(e.fields.aplicacion ?? '').trim(), fecha: e.fields.fecha ?? '' }
+    })
+}
+
+// Sin trampa: el versículo y elegir lo que tú dijiste que enseña entre 4 (los otros, tus principios de
+// otros días). Sin suficientes días, armar la cita del versículo. null si no se puede ninguna.
+export function dailyCheck(card, cards, rnd = Math.random) {
+  const answer = clipText(card.back, 160)
+  const seen = new Set([fold(answer)])
+  const others = []
+  for (const c of shuffle(cards, rnd)) {
+    const o = clipText(c.back, 160)
+    if (others.length >= 3 || seen.has(fold(o))) continue
+    seen.add(fold(o))
+    others.push(o)
   }
-  return cards
+  if (others.length >= 3) {
+    const options = shuffle([answer, ...others], rnd)
+    return { type: 'choice', options, answer: options.indexOf(answer) }
+  }
+  const texto = card.front.replace(/\s*\([^()]*\d[^()]*\)[.»”"]?\s*$/, '').trim()
+  if (card.cita && texto && citeSteps(card.cita, rnd)) return { type: 'cite', verse: { fields: { cita: card.cita, texto } } }
+  return null
 }
 
 // Repasar hoy: una tarjeta se pregunta de forma que no se pueda hacer trampa.
@@ -534,12 +557,13 @@ export function timedPoints(msLeft, msTotal) {
 // Una sesión de repaso: primero lo que ya viste y hoy toca (lo más atrasado primero, alternando tipos);
 // después, si queda lugar, hasta `fresh` cosas nuevas (`fresh: true`). Lo nuevo de tu Atalaya va primero
 // y en orden; lo demás, alternado. Los personajes solo entran si ya los viste en Memoria Bíblica.
-export function dailyMix({ atalaya = [], cards = [], verses = [], trivia = [], people = [] }, srs, isDueFn, limit = 20, rnd = Math.random, fresh = Infinity) {
+export function dailyMix({ atalaya = [], cards = [], daily = [], verses = [], trivia = [], people = [] }, srs, isDueFn, limit = 20, rnd = Math.random, fresh = Infinity) {
   const tag = (type, prefix, list) => list.map((item) => ({ type, key: prefix + item.id, item }))
-  const lists = [tag('atalaya', 'a:', atalaya), tag('card', 'c:', cards), tag('verse', 'v:', verses), tag('trivia', 'q:', trivia), tag('person', 'mb:', people)]
+  // Los textos diarios usan la clave 'c:' de antes (eran tarjetas) para no perder su avance.
+  const lists = [tag('atalaya', 'a:', atalaya), tag('card', 'c:', cards), tag('daily', 'c:', daily), tag('verse', 'v:', verses), tag('trivia', 'q:', trivia), tag('person', 'mb:', people)]
   const due = lists.map((l) => shuffle(l.filter((x) => srs[x.key] && isDueFn(srs[x.key])), rnd).sort((a, b) => (srs[a.key].due ?? '').localeCompare(srs[b.key].due ?? '')))
   const out = alternate(due, limit)
-  const [mine, ...rest] = lists.slice(0, 4).map((l) => l.filter((x) => !srs[x.key]).map((x) => ({ ...x, fresh: true })))
+  const [mine, ...rest] = lists.slice(0, 5).map((l) => l.filter((x) => !srs[x.key]).map((x) => ({ ...x, fresh: true })))
   const news = [...mine, ...alternate(rest.map((l) => shuffle(l, rnd)), Infinity)]
   return [...out, ...news.slice(0, Math.max(0, Math.min(fresh, limit - out.length)))]
 }

@@ -401,6 +401,7 @@ export const DAILY_STEPS = [
     ],
     hint: 'Hoy voy a…',
   },
+  { key: 'conceptos', label: 'Concepto' },
   { key: 'listo', label: 'Listo' },
 ]
 export const DAILY_QUESTIONS = DAILY_STEPS.filter((s) => s.q)

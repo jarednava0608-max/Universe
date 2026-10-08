@@ -4,7 +4,7 @@ import { useSync } from './lib/useSync.js'
 import { useTheme } from './lib/theme.js'
 import { getMeta, loadAll, requestPersistence, setMeta } from './lib/db.js'
 import { buildExport, planImport } from './lib/importer.js'
-import { currentGalaxy, galaxyOf, GALAXIES, makeNode, setCurrentGalaxy } from './lib/model.js'
+import { currentGalaxy, galaxyOf, GALAXIES, makeNode, normKey, setCurrentGalaxy } from './lib/model.js'
 import Graph from './components/Graph.jsx'
 import Search from './components/Search.jsx'
 import NoteView from './components/NoteView.jsx'
@@ -27,6 +27,7 @@ import { OPEN_REF } from './lib/verses.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
+import { entrySource, conceptNote } from './study/concepts.js'
 import { planVerseSave, cleanSavedVerses, wrongThirdJohn } from './lib/verseSave.js'
 
 let seedsRunning = false
@@ -37,12 +38,11 @@ export default function App() {
   const store = useStore()
   const sync = useSync(store)
 
-  // Guardar un texto en Mi Biblia también lo manda a Memorizar y crea su nodo (una sola vez por cita).
+  // Guardar un texto en Mi Biblia también lo manda a Memorizar (una sola vez por cita).
   async function saveVerse(entry) {
     await store.saveEntry(entry)
-    const { memoria, node } = planVerseSave(entry, store.nodes, store.entries)
+    const { memoria } = planVerseSave(entry, store.entries)
     if (memoria) await store.saveEntry(memoria)
-    if (node) await store.saveNode(node)
   }
   const { mode, theme, setMode, style, setStyle } = useTheme()
   const { nodes, edges } = store
@@ -132,7 +132,8 @@ export default function App() {
           const { nodes: now, edges: nowEdges, entries: nowEntries } = await loadAll()
           const { put, del, verses, trivia, entries: study } = planSeed(seed, now, nowEdges, nowEntries)
           if (put.length) await store.applyImport({ newNodes: put.map((n) => ({ ...n, updatedAt: Date.now() })), updatedNodes: [], newEdges: [] })
-          for (const id of del) await store.deleteNode(id)
+          if (seed.wipe && del.length) await setMeta('backup:' + seed.id, { nodes: now, edges: nowEdges, t: Date.now() })
+          if (del.length) await store.deleteNodes(del)
           if (verses.length) await store.saveEntries(verses)
           if (trivia.length) await store.saveEntries(trivia)
           if (study.length) await store.saveEntries(study)
@@ -310,6 +311,23 @@ export default function App() {
     return target.id
   }
 
+  // Paso "Conceptos" de Estudio: un nodo por concepto (en la galaxia Espiritual). Si el título ya existe,
+  // se le añade la definición. Devuelve { claveDelTítulo: id } para que la entrada recuerde su nodo.
+  async function conceptsToMap(list, entry) {
+    const source = entrySource(entry)
+    const plan = planImport({ nodes: list.map((c) => ({ title: c.titulo.trim(), note: conceptNote(c, source), galaxy: 'espiritual' })) }, { nodes, edges })
+    await store.applyImport(plan)
+    const all = [...plan.updatedNodes.map((u) => u.after), ...plan.newNodes, ...nodes]
+    const ids = {}
+    for (const c of list) {
+      const n = all.find((x) => normKey(x.title) === normKey(c.titulo))
+      if (n) ids[normKey(c.titulo)] = n.id
+    }
+    const k = list.length
+    toast(`${k} ${k === 1 ? 'concepto' : 'conceptos'} en el mapa${galaxy !== 'espiritual' ? ' (galaxia Espiritual)' : ''}.`)
+    return ids
+  }
+
   function openNodeFromStudy(id) {
     setTab('mapa')
     setTimeout(() => openNote(id), 50)
@@ -385,6 +403,7 @@ export default function App() {
           onSaveEntry={store.saveEntry}
           onDeleteEntry={store.deleteEntry}
           onProposeToMap={proposeToMap}
+          onConceptsToMap={conceptsToMap}
           onOpenNode={openNodeFromStudy}
           onSaveNode={store.saveNode}
           toast={toast}

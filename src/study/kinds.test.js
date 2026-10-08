@@ -147,3 +147,24 @@ describe('dailyChapter', () => {
     expect(dailyChapter('')).toBe('')
   })
 })
+
+describe('Conceptos para el mapa', async () => {
+  const { titleTip, conceptReady, conceptNote, conceptIdeas, conceptRefs, entrySource } = await import('./concepts.js')
+  it('pide títulos cortos y definición propia', () => {
+    expect(titleTip('Valor')).toBe('')
+    expect(titleTip('Jehová protege a las viudas de muchas maneras')).toMatch(/Muy largo/)
+    expect(conceptReady({ titulo: 'Valor', def: '' })).toBe(false)
+    expect(conceptReady({ titulo: 'Valor', def: 'Hacerlo aunque tengas miedo' })).toBe(true)
+  })
+  it('arma la nota con el texto y de dónde salió', () => {
+    const e = { kind: 'reunion', fields: { tipo: 'entresemana', titulo: 'Jeremías 40, 41' } }
+    expect(entrySource(e)).toBe('Vida y Ministerio, Jeremías 40, 41')
+    expect(conceptNote({ def: 'Hacerlo aunque tengas miedo', cita: 'Éxodo 4:10.' }, entrySource(e))).toBe('Hacerlo aunque tengas miedo\n\nSe apoya en Éxodo 4:10.\n\nLo vi en: Vida y Ministerio, Jeremías 40, 41.')
+  })
+  it('sugiere conceptos y textos de lo que escribiste', () => {
+    const e = { kind: 'diario', fields: { texto: 'No calumnia con su lengua (Sal. 15:3).', principio: 'El orgullo y la envidia dañan; el orgullo destruye.', aplicacion: 'Tener valor' } }
+    expect(conceptIdeas(e)).toEqual(['Orgullo', 'Valor', 'Envidia'])
+    expect(conceptIdeas(e, ['orgullo'])).toEqual(['Valor', 'Envidia'])
+    expect(conceptRefs(e)).toEqual(['Sal. 15:3'])
+  })
+})
