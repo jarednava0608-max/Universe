@@ -143,6 +143,28 @@ export function matchSchedule(partes, filas) {
   return byFila
 }
 
+// Las partes que la congregación agrega y no vienen en la Guía (un informe del Cuerpo Gobernante)
+// se vuelven partes con sus notas, en su lugar del programa. Su clave sale del título ("x-el-informe-6-del")
+// para que las notas no se pierdan; se muestran con "+" en vez de número.
+export function withExtras(partes, schedule) {
+  const filas = schedule?.filas ?? []
+  if (!filas.length) return partes
+  const byFila = matchSchedule(partes, filas)
+  const out = []
+  filas.forEach((f, i) => {
+    const pt = byFila.get(i)
+    if (pt) return out.push(pt)
+    const key = 'x-' + words(f.titulo).slice(0, 5).join('-')
+    out.push({ num: key, label: '+', extra: true, titulo: f.titulo, seccion: SEC_NAME[f.sec] ?? '', sec: f.sec, minutos: Number(f.min) || 0, lineas: [], keys: [key] })
+  })
+  partes.forEach((pt, i) => {
+    if (out.includes(pt)) return
+    const prev = partes.slice(0, i).reverse().find((p) => out.includes(p))
+    out.splice(prev ? out.indexOf(prev) + 1 : 0, 0, pt)
+  })
+  return out
+}
+
 // La sala B solo tiene la lectura y las partes de maestros: van con la fila de la sala principal
 // que está en el mismo lugar de su sección.
 function salaBOf(filas, salaB) {

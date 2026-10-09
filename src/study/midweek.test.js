@@ -277,6 +277,22 @@ describe('asignaciones de la congregación', () => {
     expect(times[6]).toEqual({ inicio: '8:37', fin: '8:52' })
   })
 
+  it('el informe de la congregación se vuelve una parte con sus notas, en su lugar', async () => {
+    const { withExtras, outline } = await import('./midweek.js')
+    const partes = withExtras(parseProgram(PROGRAMA).partes, ASIG.fields)
+    expect(partes.map((p) => p.label ?? p.num)).toEqual([1, 2, 3, 4, 5, '+', 6])
+    const inf = partes[5]
+    expect(inf).toMatchObject({ extra: true, sec: 'vida', minutos: 15, titulo: 'El informe 6 del Cuerpo Gobernante del año 2026' })
+    expect(inf.keys).toEqual([inf.num])
+    const { sections, times } = outline(partes, ASIG.fields, '19:30')
+    const rows = sections.flatMap(([, , l]) => l)
+    expect(rows.find((r) => r.part === inf).nombres).toEqual(['Ana Presidenta'])
+    // El estudio recortado: 15 min, de 8:37 a 8:52.
+    expect(rows.find((r) => r.part?.num === 6).minutos).toBe(15)
+    expect(times[6]).toEqual({ inicio: '8:37', fin: '8:52' })
+    expect(withExtras(parseProgram(PROGRAMA).partes, null)).toHaveLength(6)
+  })
+
   it('sin asignaciones queda como antes', async () => {
     const { outline } = await import('./midweek.js')
     const { sections, times } = outline(parseProgram(PROGRAMA).partes, null, '19:30')

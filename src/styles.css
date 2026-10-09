@@ -1453,6 +1453,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .mw-sec.vida { --sec: var(--mw-vida); }
 :root[data-style='jw'] .mw-title { font-size: 23px; line-height: 1.3; }
 :root[data-style='jw'] .mw-title::before { content: attr(data-num) '. '; }
+:root[data-style='jw'] .mw-title:not([data-num])::before { content: none; }
 :root[data-style='jw'] .mw-title.tesoros { color: var(--mw-tesoros); }
 :root[data-style='jw'] .mw-title.maestros { color: var(--mw-maestros); }
 :root[data-style='jw'] .mw-title.vida { color: var(--mw-vida); }

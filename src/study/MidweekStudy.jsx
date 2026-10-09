@@ -6,7 +6,7 @@ import { findAllRefs, chapterSaved } from '../lib/verses.js'
 import { parseRef } from '../lib/bible.js'
 import { isRead } from '../lib/reading.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar, DEFAULT_HOUR, weekSchedule, outline, whoLabel } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar, DEFAULT_HOUR, weekSchedule, outline, whoLabel, withExtras } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
@@ -19,13 +19,15 @@ import { DAYS } from './today.js'
 export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToAtalaya }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const prog = useMemo(() => parseProgram(fields.programa), [fields.programa])
-  const partes = prog.partes
+  const schedule = weekSchedule(entries, fields.fecha)
+  // Las partes de la Guía y, en su lugar, las que agrega la congregación (un informe).
+  const partes = useMemo(() => withExtras(prog.partes, schedule), [prog, schedule])
   const [step, setStep] = useState(() => {
     if (!parseProgram(entry.fields.programa).partes.length) return 'programa'
     return STEPS.some((s) => s.key === entry.fields.paso) ? entry.fields.paso : 'partes'
   })
   const [idx, setIdx] = useState(() => {
-    const ps = parseProgram(entry.fields.programa).partes
+    const ps = withExtras(parseProgram(entry.fields.programa).partes, weekSchedule(entries, entry.fields.fecha))
     const i = Number(entry.fields.parte)
     if (Number.isInteger(i) && i >= 0 && i < ps.length) return i
     return Math.max(0, ps.findIndex((pt) => !partDone(entry.fields, pt)))
@@ -113,8 +115,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
   // Si la cambias a mano (por ejemplo, la semana de la visita del superintendente), se respeta.
   const [meetings, setMeetings] = useMeetings()
   const auto = programDate(prog.semana, meetings?.semana, fields.fecha)
-  const schedule = weekSchedule(entries, fields.fecha)
-  const { sections: rows, times } = outline(prog.partes, schedule, meetings?.hora)
+  const { sections: rows, times } = outline(partes, schedule, meetings?.hora)
   const rowOf = (num) => rows.flatMap(([, , l]) => l).find((r) => r.part?.num === num)
   useEffect(() => {
     if (!fields.fechaManual && auto && auto !== fields.fecha) set({ fecha: auto })
@@ -149,7 +150,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
                   aria-current={i === idx ? 'step' : undefined}
                   onClick={() => go('partes', i)}
                 >
-                  {p.num}
+                  {p.label ?? p.num}
                 </button>
               ))}
             </nav>
@@ -216,7 +217,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
                 {list.map((r) => {
                   const body = (
                     <>
-                      <span className={'mw-num ' + r.sec + (r.part && partDone(fields, r.part) ? ' done' : '')}>{r.part ? r.part.num : ''}</span>
+                      <span className={'mw-num ' + r.sec + (r.part && partDone(fields, r.part) ? ' done' : '')}>{r.part ? r.part.label ?? r.part.num : ''}</span>
                       <span className="mw-row-title">
                         {r.titulo}
                         {r.part && kindOf(r.part) && <span className="mw-row-sub">{kindOf(r.part)}</span>}
@@ -400,14 +401,16 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
 // publicaciones) va más tenue y se toca ahí mismo; cada pregunta va en una tarjeta con su
 // respuesta. Si la parte no tiene preguntas (lectura, maestros, estudio bíblico), lleva notas.
 function Part({ pt, time, who, fields, fecha, onAnswer, onSet, onStar, onMarks, last, onPrev, onNext }) {
+  // Los minutos de la congregación (si recortaron el estudio, 15 en vez de 30).
+  const mins = who?.minutos || pt.minutos
   const asks = pt.lineas.some((l) => l.q)
   const study = isStudyPart(pt)
   return (
     <>
       <p className={'mw-sec ' + pt.sec}>{pt.seccion}</p>
-      <p className="at-qnum mw-meta">Parte {pt.num}{pt.minutos ? ` · ${pt.minutos} min` : ''}</p>
-      <h2 className={'mw-title ' + pt.sec} data-num={pt.num}>{pt.titulo}</h2>
-      {pt.minutos > 0 && <p className="mw-mins">({pt.minutos} mins.)</p>}
+      <p className="at-qnum mw-meta">{pt.extra ? 'Parte de la congregación' : `Parte ${pt.num}`}{mins ? ` · ${mins} min` : ''}</p>
+      <h2 className={'mw-title ' + pt.sec} data-num={pt.extra ? undefined : pt.num}>{pt.titulo}</h2>
+      {mins > 0 && <p className="mw-mins">({mins} mins.){mins !== pt.minutos && pt.minutos ? ` · la Guía dice ${pt.minutos}` : ''}</p>}
       {time && <p className="mw-time">De {time.inicio} a {time.fin}</p>}
       {who?.nombres.length > 0 && <p className="mw-who">{whoLabel(who.nombres)}{who.salaB.length > 0 && <span>Sala B: {whoLabel(who.salaB)}</span>}</p>}
       {pt.lineas.some((l) => !l.q && !l.media) && <p className="at-tip small">Toca 2 o 3 palabras clave para subrayarlas.</p>}
