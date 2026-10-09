@@ -205,10 +205,14 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
                 </select>
               </label>
             )}
-            {schedule && (
-              <p className="mw-who-top">
-                {schedule.presidente && <span>Presidente: {schedule.presidente}</span>}
-                {schedule.salaB?.consejero && <span>Sala B: {schedule.salaB.consejero}</span>}
+            {times.apertura && (
+              <p className="mw-close mw-open">
+                <span>
+                  Canción, oración y palabras de introducción
+                  {schedule?.presidente && <span className="mw-row-who">Presidente: {schedule.presidente}</span>}
+                  {schedule?.salaB?.consejero && <span className="mw-row-who">Sala B: {schedule.salaB.consejero}</span>}
+                </span>
+                <span className="mw-min">{times.apertura.inicio} a {times.apertura.fin}</span>
               </p>
             )}
             {rows.map(([name, sec, list]) => (
@@ -239,7 +243,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
             ))}
             {times.conclusion && (
               <p className="mw-close">
-                <span>Palabras de conclusión{schedule?.presidente ? <span className="mw-row-who">{schedule.presidente}</span> : null}</span>
+                <span>Palabras de conclusión{schedule?.presidente ? <span className="mw-row-who">Presidente: {schedule.presidente}</span> : null}</span>
                 <span className="mw-min">{times.conclusion.inicio} a {times.conclusion.fin}</span>
                 <span className="mw-close-end">Canción y oración{schedule?.oracion ? ` (${schedule.oracion})` : ''} · termina como a las {times.termina}</span>
               </p>

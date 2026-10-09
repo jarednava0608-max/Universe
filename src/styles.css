@@ -1464,7 +1464,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .mw-mins { display: block; margin: -8px 0 16px 24px; font-size: 19px; color: var(--text-2); }
 .mw-row-who { display: block; margin-top: 2px; font-size: 13px; color: var(--text-2); }
 .mw-row.extra { opacity: 0.85; }
-.mw-who-top { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 0 0 10px; font-size: 14px; color: var(--text-2); }
+.mw-open { margin: 0 0 14px; padding: 0 0 10px; border-top: 0; border-bottom: 1px solid var(--line); }
 .mw-who { margin: -8px 0 16px; font-size: 15px; color: var(--text-2); }
 .mw-who span { display: block; font-size: 14px; color: var(--text-3); }
 :root[data-style='jw'] .mw-who { margin-left: 24px; }

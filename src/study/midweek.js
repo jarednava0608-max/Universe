@@ -223,6 +223,8 @@ export function partTimes(partes, hora = DEFAULT_HOUR) {
     if (isStudent(pt)) t += COUNSEL
   }
   if (partes?.length) {
+    const start = h * 60 + m
+    out.apertura = { inicio: clock(start), fin: clock(start + SONG + INTRO) }
     out.conclusion = { inicio: clock(t), fin: clock(t + CLOSING) }
     out.termina = clock(t + CLOSING + SONG)
   }

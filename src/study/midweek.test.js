@@ -223,6 +223,7 @@ describe('horario de una semana completa', () => {
     expect(t[7]).toEqual({ inicio: '8:19', fin: '8:34' })
     expect(t.conclusion).toEqual({ inicio: '9:04', fin: '9:07' })
     expect(t.termina).toBe('9:11')
+    expect(t.apertura).toEqual({ inicio: '7:30', fin: '7:35' })
     // Una parte de maestros con video la lleva un anciano: sin consejo.
     const video = partTimes([p(4, 'maestros', 5, 'Parte', [{ text: 'Ponga el VIDEO.' }]), p(5, 'maestros', 3)])
     expect(video[5].inicio).toBe('7:40')
