@@ -5,6 +5,7 @@ import { newId } from '../lib/model.js'
 import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
 import { highlightArticle } from './atalaya.js'
 import { midweekForClaude, midweekNode } from './midweek.js'
+import { CHARACTERS } from '../games/memoria/characters.js'
 
 export const today = () => {
   const d = new Date()
@@ -367,7 +368,7 @@ export const DAILY_STEPS = [
   {
     key: 'contexto', label: 'Contexto', q: '¿Qué sabes de este texto?', optional: true,
     guide: ['¿Quién habla y a quién?', '¿Qué estaba pasando?'],
-    starters: ['Lo escribió…', 'Se lo dijo a…', 'Estaba pasando que…'],
+    starters: ['Lo escribió', 'Se lo dijo a', 'Estaba pasando que'],
     hint: 'Una o dos oraciones bastan',
   },
   {
@@ -378,13 +379,13 @@ export const DAILY_STEPS = [
   {
     key: 'relato', label: 'Relato', q: '¿Quién de la Biblia lo vivió?', optional: true,
     guide: ['¿Quién vivió esto, bien o mal, y qué pasó?', 'Si no se te ocurre nadie, salta este paso.'],
-    starters: ['Pasó con…', 'Hizo…', 'Resultado:'],
+    starters: ['Pasó con', 'Hizo', 'Y el resultado fue'],
     hint: 'Nombre, qué hizo y qué pasó',
   },
   {
     key: 'aplicacion', label: 'Aplicación', q: '¿Qué hago hoy?',
     guide: ['¿Qué voy a hacer o decir distinto hoy, en concreto?'],
-    starters: ['Hoy voy a…', 'Cuando me pase… voy a…', 'En casa…', 'En la escuela o el trabajo…', 'En la predicación…'],
+    starters: ['Hoy voy a', 'Cuando', 'En casa', 'En la escuela', 'En la predicación'],
     hint: 'Hoy voy a…',
   },
   { key: 'conceptos', label: 'Concepto' },
@@ -394,13 +395,36 @@ export const DAILY_STEPS = [
 // Los textos diarios no son todos iguales (piden algo, prometen, cuentan un relato o muestran cómo es
 // Jehová), así que "¿Qué enseña?" se vuelve una pregunta más fácil según el tipo que elijas.
 export const DAILY_TYPES = [
-  { key: 'pide', label: 'Me pide algo', q: '¿Qué me pide y por qué?', starters: ['Jehová me pide…', 'Porque…'] },
-  { key: 'promete', label: 'Me promete algo', q: '¿Qué me promete y por qué puedo confiar?', starters: ['Jehová promete…', 'Puedo confiar porque…'] },
-  { key: 'relato', label: 'Cuenta algo que pasó', q: '¿Qué pasó y qué aprendo?', starters: ['Pasó que…', 'Aprendo que…'] },
-  { key: 'jehova', label: 'Cómo es Jehová o Jesús', q: '¿Cómo es Jehová o Jesús aquí?', starters: ['Jehová es…', 'Lo veo cuando…'] },
+  { key: 'pide', label: 'Me pide algo', q: '¿Qué me pide y por qué?', starters: ['Jehová me pide', 'porque'] },
+  { key: 'promete', label: 'Me promete algo', q: '¿Qué me promete y por qué puedo confiar?', starters: ['Jehová promete', 'Puedo confiar porque'] },
+  { key: 'relato', label: 'Cuenta algo que pasó', q: '¿Qué pasó y qué aprendo?', starters: ['Pasó que', 'Aprendo que'] },
+  { key: 'jehova', label: 'Cómo es Jehová o Jesús', q: '¿Cómo es Jehová o Jesús aquí?', starters: ['Jehová es', 'Lo veo cuando'] },
 ]
 // Con Principio y Aplicación ya cumples lo mínimo de hoy; Contexto y Relato suman.
-export const dailyMinimum = (f = {}) => !!String(f.principio ?? '').trim() && !!String(f.aplicacion ?? '').trim()
+export const DAILY_MIN = ['principio', 'aplicacion']
+export const dailyMinimum = (f = {}) => DAILY_MIN.every((k) => String(f[k] ?? '').trim())
+
+// Si el texto ya cuenta algo que pasó, el paso Relato sobra: se salta.
+export const dailySteps = (f = {}) => DAILY_STEPS.filter((s) => !(s.key === 'relato' && f.tipo === 'relato'))
+
+// Personajes de la Biblia que salen en el texto o el comentario (sin las citas, para que "Juan 20:18"
+// no cuente como el apóstol), para sugerirlos en el paso Relato. Sin IA: la lista de Memoria Bíblica.
+// Jesús sale en casi todos; "Lea" y "Set" suelen ser palabras ("Lea Juan 3:16"), no personajes.
+const SKIP_PEOPLE = new Set(['Jesús', 'Lea', 'Set'])
+export function dailyPeople(texto) {
+  const plain = String(texto ?? '').replace(/\([^)]*\)/g, ' ').replace(/\b(\d\s)?[A-ZÁÉÍÓÚ][a-záéíóúñ]+\.? \d+(:\d+)?/g, ' ')
+  // Primero los nombres largos, y se borran al encontrarlos: "María Magdalena" no cuenta también como "María".
+  let rest = plain
+  const found = []
+  for (const c of [...CHARACTERS].sort((a, b) => b.n.length - a.n.length)) {
+    if (SKIP_PEOPLE.has(c.n)) continue
+    const re = new RegExp(`(^|[^\\p{L}])${c.n}(?![\\p{L}])`, 'gu')
+    if (!re.test(rest)) continue
+    found.push(c)
+    rest = rest.replace(re, '$1 ')
+  }
+  return found.sort((a, b) => plain.indexOf(a.n) - plain.indexOf(b.n)).map((c) => c.n)
+}
 export const DAILY_QUESTIONS = DAILY_STEPS.filter((s) => s.q)
 
 // El capítulo del texto del día ("No calumnia… (Sal. 15:3)" → "Salmos 15"), para leer alrededor.

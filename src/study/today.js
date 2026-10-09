@@ -7,7 +7,7 @@
 //      Tu asignación, desde 7 días antes (se marca hecha si ya la practicaste hoy).
 //   4. Repasar hoy (lo que toca y las nuevas).
 //   5. Reto del día.
-import { clock, dailyAnalyzed, dailyVerse, partLabel, practicedOn } from './kinds.js'
+import { clock, dailyMinimum, dailyVerse, partLabel, practicedOn } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { addDays } from '../games/progress.js'
 import { midweekCount } from './midweek.js'
@@ -49,11 +49,16 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
   const items = []
 
   const diario = entries.find((e) => e.kind === 'diario' && e.fields.fecha === day)
-  const analyzed = !!diario && dailyAnalyzed(diario.fields)
+  // Hecho con lo mínimo: Principio y Aplicación (Contexto y Relato suman, pero son opcionales).
+  const analyzed = !!diario && dailyMinimum(diario.fields)
+  const falta = diario ? ['principio', 'aplicacion'].filter((k) => !String(diario.fields[k] ?? '').trim()) : []
   items.push({
     key: 'diario',
     title: 'Texto diario',
-    sub: !diario ? 'Pégalo y contesta 4 preguntas' : analyzed ? diario.fields.resumen?.trim() || 'Analizado' : 'Contesta 4 preguntas · unos 5 min',
+    sub: !diario ? 'Pégalo y contesta 2 preguntas · unos 3 min'
+      : analyzed ? diario.fields.resumen?.trim() || 'Lo de hoy, cumplido'
+      : falta.length === 1 ? `Te falta: ${falta[0] === 'principio' ? 'Principio' : 'Aplicación'}`
+      : 'Principio y Aplicación · unos 3 min',
     done: analyzed,
     verse: diario ? dailyVerse(diario.fields.texto) : '',
     entry: diario ?? null,

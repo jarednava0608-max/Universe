@@ -6,7 +6,7 @@ import { findAllRefs, openRef } from '../lib/verses.js'
 import { refUrl } from '../lib/bible.js'
 import ConceptsStep from './ConceptsStep.jsx'
 import PasteFields from './PasteFields.jsx'
-import { DAILY_STEPS, DAILY_QUESTIONS, DAILY_TYPES, dailyMinimum, dailyChapter, dailyVerse, dailyTextUrl, dailyTextAppUrl, entryForClaude, fieldsFromJson, formatDate, refsIn } from './kinds.js'
+import { DAILY_QUESTIONS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyPeople, dailySteps, dailyChapter, dailyVerse, dailyTextUrl, dailyTextAppUrl, entryForClaude, fieldsFromJson, formatDate, refsIn } from './kinds.js'
 
 const filled = (v) => !!String(v ?? '').trim()
 
@@ -17,8 +17,9 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const [step, setStep] = useState(() => {
     if (!filled(entry.fields.texto)) return 'texto'
-    if (DAILY_STEPS.some((s) => s.key === entry.fields.paso)) return entry.fields.paso
-    return DAILY_QUESTIONS.find((s) => !filled(entry.fields[s.key]))?.key ?? 'listo'
+    const steps = dailySteps(entry.fields)
+    if (steps.some((s) => s.key === entry.fields.paso)) return entry.fields.paso
+    return steps.find((s) => s.q && !filled(entry.fields[s.key]))?.key ?? 'listo'
   })
   const [paste, setPaste] = useState(false)
   const base = useRef(entry)
@@ -26,8 +27,24 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
   const exists = useRef(!isNew)
   const top = useRef()
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
-  // Frases para empezar: un toque las agrega al final de la respuesta.
-  const addStarter = (key, text) => set({ [key]: (fields[key] ? fields[key].replace(/\s*$/, '\n') : '') + text + ' ' })
+  const answer = useRef()
+  // Frases para empezar: un toque las escribe donde está el cursor (o al final, en un renglón nuevo,
+  // si no estabas escribiendo) y deja el cursor después, listo para seguir.
+  function addStarter(key, text) {
+    const ta = answer.current
+    const v = fields[key] ?? ''
+    const typing = ta && document.activeElement === ta
+    const at = typing ? ta.selectionStart : v.length
+    const before = v.slice(0, at)
+    const lead = !before ? '' : typing ? (/\s$/.test(before) ? '' : ' ') : (/\n$/.test(before) ? '' : '\n')
+    const ins = lead + text + ' '
+    set({ [key]: before + ins + v.slice(at) })
+    requestAnimationFrame(() => {
+      if (!ta) return
+      ta.focus()
+      ta.setSelectionRange(at + ins.length, at + ins.length)
+    })
+  }
 
   async function flush() {
     const f = { ...fields, paso: step }
@@ -57,16 +74,19 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
     setStep(next)
     top.current?.scrollTo({ top: 0 })
   }
-  const i = DAILY_STEPS.findIndex((s) => s.key === step)
-  const cur = DAILY_STEPS[i]
-  const next = DAILY_STEPS[i + 1]
-  const prev = DAILY_STEPS[i - 1]
+  const steps = dailySteps(fields)
+  const questions = steps.filter((s) => s.q)
+  const i = Math.max(0, steps.findIndex((s) => s.key === step))
+  const cur = steps[i]
+  const next = steps[i + 1]
+  const prev = steps[i - 1]
   const verse = dailyVerse(fields.texto)
   const chapter = dailyChapter(fields.texto)
   // El comentario: lo pegado sin el versículo de arriba.
   const comment = String(fields.texto ?? '').trim().replace(verse, '').trim()
   const ref = refsIn(verse)[0] ?? refsIn(fields.texto)[0]
-  const done = DAILY_QUESTIONS.filter((s) => filled(fields[s.key])).length
+  const done = questions.filter((s) => filled(fields[s.key])).length
+  const people = step === 'relato' ? dailyPeople(fields.texto) : []
   const type = DAILY_TYPES.find((t) => t.key === fields.tipo)
   const starters = step === 'principio' ? type?.starters : cur?.starters
   const refs = findAllRefs(fields.contexto, fields.relato, fields.aplicacion, fields.notas)
@@ -82,7 +102,7 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
       <div className="editor-body at-body" ref={top}>
         <div className="at-bars">
           <nav className="at-steps" aria-label="Pasos">
-            {DAILY_STEPS.map((s) => (
+            {steps.map((s) => (
               <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={s.key !== 'texto' && !filled(fields.texto)} onClick={() => go(s.key)}>{s.label}</button>
             ))}
           </nav>
@@ -91,7 +111,7 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
         {step === 'texto' && (
           <>
             <h2 className="at-h">Lee el texto de hoy</h2>
-            <p className="at-tip">Léelo despacio, con el comentario. Luego te hago 4 preguntas, una a la vez.</p>
+            <p className="at-tip">Léelo despacio, con el comentario. Luego unas preguntas, una a la vez; lo mínimo es Principio y Aplicación.</p>
             <label className="sfield">
               <span className="sfield-label">Fecha</span>
               <input className="input" type="date" value={fields.fecha ?? ''} onChange={(e) => set({ fecha: e.target.value })} />
@@ -117,7 +137,7 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
                 <p>{comment}</p>
               </details>
             )}
-            <p className="at-qnum">Pregunta {i} de {DAILY_QUESTIONS.length}</p>
+            <p className="at-qnum">Pregunta {i} de {questions.length}</p>
             <h2 className="at-h">{step === 'principio' && type ? type.q : cur.q}</h2>
             {step === 'principio' ? (
               <>
@@ -140,14 +160,22 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
                 {ref && <a className="at-listen" data-direct="1" href={refUrl(ref)} target="_blank" rel="noopener noreferrer">Notas de estudio en wol.jw.org</a>}
               </div>
             )}
+            {people.length > 0 && (
+              <>
+                <p className="at-tip small">En el texto de hoy sale:</p>
+                <div className="dt-chips">
+                  {people.map((n) => <button key={n} className="dt-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => addStarter(step, n)}>{n}</button>)}
+                </div>
+              </>
+            )}
             {starters?.length > 0 && (
               <div className="dt-chips">
-                {starters.map((t) => <button key={t} className="dt-chip" onClick={() => addStarter(step, t)}>{t}</button>)}
+                {starters.map((t) => <button key={t} className="dt-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => addStarter(step, t)}>{t}</button>)}
               </div>
             )}
             <label className="at-answer">
               <span className="at-answer-label">Mi respuesta</span>
-              <AutoText key={step} value={fields[step] ?? ''} placeholder={cur.hint} onChange={(v) => set({ [step]: v })} minRows={4} />
+              <AutoText key={step} inputRef={answer} value={fields[step] ?? ''} placeholder={cur.hint} onChange={(v) => set({ [step]: v })} minRows={4} />
             </label>
             <div className="at-nav">
               <button className="secondary" onClick={() => go(prev.key)}>Anterior</button>
@@ -162,17 +190,17 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
 
         {step === 'listo' && (
           <>
-            <h2 className="at-h">{done === DAILY_QUESTIONS.length ? 'Texto de hoy, listo' : 'Casi listo'}</h2>
+            <h2 className="at-h">{done === questions.length ? 'Texto de hoy, listo' : dailyMinimum(fields) ? 'Lo de hoy, cumplido' : 'Casi listo'}</h2>
             <div className="at-card">
               {verse && <p className="dt-verse flat">{verse}</p>}
-              <div className="progress"><span style={{ width: `${(done / DAILY_QUESTIONS.length) * 100}%` }} /></div>
+              <div className="progress"><span style={{ width: `${(done / questions.length) * 100}%` }} /></div>
               {dailyMinimum(fields) && <p className="at-summary">Mínimo de hoy cumplido: Principio y Aplicación.</p>}
-              <p className="at-summary">Contestaste {done} de {DAILY_QUESTIONS.length} preguntas{fields.fecha ? ` · ${formatDate(fields.fecha)}` : ''}.</p>
+              <p className="at-summary">Contestaste {done} de {questions.length} preguntas{fields.fecha ? ` · ${formatDate(fields.fecha)}` : ''}.</p>
             </div>
-            {done < DAILY_QUESTIONS.length && (
+            {done < questions.length && (
               <div className="at-missing dt-missing">
-                <p className="at-label">Te faltan</p>
-                {DAILY_QUESTIONS.map((s) => !filled(fields[s.key]) && <button key={s.key} onClick={() => go(s.key)}>{s.label}</button>)}
+                <p className="at-label">{dailyMinimum(fields) ? 'Si quieres, suma' : 'Te faltan'}</p>
+                {questions.map((s) => !filled(fields[s.key]) && <button key={s.key} onClick={() => go(s.key)}>{s.label}{DAILY_MIN.includes(s.key) ? '' : ' (opcional)'}</button>)}
               </div>
             )}
             <label className="at-answer">

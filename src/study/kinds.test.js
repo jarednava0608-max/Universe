@@ -168,3 +168,21 @@ describe('Conceptos para el mapa', async () => {
     expect(conceptRefs(e)).toEqual(['Sal. 15:3'])
   })
 })
+
+import { dailyMinimum, dailyPeople, dailySteps } from './kinds.js'
+
+describe('Texto diario más fácil', () => {
+  it('lo mínimo es Principio y Aplicación', () => {
+    expect(dailyMinimum({ principio: 'Jehová me pide…' })).toBe(false)
+    expect(dailyMinimum({ principio: 'x', aplicacion: 'Hoy voy a…' })).toBe(true)
+  })
+  it('si el texto ya es un relato, se salta el paso Relato', () => {
+    expect(dailySteps({}).map((s) => s.key)).toContain('relato')
+    expect(dailySteps({ tipo: 'relato' }).map((s) => s.key)).not.toContain('relato')
+  })
+  it('sugiere los personajes del texto y el comentario, sin contar las citas', () => {
+    expect(dailyPeople('María Magdalena fue a ver a los discípulos: "¡He visto al Señor!" (Juan 20:18).\n\nEl 16 de nisán…')).toEqual(['María Magdalena'])
+    expect(dailyPeople('Toda una generación no logró distinguir que Josué y Caleb decían la verdad (Núm. 14:10).')).toEqual(expect.arrayContaining(['Josué', 'Caleb']))
+    expect(dailyPeople('Lea Juan 3:16 con calma.')).toEqual([])
+  })
+})
