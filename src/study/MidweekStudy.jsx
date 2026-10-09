@@ -218,6 +218,12 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
                 ))}
               </section>
             ))}
+            {times.conclusion && (
+              <p className="mw-close">
+                Palabras de conclusión <span className="mw-min">{times.conclusion.inicio} a {times.conclusion.fin}</span>
+                <span className="mw-close-end">Canción y oración · termina como a las {times.termina}</span>
+              </p>
+            )}
             <button className="primary" onClick={() => go('partes', Math.max(0, partes.findIndex((p) => !partDone(fields, p))))}>
               {Object.values(fields.respuestas ?? {}).some((v) => String(v).trim()) ? 'Seguir donde me quedé' : 'Empezar'}
             </button>

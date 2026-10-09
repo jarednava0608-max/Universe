@@ -85,26 +85,41 @@ export function parseProgram(text) {
   return out
 }
 
-// A qué hora empieza y acaba cada parte, contando desde la hora de la reunión ("19:30"):
-// canción, oración y palabras de introducción (5 min), 1 min de consejo después de la lectura
-// de la Biblia y de cada parte de Seamos mejores maestros, y la canción de en medio (4 min)
-// antes de Nuestra vida cristiana. Así, con la reunión a las 7:30, las perlas escondidas
-// van de 7:45 a 7:55. Devuelve { [num]: { inicio: '7:45', fin: '7:55' } }.
+// A qué hora empieza y acaba cada parte, contando desde la hora de la reunión ("19:30").
+// Según las "Instrucciones para la reunión Vida y Ministerio Cristianos" (jw.org) y la Guía:
+// canción y oración, palabras de introducción (1 min), las partes con sus minutos, consejo del
+// presidente (como 1 min) después de cada asignación de estudiante (la lectura de la Biblia y
+// las de Seamos mejores maestros, menos las que lleva un anciano con video o análisis), la
+// canción de en medio, Nuestra vida cristiana, palabras de conclusión (3 min), canción y oración.
+// La reunión dura 1 h 45 min (en el calendario del usuario, 7:30 a 9:15). Una canción con su
+// oración se cuenta como 4 min. Devuelve { [num]: { inicio, fin }, conclusion, termina }.
 export const DEFAULT_HOUR = '19:30'
+const SONG = 4
+const INTRO = 1
+const COUNSEL = 1
+const CLOSING = 3
+const isStudent = (pt) =>
+  /^lectura de la biblia/.test(plain(pt.titulo)) ||
+  (pt.sec === 'maestros' && !pt.lineas.some((l) => /analisis con el auditorio|ponga el video/.test(plain(l.text))))
+
 export function partTimes(partes, hora = DEFAULT_HOUR) {
   const [h, m] = String(hora || DEFAULT_HOUR).split(':').map(Number)
   if (!Number.isFinite(h) || !Number.isFinite(m)) return {}
   const clock = (t) => `${(Math.floor(t / 60) % 12) || 12}:${String(t % 60).padStart(2, '0')}`
   const out = {}
-  let t = h * 60 + m + 5
+  let t = h * 60 + m + SONG + INTRO
   let prev = ''
   for (const pt of partes ?? []) {
-    if (pt.sec === 'vida' && prev !== 'vida') t += 4
+    if (pt.sec === 'vida' && prev !== 'vida') t += SONG
     prev = pt.sec
     if (!pt.minutos) continue
     out[pt.num] = { inicio: clock(t), fin: clock(t + pt.minutos) }
     t += pt.minutos
-    if (pt.sec === 'maestros' || /^lectura de la biblia/.test(plain(pt.titulo))) t += 1
+    if (isStudent(pt)) t += COUNSEL
+  }
+  if (partes?.length) {
+    out.conclusion = { inicio: clock(t), fin: clock(t + CLOSING) }
+    out.termina = clock(t + CLOSING + SONG)
   }
   return out
 }

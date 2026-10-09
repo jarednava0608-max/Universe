@@ -203,5 +203,28 @@ describe('horario de la reunión de entre semana', () => {
     expect(t[4]).toEqual({ inicio: '8:00', fin: '8:02' })
     expect(t[5]).toEqual({ inicio: '8:07', fin: '8:22' })
     expect(t[6]).toEqual({ inicio: '8:22', fin: '8:52' })
+    expect(t.conclusion).toEqual({ inicio: '8:52', fin: '8:55' })
+    expect(t.termina).toBe('8:59')
+  })
+})
+
+describe('horario de una semana completa', () => {
+  it('cabe en 1 h 45 min, como la reunión de 7:30 a 9:15', async () => {
+    const { partTimes } = await import('./midweek.js')
+    const p = (num, sec, minutos, titulo = 'Parte', lineas = []) => ({ num, sec, minutos, titulo, lineas })
+    const partes = [
+      p(1, 'tesoros', 10), p(2, 'tesoros', 10, 'Busquemos perlas escondidas'), p(3, 'tesoros', 4, 'Lectura de la Biblia'),
+      p(4, 'maestros', 3), p(5, 'maestros', 4), p(6, 'maestros', 5),
+      p(7, 'vida', 15), p(8, 'vida', 30, 'Estudio bíblico de la congregación'),
+    ]
+    const t = partTimes(partes, '19:30')
+    expect(t[2]).toEqual({ inicio: '7:45', fin: '7:55' })
+    expect(t[4].inicio).toBe('8:00')
+    expect(t[7]).toEqual({ inicio: '8:19', fin: '8:34' })
+    expect(t.conclusion).toEqual({ inicio: '9:04', fin: '9:07' })
+    expect(t.termina).toBe('9:11')
+    // Una parte de maestros con video la lleva un anciano: sin consejo.
+    const video = partTimes([p(4, 'maestros', 5, 'Parte', [{ text: 'Ponga el VIDEO.' }]), p(5, 'maestros', 3)])
+    expect(video[5].inicio).toBe('7:40')
   })
 })
