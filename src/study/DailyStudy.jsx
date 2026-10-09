@@ -6,7 +6,7 @@ import { findAllRefs, openRef } from '../lib/verses.js'
 import { refUrl } from '../lib/bible.js'
 import ConceptsStep from './ConceptsStep.jsx'
 import PasteFields from './PasteFields.jsx'
-import { DAILY_STEPS, DAILY_QUESTIONS, dailyChapter, dailyVerse, dailyTextUrl, dailyTextAppUrl, entryForClaude, fieldsFromJson, formatDate, refsIn } from './kinds.js'
+import { DAILY_STEPS, DAILY_QUESTIONS, DAILY_TYPES, dailyMinimum, dailyChapter, dailyVerse, dailyTextUrl, dailyTextAppUrl, entryForClaude, fieldsFromJson, formatDate, refsIn } from './kinds.js'
 
 const filled = (v) => !!String(v ?? '').trim()
 
@@ -26,6 +26,8 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
   const exists = useRef(!isNew)
   const top = useRef()
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
+  // Frases para empezar: un toque las agrega al final de la respuesta.
+  const addStarter = (key, text) => set({ [key]: (fields[key] ? fields[key].replace(/\s*$/, '\n') : '') + text + ' ' })
 
   async function flush() {
     const f = { ...fields, paso: step }
@@ -65,6 +67,8 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
   const comment = String(fields.texto ?? '').trim().replace(verse, '').trim()
   const ref = refsIn(verse)[0] ?? refsIn(fields.texto)[0]
   const done = DAILY_QUESTIONS.filter((s) => filled(fields[s.key])).length
+  const type = DAILY_TYPES.find((t) => t.key === fields.tipo)
+  const starters = step === 'principio' ? type?.starters : cur?.starters
   const refs = findAllRefs(fields.contexto, fields.relato, fields.aplicacion, fields.notas)
 
   return (
@@ -114,14 +118,31 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
               </details>
             )}
             <p className="at-qnum">Pregunta {i} de {DAILY_QUESTIONS.length}</p>
-            <h2 className="at-h">{cur.q}</h2>
-            <ul className="dt-guide">
-              {cur.guide.map((g) => <li key={g}>{g}</li>)}
-            </ul>
+            <h2 className="at-h">{step === 'principio' && type ? type.q : cur.q}</h2>
+            {step === 'principio' ? (
+              <>
+                <div className="dt-chips">
+                  {DAILY_TYPES.map((t) => (
+                    <button key={t.key} className={'dt-chip' + (t.key === fields.tipo ? ' on' : '')} onClick={() => set({ tipo: t.key })}>{t.label}</button>
+                  ))}
+                </div>
+                {!type && <p className="at-tip small">{cur.guide[0]}</p>}
+              </>
+            ) : (
+              <ul className="dt-guide">
+                {cur.guide.map((g) => <li key={g}>{g}</li>)}
+              </ul>
+            )}
+            <p className="at-tip small">{cur.optional ? 'Opcional: si hoy no hay tiempo, salta este paso. ' : ''}Con una o dos oraciones basta.</p>
             {step === 'contexto' && chapter && (
               <div className="dt-links">
                 <button className="at-listen" onClick={() => openRef(chapter)}>Leer {chapter}</button>
                 {ref && <a className="at-listen" data-direct="1" href={refUrl(ref)} target="_blank" rel="noopener noreferrer">Notas de estudio en wol.jw.org</a>}
+              </div>
+            )}
+            {starters?.length > 0 && (
+              <div className="dt-chips">
+                {starters.map((t) => <button key={t} className="dt-chip" onClick={() => addStarter(step, t)}>{t}</button>)}
               </div>
             )}
             <label className="at-answer">
@@ -145,6 +166,7 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
             <div className="at-card">
               {verse && <p className="dt-verse flat">{verse}</p>}
               <div className="progress"><span style={{ width: `${(done / DAILY_QUESTIONS.length) * 100}%` }} /></div>
+              {dailyMinimum(fields) && <p className="at-summary">Mínimo de hoy cumplido: Principio y Aplicación.</p>}
               <p className="at-summary">Contestaste {done} de {DAILY_QUESTIONS.length} preguntas{fields.fecha ? ` · ${formatDate(fields.fecha)}` : ''}.</p>
             </div>
             {done < DAILY_QUESTIONS.length && (

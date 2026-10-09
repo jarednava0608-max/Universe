@@ -365,45 +365,42 @@ export function dailyVerse(texto) {
 export const DAILY_STEPS = [
   { key: 'texto', label: 'Texto' },
   {
-    key: 'contexto', label: 'Contexto', q: '¿Qué sabes de este texto?',
-    guide: [
-      '¿Quién lo escribió o lo dijo?',
-      '¿A quién se lo dijo y qué estaba pasando?',
-      '¿Qué pasa antes y después? Lee unos versículos de alrededor.',
-      '¿Qué ya sabes de ese libro, de esa época o de esa persona?',
-    ],
-    hint: 'Lo escribió… se lo dijo a… estaba pasando…',
+    key: 'contexto', label: 'Contexto', q: '¿Qué sabes de este texto?', optional: true,
+    guide: ['¿Quién habla y a quién?', '¿Qué estaba pasando?'],
+    starters: ['Lo escribió…', 'Se lo dijo a…', 'Estaba pasando que…'],
+    hint: 'Una o dos oraciones bastan',
   },
   {
     key: 'principio', label: 'Principio', q: '¿Qué enseña?',
-    guide: [
-      '¿Qué me dice de Jehová o de Jesús?',
-      '¿Qué sigue siendo cierto hoy, para cualquier persona?',
-      'Dilo en una sola oración.',
-    ],
-    hint: 'Jehová… / Cuando uno… entonces…',
+    guide: ['Elige qué tipo de texto es y te hago una pregunta más fácil.'],
+    hint: 'Una sola oración',
   },
   {
-    key: 'relato', label: 'Relato', q: '¿Quién de la Biblia lo vivió?',
-    guide: [
-      '¿Qué personaje vivió este principio, bien o mal?',
-      '¿Qué hizo y qué resultado tuvo?',
-      'Si no se te ocurre nadie, busca en el mismo capítulo del texto.',
-    ],
+    key: 'relato', label: 'Relato', q: '¿Quién de la Biblia lo vivió?', optional: true,
+    guide: ['¿Quién vivió esto, bien o mal, y qué pasó?', 'Si no se te ocurre nadie, salta este paso.'],
+    starters: ['Pasó con…', 'Hizo…', 'Resultado:'],
     hint: 'Nombre, qué hizo y qué pasó',
   },
   {
     key: 'aplicacion', label: 'Aplicación', q: '¿Qué hago hoy?',
-    guide: [
-      '¿Dónde me va a servir hoy? En casa, en el trabajo o la escuela, en la predicación.',
-      '¿Qué voy a hacer o decir distinto, en concreto?',
-      '¿A quién le puede servir que se lo cuente?',
-    ],
+    guide: ['¿Qué voy a hacer o decir distinto hoy, en concreto?'],
+    starters: ['Hoy voy a…', 'Cuando me pase… voy a…', 'En casa…', 'En la escuela o el trabajo…', 'En la predicación…'],
     hint: 'Hoy voy a…',
   },
   { key: 'conceptos', label: 'Concepto' },
   { key: 'listo', label: 'Listo' },
 ]
+
+// Los textos diarios no son todos iguales (piden algo, prometen, cuentan un relato o muestran cómo es
+// Jehová), así que "¿Qué enseña?" se vuelve una pregunta más fácil según el tipo que elijas.
+export const DAILY_TYPES = [
+  { key: 'pide', label: 'Me pide algo', q: '¿Qué me pide y por qué?', starters: ['Jehová me pide…', 'Porque…'] },
+  { key: 'promete', label: 'Me promete algo', q: '¿Qué me promete y por qué puedo confiar?', starters: ['Jehová promete…', 'Puedo confiar porque…'] },
+  { key: 'relato', label: 'Cuenta algo que pasó', q: '¿Qué pasó y qué aprendo?', starters: ['Pasó que…', 'Aprendo que…'] },
+  { key: 'jehova', label: 'Cómo es Jehová o Jesús', q: '¿Cómo es Jehová o Jesús aquí?', starters: ['Jehová es…', 'Lo veo cuando…'] },
+]
+// Con Principio y Aplicación ya cumples lo mínimo de hoy; Contexto y Relato suman.
+export const dailyMinimum = (f = {}) => !!String(f.principio ?? '').trim() && !!String(f.aplicacion ?? '').trim()
 export const DAILY_QUESTIONS = DAILY_STEPS.filter((s) => s.q)
 
 // El capítulo del texto del día ("No calumnia… (Sal. 15:3)" → "Salmos 15"), para leer alrededor.

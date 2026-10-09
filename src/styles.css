@@ -1585,6 +1585,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .dt-more p { margin: 0; white-space: pre-wrap; }
 .dt-guide { margin: 0 0 12px; padding-left: 20px; color: var(--text-body); font-size: 16px; line-height: 1.5; }
 .dt-guide li { margin: 0 0 6px; }
+.dt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.dt-chip { min-height: 44px; padding: 0 14px; border-radius: 22px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text-body); font-size: 15px; }
+.dt-chip.on { border-color: var(--accent, var(--text-2)); color: var(--accent, var(--title)); }
 .dt-missing { margin-bottom: 18px; }
 .dt-missing .at-label { width: 100%; margin: 0 0 2px; }
 .dt-links a { text-decoration: none; }
