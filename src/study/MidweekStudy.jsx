@@ -8,6 +8,7 @@ import { isRead } from '../lib/reading.js'
 import { entryForClaude } from './kinds.js'
 import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar, DEFAULT_HOUR, weekSchedule, outline, whoLabel, withExtras } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
+import JwLinks from './JwLinks.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { useMeetings } from './meetings.js'
@@ -291,9 +292,10 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
               <input className="input" value={fields.titulo ?? ''} placeholder="La lectura de la semana" onChange={(e) => set({ titulo: e.target.value })} />
             </label>
             {!partes.length && (
-              <a className="secondary as-btn" data-direct="1" href={meetingsUrl(linkDate)} target="_blank" rel="noopener noreferrer">
-                Ver esta semana en wol.jw.org
-              </a>
+              <div className="sfield">
+                <span className="sfield-label">Abrir la Guía de actividades en</span>
+                <JwLinks fecha={linkDate} kind="entresemana" />
+              </div>
             )}
             <div className="sfield">
               <span className="sfield-label">La semana completa de la Guía de actividades</span>

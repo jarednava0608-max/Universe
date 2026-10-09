@@ -6,6 +6,7 @@ import { findAllRefs } from '../lib/verses.js'
 import { entryForClaude, formatDate } from './kinds.js'
 import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
 import MeetingMode from './MeetingMode.jsx'
+import JwLinks from './JwLinks.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { isStarred, withStar } from './midweek.js'
@@ -169,6 +170,10 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
               <span className="sfield-label">Enlace en jw.org (opcional)</span>
               <input className="input" type="url" inputMode="url" value={fields.enlace ?? ''} placeholder="Para abrir cada párrafo en jw.org" onChange={(e) => set({ enlace: e.target.value.trim() })} />
             </label>
+            <div className="sfield">
+              <span className="sfield-label">Abrir La Atalaya en</span>
+              <JwLinks fecha={fields.fecha} />
+            </div>
             <div className="sfield">
               <span className="sfield-label">El artículo completo, tal cual</span>
               <AutoText value={fields.articulo ?? ''} placeholder="Cópialo de JW Library o de wol.jw.org con sus preguntas y pégalo aquí" onChange={setArticle} minRows={6} />

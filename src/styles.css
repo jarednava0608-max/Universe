@@ -938,6 +938,8 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .ref-sheet-links { display: grid; gap: 8px; margin-top: 16px; }
 .ref-sheet-links .primary, .ref-sheet-links .secondary { margin-top: 0; }
 .as-btn { display: grid; place-items: center; text-decoration: none; }
+.jw-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.jw-links .secondary { margin-top: 0; min-height: 44px; }
 .bar-actions { display: flex; align-items: center; }
 .tidy-btn { font-size: 15px; font-weight: 600; color: var(--text); }
 .tidy-banner {
