@@ -15,6 +15,14 @@ function fakeCloud() {
       const t = tables[name]
       return {
         async upsert(rows) {
+          // Como supabase-js: en un lote, la columna que le falta a una fila va vacía (null),
+          // y la tabla de nodos no acepta type, origin ni galaxy vacíos.
+          const cols = [...new Set(rows.flatMap(Object.keys))]
+          for (const r of rows) {
+            for (const c of cols) if (r[c] == null && (name !== 'universe_nodes' || ['type', 'origin', 'galaxy', 'title'].includes(c))) {
+              if (name === 'universe_nodes') return { error: { message: `null value in column "${c}" of relation "${name}" violates not-null constraint` } }
+            }
+          }
           for (const r of rows) t.set(r.user_id + '|' + r.id, { ...t.get(r.user_id + '|' + r.id), ...r, server_updated_at: tick() })
           return { error: null }
         },
@@ -122,6 +130,17 @@ describe('sincronización', () => {
     await b.db.commit({ delNodes: [n.id] })
     await b.sync.syncOnce(cloud, U)
     expect(cloud.tables.universe_nodes.get(U + '|' + n.id).deleted).toBe(true)
+  })
+
+  it('sube un borrado y un nodo nuevo en el mismo envío', async () => {
+    const a = await device()
+    const viejo = a.model.makeNode({ title: 'Viejo' })
+    await a.db.commit({ putNodes: [viejo] })
+    await a.sync.syncOnce(cloud, U)
+    await a.db.commit({ delNodes: [viejo.id], putNodes: [a.model.makeNode({ title: 'Nuevo' })] })
+    await a.sync.syncOnce(cloud, U)
+    expect(cloud.tables.universe_nodes.get(U + '|' + viejo.id).deleted).toBe(true)
+    expect([...cloud.tables.universe_nodes.values()].some((r) => r.title === 'Nuevo')).toBe(true)
   })
 
   it('sincroniza las entradas de Estudio y de juegos', async () => {

@@ -16,10 +16,10 @@ const toRow = {
   nodes: (n, userId) => ({
     user_id: userId,
     id: n.id,
-    title: n.title,
-    type: n.type,
-    origin: n.origin,
-    note: n.note,
+    title: n.title ?? '',
+    type: n.type || 'concepto',
+    origin: n.origin || 'propio',
+    note: n.note ?? '',
     sources: n.sources ?? [],
     galaxy: galaxyOf(n),
     created_at: n.createdAt ?? 0,
@@ -49,7 +49,7 @@ const toRow = {
 }
 
 const tombstone = {
-  nodes: (id, t, userId) => ({ user_id: userId, id, title: '', note: '', sources: [], created_at: t, updated_at: t, deleted: true }),
+  nodes: (id, t, userId) => ({ user_id: userId, id, title: '', type: 'concepto', origin: 'propio', galaxy: galaxyOf(null), note: '', sources: [], created_at: t, updated_at: t, deleted: true }),
   edges: (id, t, userId) => ({ user_id: userId, id, source: '', target: '', rel: '', created_at: t, updated_at: t, deleted: true }),
   entries: (id, t, userId) => ({ user_id: userId, id, kind: '', fields: {}, created_at: t, updated_at: t, deleted: true }),
 }
