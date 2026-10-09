@@ -82,6 +82,8 @@ export function parseArticle(text) {
       continue
     }
     if (section === 'notas') continue
+    // JW Library copia "Respuesta" (su cuadro para contestar) antes de cada párrafo.
+    if (/^respuesta:?$/i.test(line)) { flushPara(); continue }
     if (section === 'repaso') {
       const t = line.replace(/^[-•*]\s*/, '').replace(/^\d+[.)]\s*/, '').trim()
       if (t) out.repaso.push(t)
@@ -178,8 +180,14 @@ export function firstUnanswered(bloques, fields) {
 // artículo y salta al párrafo marcándolo (#:~:text=, lo entiende Safari); sin él, busca
 // las primeras palabras del párrafo en wol.jw.org.
 export function paragraphUrl(enlace, parrafo) {
-  const start = words(String(parrafo ?? '').replace(/[“”"«»]/g, ''))
-    .slice(0, 6).join(' ').replace(/[.,;:]+$/, '')
+  // Hasta 6 palabras, sin cruzar comillas: el marcador #:~:text= tiene que coincidir letra por letra.
+  const first = []
+  for (const w of words(String(parrafo ?? ''))) {
+    if (first.length >= 6 || (first.length && /^[“"«(]/.test(w))) break
+    first.push(w.replace(/^[“"«(]+/, ''))
+    if (/[“”"«»)]$/.test(w)) break
+  }
+  const start = first.join(' ').replace(/[.,;:“”"«»)]+$/, '')
   const url = String(enlace ?? '').trim().split('#')[0]
   if (/^https:\/\/(wol\.jw\.org|www\.jw\.org)\//.test(url)) return start ? `${url}#:~:text=${encodeURIComponent(start)}` : url
   return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(`"${start}"`)}&p=par&r=occ`

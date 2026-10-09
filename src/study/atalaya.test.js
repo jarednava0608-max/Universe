@@ -129,11 +129,25 @@ describe('La Atalaya por pasos: enlace al párrafo', () => {
   const p = 'La voluntad de Jehová "es que toda clase de personas se salven'
   it('con el enlace del artículo salta al párrafo', () => {
     expect(paragraphUrl('https://wol.jw.org/es/wol/d/r4/lp-s/2026600#h=1', p))
-      .toBe('https://wol.jw.org/es/wol/d/r4/lp-s/2026600#:~:text=' + encodeURIComponent('La voluntad de Jehová es que'))
+      .toBe('https://wol.jw.org/es/wol/d/r4/lp-s/2026600#:~:text=' + encodeURIComponent('La voluntad de Jehová'))
   })
   it('sin enlace busca el párrafo en wol.jw.org', () => {
-    expect(paragraphUrl('', p)).toBe('https://wol.jw.org/es/wol/s/r4/lp-s?q=' + encodeURIComponent('"La voluntad de Jehová es que"') + '&p=par&r=occ')
+    expect(paragraphUrl('', p)).toBe('https://wol.jw.org/es/wol/s/r4/lp-s?q=' + encodeURIComponent('"La voluntad de Jehová"') + '&p=par&r=occ')
     expect(paragraphUrl('no es enlace', p)).toContain('wol.jw.org/es/wol/s/')
+  })
+})
+
+describe('Artículo copiado de JW Library', () => {
+  const jwl = `1. ¿Qué táctica utiliza Satanás?\n\nRespuesta\nCUANDO tomamos la decisión de servir a Jehová, Satanás se opone.\n\n2. ¿Por qué es importante confiar?\n\nRespuesta\n2 En una guerra, es imprescindible confiar.\n\n3. ¿Qué dice?\n\nRespuesta\n3 “Opónganse al Diablo” y él huirá.`
+  it('quita el renglón "Respuesta" y el número del párrafo', () => {
+    const b = parseArticle(jwl).bloques
+    expect(b[0].parrafos).toEqual(['CUANDO tomamos la decisión de servir a Jehová, Satanás se opone.'])
+    expect(b[1].parrafos).toEqual(['En una guerra, es imprescindible confiar.'])
+    expect(paragraphUrl('', b[1].parrafos[0])).toBe('https://wol.jw.org/es/wol/s/r4/lp-s?q=' + encodeURIComponent('"En una guerra, es imprescindible confiar"') + '&p=par&r=occ')
+  })
+  it('el marcador del párrafo no cruza comillas', () => {
+    const b = parseArticle(jwl).bloques
+    expect(paragraphUrl('https://wol.jw.org/es/wol/d/r4/lp-s/1', b[2].parrafos[0])).toBe('https://wol.jw.org/es/wol/d/r4/lp-s/1#:~:text=' + encodeURIComponent('Opónganse al Diablo'))
   })
 })
 
