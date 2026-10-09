@@ -6,7 +6,7 @@ import { findAllRefs, openRef } from '../lib/verses.js'
 import { refUrl } from '../lib/bible.js'
 import ConceptsStep from './ConceptsStep.jsx'
 import PasteFields from './PasteFields.jsx'
-import { DAILY_QUESTIONS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyPeople, dailySteps, dailyChapter, dailyVerse, dailyTextUrl, dailyTextAppUrl, entryForClaude, fieldsFromJson, formatDate, refsIn } from './kinds.js'
+import { DAILY_QUESTIONS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyPeople, dailySteps, dailyType, dailyChapter, dailyVerse, dailyTextUrl, dailyTextAppUrl, entryForClaude, fieldsFromJson, formatDate, refsIn } from './kinds.js'
 
 const filled = (v) => !!String(v ?? '').trim()
 
@@ -87,8 +87,13 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
   const ref = refsIn(verse)[0] ?? refsIn(fields.texto)[0]
   const done = questions.filter((s) => filled(fields[s.key])).length
   const people = step === 'relato' ? dailyPeople(fields.texto) : []
-  const type = DAILY_TYPES.find((t) => t.key === fields.tipo)
-  const starters = step === 'principio' ? type?.starters : cur?.starters
+  const type = DAILY_TYPES.find((t) => t.key === dailyType(fields))
+  const guessed = type && !fields.tipo
+  // Las frases solo ayudan a arrancar: se quitan las que ya usaste y todas cuando ya escribiste
+  // unas palabras tuyas, para que la respuesta no se vuelva de puro relleno.
+  const mine = String(fields[step] ?? '')
+  const own = (cur?.starters ?? type?.starters ?? []).reduce((t, x) => t.replace(x, ''), mine).trim()
+  const starters = own.length >= 40 ? [] : (step === 'principio' ? type?.starters : cur?.starters)?.filter((x) => !mine.includes(x))
   const refs = findAllRefs(fields.contexto, fields.relato, fields.aplicacion, fields.notas)
 
   return (
@@ -141,12 +146,12 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
             <h2 className="at-h">{step === 'principio' && type ? type.q : cur.q}</h2>
             {step === 'principio' ? (
               <>
+                <p className="at-tip small">{!type ? cur.guide[0] : guessed ? 'Parece de este tipo. Si no, toca otro.' : 'Este texto:'}</p>
                 <div className="dt-chips">
                   {DAILY_TYPES.map((t) => (
-                    <button key={t.key} className={'dt-chip' + (t.key === fields.tipo ? ' on' : '')} onClick={() => set({ tipo: t.key })}>{t.label}</button>
+                    <button key={t.key} className={'dt-chip' + (t.key === type?.key ? ' on' : '')} onClick={() => set({ tipo: t.key })}>{t.label}</button>
                   ))}
                 </div>
-                {!type && <p className="at-tip small">{cur.guide[0]}</p>}
               </>
             ) : (
               <ul className="dt-guide">

@@ -179,10 +179,27 @@ describe('Texto diario más fácil', () => {
   it('si el texto ya es un relato, se salta el paso Relato', () => {
     expect(dailySteps({}).map((s) => s.key)).toContain('relato')
     expect(dailySteps({ tipo: 'relato' }).map((s) => s.key)).not.toContain('relato')
+    expect(dailySteps({ tipo: 'relato', relato: 'Abrahán' }).map((s) => s.key)).toContain('relato')
   })
   it('sugiere los personajes del texto y el comentario, sin contar las citas', () => {
     expect(dailyPeople('María Magdalena fue a ver a los discípulos: "¡He visto al Señor!" (Juan 20:18).\n\nEl 16 de nisán…')).toEqual(['María Magdalena'])
     expect(dailyPeople('Toda una generación no logró distinguir que Josué y Caleb decían la verdad (Núm. 14:10).')).toEqual(expect.arrayContaining(['Josué', 'Caleb']))
     expect(dailyPeople('Lea Juan 3:16 con calma.')).toEqual([])
+  })
+})
+
+import { guessDailyType } from './kinds.js'
+
+describe('Tipo del texto diario', () => {
+  it('lo adivina con los textos de octubre', () => {
+    expect(guessDailyType('Acuérdense de los que los dirigen, quienes les han hablado acerca de la palabra de Dios (Heb. 13:7).')).toBe('pide')
+    expect(guessDailyType('No calumnia con su lengua (Sal. 15:3).')).toBe('pide')
+    expect(guessDailyType('Siempre tengo a Jehová delante de mí. Como él está a mi derecha, nada me sacudirá jamás (Sal. 16:8).')).toBe('promete')
+    expect(guessDailyType('María Magdalena fue a ver a los discípulos y les dio la noticia: “¡He visto al Señor!” (Juan 20:18).')).toBe('relato')
+    expect(guessDailyType('Es Jehová quien examina los corazones (Prov. 17:3).')).toBe('jehova')
+    expect(guessDailyType('La Ley tiene una sombra de las cosas buenas por venir (Heb. 10:1).')).toBe(null)
+  })
+  it('reconoce nombres que no están en Memoria Bíblica', () => {
+    expect(dailyPeople('Gómer, la esposa de Oseas, dejó al profeta por otros hombres.')).toEqual(['Gómer', 'Oseas'])
   })
 })

@@ -58,6 +58,7 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     sub: !diario ? 'Pégalo y contesta 2 preguntas · unos 3 min'
       : analyzed ? diario.fields.resumen?.trim() || 'Lo de hoy, cumplido'
       : falta.length === 1 ? `Te falta: ${falta[0] === 'principio' ? 'Principio' : 'Aplicación'}`
+      : ['contexto', 'relato'].some((k) => String(diario.fields[k] ?? '').trim()) ? 'Te falta: Principio y Aplicación'
       : 'Principio y Aplicación · unos 3 min',
     done: analyzed,
     verse: diario ? dailyVerse(diario.fields.texto) : '',

@@ -6,6 +6,7 @@ import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
 import { highlightArticle } from './atalaya.js'
 import { midweekForClaude, midweekNode } from './midweek.js'
 import { CHARACTERS } from '../games/memoria/characters.js'
+import { EXTRA_PEOPLE } from './people.js'
 
 export const today = () => {
   const d = new Date()
@@ -401,11 +402,28 @@ export const DAILY_TYPES = [
   { key: 'jehova', label: 'Cómo es Jehová o Jesús', q: '¿Cómo es Jehová o Jesús aquí?', starters: ['Jehová es', 'Lo veo cuando'] },
 ]
 // Con Principio y Aplicación ya cumples lo mínimo de hoy; Contexto y Relato suman.
+// Adivina el tipo del texto de hoy, sin IA, por cómo empieza el versículo: si pide algo ("Acuérdense…",
+// "No…"), si promete ("nada me sacudirá"), si cuenta algo que pasó ("María Magdalena fue…") o si dice
+// cómo es Jehová ("Es Jehová quien examina…"). Si no está claro, no adivina. Tú siempre lo puedes cambiar.
+export function guessDailyType(texto) {
+  const v = dailyVerse(texto).replace(/\([^)]*\)[.»”"]?$/, '').trim()
+  if (!v) return null
+  const first = v.split(/\s+/)[0].replace(/[«“"¡¿]/g, '')
+  if (/^(No|Nunca|Sigan|Sigamos|Sean|Seamos|Mantengan|Mantengamos|Busquen|Busquemos|Hagan|Hagamos|Confíen|Confía|Ama|Amen|Amemos|Escuchen|Escucha|Oren|Oremos|Perdonen|Animen|Animémonos|Tengan|Ten|Sé|Den|Pongan|Vístanse|Huyan|Eviten|Esfuércense|Esperen|Espera|Alaben|Alabemos|Den|Sírvanle|Sirvan|Honren|Imiten|Imitemos)$/.test(first) || /[a-záéíóú]+(nse|monos)$/.test(first)) return 'pide'
+  if (/\p{L}+(rá|rán|ré|remos)(?!\p{L})|jamás/u.test(v) && !/\b(fue|dijo|dio|hizo)\b/.test(v)) return 'promete'
+  if (dailyPeople(v).length && /\b(fue|fueron|dijo|dio|hizo|llegó|estaba|vio|oyó|respondió|contestó)\b/.test(v)) return 'relato'
+  if (/^(Es Jehová|Jehová es|Dios es|Jehová \p{Ll}+(a|e)(?!\p{L}))/u.test(v)) return 'jehova'
+  return null
+}
+// El tipo que elegiste o, si no has elegido, el que adivina la app.
+export const dailyType = (f = {}) => f.tipo || guessDailyType(f.texto)
+
 export const DAILY_MIN = ['principio', 'aplicacion']
 export const dailyMinimum = (f = {}) => DAILY_MIN.every((k) => String(f[k] ?? '').trim())
 
 // Si el texto ya cuenta algo que pasó, el paso Relato sobra: se salta.
-export const dailySteps = (f = {}) => DAILY_STEPS.filter((s) => !(s.key === 'relato' && f.tipo === 'relato'))
+// (Si ya escribiste algo en Relato, el paso se queda para no esconder tu respuesta.)
+export const dailySteps = (f = {}) => DAILY_STEPS.filter((s) => !(s.key === 'relato' && dailyType(f) === 'relato' && !String(f.relato ?? '').trim()))
 
 // Personajes de la Biblia que salen en el texto o el comentario (sin las citas, para que "Juan 20:18"
 // no cuente como el apóstol), para sugerirlos en el paso Relato. Sin IA: la lista de Memoria Bíblica.
@@ -416,14 +434,17 @@ export function dailyPeople(texto) {
   // Primero los nombres largos, y se borran al encontrarlos: "María Magdalena" no cuenta también como "María".
   let rest = plain
   const found = []
-  for (const c of [...CHARACTERS].sort((a, b) => b.n.length - a.n.length)) {
-    if (SKIP_PEOPLE.has(c.n)) continue
-    const re = new RegExp(`(^|[^\\p{L}])${c.n}(?![\\p{L}])`, 'gu')
+  const names = [...new Set([...CHARACTERS.map((c) => c.n), ...EXTRA_PEOPLE])]
+  for (const n of names.sort((a, b) => b.length - a.length)) {
+    if (SKIP_PEOPLE.has(n)) continue
+    const re = new RegExp(`(^|[^\\p{L}])${n}(?![\\p{L}])`, 'gu')
     if (!re.test(rest)) continue
-    found.push(c)
+    found.push(n)
     rest = rest.replace(re, '$1 ')
   }
-  return found.sort((a, b) => plain.indexOf(a.n) - plain.indexOf(b.n)).map((c) => c.n)
+  // Abrahán y Abraham son el mismo: se queda el primero que salga.
+  const out = found.sort((a, b) => plain.indexOf(a) - plain.indexOf(b))
+  return out.filter((n) => !(n === 'Abraham' && out.includes('Abrahán')))
 }
 export const DAILY_QUESTIONS = DAILY_STEPS.filter((s) => s.q)
 
