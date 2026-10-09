@@ -98,6 +98,7 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
             </label>
             <div className="action-stack">
               <a className="secondary as-btn" data-direct="1" href={dailyTextAppUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">Abrir este texto en JW Library</a>
+              <a className="secondary as-btn" data-direct="1" href={dailyTextUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">Ver este texto en wol.jw.org</a>
               <button className="primary" disabled={!filled(fields.texto)} onClick={() => go('contexto')}>Empezar</button>
             </div>
           </>
