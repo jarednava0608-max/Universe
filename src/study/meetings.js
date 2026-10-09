@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-// Días de tus reuniones ({ semana, fin }, 0 = domingo): preferencia de este teléfono.
+// Días de tus reuniones ({ semana, fin }, 0 = domingo) y la hora de la de entre semana (`hora`, "19:30"): preferencia de este teléfono.
 // Los usan "Hoy" y la reunión de entre semana (para poner la fecha de la reunión).
 const KEY = 'universe-meetings'
 const EVENT = 'universe-meetings'

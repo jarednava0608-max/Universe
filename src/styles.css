@@ -1461,6 +1461,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mw-mins { display: none; }
 :root[data-style='jw'] .mw-meta { display: none; }
 :root[data-style='jw'] .mw-mins { display: block; margin: -8px 0 16px 24px; font-size: 19px; color: var(--text-2); }
+.mw-time { margin: -6px 0 14px; font-size: 15px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+:root[data-style='jw'] .mw-mins:has(+ .mw-time) { margin-bottom: 2px; }
+:root[data-style='jw'] .mw-time { margin: 0 0 16px 24px; font-size: 17px; }
 :root[data-style='jw'] .mw-aside { font-size: inherit; color: var(--text); }
 :root[data-style='jw'] .mw-aside .ref-link { color: var(--link); }
 :root[data-style='jw'] { --mw-tesoros: #6db3c0; --mw-maestros: #d9a43a; --mw-vida: #cf5f52; }

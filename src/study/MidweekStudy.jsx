@@ -6,7 +6,7 @@ import { findAllRefs, chapterSaved } from '../lib/verses.js'
 import { parseRef } from '../lib/bible.js'
 import { isRead } from '../lib/reading.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar, partTimes, DEFAULT_HOUR } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
@@ -113,6 +113,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
   // Si la cambias a mano (por ejemplo, la semana de la visita del superintendente), se respeta.
   const [meetings, setMeetings] = useMeetings()
   const auto = programDate(prog.semana, meetings?.semana, fields.fecha)
+  const times = partTimes(prog.partes, meetings?.hora)
   useEffect(() => {
     if (!fields.fechaManual && auto && auto !== fields.fecha) set({ fecha: auto })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -208,7 +209,11 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
                   <button key={p.num} className="mw-row" onClick={() => go('partes', partes.indexOf(p))}>
                     <span className={'mw-num ' + p.sec + (partDone(fields, p) ? ' done' : '')}>{p.num}</span>
                     <span className="mw-row-title">{p.titulo}{kindOf(p) && <span className="mw-row-sub">{kindOf(p)}</span>}</span>
-                    {p.minutos > 0 && <span className="mw-min">{p.minutos} min</span>}
+                    {p.minutos > 0 && (
+                      <span className="mw-min">
+                        {times[p.num] ? `${times[p.num].inicio} a ${times[p.num].fin}` : `${p.minutos} min`}
+                      </span>
+                    )}
                   </button>
                 ))}
               </section>
@@ -248,6 +253,10 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
               </label>
             )}
             <label className="sfield">
+              <span className="sfield-label">Hora de tu reunión entre semana</span>
+              <input className="input" type="time" value={meetings?.hora || DEFAULT_HOUR} onChange={(e) => setMeetings({ ...(meetings ?? {}), hora: e.target.value })} />
+            </label>
+            <label className="sfield">
               <span className="sfield-label">Título</span>
               <input className="input" value={fields.titulo ?? ''} placeholder="La lectura de la semana" onChange={(e) => set({ titulo: e.target.value })} />
             </label>
@@ -276,6 +285,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
           <Part
             key={pt.num}
             pt={pt}
+            time={times[pt.num]}
             fields={fields}
             fecha={linkDate}
             onAnswer={(k, v) => setFields((f) => withAnswer(f, k, v))}
@@ -363,7 +373,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
 // Una parte del programa con el color de su sección. Lo que va entre paréntesis (citas y
 // publicaciones) va más tenue y se toca ahí mismo; cada pregunta va en una tarjeta con su
 // respuesta. Si la parte no tiene preguntas (lectura, maestros, estudio bíblico), lleva notas.
-function Part({ pt, fields, fecha, onAnswer, onSet, onStar, onMarks, last, onPrev, onNext }) {
+function Part({ pt, time, fields, fecha, onAnswer, onSet, onStar, onMarks, last, onPrev, onNext }) {
   const asks = pt.lineas.some((l) => l.q)
   const study = isStudyPart(pt)
   return (
@@ -372,6 +382,7 @@ function Part({ pt, fields, fecha, onAnswer, onSet, onStar, onMarks, last, onPre
       <p className="at-qnum mw-meta">Parte {pt.num}{pt.minutos ? ` · ${pt.minutos} min` : ''}</p>
       <h2 className={'mw-title ' + pt.sec} data-num={pt.num}>{pt.titulo}</h2>
       {pt.minutos > 0 && <p className="mw-mins">({pt.minutos} mins.)</p>}
+      {time && <p className="mw-time">De {time.inicio} a {time.fin}</p>}
       {pt.lineas.some((l) => !l.q && !l.media) && <p className="at-tip small">Toca 2 o 3 palabras clave para subrayarlas.</p>}
       {pt.lineas.map((l, i) => {
         if (l.q) return (

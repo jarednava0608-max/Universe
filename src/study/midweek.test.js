@@ -192,3 +192,16 @@ describe('reunión de entre semana', () => {
     expect(parseProgram('').semana).toBe('')
   })
 })
+
+describe('horario de la reunión de entre semana', () => {
+  it('calcula a qué hora empieza y acaba cada parte', async () => {
+    const { partTimes } = await import('./midweek.js')
+    const t = partTimes(parseProgram(PROGRAMA).partes, '19:30')
+    expect(t[1]).toEqual({ inicio: '7:35', fin: '7:45' })
+    expect(t[2]).toEqual({ inicio: '7:45', fin: '7:55' })
+    expect(t[3]).toEqual({ inicio: '7:55', fin: '7:59' })
+    expect(t[4]).toEqual({ inicio: '8:00', fin: '8:02' })
+    expect(t[5]).toEqual({ inicio: '8:07', fin: '8:22' })
+    expect(t[6]).toEqual({ inicio: '8:22', fin: '8:52' })
+  })
+})

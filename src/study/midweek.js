@@ -85,6 +85,30 @@ export function parseProgram(text) {
   return out
 }
 
+// A qué hora empieza y acaba cada parte, contando desde la hora de la reunión ("19:30"):
+// canción, oración y palabras de introducción (5 min), 1 min de consejo después de la lectura
+// de la Biblia y de cada parte de Seamos mejores maestros, y la canción de en medio (4 min)
+// antes de Nuestra vida cristiana. Así, con la reunión a las 7:30, las perlas escondidas
+// van de 7:45 a 7:55. Devuelve { [num]: { inicio: '7:45', fin: '7:55' } }.
+export const DEFAULT_HOUR = '19:30'
+export function partTimes(partes, hora = DEFAULT_HOUR) {
+  const [h, m] = String(hora || DEFAULT_HOUR).split(':').map(Number)
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return {}
+  const clock = (t) => `${(Math.floor(t / 60) % 12) || 12}:${String(t % 60).padStart(2, '0')}`
+  const out = {}
+  let t = h * 60 + m + 5
+  let prev = ''
+  for (const pt of partes ?? []) {
+    if (pt.sec === 'vida' && prev !== 'vida') t += 4
+    prev = pt.sec
+    if (!pt.minutos) continue
+    out[pt.num] = { inicio: clock(t), fin: clock(t + pt.minutos) }
+    t += pt.minutos
+    if (pt.sec === 'maestros' || /^lectura de la biblia/.test(plain(pt.titulo))) t += 1
+  }
+  return out
+}
+
 // Título para la lista de Reuniones: la lectura de la semana ("Jeremías 40, 41").
 export const programTitle = (prog) => prog.lectura || (prog.semana ? `Semana del ${prog.semana}` : '')
 
