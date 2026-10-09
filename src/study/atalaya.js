@@ -182,7 +182,7 @@ export function paragraphUrl(enlace, parrafo) {
     .slice(0, 6).join(' ').replace(/[.,;:]+$/, '')
   const url = String(enlace ?? '').trim().split('#')[0]
   if (/^https:\/\/(wol\.jw\.org|www\.jw\.org)\//.test(url)) return start ? `${url}#:~:text=${encodeURIComponent(start)}` : url
-  return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(`"${start}"`)}&p=par`
+  return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(`"${start}"`)}&p=par&r=occ`
 }
 
 // El artículo con tus palabras clave subrayadas (==así==) para guardarlo en el mapa. Se buscan en el

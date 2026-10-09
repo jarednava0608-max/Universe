@@ -99,7 +99,7 @@ export function pubTitle(ref) {
 }
 
 export function pubUrl(ref) {
-  return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(pubTitle(ref))}`
+  return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(pubTitle(ref))}&p=par&r=occ`
 }
 
 // Markdown: convierte las referencias en enlaces (para las notas del mapa).

@@ -105,7 +105,7 @@ export function parseRef(ref) {
 // Dirección en wol.jw.org: el capítulo con el versículo marcado; si no reconoce el libro, una búsqueda.
 export function refUrl(ref) {
   const r = parseRef(ref)
-  if (!r) return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(ref)}`
+  if (!r) return `https://wol.jw.org/es/wol/s/r4/lp-s?q=${encodeURIComponent(ref)}&p=par&r=occ`
   const base = `https://wol.jw.org/es/wol/b/r4/lp-s/nwtsty/${r.book}/${r.chapter}`
   return r.verse ? `${base}#study=discover&v=${r.book}:${r.chapter}:${r.verse}` : base
 }

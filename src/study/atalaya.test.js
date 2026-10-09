@@ -132,7 +132,7 @@ describe('La Atalaya por pasos: enlace al párrafo', () => {
       .toBe('https://wol.jw.org/es/wol/d/r4/lp-s/2026600#:~:text=' + encodeURIComponent('La voluntad de Jehová es que'))
   })
   it('sin enlace busca el párrafo en wol.jw.org', () => {
-    expect(paragraphUrl('', p)).toBe('https://wol.jw.org/es/wol/s/r4/lp-s?q=' + encodeURIComponent('"La voluntad de Jehová es que"') + '&p=par')
+    expect(paragraphUrl('', p)).toBe('https://wol.jw.org/es/wol/s/r4/lp-s?q=' + encodeURIComponent('"La voluntad de Jehová es que"') + '&p=par&r=occ')
     expect(paragraphUrl('no es enlace', p)).toContain('wol.jw.org/es/wol/s/')
   })
 })
