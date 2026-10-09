@@ -228,3 +228,59 @@ describe('horario de una semana completa', () => {
     expect(video[5].inicio).toBe('7:40')
   })
 })
+
+describe('asignaciones de la congregación', () => {
+  // Nombres inventados: los reales solo viven en la nube privada del usuario.
+  const ASIG = {
+    id: 'asig-2026-10-08', kind: 'asignaciones',
+    fields: {
+      fecha: '2026-10-08', presidente: 'Ana Presidenta', oracion: 'Beto Oración',
+      filas: [
+        { sec: 'tesoros', min: 10, titulo: 'Tengamos un punto de vista equilibrado de la protección de Jehová', nombres: ['Carlos Uno'] },
+        { sec: 'tesoros', min: 10, titulo: 'Busquemos perlas escondidas (Jeremías 40-41)', nombres: ['Dani Dos'] },
+        { sec: 'tesoros', min: 4, titulo: 'Lectura de la Biblia (Jer 40:1-10)', nombres: ['Eli Tres'] },
+        { sec: 'maestros', min: 2, titulo: 'Empiece conversaciones: De casa en casa', nombres: ['Fer Cuatro', 'Gabi Cinco'] },
+        { sec: 'vida', min: 15, titulo: 'Jehová protege a las viudas', nombres: ['Hugo Seis'] },
+        { sec: 'vida', min: 15, titulo: 'El informe 6 del Cuerpo Gobernante del año 2026', nombres: ['Ana Presidenta'] },
+        { sec: 'vida', min: 15, titulo: 'Estudio bíblico de la congregación', nombres: ['Iván Siete'] },
+      ],
+      salaB: { consejero: 'Juan Ocho', filas: [
+        { sec: 'tesoros', min: 4, titulo: 'Lectura de la Biblia', nombres: ['Kike Nueve'] },
+        { sec: 'maestros', min: 2, titulo: 'Empiece conversaciones', nombres: ['Lalo Diez', 'Memo Once'] },
+      ] },
+    },
+  }
+
+  it('encuentra la de la semana, aunque la fecha sea otro día', async () => {
+    const { weekSchedule } = await import('./midweek.js')
+    expect(weekSchedule([ASIG], '2026-10-08').presidente).toBe('Ana Presidenta')
+    expect(weekSchedule([ASIG], '2026-10-06').presidente).toBe('Ana Presidenta')
+    expect(weekSchedule([ASIG], '2026-10-15')).toBe(null)
+  })
+
+  it('pone los nombres en cada parte y usa los minutos de la congregación', async () => {
+    const { outline } = await import('./midweek.js')
+    const { sections, times } = outline(parseProgram(PROGRAMA).partes, ASIG.fields, '19:30')
+    const rows = sections.flatMap(([, , l]) => l)
+    const byNum = (n) => rows.find((r) => r.part?.num === n)
+    expect(byNum(2).nombres).toEqual(['Dani Dos'])
+    expect(byNum(3).salaB).toEqual(['Kike Nueve'])
+    expect(byNum(4).nombres).toEqual(['Fer Cuatro', 'Gabi Cinco'])
+    expect(byNum(4).salaB).toEqual(['Lalo Diez', 'Memo Once'])
+    // El informe no está en el programa: sale como fila aparte, entre las dos partes.
+    const vida = sections.find(([, sec]) => sec === 'vida')[2]
+    expect(vida.map((r) => r.part?.num ?? r.titulo)).toEqual([5, 'El informe 6 del Cuerpo Gobernante del año 2026', 6])
+    // Esa semana el estudio dura 15 min (no 30).
+    expect(times[2]).toEqual({ inicio: '7:45', fin: '7:55' })
+    expect(times[5]).toEqual({ inicio: '8:07', fin: '8:22' })
+    expect(times.x5).toEqual({ inicio: '8:22', fin: '8:37' })
+    expect(times[6]).toEqual({ inicio: '8:37', fin: '8:52' })
+  })
+
+  it('sin asignaciones queda como antes', async () => {
+    const { outline } = await import('./midweek.js')
+    const { sections, times } = outline(parseProgram(PROGRAMA).partes, null, '19:30')
+    expect(sections.flatMap(([, , l]) => l).every((r) => r.nombres.length === 0)).toBe(true)
+    expect(times[2]).toEqual({ inicio: '7:45', fin: '7:55' })
+  })
+})

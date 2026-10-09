@@ -100,7 +100,90 @@ const COUNSEL = 1
 const CLOSING = 3
 const isStudent = (pt) =>
   /^lectura de la biblia/.test(plain(pt.titulo)) ||
-  (pt.sec === 'maestros' && !pt.lineas.some((l) => /analisis con el auditorio|ponga el video/.test(plain(l.text))))
+  (pt.sec === 'maestros' && ![pt.titulo, ...(pt.lineas ?? []).map((l) => l.text)].some((t) => /analisis con el auditorio|ponga el video/.test(plain(t))))
+
+// Las asignaciones de la congregación (quién da cada parte). Viven solo en la nube privada del
+// usuario (entradas `kind: 'asignaciones'`, una por semana; nunca en el código, porque el
+// repositorio es público): { fecha, presidente, oracion, filas: [{ sec, min, titulo, nombres }],
+// salaB: { consejero, filas } }. La de la semana se busca por la fecha de la reunión (o la misma semana).
+const mondayOf = (iso) => {
+  const d = new Date(`${iso}T12:00:00`)
+  if (Number.isNaN(d.getTime())) return ''
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  return d.toISOString().slice(0, 10)
+}
+export function weekSchedule(entries, fecha) {
+  if (!fecha) return null
+  const list = (entries ?? []).filter((e) => e.kind === 'asignaciones' && Array.isArray(e.fields?.filas))
+  const week = mondayOf(fecha)
+  return (list.find((e) => e.fields.fecha === fecha) ?? list.find((e) => week && mondayOf(e.fields.fecha) === week))?.fields ?? null
+}
+
+// Empareja cada fila de las asignaciones con su parte del programa: en la misma sección, la que
+// comparte más palabras al inicio del título ("Empiece conversaciones: de casa en casa" ↔
+// "Empiece conversaciones"); si hay empate, la primera libre. Las filas que no están en el
+// programa (un informe del Cuerpo Gobernante) quedan sin parte.
+const words = (t) => plain(t).replace(/[^a-z0-9ñ ]/g, ' ').split(' ').filter(Boolean)
+export function matchSchedule(partes, filas) {
+  const used = new Set()
+  const byFila = new Map()
+  const fw = (filas ?? []).map((f) => words(f.titulo))
+  for (const pt of partes ?? []) {
+    const pw = words(pt.titulo)
+    let best = -1
+    let score = 0
+    fw.forEach((w, i) => {
+      if (used.has(i) || filas[i].sec !== pt.sec) return
+      let n = 0
+      while (n < 3 && n < w.length && n < pw.length && w[n] === pw[n]) n++
+      if (n > score) { score = n; best = i }
+    })
+    if (best >= 0) { used.add(best); byFila.set(best, pt) }
+  }
+  return byFila
+}
+
+// La sala B solo tiene la lectura y las partes de maestros: van con la fila de la sala principal
+// que está en el mismo lugar de su sección.
+function salaBOf(filas, salaB) {
+  const out = new Map()
+  for (const sec of ['tesoros', 'maestros']) {
+    const a = filas.map((f, i) => [f, i]).filter(([f]) => f.sec === sec && (sec === 'maestros' || /^lectura/.test(plain(f.titulo))))
+    const b = (salaB?.filas ?? []).filter((f) => f.sec === sec)
+    a.forEach(([, i], k) => b[k] && out.set(i, b[k]))
+  }
+  return out
+}
+
+// La portada por secciones: con asignaciones, cada fila con su parte (si está en el programa),
+// sus nombres y los de la sala B; sin ellas, solo las partes. Devuelve
+// [[sección, clave, [{ key, part, titulo, minutos, nombres, salaB }]]] y los horarios por `key`.
+const SEC_NAME = { tesoros: 'Tesoros de la Biblia', maestros: 'Seamos mejores maestros', vida: 'Nuestra vida cristiana' }
+export function outline(partes, schedule, hora) {
+  const rows = []
+  if (schedule?.filas?.length) {
+    const filas = schedule.filas
+    const byFila = matchSchedule(partes, filas)
+    const b = salaBOf(filas, schedule.salaB)
+    filas.forEach((f, i) => {
+      const part = byFila.get(i)
+      rows.push({ key: part ? part.num : `x${i}`, part, sec: f.sec, titulo: part?.titulo ?? f.titulo, fila: f.titulo, minutos: Number(f.min) || part?.minutos || 0, nombres: f.nombres ?? [], salaB: b.get(i)?.nombres ?? [] })
+    })
+    const matched = new Set(byFila.values())
+    for (const pt of partes) if (!matched.has(pt)) rows.push({ key: pt.num, part: pt, sec: pt.sec, titulo: pt.titulo, minutos: pt.minutos, nombres: [], salaB: [], late: true })
+  } else {
+    for (const pt of partes) rows.push({ key: pt.num, part: pt, sec: pt.sec, titulo: pt.titulo, minutos: pt.minutos, nombres: [], salaB: [] })
+  }
+  const order = ['tesoros', 'maestros', 'vida']
+  const sections = order.map((sec) => [SEC_NAME[sec], sec, rows.filter((r) => r.sec === sec)]).filter(([, , l]) => l.length)
+  const timed = sections.flatMap(([, , l]) => l.filter((r) => !r.late)).map((r) => ({
+    num: r.key, sec: r.sec, minutos: r.minutos, titulo: r.titulo, lineas: [...(r.part?.lineas ?? []), { text: r.fila ?? r.titulo }],
+  }))
+  return { sections, times: partTimes(timed, hora) }
+}
+
+// "Ana López" / "Ana López y Eva Ruiz" (estudiante y ayudante).
+export const whoLabel = (nombres) => (nombres ?? []).filter(Boolean).join(' y ')
 
 export function partTimes(partes, hora = DEFAULT_HOUR) {
   const [h, m] = String(hora || DEFAULT_HOUR).split(':').map(Number)

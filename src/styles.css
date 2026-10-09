@@ -1461,7 +1461,13 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mw-mins { display: none; }
 :root[data-style='jw'] .mw-meta { display: none; }
 :root[data-style='jw'] .mw-mins { display: block; margin: -8px 0 16px 24px; font-size: 19px; color: var(--text-2); }
-.mw-close { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; margin: 4px 0 16px; padding: 10px 0 0; border-top: 1px solid var(--line); font-size: 15px; color: var(--text-2); }
+.mw-row-who { display: block; margin-top: 2px; font-size: 13px; color: var(--text-2); }
+.mw-row.extra { opacity: 0.85; }
+.mw-who-top { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 0 0 10px; font-size: 14px; color: var(--text-2); }
+.mw-who { margin: -8px 0 16px; font-size: 15px; color: var(--text-2); }
+.mw-who span { display: block; font-size: 14px; color: var(--text-3); }
+:root[data-style='jw'] .mw-who { margin-left: 24px; }
+.mw-close { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 2px 12px; margin: 4px 0 16px; padding: 10px 0 0; border-top: 1px solid var(--line); font-size: 15px; color: var(--text-2); }
 .mw-close-end { flex-basis: 100%; font-size: 13px; color: var(--text-3); }
 .mw-time { margin: -6px 0 14px; font-size: 15px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
 :root[data-style='jw'] .mw-mins:has(+ .mw-time) { margin-bottom: 2px; }

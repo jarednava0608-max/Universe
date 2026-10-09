@@ -6,7 +6,7 @@ import { findAllRefs, chapterSaved } from '../lib/verses.js'
 import { parseRef } from '../lib/bible.js'
 import { isRead } from '../lib/reading.js'
 import { entryForClaude } from './kinds.js'
-import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar, partTimes, DEFAULT_HOUR } from './midweek.js'
+import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar, DEFAULT_HOUR, weekSchedule, outline, whoLabel } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
@@ -113,7 +113,9 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
   // Si la cambias a mano (por ejemplo, la semana de la visita del superintendente), se respeta.
   const [meetings, setMeetings] = useMeetings()
   const auto = programDate(prog.semana, meetings?.semana, fields.fecha)
-  const times = partTimes(prog.partes, meetings?.hora)
+  const schedule = weekSchedule(entries, fields.fecha)
+  const { sections: rows, times } = outline(prog.partes, schedule, meetings?.hora)
+  const rowOf = (num) => rows.flatMap(([, , l]) => l).find((r) => r.part?.num === num)
   useEffect(() => {
     if (!fields.fechaManual && auto && auto !== fields.fecha) set({ fecha: auto })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,26 +204,43 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
                 </select>
               </label>
             )}
-            {sections(partes).map(([name, sec, list]) => (
+            {schedule && (
+              <p className="mw-who-top">
+                {schedule.presidente && <span>Presidente: {schedule.presidente}</span>}
+                {schedule.salaB?.consejero && <span>Sala B: {schedule.salaB.consejero}</span>}
+              </p>
+            )}
+            {rows.map(([name, sec, list]) => (
               <section key={name} className="mw-outline">
                 <p className={'mw-sec ' + sec}>{name}</p>
-                {list.map((p) => (
-                  <button key={p.num} className="mw-row" onClick={() => go('partes', partes.indexOf(p))}>
-                    <span className={'mw-num ' + p.sec + (partDone(fields, p) ? ' done' : '')}>{p.num}</span>
-                    <span className="mw-row-title">{p.titulo}{kindOf(p) && <span className="mw-row-sub">{kindOf(p)}</span>}</span>
-                    {p.minutos > 0 && (
-                      <span className="mw-min">
-                        {times[p.num] ? `${times[p.num].inicio} a ${times[p.num].fin}` : `${p.minutos} min`}
+                {list.map((r) => {
+                  const body = (
+                    <>
+                      <span className={'mw-num ' + r.sec + (r.part && partDone(fields, r.part) ? ' done' : '')}>{r.part ? r.part.num : ''}</span>
+                      <span className="mw-row-title">
+                        {r.titulo}
+                        {r.part && kindOf(r.part) && <span className="mw-row-sub">{kindOf(r.part)}</span>}
+                        {r.nombres.length > 0 && <span className="mw-row-who">{whoLabel(r.nombres)}</span>}
+                        {r.salaB.length > 0 && <span className="mw-row-who">Sala B: {whoLabel(r.salaB)}</span>}
                       </span>
-                    )}
-                  </button>
-                ))}
+                      {r.minutos > 0 && (
+                        <span className="mw-min">
+                          {times[r.key] ? `${times[r.key].inicio} a ${times[r.key].fin}` : `${r.minutos} min`}
+                        </span>
+                      )}
+                    </>
+                  )
+                  return r.part
+                    ? <button key={r.key} className="mw-row" onClick={() => go('partes', partes.indexOf(r.part))}>{body}</button>
+                    : <div key={r.key} className="mw-row extra">{body}</div>
+                })}
               </section>
             ))}
             {times.conclusion && (
               <p className="mw-close">
-                Palabras de conclusión <span className="mw-min">{times.conclusion.inicio} a {times.conclusion.fin}</span>
-                <span className="mw-close-end">Canción y oración · termina como a las {times.termina}</span>
+                <span>Palabras de conclusión{schedule?.presidente ? <span className="mw-row-who">{schedule.presidente}</span> : null}</span>
+                <span className="mw-min">{times.conclusion.inicio} a {times.conclusion.fin}</span>
+                <span className="mw-close-end">Canción y oración{schedule?.oracion ? ` (${schedule.oracion})` : ''} · termina como a las {times.termina}</span>
               </p>
             )}
             <button className="primary" onClick={() => go('partes', Math.max(0, partes.findIndex((p) => !partDone(fields, p))))}>
@@ -292,6 +311,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
             key={pt.num}
             pt={pt}
             time={times[pt.num]}
+            who={rowOf(pt.num)}
             fields={fields}
             fecha={linkDate}
             onAnswer={(k, v) => setFields((f) => withAnswer(f, k, v))}
@@ -379,7 +399,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
 // Una parte del programa con el color de su sección. Lo que va entre paréntesis (citas y
 // publicaciones) va más tenue y se toca ahí mismo; cada pregunta va en una tarjeta con su
 // respuesta. Si la parte no tiene preguntas (lectura, maestros, estudio bíblico), lleva notas.
-function Part({ pt, time, fields, fecha, onAnswer, onSet, onStar, onMarks, last, onPrev, onNext }) {
+function Part({ pt, time, who, fields, fecha, onAnswer, onSet, onStar, onMarks, last, onPrev, onNext }) {
   const asks = pt.lineas.some((l) => l.q)
   const study = isStudyPart(pt)
   return (
@@ -389,6 +409,7 @@ function Part({ pt, time, fields, fecha, onAnswer, onSet, onStar, onMarks, last,
       <h2 className={'mw-title ' + pt.sec} data-num={pt.num}>{pt.titulo}</h2>
       {pt.minutos > 0 && <p className="mw-mins">({pt.minutos} mins.)</p>}
       {time && <p className="mw-time">De {time.inicio} a {time.fin}</p>}
+      {who?.nombres.length > 0 && <p className="mw-who">{whoLabel(who.nombres)}{who.salaB.length > 0 && <span>Sala B: {whoLabel(who.salaB)}</span>}</p>}
       {pt.lineas.some((l) => !l.q && !l.media) && <p className="at-tip small">Toca 2 o 3 palabras clave para subrayarlas.</p>}
       {pt.lineas.map((l, i) => {
         if (l.q) return (
@@ -543,17 +564,6 @@ const Check = () => (
     <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
-
-// Las partes agrupadas por sección, en orden: [[nombre, clave, partes]].
-function sections(partes) {
-  const out = []
-  for (const p of partes) {
-    const last = out.at(-1)
-    if (last && last[0] === p.seccion) last[2].push(p)
-    else out.push([p.seccion, p.sec, [p]])
-  }
-  return out
-}
 
 // "jueves 8 de octubre"
 function meetingDay(iso) {
