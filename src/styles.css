@@ -1594,3 +1594,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .dt-missing .at-label { width: 100%; margin: 0 0 2px; }
 .dt-links a { text-decoration: none; }
 .dt-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 8px; }
+
+/* Campo con botón para borrarlo de un toque (×) */
+.input-wrap { position: relative; display: block; }
+.input-wrap .input { padding-right: 48px; }
+.input-clear { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); width: 44px; height: 44px; display: grid; place-items: center; color: var(--text-2); }
+.input-clear svg { background: var(--line); border-radius: 50%; padding: 3px; box-sizing: content-box; }

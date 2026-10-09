@@ -164,11 +164,18 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
             </label>
             <label className="sfield">
               <span className="sfield-label">Título</span>
-              <input className="input" value={fields.titulo ?? ''} placeholder="Título del artículo" onChange={(e) => set({ titulo: e.target.value })} />
+              <span className="input-wrap">
+                <input className="input" value={fields.titulo ?? ''} placeholder="Título del artículo" onChange={(e) => set({ titulo: e.target.value })} />
+                {fields.titulo && <button type="button" className="input-clear" aria-label="Borrar el título" onClick={(e) => { e.preventDefault(); set({ titulo: '' }) }}><Icon d={ICONS.borrar} size={16} stroke={2.2} /></button>}
+              </span>
             </label>
             <label className="sfield">
               <span className="sfield-label">Enlace en jw.org (opcional)</span>
-              <input className="input" type="url" inputMode="url" value={fields.enlace ?? ''} placeholder="Para abrir cada párrafo en jw.org" onChange={(e) => set({ enlace: e.target.value.trim() })} />
+              <span className="input-wrap">
+                <input className="input" type="url" inputMode="url" value={fields.enlace ?? ''} placeholder="Para abrir cada párrafo en jw.org" onChange={(e) => set({ enlace: e.target.value.trim() })} />
+                {fields.enlace && <button type="button" className="input-clear" aria-label="Borrar el enlace" onClick={(e) => { e.preventDefault(); set({ enlace: '' }) }}><Icon d={ICONS.borrar} size={16} stroke={2.2} /></button>}
+              </span>
+              {fields.enlace && !/^https?:\/\//i.test(fields.enlace) && <span className="hint warn">Esto no parece un enlace. Tócale a la × para borrarlo.</span>}
             </label>
             <div className="sfield">
               <span className="sfield-label">Abrir La Atalaya en</span>
