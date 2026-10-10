@@ -1,6 +1,6 @@
 // Service worker simple: la app funciona sin conexión.
 // HTML: red primero (para recibir versiones nuevas). Archivos con hash: caché primero.
-const CACHE = 'universe-v7'
+const CACHE = 'universe-v8'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icon.svg'])))
@@ -47,15 +47,23 @@ self.addEventListener('fetch', (e) => {
   )
 })
 
-// Avisos de Constancia (los manda la función constancia-push de Supabase).
+// Avisos de Constancia y de Pendientes (los mandan las funciones constancia-push y pendientes-push de Supabase).
+// `tab`: la pestaña que abre el aviso al tocarlo (Pendientes manda 'pendientes').
 self.addEventListener('push', (e) => {
   const d = e.data ? e.data.json() : {}
-  e.waitUntil(self.registration.showNotification(d.title || 'Universe', { body: d.body || '', tag: d.tag, icon: '/icon-192.png', badge: '/icon-192.png' }))
+  e.waitUntil(self.registration.showNotification(d.title || 'Universe', { body: d.body || '', tag: d.tag, icon: '/icon-192.png', badge: '/icon-192.png', data: { tab: d.tab || null } }))
 })
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close()
+  const tab = e.notification.data?.tab
   e.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => (list[0] ? list[0].focus() : self.clients.openWindow('/'))),
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      if (list[0]) {
+        if (tab) list[0].postMessage({ type: 'open-tab', tab })
+        return list[0].focus()
+      }
+      return self.clients.openWindow(tab ? '/?tab=' + tab : '/')
+    }),
   )
 })

@@ -20,6 +20,8 @@ import Icon, { ICONS } from './components/Icon.jsx'
 import StudyTab from './study/StudyTab.jsx'
 import GamesTab, { Daily } from './games/GamesTab.jsx'
 import Constancia from './games/Constancia.jsx'
+import TasksTab from './tasks/TasksTab.jsx'
+import { groupTasks } from './tasks/tasks.js'
 import Review, { reviewSummary } from './games/Review.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import ChapterReader from './components/ChapterReader.jsx'
@@ -32,6 +34,18 @@ import { entrySource, conceptNote } from './study/concepts.js'
 import { planVerseSave, cleanSavedVerses, wrongThirdJohn } from './lib/verseSave.js'
 
 let seedsRunning = false
+
+const TAB_IDS = ['mapa', 'estudio', 'pendientes', 'juegos']
+function initialTab() {
+  try {
+    const t = new URLSearchParams(location.search).get('tab')
+    if (TAB_IDS.includes(t)) {
+      history.replaceState(null, '', location.pathname + location.hash)
+      return t
+    }
+  } catch { /* sin URL */ }
+  return 'estudio'
+}
 
 const LAST_NODE = 'universe-last-node'
 
@@ -50,7 +64,8 @@ export default function App() {
   const graph = useRef()
 
   // La app abre en Estudio: arriba está "Hoy", lo que toca hacer hoy.
-  const [tab, setTab] = useState('estudio') // 'mapa' | 'estudio' | 'juegos'
+  // Un aviso de Pendientes abre la app con ?tab=pendientes.
+  const [tab, setTab] = useState(initialTab) // 'mapa' | 'estudio' | 'pendientes' | 'juegos'
   const [searchOpen, setSearchOpen] = useState(false) // Buscar en todo (lupa en Estudio)
   const [studyHome, setStudyHome] = useState(true) // la lupa solo sale en el inicio de Estudio (en las listas el título es largo)
   const [play, setPlay] = useState(null) // 'review' | 'daily': Repasar hoy o el Reto del día, abiertos desde "Hoy"
@@ -335,6 +350,19 @@ export default function App() {
   }
 
   // Para "Hoy" en Estudio: cuánto toca repasar y si ya hiciste el Reto del día.
+  // Puntito en Pendientes si hay algo atrasado o para hoy.
+  const tasksDue = useMemo(() => {
+    if (!store.ready) return 0
+    const g = groupTasks(store.entries)
+    return g.atrasados.length + g.hoy.length
+  }, [store.ready, store.entries])
+  // Tocar un aviso con la app abierta: el service worker pide abrir la pestaña.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const onMsg = (e) => { if (e.data?.type === 'open-tab' && e.data.tab) setTab(e.data.tab) }
+    navigator.serviceWorker.addEventListener('message', onMsg)
+    return () => navigator.serviceWorker.removeEventListener('message', onMsg)
+  }, [])
   const reviewToday = useMemo(() => (store.ready && tab === 'estudio' ? reviewSummary(store) : { due: 0, fresh: 0 }), [store.ready, tab, store.nodes, store.entries, store.progress]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!store.ready) return <div className="boot" />
@@ -427,6 +455,7 @@ export default function App() {
       {play === 'daily' && <Daily store={store} back="Estudio" onExit={() => setPlay(null)} />}
       {play === 'constancia' && <Constancia store={store} toast={toast} back="Estudio" onExit={() => setPlay(null)} />}
       {tab === 'juegos' && <GamesTab store={store} toast={toast} />}
+      {tab === 'pendientes' && <TasksTab store={store} toast={toast} />}
 
       {tab !== 'mapa' && (
         <div className="top-actions">
@@ -445,7 +474,7 @@ export default function App() {
         </div>
       )}
 
-      <TabBar tab={tab} onChange={(t) => { setTab(t); setSearchOpen(false) }} dots={{ juegos: store.ready && !dailyDone(store.progress) }} />
+      <TabBar tab={tab} onChange={(t) => { setTab(t); setSearchOpen(false) }} dots={{ juegos: store.ready && !dailyDone(store.progress), pendientes: tasksDue > 0 }} />
 
       {store.error && <p className="banner">{store.error}</p>}
 

@@ -3,6 +3,7 @@ import Icon, { ICONS } from './Icon.jsx'
 export const TABS = [
   { id: 'mapa', label: 'Mapa' },
   { id: 'estudio', label: 'Estudio' },
+  { id: 'pendientes', label: 'Pendientes' },
   { id: 'juegos', label: 'Juegos' },
 ]
 

@@ -62,3 +62,30 @@ export async function disablePush() {
   await supabase.from('universe_push').delete().eq('endpoint', sub.endpoint)
   await sub.unsubscribe()
 }
+
+// ¿Este teléfono ya está suscrito y guardado en la nube? (lo usan Constancia y Pendientes)
+export async function deviceHasPush() {
+  if (pushState() !== 'ok' || Notification.permission !== 'granted') return false
+  const sub = await currentSub()
+  if (!sub) return false
+  const { data } = await supabase.from('universe_push').select('endpoint').eq('endpoint', sub.endpoint).maybeSingle()
+  return !!data
+}
+
+// Activa los avisos en este teléfono sin cambiar las horas de Constancia. Hay que llamarla desde un toque.
+export async function enableDevicePush() {
+  // El permiso se pide primero, mientras el toque todavía cuenta (iOS lo exige).
+  if ((await Notification.requestPermission()) !== 'granted') throw new Error('Permite las notificaciones en Ajustes del iPhone.')
+  const times = (await loadPushTimes().catch(() => null)) ?? []
+  await savePushTimes(times)
+}
+
+// Pide a la función de Supabase un aviso de prueba para los teléfonos de esta cuenta.
+export async function testPush() {
+  const { data: s } = await supabase.auth.getSession()
+  if (!s.session) throw new Error('Entra a tu cuenta (botón de nube) para probar los avisos.')
+  const { data, error } = await supabase.functions.invoke('pendientes-push', { body: { test: true } })
+  if (error) throw new Error('No se pudo mandar el aviso de prueba.')
+  if (!data?.sent) throw new Error('No hay teléfonos con avisos activados en esta cuenta.')
+  return data
+}

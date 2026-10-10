@@ -4,6 +4,7 @@ import * as db from './db.js'
 import { DEFAULT_GALAXY, isGalaxy, makeEdge, makeRoot, ROOT_ID, sameGalaxy } from './model.js'
 import { renameLinks } from './markdown.js'
 import { PROGRESS_ID, makeProgress, withDay } from '../games/progress.js'
+import { isPlannerEntry } from '../tasks/tasks.js'
 
 export function useStore() {
   const [state, setState] = useState({ nodes: [], edges: [], entries: [], ready: false, error: null })
@@ -161,6 +162,7 @@ export function useStore() {
 
 // Agrega el día de hoy a la racha dentro del mismo guardado (una sola vez por día).
 function withActivity(change, entries) {
+  if (onlyPlanner(change, entries)) return change
   const puts = change.putEntries ?? []
   const i = puts.findIndex((e) => e.id === PROGRESS_ID)
   if (i >= 0) {
@@ -174,4 +176,13 @@ function withActivity(change, entries) {
   if (fields === cur.fields) return change
   const now = Date.now()
   return { ...change, putEntries: [...puts, { ...cur, fields, createdAt: cur.createdAt || now, updatedAt: now }] }
+}
+
+// Palomear un pendiente o un hábito no es estudiar: esos cambios no tocan la racha.
+function onlyPlanner(change, entries) {
+  const { putNodes = [], putEdges = [], delNodes = [], delEdges = [], putEntries = [], delEntries = [], clear } = change
+  if (clear || putNodes.length || putEdges.length || delNodes.length || delEdges.length) return false
+  if (!putEntries.length && !delEntries.length) return false
+  if (!putEntries.every(isPlannerEntry)) return false
+  return delEntries.every((id) => isPlannerEntry(entries.find((e) => e.id === id)))
 }

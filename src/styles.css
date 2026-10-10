@@ -1613,3 +1613,34 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .push-time .input { flex: 1; }
 .push-time .link-danger { margin-top: 0; }
 .constancia-card .continue-title { font-size: 22px; }
+
+/* ---------- Pendientes (antes la app Centro) ---------- */
+:root { --check: var(--accent, var(--link)); --check-ink: var(--bg); }
+.section-label.first { margin-top: 6px; }
+.section-label.late { color: var(--danger); }
+.task-row { gap: 4px; padding-left: 4px; }
+.task-check { flex: none; width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--text-3); border-radius: 50%; }
+.task-check.on { color: var(--check); }
+.task-check:active { transform: scale(0.9); }
+.task-main { flex: 1; min-width: 0; align-self: stretch; justify-content: center; text-align: left; padding: 4px 0; }
+.task-row.done .entry-title { color: var(--text-3); text-decoration: line-through; }
+.entry-sub.late { color: var(--danger); }
+.prio-dot { display: inline-block; width: 7px; height: 7px; margin: 0 7px 2px 0; border-radius: 50%; background: var(--danger); vertical-align: middle; }
+.done-toggle { font-size: 17px; margin-top: 22px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-row .field { min-width: 0; }
+input[type='time'].input { min-height: var(--tap); }
+.input:disabled, .select:disabled { opacity: 0.45; }
+.select { padding-right: 34px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16'%3E%3Cpath d='m7 10 5 5 5-5' fill='none' stroke='%2391919b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+.seg2.wrap { flex-wrap: wrap; }
+.seg2.wrap button { flex: 1 0 auto; padding: 0 10px; }
+.link-btn { display: inline-flex; align-items: center; min-height: 36px; margin: -8px 0 12px; color: var(--link); font-size: 14px; }
+.hint.small { font-size: 13px; margin: -6px 0 14px; }
+.sfield .hint.small { margin: 8px 0 0; }
+.slot-card { margin: 0 0 14px; padding: 12px; background: var(--bg-raise, var(--surface)); border: 1px solid var(--line); border-radius: var(--r); }
+.slot-card .field:last-child { margin-bottom: 0; }
+.slot-head { display: flex; align-items: center; margin-bottom: 8px; }
+.slot-head .sfield-label { margin: 0; }
+.day-picks { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px; }
+.day-picks button { min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); font-size: 13px; font-weight: 500; }
+.day-picks button.on { background: var(--check); border-color: var(--check); color: var(--check-ink); font-weight: 600; }
