@@ -5,13 +5,13 @@ import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import {
-  CATEGORIES, DAYS, HABIT, PRIORITIES, REMINDERS, SETTINGS_ID,
-  dueLabel, groupTasks, habitStreak, habitsToday, joinLocal, makeHabit, makeSettings, makeTask,
-  reminderLabel, splitLocal, timeLabel, toggleHabitDay,
+  CATEGORIES, DAYS, HABIT, PRIORITIES, REMINDERS, REPEATS, SETTINGS_ID, TASK, TYPES,
+  categoriesIn, dueLabel, groupTasks, habitStreak, habitsToday, isFinished, joinLocal, makeHabit, makeSettings, makeTask,
+  nextOccurrence, reminderLabel, splitLocal, timeLabel, toggleHabitDay,
 } from './tasks.js'
-import { enableDevicePush, pushState, testPush, deviceHasPush } from '../lib/push.js'
+import { deviceHasPush, enableDevicePush, pushState, testPush } from '../lib/push.js'
 
-// Pestaña Pendientes (antes la app Centro): tareas con fecha y aviso, y hábitos de cada día.
+// Pestaña Pendientes (antes la app Centro): pendientes con fecha y aviso, y hábitos de cada día.
 const GROUPS = [
   ['atrasados', 'Atrasados'],
   ['hoy', 'Hoy'],
@@ -20,6 +20,7 @@ const GROUPS = [
   ['despues', 'Después'],
   ['sinFecha', 'Sin fecha'],
 ]
+const DONE_SHOWN = 30
 
 function useNow() {
   const [now, setNow] = useState(() => new Date())
@@ -35,9 +36,15 @@ function useNow() {
 export default function TasksTab({ store, toast }) {
   const now = useNow()
   const entries = store.entries
-  const groups = useMemo(() => groupTasks(entries, now), [entries, now])
+  const [category, setCategory] = useState(null)
+  const [query, setQuery] = useState('')
+  const [searching, setSearching] = useState(false)
+  const filter = useMemo(() => ({ category, query }), [category, query])
+  const groups = useMemo(() => groupTasks(entries, now, filter), [entries, now, filter])
   const todayHabits = useMemo(() => habitsToday(entries, now), [entries, now])
   const habits = useMemo(() => entries.filter((e) => e.kind === HABIT).sort((a, b) => a.createdAt - b.createdAt), [entries])
+  const cats = useMemo(() => categoriesIn(entries), [entries])
+  const total = useMemo(() => entries.reduce((n, e) => n + (e.kind === TASK ? 1 : 0), 0), [entries])
   const settings = entries.find((e) => e.id === SETTINGS_ID) ?? makeSettings()
 
   const [editing, setEditing] = useState(null) // { entry, isNew }
@@ -46,26 +53,30 @@ export default function TasksTab({ store, toast }) {
   const [showDone, setShowDone] = useState(false)
 
   const undoDel = useUndoDelete((e) => store.deleteEntry(e.id), (e) => store.saveEntry(e))
-
   const pendingCount = GROUPS.reduce((n, [k]) => n + groups[k].length, 0)
+  const filtering = !!category || !!query.trim()
 
-  const toggleDone = (e) => {
+  const toggleDone = async (e) => {
     const done = !e.fields.done
-    store.saveEntry({ ...e, fields: { ...e.fields, done, doneAt: done ? Date.now() : null } })
-    if (done) toast?.('Hecho')
+    const saved = { ...e, fields: { ...e.fields, done, doneAt: done ? Date.now() : null } }
+    // Si se repite, al terminarlo aparece el siguiente (como en Centro).
+    const next = done ? nextOccurrence(e, now) : null
+    await store.saveEntries(next ? [saved, next] : [saved])
+    if (done) toast?.(next ? `Hecho. El siguiente: ${dueLabel(next.fields.dueAt, now)}` : 'Hecho')
   }
+
+  const newTask = () => setEditing({ entry: makeTask({ dueAt: nextHour(now), category: category ?? 'Personal' }), isNew: true })
 
   return (
     <div className="page">
       <PageScroll title="Pendientes">
-        <div className="page-head">
-          <h1 className="page-title">Pendientes</h1>
-          <button className="round-btn" aria-label="Nuevo pendiente" onClick={() => setEditing({ entry: makeTask({ dueAt: nextHour(now) }), isNew: true })}>
-            <Icon d={ICONS.plus} size={20} stroke={2} />
-          </button>
-        </div>
+        <h1 className="page-title">Pendientes</h1>
+        <button className="new-task" onClick={newTask}>
+          <span className="new-task-plus"><Icon d={ICONS.plus} size={18} stroke={2.2} /></span>
+          Nuevo pendiente
+        </button>
 
-        {todayHabits.length > 0 && (
+        {todayHabits.length > 0 && !filtering && (
           <>
             <h2 className="section-label first">Hábitos de hoy</h2>
             <ul className="entry-list">
@@ -84,6 +95,23 @@ export default function TasksTab({ store, toast }) {
           </>
         )}
 
+        {(cats.length > 1 || total > 8) && (
+          <div className="task-filters">
+            {/* Tocar una categoría filtra; tocarla otra vez quita el filtro. */}
+            <div className="chips" role="group" aria-label="Filtrar">
+              {total > 8 && (
+                <button className={'chip-icon' + (searching ? ' on' : '')} aria-label="Buscar pendientes" aria-pressed={searching} onClick={() => { if (searching) setQuery(''); setSearching(!searching) }}>
+                  <span><Icon d={ICONS.buscar} size={17} stroke={2} /></span>
+                </button>
+              )}
+              {cats.length > 1 && cats.map((c) => (
+                <button key={c} className={category === c ? 'on' : ''} aria-pressed={category === c} onClick={() => setCategory(category === c ? null : c)}><span>{c}</span></button>
+              ))}
+            </div>
+            {searching && <input className="input note-search" type="search" placeholder="Buscar pendientes" autoFocus value={query} onChange={(e) => setQuery(e.target.value)} />}
+          </div>
+        )}
+
         {GROUPS.map(([key, label]) =>
           groups[key].length ? (
             <section key={key}>
@@ -95,18 +123,24 @@ export default function TasksTab({ store, toast }) {
 
         {pendingCount === 0 && (
           <div className="empty-state">
-            <p className="empty-title">Nada pendiente</p>
-            <p className="hint center">Toca + para agregar algo con fecha y aviso.</p>
+            <span className="empty-icon kind-icon"><Icon d={ICONS.pendientes} size={26} /></span>
+            <p className="empty-title">{filtering ? 'Nada con ese filtro' : 'Nada pendiente'}</p>
+            {!filtering && <p className="hint center">Toca "Nuevo pendiente" para agregar algo con fecha y aviso.</p>}
           </div>
         )}
 
         {groups.hechos.length > 0 && (
           <>
-            <button className={'library-toggle done-toggle' + (showDone ? ' open' : '')} onClick={() => setShowDone((v) => !v)}>
+            <button className={'library-toggle done-toggle' + (showDone ? ' open' : '')} aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>
               <span>Hechos · {groups.hechos.length}</span>
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
-            {showDone && <TaskList items={groups.hechos.slice(0, 40)} now={now} onToggle={toggleDone} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={undoDel.remove} />}
+            {showDone && (
+              <>
+                <TaskList items={groups.hechos.slice(0, DONE_SHOWN)} now={now} onToggle={toggleDone} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={undoDel.remove} />
+                {groups.hechos.length > DONE_SHOWN && <p className="hint small center pad-top">Se muestran los {DONE_SHOWN} más recientes.</p>}
+              </>
+            )}
           </>
         )}
 
@@ -116,7 +150,7 @@ export default function TasksTab({ store, toast }) {
             <button className="entry-row" onClick={() => setSheet('habitos')}>
               <span className="entry-main">
                 <span className="entry-title">Hábitos</span>
-                <span className="entry-sub">{habits.length ? `${habits.length} ${habits.length === 1 ? 'hábito' : 'hábitos'}` : 'Agrega lo que haces cada semana'}</span>
+                <span className="entry-sub">{habits.length ? `${habits.length} ${habits.length === 1 ? 'hábito' : 'hábitos'}` : 'Lo que haces ciertos días a cierta hora'}</span>
               </span>
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
@@ -140,6 +174,7 @@ export default function TasksTab({ store, toast }) {
           key={editing.entry.id}
           entry={editing.entry}
           isNew={editing.isNew}
+          now={now}
           onClose={() => setEditing(null)}
           onSave={async (e) => { await store.saveEntry(e); setEditing(null) }}
           onDelete={(e) => { setEditing(null); undoDel.remove(e) }}
@@ -155,7 +190,7 @@ export default function TasksTab({ store, toast }) {
                   <button className="entry-row" onClick={() => setHabitEdit({ entry: h, isNew: false })}>
                     <span className="entry-main">
                       <span className="entry-title">{h.fields.title || 'Sin título'}</span>
-                      <span className="entry-sub">{slotsSummary(h.fields.slots)}{streakText(habitStreak(h, now))}</span>
+                      <span className="entry-sub">{h.fields.active === false ? 'En pausa' : slotsSummary(h.fields.slots)}{streakText(habitStreak(h, now))}</span>
                     </span>
                     <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
                   </button>
@@ -163,7 +198,7 @@ export default function TasksTab({ store, toast }) {
               ))}
             </ul>
           ) : (
-            <p className="hint">Un hábito es algo que haces ciertos días a cierta hora (por ejemplo, ejercicio lunes, miércoles y viernes a las 3:00). Te avisa a esa hora y lo palomeas en "Hábitos de hoy".</p>
+            <p className="hint">Un hábito es algo que haces ciertos días a cierta hora (por ejemplo, ejercicio lunes, miércoles y viernes a las 3:00 pm). Te avisa a esa hora y lo palomeas en "Hábitos de hoy".</p>
           )}
         </Sheet>
       )}
@@ -189,17 +224,23 @@ function TaskList({ items, now, onToggle, onOpen, onDelete }) {
     <ul className="entry-list">
       {items.map((e) => {
         const f = e.fields
-        const late = !f.done && f.dueAt && new Date(f.dueAt) < now
+        const finished = isFinished(f, now)
+        const late = !finished && f.dueAt && new Date(f.dueAt) < now
+        const extra = [
+          f.type && f.type !== 'Tarea' ? f.type : null,
+          f.category || null,
+          f.repeat && f.repeat !== 'none' ? 'se repite' : null,
+          f.notes?.trim() ? 'nota' : null,
+        ].filter(Boolean)
         return (
           <SwipeRow key={e.id} onDelete={() => onDelete(e)}>
-            <div className={'entry-row task-row' + (f.done ? ' done' : '')}>
-              <CheckButton done={f.done} label={f.title} onClick={() => onToggle(e)} />
+            <div className={'entry-row task-row' + (finished ? ' done' : '')}>
+              <CheckButton done={finished} label={f.title} onClick={() => onToggle(e)} />
               <button className="entry-main task-main" onClick={() => onOpen(e)}>
-                <span className="entry-title">{f.priority === 'Alta' && !f.done && <i className="prio-dot" aria-label="Prioridad alta" />}{f.title || 'Sin título'}</span>
+                <span className="entry-title">{f.priority === 'Alta' && !finished && <i className="prio-dot" aria-label="Prioridad alta" />}{f.title || 'Sin título'}</span>
                 <span className={'entry-sub' + (late ? ' late' : '')}>
                   {dueLabel(f.dueAt, now)}
-                  {f.category ? ` · ${f.category}` : ''}
-                  {f.notes?.trim() ? ' · nota' : ''}
+                  {extra.length ? ` · ${extra.join(' · ')}` : ''}
                 </span>
               </button>
             </div>
@@ -221,34 +262,29 @@ function CheckButton({ done, label, onClick }) {
   )
 }
 
-function TaskEditor({ entry, isNew, onClose, onSave, onDelete }) {
+function TaskEditor({ entry, isNew, now, onClose, onSave, onDelete }) {
   const f0 = entry.fields
   const start = splitLocal(f0.dueAt)
   const [title, setTitle] = useState(f0.title ?? '')
   const [date, setDate] = useState(start.date)
   const [time, setTime] = useState(start.time || '09:00')
+  const [type, setType] = useState(f0.type || 'Tarea')
   const [category, setCategory] = useState(f0.category || 'Personal')
   const [priority, setPriority] = useState(f0.priority || 'Media')
-  const [reminder, setReminder] = useState(f0.reminderMinutes ?? null)
+  const [reminder, setReminder] = useState(f0.reminderMinutes === undefined ? 0 : f0.reminderMinutes)
+  const [repeat, setRepeat] = useState(f0.repeat || 'none')
   const [notes, setNotes] = useState(f0.notes ?? '')
   const categories = CATEGORIES.includes(category) ? CATEGORIES : [...CATEGORIES, category]
   const reminders = REMINDERS.some(([m]) => m === reminder) ? REMINDERS : [...REMINDERS, [reminder, reminderLabel(reminder)]]
+  const dueAt = joinLocal(date, time)
+  const fire = dueAt && reminder != null ? new Date(new Date(dueAt).getTime() - reminder * 60000) : null
+  const firePast = fire && fire < now && !f0.done
 
-  const save = () => {
-    const dueAt = joinLocal(date, time)
+  const save = () =>
     onSave({
       ...entry,
-      fields: {
-        ...f0,
-        title: title.trim(),
-        dueAt,
-        category,
-        priority,
-        reminderMinutes: dueAt ? reminder : null,
-        notes,
-      },
+      fields: { ...f0, title: title.trim(), dueAt, type, category, priority, reminderMinutes: dueAt ? reminder : null, repeat: dueAt ? repeat : 'none', notes },
     })
-  }
 
   return (
     <Sheet
@@ -258,8 +294,15 @@ function TaskEditor({ entry, isNew, onClose, onSave, onDelete }) {
     >
       <label className="field">
         <span>Qué</span>
-        <input className="input" value={title} placeholder="Por ejemplo: entregar la actividad 5" autoFocus={isNew} onChange={(e) => setTitle(e.target.value)} />
+        <input className="input" value={title} placeholder="Por ejemplo: entregar la actividad 5" autoFocus={isNew} enterKeyHint="done" onChange={(e) => setTitle(e.target.value)} />
       </label>
+      <div className="field">
+        <span>Tipo</span>
+        <div className="seg2">
+          {TYPES.map((t) => <button key={t} className={type === t ? 'on' : ''} onClick={() => setType(t)}>{t}</button>)}
+        </div>
+        {type === 'Recordatorio' && <p className="hint small after">Solo es un aviso: cuando pasa su hora se va a Hechos.</p>}
+      </div>
       <div className="field-row">
         <label className="field">
           <span>Fecha</span>
@@ -275,12 +318,23 @@ function TaskEditor({ entry, isNew, onClose, onSave, onDelete }) {
       ) : (
         <p className="hint small">Sin fecha no hay aviso.</p>
       )}
-      <label className="field">
-        <span>Aviso</span>
-        <select className="input select" value={reminder == null ? '' : String(reminder)} disabled={!date} onChange={(e) => setReminder(e.target.value === '' ? null : Number(e.target.value))}>
-          {reminders.map(([m, l]) => <option key={String(m)} value={m == null ? '' : String(m)}>{l}</option>)}
-        </select>
-      </label>
+      {date && (
+        <div className="field-row">
+          <label className="field">
+            <span>Aviso</span>
+            <select className="input select" value={reminder == null ? '' : String(reminder)} onChange={(e) => setReminder(e.target.value === '' ? null : Number(e.target.value))}>
+              {reminders.map(([m, l]) => <option key={String(m)} value={m == null ? '' : String(m)}>{l}</option>)}
+            </select>
+          </label>
+          <label className="field">
+            <span>Repetir</span>
+            <select className="input select" value={repeat} onChange={(e) => setRepeat(e.target.value)}>
+              {REPEATS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+      {date && firePast && <p className="hint small warn-text">Esa hora de aviso ya pasó: no va a sonar.</p>}
       <div className="field">
         <span>Categoría</span>
         <div className="seg2 wrap">
@@ -306,8 +360,10 @@ function TaskEditor({ entry, isNew, onClose, onSave, onDelete }) {
 function HabitEditor({ entry, isNew, onClose, onSave, onDelete }) {
   const f0 = entry.fields
   const [title, setTitle] = useState(f0.title ?? '')
+  const [goal, setGoal] = useState(f0.goal ?? '')
   const [notes, setNotes] = useState(f0.notes ?? '')
-  const [slots, setSlots] = useState(() => (f0.slots?.length ? f0.slots : makeHabit().fields.slots).map((s) => ({ ...s })))
+  const [active, setActive] = useState(f0.active !== false)
+  const [slots, setSlots] = useState(() => (f0.slots?.length ? f0.slots : makeHabit().fields.slots).map((s) => ({ ...s, days: [...s.days] })))
 
   const setSlot = (i, patch) => setSlots((list) => list.map((s, j) => (j === i ? { ...s, ...patch } : s)))
   const toggleDay = (i, d) => {
@@ -320,16 +376,20 @@ function HabitEditor({ entry, isNew, onClose, onSave, onDelete }) {
     <Sheet
       title={isNew ? 'Nuevo hábito' : 'Hábito'}
       onClose={onClose}
-      footer={<button className="primary" disabled={!valid} onClick={() => onSave({ ...entry, fields: { ...f0, title: title.trim(), notes, slots } })}>Guardar</button>}
+      footer={<button className="primary" disabled={!valid} onClick={() => onSave({ ...entry, fields: { ...f0, title: title.trim(), goal: goal.trim(), notes, active, slots } })}>Guardar</button>}
     >
       <label className="field">
         <span>Hábito</span>
         <input className="input" value={title} placeholder="Por ejemplo: ejercicio" autoFocus={isNew} onChange={(e) => setTitle(e.target.value)} />
       </label>
+      <label className="field">
+        <span>Meta (opcional)</span>
+        <input className="input" value={goal} placeholder="Por ejemplo: 5 días por semana" onChange={(e) => setGoal(e.target.value)} />
+      </label>
       {slots.map((s, i) => (
         <div className="slot-card" key={i}>
           <div className="slot-head">
-            <span className="sfield-label">Horario {slots.length > 1 ? i + 1 : ''}</span>
+            <span className="sfield-label">{slots.length > 1 ? `Horario ${i + 1}` : 'Horario'}</span>
             {slots.length > 1 && <button className="para-del" onClick={() => setSlots((l) => l.filter((_, j) => j !== i))}>Quitar</button>}
           </div>
           <div className="day-picks" role="group" aria-label="Días">
@@ -369,6 +429,16 @@ function HabitEditor({ entry, isNew, onClose, onSave, onDelete }) {
         <span>Notas</span>
         <textarea className="input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
+      {!isNew && (
+        <div className="field">
+          <span>Estado</span>
+          <div className="seg2">
+            <button className={active ? 'on' : ''} onClick={() => setActive(true)}>Activo</button>
+            <button className={!active ? 'on' : ''} onClick={() => setActive(false)}>En pausa</button>
+          </div>
+          {!active && <p className="hint small after">En pausa no sale en "Hábitos de hoy" ni manda avisos.</p>}
+        </div>
+      )}
       {!isNew && <button className="delete-btn" onClick={() => onDelete(entry)}>Eliminar hábito</button>}
     </Sheet>
   )
@@ -379,6 +449,7 @@ function AlertsSheet({ settings, onSave, toast, onClose }) {
   const [busy, setBusy] = useState(false)
   const state = pushState()
   const on = !!settings.fields.avisos
+  const setOn = (avisos) => onSave({ ...settings, fields: { ...settings.fields, avisos }, createdAt: settings.createdAt || Date.now() })
 
   useEffect(() => {
     let live = true
@@ -405,13 +476,13 @@ function AlertsSheet({ settings, onSave, toast, onClose }) {
       <div className="sfield">
         <span className="sfield-label">1. Este iPhone</span>
         {state === 'install' ? (
-          <p className="hint small">Abre Universe desde el ícono de tu pantalla de inicio para poder recibir avisos.</p>
+          <p className="hint small after">Abre Universe desde el ícono de tu pantalla de inicio para poder recibir avisos.</p>
         ) : state === 'denied' ? (
-          <p className="hint small">Las notificaciones están bloqueadas. Permítelas en Ajustes del iPhone, en Notificaciones, Universe.</p>
+          <p className="hint small after">Las notificaciones están bloqueadas. Permítelas en Ajustes del iPhone, en Notificaciones, Universe.</p>
         ) : state === 'unsupported' ? (
-          <p className="hint small">Este teléfono no puede recibir avisos (se necesita iOS 16.4 o más nuevo).</p>
+          <p className="hint small after">Este teléfono no puede recibir avisos (se necesita iOS 16.4 o más nuevo).</p>
         ) : device ? (
-          <p className="hint small">Listo: este iPhone recibe avisos.</p>
+          <p className="hint small after">Listo: este iPhone recibe avisos.</p>
         ) : (
           <button className="secondary" disabled={busy || device === null} onClick={() => run(async () => { await enableDevicePush(); setDevice(true) }, 'Avisos activados en este iPhone')}>Activar avisos en este iPhone</button>
         )}
@@ -420,10 +491,10 @@ function AlertsSheet({ settings, onSave, toast, onClose }) {
       <div className="sfield">
         <span className="sfield-label">2. Pendientes y hábitos</span>
         <div className="seg2">
-          <button className={!on ? 'on' : ''} onClick={() => onSave({ ...settings, fields: { ...settings.fields, avisos: false } })}>Apagados</button>
-          <button className={on ? 'on' : ''} onClick={() => onSave({ ...settings, fields: { ...settings.fields, avisos: true } })}>Prendidos</button>
+          <button className={!on ? 'on' : ''} onClick={() => setOn(false)}>Apagados</button>
+          <button className={on ? 'on' : ''} onClick={() => setOn(true)}>Prendidos</button>
         </div>
-        <p className="hint small">Mientras sigas usando la app Centro, déjalos apagados para que no te lleguen dobles.</p>
+        <p className="hint small after">Mientras sigas usando la app Centro, déjalos apagados para que no te lleguen dobles.</p>
       </div>
 
       {device && (
@@ -457,9 +528,8 @@ function streakText(n) {
 function slotsSummary(slots = []) {
   return slots
     .map((s) => {
-      const days = s.days.length === 7 ? 'Diario' : s.days.length === 5 && [1, 2, 3, 4, 5].every((d) => s.days.includes(d)) ? 'L a V' : s.days.map((d) => DAYS[d]).join(', ')
+      const days = s.days.length === 7 ? 'Diario' : s.days.length === 5 && [1, 2, 3, 4, 5].every((d) => s.days.includes(d)) ? 'Lun a Vie' : s.days.map((d) => DAYS[d]).join(', ')
       return `${days} ${timeLabel(atTime(new Date(), s.time))}${s.biweekly ? ' (cada 2 sem.)' : ''}`
     })
     .join(' · ')
 }
-

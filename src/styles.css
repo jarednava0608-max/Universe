@@ -1616,7 +1616,24 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 
 /* ---------- Pendientes (antes la app Centro) ---------- */
 :root { --check: var(--accent, var(--link)); --check-ink: var(--bg); }
-.section-label.first { margin-top: 6px; }
+.section-label.first { margin-top: 26px; }
+.new-task { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 0 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 16px; font-weight: 500; text-align: left; }
+.new-task:active { background: var(--surface-2); }
+.new-task-plus { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--btn); color: var(--btn-ink); }
+:root[data-style='jw'] .new-task { border-radius: 6px; }
+:root[data-style='jw'] .new-task-plus { background: var(--accent); }
+.task-filters { margin-top: 24px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px 4px; padding: 0 18px; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex: none; min-height: var(--tap); display: grid; align-items: center; }
+.chips button span { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); font-size: 14px; font-weight: 500; }
+.chips button.on span { background: var(--btn); border-color: var(--btn); color: var(--btn-ink); }
+:root[data-style='jw'] .chips button.on span { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+.task-filters .note-search { margin: 6px 0 0; }
+.chips .chip-icon span { padding: 0; width: 34px; justify-content: center; }
+.hint.small.after { margin: 8px 0 0; }
+.warn-text { color: var(--yo); }
+.pad-top { margin-top: 10px; }
 .section-label.late { color: var(--danger); }
 .task-row { gap: 4px; padding-left: 4px; }
 .task-check { flex: none; width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--text-3); border-radius: 50%; }
