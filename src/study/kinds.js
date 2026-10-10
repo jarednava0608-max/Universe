@@ -111,6 +111,27 @@ export const KINDS = {
     }),
   },
 
+  // JW Broadcasting: notas de los programas y discursos del mes. Funcionan como Notas
+  // (título + texto libre que se guarda solo).
+  broadcasting: {
+    label: 'JW Broadcasting',
+    short: 'Broadcasting',
+    desc: 'Tus notas de los programas y discursos',
+    icon: 'M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 21h8M12 17v4',
+    notes: true,
+    fields: [
+      { key: 'titulo', label: 'Título', type: 'line' },
+      { key: 'texto', label: 'Nota', type: 'text', hint: 'Puedes usar Markdown: ## subtítulos, **negritas**, listas, - [ ] tareas y tablas' },
+    ],
+    title: (e) => e.fields.titulo || firstLine(e.fields.texto) || 'Programa nuevo',
+    subtitle: (e) => [noteDate(e.updatedAt), firstLine(e.fields.titulo ? e.fields.texto : lines(e.fields.texto).slice(1).join(' ')) || ''].filter(Boolean).join(' · '),
+    toNode: (f) => ({
+      title: f.titulo || firstLine(f.texto) || 'Broadcasting',
+      idea: f.texto,
+      textos: refsIn(f.texto),
+    }),
+  },
+
   // Ideas que me ayudan: la imagen que traigo en la cabeza cuando algo me sale mejor
   // ("cantar como Omar Camacho", "jugar como uno de Tigres"). Son personales: no van al mapa.
   idea: {
@@ -178,7 +199,7 @@ export const practicedOn = (f = {}, day) => (f.ensayos ?? []).filter((x) => x?.t
 const isoOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 export const clock = (secs) => `${Math.floor(Math.abs(secs) / 60)}:${String(Math.floor(Math.abs(secs) % 60)).padStart(2, '0')}`
 
-export const KIND_ORDER = ['diario', 'reunion', 'estudio', 'reflexion', 'idea', 'asignacion']
+export const KIND_ORDER = ['diario', 'reunion', 'estudio', 'reflexion', 'broadcasting', 'idea', 'asignacion']
 
 export function makeEntry(kind) {
   const def = KINDS[kind]
@@ -222,6 +243,7 @@ const ALIASES = {
   reunion: { type: 'tipo', date: 'fecha', title: 'titulo', título: 'titulo', idea_principal: 'idea', paragraphs: 'parrafos', párrafos: 'parrafos', notes: 'notas', aplicación: 'aplicacion', application: 'aplicacion' },
   estudio: { title: 'titulo', título: 'titulo', idea_central: 'idea', hook: 'gancho', extracción: 'extraccion', golpe_logico: 'golpe', golpe_lógico: 'golpe', aha_extra: 'aha', summary: 'resumen' },
   reflexion: { title: 'titulo', título: 'titulo', nota: 'texto', note: 'texto', notas: 'texto', contenido: 'texto' },
+  broadcasting: { title: 'titulo', título: 'titulo', programa: 'titulo', nota: 'texto', note: 'texto', notas: 'texto', contenido: 'texto' },
   asignacion: { date: 'fecha', part: 'parte', tipo: 'parte', minutes: 'minutos', title: 'titulo', título: 'titulo', tema: 'titulo', escenario: 'titulo', lectura: 'texto', cita: 'texto', lección: 'leccion', helper: 'ayudante', outline: 'bosquejo', lo_que_voy_a_decir: 'bosquejo', notes: 'notas' },
   idea: { title: 'titulo', título: 'titulo', idea: 'titulo', para_qué: 'para', para_que: 'para', como_me_la_imagino: 'como', cómo: 'como', imagen: 'como', que_cambia: 'cambia', qué_cambia: 'cambia', resultado: 'cambia', notes: 'notas' },
 }
