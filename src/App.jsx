@@ -21,7 +21,7 @@ import StudyTab from './study/StudyTab.jsx'
 import GamesTab, { Daily } from './games/GamesTab.jsx'
 import Constancia from './games/Constancia.jsx'
 import TasksTab from './tasks/TasksTab.jsx'
-import { groupTasks } from './tasks/tasks.js'
+import { dueCount } from './tasks/tasks.js'
 import Review, { reviewSummary } from './games/Review.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import ChapterReader from './components/ChapterReader.jsx'
@@ -349,13 +349,8 @@ export default function App() {
     setTimeout(() => openNote(id), 50)
   }
 
-  // Para "Hoy" en Estudio: cuánto toca repasar y si ya hiciste el Reto del día.
   // Puntito en Pendientes si hay algo atrasado o para hoy.
-  const tasksDue = useMemo(() => {
-    if (!store.ready) return 0
-    const g = groupTasks(store.entries)
-    return g.atrasados.length + g.hoy.length
-  }, [store.ready, store.entries])
+  const tasksDue = useMemo(() => (store.ready ? dueCount(store.entries) : 0), [store.ready, store.entries])
   // Tocar un aviso con la app abierta: el service worker pide abrir la pestaña.
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
@@ -363,6 +358,7 @@ export default function App() {
     navigator.serviceWorker.addEventListener('message', onMsg)
     return () => navigator.serviceWorker.removeEventListener('message', onMsg)
   }, [])
+  // Para "Hoy" en Estudio: cuánto toca repasar y si ya hiciste el Reto del día.
   const reviewToday = useMemo(() => (store.ready && tab === 'estudio' ? reviewSummary(store) : { due: 0, fresh: 0 }), [store.ready, tab, store.nodes, store.entries, store.progress]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!store.ready) return <div className="boot" />
