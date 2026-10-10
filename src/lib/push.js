@@ -23,7 +23,8 @@ async function currentSub() {
   return reg.pushManager.getSubscription()
 }
 
-// Horas guardadas para este teléfono (null si los avisos están apagados).
+// Horas de Constancia guardadas para este teléfono (null si el teléfono no está registrado;
+// [] si está registrado solo para los avisos de Pendientes).
 export async function loadPushTimes() {
   if (pushState() !== 'ok') return null
   const sub = await currentSub()
@@ -56,6 +57,15 @@ export async function savePushTimes(times) {
   if (error) throw new Error('No se pudo guardar. Intenta de nuevo.')
 }
 
+// Apaga los avisos de Constancia en este teléfono sin quitarlo: los de Pendientes siguen llegando.
+export async function clearPushTimes() {
+  const sub = await currentSub()
+  if (!sub) return
+  const { error } = await supabase.from('universe_push').update({ times: [], updated_at: new Date().toISOString() }).eq('endpoint', sub.endpoint)
+  if (error) throw error
+}
+
+// Quita este teléfono por completo (ya no le llega ningún aviso).
 export async function disablePush() {
   const sub = await currentSub()
   if (!sub) return

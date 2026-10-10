@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { GameScreen } from './ui.jsx'
 import RefLink from '../components/RefLink.jsx'
 import { constanciaDays, restartConstancia, todayISO } from './progress.js'
-import { DEFAULT_TIMES, disablePush, loadPushTimes, pushState, savePushTimes } from '../lib/push.js'
+import { DEFAULT_TIMES, clearPushTimes, loadPushTimes, pushState, savePushTimes } from '../lib/push.js'
 
 // Constancia: días seguidos de una meta personal. A propósito no dice cuál es.
 const TEXTS = [
@@ -75,7 +75,8 @@ function Reminders({ toast }) {
   const [times, setTimes] = useState(DEFAULT_TIMES)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
-    loadPushTimes().then((t) => { if (t) { setOn(true); setTimes(t.length ? t : DEFAULT_TIMES) } }).catch(() => {})
+    // Sin horas = el teléfono solo está registrado para los avisos de Pendientes.
+    loadPushTimes().then((t) => { if (t?.length) { setOn(true); setTimes(t) } }).catch(() => {})
   }, [])
 
   async function save() {
@@ -91,7 +92,7 @@ function Reminders({ toast }) {
   }
   async function off() {
     setBusy(true)
-    try { await disablePush(); setOn(false); toast('Avisos apagados.') } catch { toast('No se pudo. Intenta de nuevo.') }
+    try { await clearPushTimes(); setOn(false); toast('Avisos apagados.') } catch { toast('No se pudo. Intenta de nuevo.') }
     setBusy(false)
   }
 
