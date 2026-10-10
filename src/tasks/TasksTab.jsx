@@ -21,6 +21,9 @@ const GROUPS = [
   ['sinFecha', 'Sin fecha'],
 ]
 const DONE_SHOWN = 30
+// En estas secciones los recordatorios ("faltan 3 días"...) se juntan en un renglón para que se vean
+// los pendientes de verdad; los de hoy y mañana sí se ven sueltos.
+const FOLD = new Set(['semana', 'despues'])
 
 function useNow() {
   const [now, setNow] = useState(() => new Date())
@@ -114,10 +117,17 @@ export default function TasksTab({ store, toast }) {
 
         {GROUPS.map(([key, label]) =>
           groups[key].length ? (
-            <section key={key}>
-              <h2 className={'section-label' + (key === 'atrasados' ? ' late' : '')}>{label} · {groups[key].length}</h2>
-              <TaskList items={groups[key]} now={now} onToggle={toggleDone} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={undoDel.remove} />
-            </section>
+            <GroupSection
+              key={key}
+              id={key}
+              label={label}
+              items={groups[key]}
+              now={now}
+              foldReminders={FOLD.has(key) && !filtering}
+              onToggle={toggleDone}
+              onOpen={(e) => setEditing({ entry: e, isNew: false })}
+              onDelete={undoDel.remove}
+            />
           ) : null,
         )}
 
@@ -216,6 +226,27 @@ export default function TasksTab({ store, toast }) {
 
       {sheet === 'avisos' && <AlertsSheet settings={settings} onSave={store.saveEntry} toast={toast} onClose={() => setSheet(null)} />}
     </div>
+  )
+}
+
+function GroupSection({ id, label, items, now, foldReminders, onToggle, onOpen, onDelete }) {
+  const [open, setOpen] = useState(false)
+  const reminders = foldReminders ? items.filter((e) => e.fields.type === 'Recordatorio') : []
+  const shown = reminders.length ? items.filter((e) => e.fields.type !== 'Recordatorio') : items
+  return (
+    <section>
+      <h2 className={'section-label' + (id === 'atrasados' ? ' late' : '')}>{label}{shown.length ? ` · ${shown.length}` : ''}</h2>
+      {shown.length > 0 && <TaskList items={shown} now={now} onToggle={onToggle} onOpen={onOpen} onDelete={onDelete} />}
+      {reminders.length > 0 && (
+        <>
+          <button className={'fold-row' + (open ? ' open' : '') + (shown.length ? '' : ' alone')} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+            <span>{reminders.length} {reminders.length === 1 ? 'recordatorio programado' : 'recordatorios programados'}</span>
+            <span className="chev"><Icon d={ICONS.chev} size={15} stroke={2} /></span>
+          </button>
+          {open && <TaskList items={reminders} now={now} onToggle={onToggle} onOpen={onOpen} onDelete={onDelete} />}
+        </>
+      )}
+    </section>
   )
 }
 

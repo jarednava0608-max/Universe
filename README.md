@@ -7,6 +7,7 @@ Mapa de conocimiento personal para estudio bíblico, tipo Obsidian, pensado para
 - Búsqueda en títulos y contenido.
 - "Pegar conocimiento" (JSON generado por Claude) con vista previa antes de guardar.
 - Exportar e importar respaldo en JSON. Datos guardados en el navegador (IndexedDB).
+- Pendientes (antes la app Centro): tareas con fecha y avisos, hábitos y entrada desde ChatGPT. Ver `docs/pendientes.md`.
 - Instalable en la pantalla de inicio (PWA).
 
 ```bash

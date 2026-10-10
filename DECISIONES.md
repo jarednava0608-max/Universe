@@ -69,10 +69,49 @@ Proyecto **Centro**:
 ## Pruebas que dejé en tus datos (las puedes borrar)
 
 - "Prueba: pendiente desde ChatGPT (puedes borrarlo)": prueba de la entrada desde ChatGPT. Está en Hechos.
-- "Prueba de avisos de Pendientes": prueba de los avisos (te debió llegar una notificación a las 12:31 pm). Está en Hechos.
+- "Prueba de avisos de Pendientes": prueba de los avisos. Si te llegó una notificación así a las 12:31 pm del
+  sábado, fue esta (Supabase la mandó sin error; no pude ver tu iPhone para confirmarlo). Está en Hechos.
 - En `universe_intake` quedó una fila `prueba_temporal_desactivada` con una huella inválida (no sirve para nada).
   No la borré porque pediste no borrar nada; se puede borrar sin problema.
 
-## Pendiente de revisar contigo (no lo hice porque no se puede deshacer o necesita tu OK)
+## La copia de Centro
 
-Ver "Qué falta" en el resumen final (`docs/pendientes.md`, sección "Pasar de Centro a Universe").
+- Copié **66 pendientes y 5 hábitos** (con sus 11 horarios) a Universe, con ids fijos `centro-<id>` y
+  `centro-habito-<id>`. Revisé que títulos, fechas, notas y palomitas quedaran idénticos (misma huella MD5
+  de los dos lados). Centro **no se tocó**: sigue funcionando igual.
+- No copié los recordatorios automáticos de hábitos de Centro (los que creaba el cron cada día): en Universe
+  el hábito mismo avisa a su hora.
+- Ya están en tu cuenta y le llegan a la versión actual de Universe en tu iPhone, pero **no se ven** ahí
+  (esa versión no tiene la pestaña). No estorban.
+- Si sigues usando Centro antes de pasarte, lo nuevo de Centro no aparece solo en Universe: pídeme
+  "pasa lo nuevo de Centro" y lo vuelvo a correr (no duplica nada).
+
+## Cambio en Constancia
+
+- "Apagar avisos" de Constancia antes quitaba el iPhone por completo; ahora solo borra las horas de
+  Constancia. Si no, al apagar Constancia también se apagaban los avisos de Pendientes.
+
+## Qué falta (no lo hice porque necesita tu OK o no se puede deshacer fácil)
+
+1. **Publicarlo.** Todo está en la rama `fusion-centro`. Vercel ya hizo una versión de prueba
+   (`universe-git-fusion-centro-jared-dcca.vercel.app`; puede pedirte entrar con tu cuenta de Vercel).
+   Para que salga en tu app de siempre hay que pasar la rama a `claude/zen-mendel-l8h9lw`. Dime "publícalo".
+2. **Prender los avisos nuevos y apagar los de Centro al mismo tiempo** (para que no lleguen dobles):
+   - Tú: Pendientes → Más → Avisos → "Activar avisos en este iPhone" → "Prendidos" → "Mandar un aviso de prueba".
+   - Yo: pausar los 2 cron de Centro (`centro_due_pushes` y `habitos-diarios`; se pueden volver a prender)
+     y, si quieres, suspender el servidor de Render. Dime "apaga Centro".
+3. **ChatGPT**: en la acción de tu GPT cambia la URL de
+   `https://fvbcptmbexvlyzgglvav.supabase.co/functions/v1/centro-intake` a
+   `https://jikonxuznepdyhcjyysh.supabase.co/functions/v1/pendientes-intake`. La clave y el formato son los mismos.
+   (Si tu GPT usa la de Render `/api/inbox`, avísame y lo vemos.)
+4. **Borrar para siempre** (solo cuando ya estés seguro, no lo hice): el proyecto de Supabase "Centro",
+   el proyecto `centro-pendientes` de Vercel, el servidor de Render y el ícono de Centro en tu iPhone.
+5. Borrar las 2 pruebas que dejé (están en Hechos) y la fila `prueba_temporal_desactivada`.
+
+## Otras notas
+
+- Hay una prueba que ya fallaba antes de mis cambios ("Mapa en blanco y conceptos de la reunión del 8 de
+  octubre", en `seeds.test.js`); no tiene que ver con Pendientes y no la toqué.
+- No pude correr `npm install` aquí (la red bloquea npm), así que probé con lo que había: pruebas con Bun,
+  la pestaña dibujada en un navegador a tamaño iPhone (negro, blanco, estilo Original y JW, con tus datos
+  reales) y la compilación real la hizo Vercel (salió bien).

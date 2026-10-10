@@ -1631,6 +1631,12 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .chips button.on span { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
 .task-filters .note-search { margin: 6px 0 0; }
 .chips .chip-icon span { padding: 0; width: 34px; justify-content: center; }
+.fold-row { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: var(--tap); margin: 6px 0 0; padding: 0 4px 0 14px; color: var(--text-2); font-size: 14px; text-align: left; }
+.fold-row.alone { margin-top: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+:root[data-style='jw'] .fold-row.alone { border-radius: 6px; }
+.fold-row .chev { color: var(--text-3); display: grid; transform: rotate(90deg); transition: transform 0.2s; }
+.fold-row.open .chev { transform: rotate(-90deg); }
+.fold-row + .entry-list { margin-top: 6px; }
 .hint.small.after { margin: 8px 0 0; }
 .warn-text { color: var(--yo); }
 .pad-top { margin-top: 10px; }
@@ -1640,6 +1646,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .task-check.on { color: var(--check); }
 .task-check:active { transform: scale(0.9); }
 .task-main { flex: 1; min-width: 0; align-self: stretch; justify-content: center; text-align: left; padding: 4px 0; }
+.task-row .entry-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
 .task-row.done .entry-title { color: var(--text-3); text-decoration: line-through; }
 .entry-sub.late { color: var(--danger); }
 .prio-dot { display: inline-block; width: 7px; height: 7px; margin: 0 7px 2px 0; border-radius: 50%; background: var(--danger); vertical-align: middle; }
