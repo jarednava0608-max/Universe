@@ -1,6 +1,6 @@
 // Service worker simple: la app funciona sin conexión.
 // HTML: red primero (para recibir versiones nuevas). Archivos con hash: caché primero.
-const CACHE = 'universe-v6'
+const CACHE = 'universe-v7'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icon.svg'])))
@@ -44,5 +44,18 @@ self.addEventListener('fetch', (e) => {
           return res
         }),
     ),
+  )
+})
+
+// Avisos de Constancia (los manda la función constancia-push de Supabase).
+self.addEventListener('push', (e) => {
+  const d = e.data ? e.data.json() : {}
+  e.waitUntil(self.registration.showNotification(d.title || 'Universe', { body: d.body || '', tag: d.tag, icon: '/icon-192.png', badge: '/icon-192.png' }))
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => (list[0] ? list[0].focus() : self.clients.openWindow('/'))),
   )
 })

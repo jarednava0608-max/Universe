@@ -19,6 +19,7 @@ import { dailyDone } from './games/daily.js'
 import Icon, { ICONS } from './components/Icon.jsx'
 import StudyTab from './study/StudyTab.jsx'
 import GamesTab, { Daily } from './games/GamesTab.jsx'
+import Constancia from './games/Constancia.jsx'
 import Review, { reviewSummary } from './games/Review.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import ChapterReader from './components/ChapterReader.jsx'
@@ -411,6 +412,8 @@ export default function App() {
           challenge={dailyDone(store.progress)}
           onReview={() => setPlay('review')}
           onChallenge={() => setPlay('daily')}
+          constancia={store.progress.constancia}
+          onConstancia={() => setPlay('constancia')}
           leidos={store.progress.leidos}
           readingPlan={store.progress.plan}
           onSetPlan={(plan) => store.updateProgress((f) => ({ ...f, plan }))}
@@ -422,6 +425,7 @@ export default function App() {
       )}
       {play === 'review' && <Review store={store} back="Estudio" onExit={() => setPlay(null)} />}
       {play === 'daily' && <Daily store={store} back="Estudio" onExit={() => setPlay(null)} />}
+      {play === 'constancia' && <Constancia store={store} toast={toast} back="Estudio" onExit={() => setPlay(null)} />}
       {tab === 'juegos' && <GamesTab store={store} toast={toast} />}
 
       {tab !== 'mapa' && (

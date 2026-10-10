@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GameScreen } from './ui.jsx'
 import RefLink from '../components/RefLink.jsx'
 import { constanciaDays, restartConstancia, todayISO } from './progress.js'
+import { DEFAULT_TIMES, disablePush, loadPushTimes, pushState, savePushTimes } from '../lib/push.js'
 
 // Constancia: días seguidos de una meta personal. A propósito no dice cuál es.
 const TEXTS = [
@@ -17,7 +18,7 @@ const TEXTS = [
   ['2 Corintios 4:16', 'Por dentro te renuevas día tras día.'],
 ]
 
-export default function Constancia({ store, toast, onExit }) {
+export default function Constancia({ store, toast, onExit, back }) {
   const c = store.progress.constancia
   const today = todayISO()
   const [start, setStart] = useState(today)
@@ -30,7 +31,7 @@ export default function Constancia({ store, toast, onExit }) {
 
   if (!c?.start) {
     return (
-      <GameScreen title="Constancia" onExit={onExit}>
+      <GameScreen title="Constancia" back={back} onExit={onExit}>
         <p className="hint">Cuenta los días seguidos de tu meta. Solo tú sabes cuál es.</p>
         <label className="field">
           <span>¿Desde cuándo?</span>
@@ -42,7 +43,7 @@ export default function Constancia({ store, toast, onExit }) {
   }
 
   return (
-    <GameScreen title="Constancia" onExit={onExit}>
+    <GameScreen title="Constancia" back={back} onExit={onExit}>
       <div className="constancia">
         <p className="constancia-num">{days}</p>
         <p className="constancia-label">{days === 1 ? 'día' : 'días'}</p>
@@ -62,6 +63,61 @@ export default function Constancia({ store, toast, onExit }) {
       >
         Volver a empezar
       </button>
+      <Reminders toast={toast} />
     </GameScreen>
+  )
+}
+
+// Avisos en la noche (web push). El aviso solo dice "Constancia" y los días.
+function Reminders({ toast }) {
+  const state = pushState()
+  const [on, setOn] = useState(false)
+  const [times, setTimes] = useState(DEFAULT_TIMES)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    loadPushTimes().then((t) => { if (t) { setOn(true); setTimes(t.length ? t : DEFAULT_TIMES) } }).catch(() => {})
+  }, [])
+
+  async function save() {
+    setBusy(true)
+    try {
+      await savePushTimes(times)
+      setOn(true)
+      toast(on ? 'Horas guardadas.' : 'Avisos activados.')
+    } catch (e) {
+      toast(e.message)
+    }
+    setBusy(false)
+  }
+  async function off() {
+    setBusy(true)
+    try { await disablePush(); setOn(false); toast('Avisos apagados.') } catch { toast('No se pudo. Intenta de nuevo.') }
+    setBusy(false)
+  }
+
+  return (
+    <section className="constancia-push">
+      <p className="section-label">Avisos en la noche</p>
+      {state === 'install' ? (
+        <p className="hint">Para recibir avisos, abre la app desde el ícono de tu pantalla de inicio.</p>
+      ) : state === 'unsupported' ? (
+        <p className="hint">Este iPhone no permite avisos. Actualiza iOS a 16.4 o más.</p>
+      ) : state === 'denied' ? (
+        <p className="hint">Las notificaciones están bloqueadas. Actívalas en Ajustes &gt; Notificaciones &gt; Universe.</p>
+      ) : (
+        <>
+          <p className="hint">El aviso solo dice "Constancia" y tus días.</p>
+          {times.map((t, i) => (
+            <div className="push-time" key={i}>
+              <input className="input" type="time" step="300" value={t} onChange={(e) => setTimes(times.map((x, j) => (j === i ? e.target.value || x : x)))} />
+              {times.length > 1 && <button className="link-danger" onClick={() => setTimes(times.filter((_, j) => j !== i))}>Quitar</button>}
+            </div>
+          ))}
+          {times.length < 6 && <button className="secondary" onClick={() => setTimes([...times, times[times.length - 1] ?? '22:00'])}>Agregar hora</button>}
+          <button className="primary" disabled={busy} onClick={save}>{on ? 'Guardar horas' : 'Activar avisos'}</button>
+          {on && <button className="link-danger" disabled={busy} onClick={off}>Apagar avisos</button>}
+        </>
+      )}
+    </section>
   )
 }

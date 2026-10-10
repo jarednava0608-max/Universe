@@ -24,11 +24,12 @@ import AtalayaStudy from './AtalayaStudy.jsx'
 import MidweekStudy from './MidweekStudy.jsx'
 import DailyStudy from './DailyStudy.jsx'
 import PasteFields from './PasteFields.jsx'
+import { constanciaDays } from '../games/progress.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
 // Pestaña Estudio: 5 apartados, cada uno con su lista de entradas.
-export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
+export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
@@ -65,6 +66,11 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
       {!section ? (
         <PageScroll title="Estudio">
           <h1 className="page-title">Estudio</h1>
+          <button className="continue-card constancia-card" onClick={onConstancia}>
+            <span className="continue-label">Constancia</span>
+            <span className="continue-title">{constancia?.start ? `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}` : 'Empezar'}</span>
+            <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+          </button>
           <TodayPlan
             chain={chain}
             entries={entries}

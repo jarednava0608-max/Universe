@@ -1608,3 +1608,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .constancia-text { margin: 8px 0 16px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
 :root[data-style='jw'] .constancia-text { border-radius: 6px; }
 .constancia-text p { margin: 0 0 6px; font-family: var(--font-book, inherit); font-size: 17px; line-height: 1.5; }
+.constancia-push { margin-top: 28px; }
+.push-time { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+.push-time .input { flex: 1; }
+.push-time .link-danger { margin-top: 0; }
+.constancia-card .continue-title { font-size: 22px; }
