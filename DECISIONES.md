@@ -93,9 +93,8 @@ Proyecto **Centro**:
 
 ## Qué falta (no lo hice porque necesita tu OK o no se puede deshacer fácil)
 
-1. **Publicarlo.** Todo está en la rama `fusion-centro`. Vercel ya hizo una versión de prueba
-   (`universe-git-fusion-centro-jared-dcca.vercel.app`; puede pedirte entrar con tu cuenta de Vercel).
-   Para que salga en tu app de siempre hay que pasar la rama a `claude/zen-mendel-l8h9lw`. Dime "publícalo".
+1. ~~Publicarlo.~~ **Ya está publicado** (10 oct, 1:58 pm): `fusion-centro` se pasó a `claude/zen-mendel-l8h9lw`.
+   Si algo sale mal, en Vercel se puede regresar a la versión anterior (`bcc4089`) con un toque.
 2. **Prender los avisos nuevos y apagar los de Centro al mismo tiempo** (para que no lleguen dobles):
    - Tú: Pendientes → Más → Avisos → "Activar avisos en este iPhone" → "Prendidos" → "Mandar un aviso de prueba".
    - Yo: pausar los 2 cron de Centro (`centro_due_pushes` y `habitos-diarios`; se pueden volver a prender)
