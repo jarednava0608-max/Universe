@@ -7,10 +7,11 @@ import Trivia from './Trivia.jsx'
 import Memorize from './Memorize.jsx'
 import StudyGames from './StudyGames.jsx'
 import Books from './Books.jsx'
+import Constancia from './Constancia.jsx'
 import { CHARACTERS } from './memoria/characters.js'
 import { KEY } from './memoria/logic.js'
 import { memorizeSources } from './logic.js'
-import { isKnown } from './progress.js'
+import { constanciaDays, isKnown } from './progress.js'
 
 const srsOf = (store) => store.progress.srs ?? {}
 const bestOf = (store, k) => store.progress.best?.[k] ?? 0
@@ -65,5 +66,13 @@ export const GAMES = [
     icon: 'M4 5a2 2 0 0 1 2-2h3v18H6a2 2 0 0 1-2-2zM9 3h4v18H9zM14.5 4.2l3.4-.9 3 16.4-3.4.9z',
     Component: Books,
     stat: (store) => (bestOf(store, 'libros') ? { text: `${bestOf(store, 'libros')} %` } : null),
+  },
+  {
+    id: 'constancia',
+    title: 'Constancia',
+    desc: 'Tu racha de días',
+    icon: 'M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83',
+    Component: Constancia,
+    stat: (store) => (store.progress.constancia?.start ? { text: `${constanciaDays(store.progress.constancia)} días` } : null),
   },
 ]

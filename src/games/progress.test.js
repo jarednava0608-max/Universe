@@ -63,3 +63,22 @@ describe('repaso inteligente', () => {
     expect(dueCount(['a', 'b', 'c'], srs, T)).toBe(1) // lo nunca visto es nuevo, no "para repasar"
   })
 })
+
+import { constanciaDays, restartConstancia, mergeConstancia } from './progress.js'
+
+describe('constancia', () => {
+  it('cuenta los días desde que empezó', () => {
+    expect(constanciaDays(null, '2026-10-10')).toBe(0)
+    expect(constanciaDays({ start: '2026-10-10' }, '2026-10-10')).toBe(0)
+    expect(constanciaDays({ start: '2026-09-30' }, '2026-10-10')).toBe(10)
+  })
+  it('volver a empezar guarda la mejor', () => {
+    expect(restartConstancia({ start: '2026-10-01', best: 3 }, '2026-10-10', 5)).toEqual({ start: '2026-10-10', best: 9, at: 5 })
+    expect(restartConstancia({ start: '2026-10-08', best: 20 }, '2026-10-10', 5).best).toBe(20)
+  })
+  it('al sincronizar gana el cambio más reciente y la mejor mayor', () => {
+    const m = mergeConstancia({ start: '2026-10-01', best: 30, at: 1 }, { start: '2026-10-09', best: 4, at: 2 })
+    expect(m).toEqual({ start: '2026-10-09', best: 30, at: 2 })
+    expect(mergeConstancia(undefined, { start: '2026-10-01' })).toEqual({ start: '2026-10-01' })
+  })
+})

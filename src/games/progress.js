@@ -143,7 +143,29 @@ export function mergeProgress(a = {}, b = {}) {
   const leidos = a.leidos || b.leidos ? { leidos: mergeLeidos(a.leidos, b.leidos) } : {}
   // Meta de lectura: gana el cambio más reciente.
   const plan = mergePlan(a.plan, b.plan)
-  return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}) }
+  const constancia = mergeConstancia(a.constancia, b.constancia)
+  return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}), ...(constancia ? { constancia } : {}) }
+}
+
+// Constancia: `{ start, best, at }`. Días desde `start` (el día en que empezó o volvió a empezar).
+export function constanciaDays(c, today = todayISO()) {
+  if (!c?.start) return 0
+  const [y1, m1, d1] = c.start.split('-').map(Number)
+  const [y2, m2, d2] = today.split('-').map(Number)
+  return Math.max(0, Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000))
+}
+
+// Volver a empezar hoy: la racha que llevaba cuenta para la mejor.
+export function restartConstancia(c, today = todayISO(), now = Date.now()) {
+  const best = Math.max(c?.best ?? 0, constanciaDays(c, today))
+  return { start: today, best, at: now }
+}
+
+// Al sincronizar gana el cambio más reciente, y la mejor se queda con la mayor.
+export function mergeConstancia(a, b) {
+  if (!a || !b) return a ?? b
+  const last = (a.at ?? 0) >= (b.at ?? 0) ? a : b
+  return { ...last, best: Math.max(a.best ?? 0, b.best ?? 0) }
 }
 
 // Guarda un récord solo si supera el anterior. Devuelve los campos nuevos (o los mismos).
