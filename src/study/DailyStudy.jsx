@@ -138,6 +138,7 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
                 <p className="at-tip">Cópialo en JW Library y pégalo aquí. Luego, dos respuestas cortas y listo.</p>
                 <div className="action-stack">
                   <a className="secondary as-btn" data-direct="1" href={dailyTextAppUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">1. Abrir el texto en JW Library</a>
+                  <a className="secondary as-btn" data-direct="1" href={dailyTextUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">Ver el texto en wol.jw.org</a>
                   <button className="primary" onClick={pasteText}>2. Pegar el texto</button>
                 </div>
                 <label className="at-answer">
@@ -148,6 +149,7 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
             ) : (
               <>
                 <p className="dt-verse">{verse}</p>
+                <a className="dt-link" data-direct="1" href={dailyTextUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">Ver el texto en wol.jw.org</a>
                 {comment && (
                   <details className="dt-more">
                     <summary>Leer el comentario</summary>
@@ -188,7 +190,6 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
                   <AutoText value={fields.texto ?? ''} onChange={(v) => set({ texto: v })} minRows={3} />
                 </label>
               )}
-              <a className="dt-link" data-direct="1" href={dailyTextUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">Ver este texto en wol.jw.org</a>
             </details>
           </>
         )}
