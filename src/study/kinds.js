@@ -19,16 +19,17 @@ export const KINDS = {
   diario: {
     label: 'Texto diario',
     short: 'Diario',
-    desc: 'Texto, principio y aplicación de cada día',
+    desc: 'Jehová, la lección y qué hago hoy',
     icon: 'M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z',
     fields: [
       { key: 'fecha', label: 'Fecha', type: 'date', default: today },
       { key: 'texto', label: 'Texto', type: 'text', hint: 'El versículo del día y su cita' },
       { key: 'contexto', label: 'Contexto', type: 'text' },
-      { key: 'principio', label: 'Principio bíblico', type: 'text' },
+      { key: 'jehova', label: 'Qué me dice de Jehová', type: 'text' },
+      { key: 'principio', label: 'La lección', type: 'text' },
       { key: 'relato', label: 'Relato de apoyo', type: 'text' },
-      { key: 'aplicacion', label: 'Aplicación', type: 'text' },
-      { key: 'resumen', label: 'Resumen en 3-4 palabras', type: 'line' },
+      { key: 'aplicacion', label: 'Qué hago hoy', type: 'text' },
+      { key: 'resumen', label: 'Frase para recordar', type: 'line' },
       { key: 'notas', label: 'Mis notas', type: 'text' },
     ],
     title: (e) => e.fields.resumen || firstLine(e.fields.texto) || 'Texto diario',
@@ -37,7 +38,7 @@ export const KINDS = {
       title: f.resumen || firstRef(f.texto) || 'Texto diario',
       idea: f.aplicacion,
       principio: f.principio,
-      textos: refsIn(f.texto, f.contexto, f.relato, f.aplicacion),
+      textos: refsIn(f.texto, f.contexto, f.jehova, f.relato, f.aplicacion),
     }),
   },
 
@@ -218,7 +219,7 @@ export function entrySortKey(e) {
 // ---------- "Pegar de Claude" ----------
 
 const ALIASES = {
-  diario: { date: 'fecha', text: 'texto', versiculo: 'texto', context: 'contexto', principle: 'principio', story: 'relato', relato_de_apoyo: 'relato', application: 'aplicacion', aplicación: 'aplicacion', summary: 'resumen', notes: 'notas', mis_notas: 'notas' },
+  diario: { jehová: 'jehova', jehovah: 'jehova', leccion: 'principio', lección: 'principio', lesson: 'principio', frase: 'resumen', date: 'fecha', text: 'texto', versiculo: 'texto', context: 'contexto', principle: 'principio', story: 'relato', relato_de_apoyo: 'relato', application: 'aplicacion', aplicación: 'aplicacion', summary: 'resumen', notes: 'notas', mis_notas: 'notas' },
   reunion: { type: 'tipo', date: 'fecha', title: 'titulo', título: 'titulo', idea_principal: 'idea', paragraphs: 'parrafos', párrafos: 'parrafos', notes: 'notas', aplicación: 'aplicacion', application: 'aplicacion' },
   estudio: { title: 'titulo', título: 'titulo', idea_central: 'idea', hook: 'gancho', extracción: 'extraccion', golpe_logico: 'golpe', golpe_lógico: 'golpe', aha_extra: 'aha', summary: 'resumen' },
   reflexion: { title: 'titulo', título: 'titulo', nota: 'texto', note: 'texto', notas: 'texto', contenido: 'texto' },
@@ -362,39 +363,35 @@ export function dailyVerse(texto) {
   return m ? m[0] : line
 }
 
-// El Texto diario (DailyStudy.jsx) es fácil a propósito: la primera pantalla, "Hoy", tiene el texto,
-// "¿Qué enseña?" y "¿Qué hago hoy?" juntos, y con eso ya está lo de hoy (el usuario dejaba de entrar
-// porque eran muchos pasos). Contexto, Relato y Concepto son para profundizar, cuando hay tiempo.
-const DAILY_PRINCIPIO = {
-  key: 'principio', label: 'Principio', q: '¿Qué enseña?',
-  starters: ['Jehová me pide', 'Aprendo que'],
-  hint: 'Una sola oración',
-}
-const DAILY_APLICACION = {
-  key: 'aplicacion', label: 'Aplicación', q: '¿Qué hago hoy?',
-  starters: ['Hoy voy a', 'Cuando', 'En casa', 'En la escuela', 'En la predicación'],
-  hint: 'Hoy voy a…',
-}
-const DAILY_CONTEXTO = {
-  key: 'contexto', label: 'Contexto', q: '¿Qué sabes de este texto?', optional: true,
-  guide: ['¿Quién habla y a quién?', '¿Qué estaba pasando?'],
-  starters: ['Lo escribió', 'Se lo dijo a', 'Estaba pasando que'],
-  hint: 'Una o dos oraciones bastan',
-}
-const DAILY_RELATO = {
-  key: 'relato', label: 'Relato', q: '¿Quién de la Biblia lo vivió?', optional: true,
-  guide: ['¿Quién vivió esto, bien o mal, y qué pasó?', 'Si no se te ocurre nadie, salta este paso.'],
-  starters: ['Pasó con', 'Hizo', 'Y el resultado fue'],
-  hint: 'Nombre, qué hizo y qué pasó',
-}
-// Las dos preguntas de la pantalla "Hoy".
-export const DAILY_TODAY = [DAILY_PRINCIPIO, DAILY_APLICACION]
+// El Texto diario (DailyStudy.jsx): leer y tres preguntas cortas, una a la vez, que van del corazón
+// a la acción, y una frase para llevártelo en la mente todo el día (sale en "Hoy"). El usuario
+// sentía el método de antes muy largo (Contexto, Relato, Concepto…) y uno de dos cajas, muy corto.
+// "La lección" (principio) es la que luego te pregunta Repasar hoy.
 export const DAILY_STEPS = [
-  { key: 'hoy', label: 'Hoy' },
-  DAILY_CONTEXTO,
-  DAILY_RELATO,
-  { key: 'conceptos', label: 'Concepto' },
-  { key: 'listo', label: 'Listo' },
+  { key: 'leer', label: 'Leer' },
+  {
+    key: 'jehova', label: 'Jehová', q: '¿Qué me dice de Jehová?',
+    guide: '¿Cómo es, qué siente o qué quiere para mí?',
+    starters: ['Jehová es', 'A Jehová le importa', 'Jehová quiere'],
+    hint: 'Una o dos oraciones',
+  },
+  {
+    key: 'principio', label: 'Lección', q: '¿Qué lección me deja?',
+    guide: 'Dila en una oración, como si se la explicaras a un amigo.',
+    starters: ['Aprendo que', 'Jehová me pide', 'Puedo confiar en que'],
+    hint: 'Una sola oración',
+  },
+  {
+    key: 'aplicacion', label: 'Hoy', q: '¿Dónde lo necesito hoy?',
+    guide: 'Piensa en algo real de hoy: ¿con quién o dónde? ¿Qué vas a hacer o decir?',
+    starters: ['Hoy voy a', 'Cuando', 'En casa', 'En la escuela', 'En la predicación'],
+    hint: 'Hoy voy a…',
+  },
+  {
+    key: 'resumen', label: 'Recordar', q: 'Tu frase del día',
+    guide: 'De 3 a 5 palabras, para llevarte el texto en la mente. Te la muestro en Hoy.',
+    hint: 'Jehová no me suelta',
+  },
 ]
 
 // Los textos diarios no son todos iguales (piden algo, prometen, cuentan un relato o muestran cómo es
@@ -421,13 +418,11 @@ export function guessDailyType(texto) {
 // El tipo que elegiste o, si no has elegido, el que adivina la app.
 export const dailyType = (f = {}) => f.tipo || guessDailyType(f.texto)
 
-// Con Principio y Aplicación ya cumples lo de hoy; Contexto y Relato suman.
+// Con la lección y qué hago hoy ya está lo de hoy (las entradas de antes también cuentan).
 export const DAILY_MIN = ['principio', 'aplicacion']
 export const dailyMinimum = (f = {}) => DAILY_MIN.every((k) => String(f[k] ?? '').trim())
 
-// Si el texto ya cuenta algo que pasó, el paso Relato sobra: se salta.
-// (Si ya escribiste algo en Relato, el paso se queda para no esconder tu respuesta.)
-export const dailySteps = (f = {}) => DAILY_STEPS.filter((s) => !(s.key === 'relato' && dailyType(f) === 'relato' && !String(f.relato ?? '').trim()))
+
 
 // Personajes de la Biblia que salen en el texto o el comentario (sin las citas, para que "Juan 20:18"
 // no cuente como el apóstol), para sugerirlos en el paso Relato. Sin IA: la lista de Memoria Bíblica.
@@ -450,7 +445,7 @@ export function dailyPeople(texto) {
   const out = found.sort((a, b) => plain.indexOf(a) - plain.indexOf(b))
   return out.filter((n) => !(n === 'Abraham' && out.includes('Abrahán')))
 }
-export const DAILY_QUESTIONS = [DAILY_CONTEXTO, DAILY_PRINCIPIO, DAILY_RELATO, DAILY_APLICACION]
+export const DAILY_QUESTIONS = DAILY_STEPS.filter((s) => s.q)
 
 // El capítulo del texto del día ("No calumnia… (Sal. 15:3)" → "Salmos 15"), para leer alrededor.
 export function dailyChapter(texto) {
@@ -459,7 +454,7 @@ export function dailyChapter(texto) {
 }
 
 // ¿Ya analizaste este texto diario? (algo más que pegar el texto).
-export const dailyAnalyzed = (f = {}) => ['contexto', 'principio', 'relato', 'aplicacion', 'resumen', 'notas'].some((k) => String(f[k] ?? '').trim())
+export const dailyAnalyzed = (f = {}) => ['contexto', 'jehova', 'principio', 'relato', 'aplicacion', 'resumen', 'notas'].some((k) => String(f[k] ?? '').trim())
 
 // El texto diario de esa fecha en wol.jw.org ("2026-10-04" → .../dt/r4/lp-s/2026/10/4).
 export function dailyTextUrl(fecha) {

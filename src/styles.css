@@ -1595,6 +1595,12 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .dt-links a { text-decoration: none; }
 .dt-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 8px; }
 .dt-q { font-size: 20px; margin-top: 18px; }
+.dt-more + .dt-link { margin-top: -12px; }
+.dt-comment { margin: 0 0 4px; color: var(--text-body); font-size: 16px; line-height: 1.55; white-space: pre-wrap; }
+.dt-recap { display: flex; flex-direction: column; gap: 10px; }
+.dt-recap p { margin: 0; color: var(--text-body); font-size: 15px; line-height: 1.45; }
+.dt-recap span { display: block; color: var(--text-2); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.dt-phrase { font-size: 18px; margin: 0 0 16px; }
 .dt-link { display: flex; align-items: center; min-height: 44px; color: var(--link); text-decoration: none; font-size: 15px; }
 
 /* Campo con botón para borrarlo de un toque (×) */

@@ -94,7 +94,7 @@ describe('Notas', async () => {
     e.fields.aplicacion = 'Pensar en lo positivo de un hermano'
     const t = entryForClaude(e)
     expect(t).toContain('Texto:\nNo calumnia con su lengua (Sal. 15:3).')
-    expect(t).toContain('Aplicación:\nPensar en lo positivo de un hermano')
+    expect(t).toContain('Qué hago hoy:\nPensar en lo positivo de un hermano')
     expect(t).not.toContain('Contexto')
     const r = makeEntry('reunion')
     r.fields.parrafos = [{ num: '2', nota: 'Conocimiento exacto' }, { num: '3', nota: '' }]
@@ -169,20 +169,15 @@ describe('Conceptos para el mapa', async () => {
   })
 })
 
-import { dailyMinimum, dailyPeople, dailySteps } from './kinds.js'
+import { dailyMinimum, dailyPeople, DAILY_STEPS } from './kinds.js'
 
 describe('Texto diario más fácil', () => {
   it('lo mínimo es Principio y Aplicación', () => {
     expect(dailyMinimum({ principio: 'Jehová me pide…' })).toBe(false)
     expect(dailyMinimum({ principio: 'x', aplicacion: 'Hoy voy a…' })).toBe(true)
   })
-  it('empieza en Hoy (texto, principio y aplicación juntos) y lo demás es para profundizar', () => {
-    expect(dailySteps({}).map((s) => s.key)).toEqual(['hoy', 'contexto', 'relato', 'conceptos', 'listo'])
-  })
-  it('si el texto ya es un relato, se salta el paso Relato', () => {
-    expect(dailySteps({}).map((s) => s.key)).toContain('relato')
-    expect(dailySteps({ tipo: 'relato' }).map((s) => s.key)).not.toContain('relato')
-    expect(dailySteps({ tipo: 'relato', relato: 'Abrahán' }).map((s) => s.key)).toContain('relato')
+  it('es leer, tres preguntas (Jehová, la lección, dónde lo necesito hoy) y una frase para recordar', () => {
+    expect(DAILY_STEPS.map((s) => s.key)).toEqual(['leer', 'jehova', 'principio', 'aplicacion', 'resumen'])
   })
   it('sugiere los personajes del texto y el comentario, sin contar las citas', () => {
     expect(dailyPeople('María Magdalena fue a ver a los discípulos: "¡He visto al Señor!" (Juan 20:18).\n\nEl 16 de nisán…')).toEqual(['María Magdalena'])

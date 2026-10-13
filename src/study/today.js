@@ -49,17 +49,16 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
   const items = []
 
   const diario = entries.find((e) => e.kind === 'diario' && e.fields.fecha === day)
-  // Hecho con lo mínimo: Principio y Aplicación (Contexto y Relato suman, pero son opcionales).
+  // Hecho con la lección y qué hago hoy (lo de Jehová y la frase suman). Ya hecho, sale tu frase del día.
   const analyzed = !!diario && dailyMinimum(diario.fields)
-  const falta = diario ? ['principio', 'aplicacion'].filter((k) => !String(diario.fields[k] ?? '').trim()) : []
+  const falta = diario ? [['principio', 'la lección'], ['aplicacion', 'qué hago hoy']].filter(([k]) => !String(diario.fields[k] ?? '').trim()).map(([, l]) => l) : []
   items.push({
     key: 'diario',
     title: 'Texto diario',
-    sub: !diario ? 'Pégalo y contesta 2 preguntas · unos 3 min'
+    sub: !diario ? 'Léelo y 3 preguntas cortas · unos 5 min'
       : analyzed ? diario.fields.resumen?.trim() || 'Lo de hoy, cumplido'
-      : falta.length === 1 ? `Te falta: ${falta[0] === 'principio' ? 'Principio' : 'Aplicación'}`
-      : ['contexto', 'relato'].some((k) => String(diario.fields[k] ?? '').trim()) ? 'Te falta: Principio y Aplicación'
-      : 'Principio y Aplicación · unos 3 min',
+      : falta.length === 1 || String(diario.fields.jehova ?? '').trim() ? `Te falta: ${falta.join(' y ')}`
+      : '3 preguntas cortas · unos 5 min',
     done: analyzed,
     verse: diario ? dailyVerse(diario.fields.texto) : '',
     entry: diario ?? null,
