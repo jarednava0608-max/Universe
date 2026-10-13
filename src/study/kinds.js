@@ -362,33 +362,37 @@ export function dailyVerse(texto) {
   return m ? m[0] : line
 }
 
-// El Texto diario por pasos (DailyStudy.jsx): una pregunta a la vez, con preguntas guía para
-// que no tengas que pensar qué escribir. Cada paso llena un campo de la entrada.
+// El Texto diario (DailyStudy.jsx) es fácil a propósito: la primera pantalla, "Hoy", tiene el texto,
+// "¿Qué enseña?" y "¿Qué hago hoy?" juntos, y con eso ya está lo de hoy (el usuario dejaba de entrar
+// porque eran muchos pasos). Contexto, Relato y Concepto son para profundizar, cuando hay tiempo.
+const DAILY_PRINCIPIO = {
+  key: 'principio', label: 'Principio', q: '¿Qué enseña?',
+  starters: ['Jehová me pide', 'Aprendo que'],
+  hint: 'Una sola oración',
+}
+const DAILY_APLICACION = {
+  key: 'aplicacion', label: 'Aplicación', q: '¿Qué hago hoy?',
+  starters: ['Hoy voy a', 'Cuando', 'En casa', 'En la escuela', 'En la predicación'],
+  hint: 'Hoy voy a…',
+}
+const DAILY_CONTEXTO = {
+  key: 'contexto', label: 'Contexto', q: '¿Qué sabes de este texto?', optional: true,
+  guide: ['¿Quién habla y a quién?', '¿Qué estaba pasando?'],
+  starters: ['Lo escribió', 'Se lo dijo a', 'Estaba pasando que'],
+  hint: 'Una o dos oraciones bastan',
+}
+const DAILY_RELATO = {
+  key: 'relato', label: 'Relato', q: '¿Quién de la Biblia lo vivió?', optional: true,
+  guide: ['¿Quién vivió esto, bien o mal, y qué pasó?', 'Si no se te ocurre nadie, salta este paso.'],
+  starters: ['Pasó con', 'Hizo', 'Y el resultado fue'],
+  hint: 'Nombre, qué hizo y qué pasó',
+}
+// Las dos preguntas de la pantalla "Hoy".
+export const DAILY_TODAY = [DAILY_PRINCIPIO, DAILY_APLICACION]
 export const DAILY_STEPS = [
-  { key: 'texto', label: 'Texto' },
-  {
-    key: 'contexto', label: 'Contexto', q: '¿Qué sabes de este texto?', optional: true,
-    guide: ['¿Quién habla y a quién?', '¿Qué estaba pasando?'],
-    starters: ['Lo escribió', 'Se lo dijo a', 'Estaba pasando que'],
-    hint: 'Una o dos oraciones bastan',
-  },
-  {
-    key: 'principio', label: 'Principio', q: '¿Qué enseña?',
-    guide: ['Elige qué tipo de texto es y te hago una pregunta más fácil.'],
-    hint: 'Una sola oración',
-  },
-  {
-    key: 'relato', label: 'Relato', q: '¿Quién de la Biblia lo vivió?', optional: true,
-    guide: ['¿Quién vivió esto, bien o mal, y qué pasó?', 'Si no se te ocurre nadie, salta este paso.'],
-    starters: ['Pasó con', 'Hizo', 'Y el resultado fue'],
-    hint: 'Nombre, qué hizo y qué pasó',
-  },
-  {
-    key: 'aplicacion', label: 'Aplicación', q: '¿Qué hago hoy?',
-    guide: ['¿Qué voy a hacer o decir distinto hoy, en concreto?'],
-    starters: ['Hoy voy a', 'Cuando', 'En casa', 'En la escuela', 'En la predicación'],
-    hint: 'Hoy voy a…',
-  },
+  { key: 'hoy', label: 'Hoy' },
+  DAILY_CONTEXTO,
+  DAILY_RELATO,
   { key: 'conceptos', label: 'Concepto' },
   { key: 'listo', label: 'Listo' },
 ]
@@ -401,7 +405,6 @@ export const DAILY_TYPES = [
   { key: 'relato', label: 'Cuenta algo que pasó', q: '¿Qué pasó y qué aprendo?', starters: ['Pasó que', 'Aprendo que'] },
   { key: 'jehova', label: 'Cómo es Jehová o Jesús', q: '¿Cómo es Jehová o Jesús aquí?', starters: ['Jehová es', 'Lo veo cuando'] },
 ]
-// Con Principio y Aplicación ya cumples lo mínimo de hoy; Contexto y Relato suman.
 // Adivina el tipo del texto de hoy, sin IA, por cómo empieza el versículo: si pide algo ("Acuérdense…",
 // "No…"), si promete ("nada me sacudirá"), si cuenta algo que pasó ("María Magdalena fue…") o si dice
 // cómo es Jehová ("Es Jehová quien examina…"). Si no está claro, no adivina. Tú siempre lo puedes cambiar.
@@ -418,6 +421,7 @@ export function guessDailyType(texto) {
 // El tipo que elegiste o, si no has elegido, el que adivina la app.
 export const dailyType = (f = {}) => f.tipo || guessDailyType(f.texto)
 
+// Con Principio y Aplicación ya cumples lo de hoy; Contexto y Relato suman.
 export const DAILY_MIN = ['principio', 'aplicacion']
 export const dailyMinimum = (f = {}) => DAILY_MIN.every((k) => String(f[k] ?? '').trim())
 
@@ -446,7 +450,7 @@ export function dailyPeople(texto) {
   const out = found.sort((a, b) => plain.indexOf(a) - plain.indexOf(b))
   return out.filter((n) => !(n === 'Abraham' && out.includes('Abrahán')))
 }
-export const DAILY_QUESTIONS = DAILY_STEPS.filter((s) => s.q)
+export const DAILY_QUESTIONS = [DAILY_CONTEXTO, DAILY_PRINCIPIO, DAILY_RELATO, DAILY_APLICACION]
 
 // El capítulo del texto del día ("No calumnia… (Sal. 15:3)" → "Salmos 15"), para leer alrededor.
 export function dailyChapter(texto) {

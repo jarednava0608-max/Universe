@@ -1594,6 +1594,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .dt-missing .at-label { width: 100%; margin: 0 0 2px; }
 .dt-links a { text-decoration: none; }
 .dt-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 8px; }
+.dt-q { font-size: 20px; margin-top: 18px; }
+.dt-link { display: flex; align-items: center; min-height: 44px; color: var(--link); text-decoration: none; font-size: 15px; }
 
 /* Campo con botón para borrarlo de un toque (×) */
 .input-wrap { position: relative; display: block; }

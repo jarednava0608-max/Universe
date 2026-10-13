@@ -87,7 +87,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             onPasteDaily={async (texto, existing) => {
               const e = existing ?? makeEntry('diario')
               const saved = await onSaveEntry({ ...e, fields: { ...e.fields, fecha: today(), texto } })
-              toast('Texto de hoy guardado. Ahora, 4 preguntas.')
+              toast('Texto de hoy guardado. Ahora, dos respuestas cortas.')
               setEditing({ entry: saved ?? e, isNew: false })
             }}
             toast={toast}

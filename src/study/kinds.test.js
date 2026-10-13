@@ -176,6 +176,9 @@ describe('Texto diario más fácil', () => {
     expect(dailyMinimum({ principio: 'Jehová me pide…' })).toBe(false)
     expect(dailyMinimum({ principio: 'x', aplicacion: 'Hoy voy a…' })).toBe(true)
   })
+  it('empieza en Hoy (texto, principio y aplicación juntos) y lo demás es para profundizar', () => {
+    expect(dailySteps({}).map((s) => s.key)).toEqual(['hoy', 'contexto', 'relato', 'conceptos', 'listo'])
+  })
   it('si el texto ya es un relato, se salta el paso Relato', () => {
     expect(dailySteps({}).map((s) => s.key)).toContain('relato')
     expect(dailySteps({ tipo: 'relato' }).map((s) => s.key)).not.toContain('relato')
