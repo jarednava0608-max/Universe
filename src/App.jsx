@@ -30,6 +30,7 @@ import { OPEN_REF } from './lib/verses.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
+import { isStandalone, safariUrl } from './lib/external.js'
 import { entrySource, conceptNote } from './study/concepts.js'
 import { planVerseSave, cleanSavedVerses, wrongThirdJohn } from './lib/verseSave.js'
 
@@ -134,6 +135,22 @@ export default function App() {
       window.removeEventListener(OPEN_REF, onOpen)
       document.removeEventListener('click', onClick, true)
     }
+  }, [])
+
+  // Los enlaces a internet salen de la app y se abren en Safari (no en una hoja encima).
+  // Va después de las citas: si una cita ya abrió su hoja, no se toca.
+  useEffect(() => {
+    const onClick = (e) => {
+      if (e.defaultPrevented || !isStandalone()) return
+      const a = e.target.closest?.('a[href]')
+      if (!a || a.origin === window.location.origin) return
+      const url = safariUrl(a.href, navigator.userAgent)
+      if (!url) return
+      e.preventDefault()
+      window.location.href = url
+    }
+    window.addEventListener('click', onClick)
+    return () => window.removeEventListener('click', onClick)
   }, [])
 
   // Paquetes de nodos pedidos por el usuario (src/lib/seeds.js): una sola vez por teléfono.
