@@ -1,10 +1,11 @@
-// "Mi Biblia": los textos bíblicos que el usuario pega (no se descarga la Biblia completa).
-// Se guardan como entradas `kind: 'biblia'` ({ cita, texto }) y se sincronizan como las demás.
+// "Mi Biblia": los textos bíblicos que el usuario pega. Se guardan como entradas `kind: 'biblia'`
+// ({ cita, texto }) y se sincronizan como las demás. Si importó la TNM completa (nwt.js), lo que falta sale de ahí.
 import { parseRef, refUrl, findRefs, canonRef } from './bible.js'
 import { findPubs, isPubRef, pubUrl } from './pubs.js'
 import { newId } from './model.js'
 import { chapterVerses, VERSE_COUNTS } from './verseCounts.js'
 import { verseSources } from '../games/logic.js'
+import { bibleChapter, bibleVerse } from './nwt.js'
 
 // Clave para comparar citas escritas de formas distintas ("Sal. 83:18" = "Salmo 83:18").
 export function refKey(ref) {
@@ -35,12 +36,18 @@ export function anyRefUrl(ref) {
 }
 
 // Texto guardado para una cita (o un párrafo de una publicación): primero lo guardado aquí,
-// luego (solo citas bíblicas) Memorizar textos y el Texto diario.
+// luego (solo citas bíblicas) Memorizar textos, el Texto diario y la TNM importada.
 export function findSavedVerse(entries, ref) {
   const key = anyRefKey(ref)
   if (!key) return null
   const exact = findExact(entries, key)
   if (exact || key.startsWith('pub:')) return exact
+  const r = parseRef(canonRef(ref))
+  const single = r?.verse != null && !/[-,–]/.test(String(canonRef(ref)).split(':')[1] ?? '')
+  if (single) {
+    const texto = bibleVerse(r.book, r.chapter, r.verse)
+    return texto ? { entry: null, texto, source: 'tnm' } : null
+  }
   return joinVerses(entries, ref)
 }
 
@@ -65,6 +72,7 @@ function joinVerses(entries, ref) {
   }
   // Índice de lo guardado (una sola pasada, para no buscar 176 veces).
   const index = new Map()
+  for (const x of bibleChapter(r.book, r.chapter) ?? []) index.set(`${r.book}:${r.chapter}:${x.v}`, x.texto)
   for (const v of verseSources(entries)) if (v.fields.cita && v.fields.texto?.trim()) index.set(refKey(v.fields.cita), v.fields.texto)
   for (const e of entries) if (e.kind === 'biblia' && e.fields.texto?.trim()) index.set(anyRefKey(e.fields.cita), e.fields.texto)
   const parts = []
@@ -160,6 +168,7 @@ export function chapterSaved(entries, ref) {
   const r = parseRef(canonRef(ref))
   if (!r || r.verse != null) return { saved: 0, expected: 0 }
   const seq = chapterVerses(r.book, r.chapter) ?? []
+  if (bibleChapter(r.book, r.chapter)) return { saved: seq.length, expected: seq.length }
   const have = new Set()
   for (const e of entries) {
     if (e.kind !== 'biblia' || !String(e.fields?.texto ?? '').trim()) continue
@@ -194,7 +203,10 @@ export function openRef(ref) {
 }
 
 // Los versículos guardados en Mi Biblia de un capítulo, en orden: [{ v, texto }] (con sus renglones).
+// Con la TNM importada, el capítulo sale de ahí completo.
 export function savedChapterVerses(entries, book, chapter) {
+  const full = bibleChapter(book, chapter)
+  if (full) return full.map((x) => ({ ...x }))
   const map = new Map()
   for (const v of verseSources(entries)) {
     const r = v.fields?.cita && parseRef(canonRef(v.fields.cita))

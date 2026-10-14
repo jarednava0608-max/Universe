@@ -5,7 +5,7 @@ import { pubTitle, pubUrl } from '../lib/pubs.js'
 import Sheet from './Sheet.jsx'
 import BibleText from './BibleText.jsx'
 
-const SOURCE = { memoria: 'De Memorizar textos', diario: 'De tu Texto diario', capitulo: 'Los versículos que tienes guardados de este capítulo' }
+const SOURCE = { memoria: 'De Memorizar textos', diario: 'De tu Texto diario', capitulo: 'Los versículos que tienes guardados de este capítulo', tnm: 'De la Biblia que importaste' }
 
 // Hoja que se abre al tocar una cita: el texto guardado (o para pegarlo una vez)
 // y botones para abrir la cita en JW Library o en wol.jw.org.

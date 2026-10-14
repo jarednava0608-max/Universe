@@ -1389,7 +1389,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .cx-refs { margin-top: 4px; }
 .cx-note { margin-top: 12px; }
 .cx-nav { margin-top: 24px; }
-.primary:disabled { opacity: 0.4; }
+.primary:disabled, .as-btn.disabled { opacity: 0.4; }
+.as-btn.disabled { pointer-events: none; }
 @media (max-width: 374px) { .at-step { font-size: 13px; } }
 
 /* ---------- Memorizar: Cita ---------- */

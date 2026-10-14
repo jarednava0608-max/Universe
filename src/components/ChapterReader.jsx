@@ -5,6 +5,7 @@ import { BOOKS, refUrl } from '../lib/bible.js'
 import { savedChapterVerses, neighborChapter, chapterSaved, jwLibraryUrl } from '../lib/verses.js'
 import { canSpeak, useSpeech } from '../lib/speech.js'
 import VoiceSheet from './VoiceSheet.jsx'
+import { useBible } from '../lib/nwt.js'
 
 const nameOf = (book, chapter) => `${BOOKS[book - 1]} ${chapter}`
 
@@ -14,7 +15,8 @@ const nameOf = (book, chapter) => `${BOOKS[book - 1]} ${chapter}`
 // Si el capítulo no está guardado completo, se ofrece pegarlo (abre la hoja de Mi Biblia). Siempre a la vista:
 // el capítulo en wol.jw.org (En línea) y en la app JW Library.
 export default function ChapterReader({ book, chapter, verse, entries, read, onToggleRead, onGo, onPaste, onClose }) {
-  const verses = useMemo(() => savedChapterVerses(entries, book, chapter), [entries, book, chapter])
+  const bible = useBible()
+  const verses = useMemo(() => savedChapterVerses(entries, book, chapter), [entries, book, chapter, bible])
   const { saved, expected } = chapterSaved(entries, nameOf(book, chapter))
   const prev = neighborChapter(book, chapter, -1)
   const next = neighborChapter(book, chapter, 1)
@@ -82,6 +84,7 @@ export default function ChapterReader({ book, chapter, verse, entries, read, onT
           <div className="reader-missing">
             <p>{saved ? `Tienes ${saved} de ${expected} versículos de este capítulo.` : 'Aún no tienes este capítulo en Mi Biblia.'}</p>
             <button className="primary" onClick={() => onPaste(nameOf(book, chapter))}>Pegar el capítulo</button>
+            <p className="hint">O ten toda la Biblia de una vez: en Leer la Biblia, elige el EPUB que bajas de jw.org.</p>
           </div>
         )}
         {verses.length > 0 && onToggleRead && (

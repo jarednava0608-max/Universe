@@ -2,13 +2,16 @@ import { useState } from 'react'
 import Icon, { ICONS } from './Icon.jsx'
 import { BOOKS } from '../lib/bible.js'
 import { chapterSaved, openRef } from '../lib/verses.js'
+import { hasBible, importBible, useBible } from '../lib/nwt.js'
 import { BOOK_ABBR, TOTAL_CHAPTERS, PLAN_LENGTHS, bookRead, chaptersOf, hasPlan, isRead, makePlan, readCount, readingToday } from '../lib/reading.js'
 
 // Leer toda la Biblia, como la pestaña "Libros" de JW Library: los 66 libros en cuadros (más
 // claros mientras más llevas leído), y al tocar uno, sus capítulos con los leídos marcados.
 // Un capítulo se abre en el lector de pantalla completa.
-export default function BibleHome({ leidos, plan, onSetPlan, entries, onClose }) {
+export default function BibleHome({ leidos, plan, onSetPlan, entries, toast, onClose }) {
   const [book, setBook] = useState(null)
+  useBible()
+  const full = hasBible()
   const total = readCount(leidos)
   const pct = Math.floor((total / TOTAL_CHAPTERS) * 100)
 
@@ -45,6 +48,7 @@ export default function BibleHome({ leidos, plan, onSetPlan, entries, onClose })
               <p className="hint">Marca cada capítulo al terminar de leerlo (abajo, en el lector). Los de la lectura de la semana también cuentan.</p>
             </div>
             {onSetPlan && <ReadingGoal leidos={leidos} plan={plan} onSetPlan={onSetPlan} />}
+            {!full && <BibleImport toast={toast} />}
             <h2 className="bh-h">Escrituras Hebreoarameas</h2>
             {grid(0, 39)}
             <h2 className="bh-h">Escrituras Griegas Cristianas</h2>
@@ -56,7 +60,7 @@ export default function BibleHome({ leidos, plan, onSetPlan, entries, onClose })
             <div className="bh-chapters">
               {Array.from({ length: chaptersOf(book) }, (_, i) => i + 1).map((c) => {
                 const ref = `${BOOKS[book - 1]} ${c}`
-                const saved = chapterSaved(entries, ref).saved > 0
+                const saved = !full && chapterSaved(entries, ref).saved > 0
                 return (
                   <button key={c} className={'bh-ch' + (isRead(leidos, book, c) ? ' read' : '') + (saved ? ' saved' : '')} onClick={() => openRef(ref)}>
                     {c}
@@ -64,10 +68,41 @@ export default function BibleHome({ leidos, plan, onSetPlan, entries, onClose })
                 )
               })}
             </div>
-            <p className="hint">Los capítulos con un punto ya los tienes en Mi Biblia; los demás se pegan una vez desde JW Library.</p>
+            {!full && <p className="hint">Los capítulos con un punto ya los tienes en Mi Biblia; los demás se pegan una vez desde JW Library.</p>}
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+// Toda la TNM de una vez: el usuario baja el EPUB de jw.org y lo elige aquí. Se lee y se guarda solo
+// en este teléfono (no se sube a la nube); en otro teléfono se vuelve a elegir el archivo.
+function BibleImport({ toast }) {
+  const [busy, setBusy] = useState(false)
+  async function pick(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    try {
+      const done = await importBible(await file.arrayBuffer())
+      toast?.(done ? `Listo: la Biblia completa está en este teléfono (${done.verses.toLocaleString('es')} versículos).` : 'Ese archivo no parece la Traducción del Nuevo Mundo en EPUB.')
+    } catch (err) {
+      toast?.('No se pudo importar: ' + err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="bh-goal">
+      <p className="bh-goal-title">Toda la Biblia sin pegar capítulos</p>
+      <p className="hint">Baja la Traducción del Nuevo Mundo en EPUB desde jw.org (la Biblia, botón de descargar, EPUB) y elige aquí el archivo. Se guarda solo en este teléfono.</p>
+      <label className={'primary as-btn' + (busy ? ' disabled' : '')}>
+        {busy ? 'Leyendo la Biblia…' : 'Elegir el archivo EPUB'}
+        <input type="file" accept=".epub,application/epub+zip" hidden disabled={busy} onChange={pick} />
+      </label>
+      <a className="secondary as-btn" data-direct="1" href="https://www.jw.org/es/biblioteca/biblia/" target="_blank" rel="noopener noreferrer">Ir a la Biblia en jw.org</a>
     </div>
   )
 }

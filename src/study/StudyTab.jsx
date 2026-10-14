@@ -261,7 +261,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         />
       )}
 
-      {bibleOpen && <BibleHome leidos={leidos} plan={readingPlan} onSetPlan={onSetPlan} entries={entries} onClose={() => setBibleOpen(false)} />}
+      {bibleOpen && <BibleHome leidos={leidos} plan={readingPlan} onSetPlan={onSetPlan} entries={entries} toast={toast} onClose={() => setBibleOpen(false)} />}
 
       {editing && isMidweek(editing.entry) && (
         <MidweekStudy
