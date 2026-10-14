@@ -15,7 +15,7 @@
   --title: #fafafa;
   --text-body: #d4d4d8;
   --text-2: #a1a1aa;
-  --text-3: #63636b;
+  --text-3: #85858e;
   --gold: #f5d27a;
   --link: #b8c4ff;
   --link-rgb: 184, 196, 255;
@@ -74,7 +74,7 @@
   --title: #09090b;
   --text-body: #27272a;
   --text-2: #52525b;
-  --text-3: #a1a1aa;
+  --text-3: #6b6b74;
   --link: #4f46e5;
   --link-rgb: 79, 70, 229;
   --btn: #09090b;
@@ -84,7 +84,7 @@
   --yo: #b45309;
   --danger: #dc2626;
   --danger-text: #991b1b;
-  --ok: #16a34a;
+  --ok: #15803d;
   --overlay: rgba(0, 0, 0, 0.25);
   --graph-bg: #fafafa;
   --graph-node: #71717a;
@@ -119,7 +119,7 @@
   --title: #ffffff;
   --text-body: #e5e5ea;
   --text-2: #aeaeb2;
-  --text-3: #6e6e73;
+  --text-3: #8e8e93;
   --accent: #b9a8f4;
   --accent-soft: rgba(185, 168, 244, 0.16);
   --link: #8fa2e8;
@@ -144,8 +144,8 @@
   --text: #1c1c1e;
   --title: #000000;
   --text-body: #2c2c2e;
-  --text-2: #636366;
-  --text-3: #a1a1a6;
+  --text-2: #545458;
+  --text-3: #6e6e73;
   --accent: #5e48a8;
   --accent-soft: rgba(94, 72, 168, 0.12);
   --link: #4a64b8;
@@ -297,8 +297,8 @@ a { color: inherit; }
 .note-grabber { position: absolute; z-index: 2; top: 0; left: 50%; width: 80px; height: 24px; margin-left: -40px; }
 .note-grabber::after { content: ''; position: absolute; top: 7px; left: 22px; width: 36px; height: 5px; border-radius: 3px; background: rgba(var(--fg-rgb), 0.18); }
 .note-edit {
-  position: absolute; z-index: 2; top: 12px; right: calc(var(--sar) + 12px);
-  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+  position: absolute; z-index: 2; top: 8px; right: calc(var(--sar) + 8px);
+  width: var(--tap); height: var(--tap); border-radius: 50%; display: grid; place-items: center;
   color: var(--text-3); background: transparent; transition: color 0.15s, background 0.15s;
 }
 .note-edit:active { color: var(--text); background: var(--surface-2); }
@@ -540,7 +540,7 @@ a { color: inherit; }
 }
 .page-head .page-title { margin-bottom: 20px; }
 .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); margin: 32px 0 12px; }
-.back-link { display: inline-flex; align-items: center; gap: 2px; min-height: 36px; margin-left: -8px; color: var(--text-2); font-size: 17px; }
+.back-link { display: inline-flex; align-items: center; gap: 2px; min-height: var(--tap); margin-left: -8px; color: var(--text-2); font-size: 17px; }
 .round-btn {
   width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center;
   background: var(--btn); color: var(--btn-ink); margin-bottom: 12px;
@@ -597,12 +597,12 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .para { padding: 12px; background: var(--bg-raise); border: 1px solid var(--line); border-radius: var(--r); }
 .para-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; color: var(--text-2); }
 .para-num { width: 52px; min-height: 32px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 17px; text-align: center; }
-.para-del { margin-left: auto; font-size: 13px; color: var(--danger); min-height: 32px; }
+.para-del { margin-left: auto; font-size: 13px; color: var(--danger); min-height: var(--tap); margin-block: -8px; }
 .add-row { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); margin-top: 8px; color: var(--text-2); font-size: 15px; }
 .action-stack { display: grid; gap: 8px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
 .action-stack .secondary { margin-top: 0; }
 .icon-left { display: flex; align-items: center; justify-content: center; gap: 12px; }
-.link-note { min-height: 40px; font-size: 15px; color: var(--gold); opacity: 0.9; }
+.link-note { min-height: var(--tap); font-size: 15px; color: var(--gold); opacity: 0.9; }
 .propose-card { padding: 16px; background: var(--bg-raise); border: 1px solid var(--line-strong); border-radius: 16px; margin-bottom: 16px; }
 .propose-card .title-input { font-size: 22px; }
 
@@ -921,7 +921,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .reader-title small { font-size: 13px; font-weight: 500; color: var(--text-2); }
 .reader-actions { display: flex; justify-content: flex-end; min-width: 44px; }
 .bar-btn.icon { width: 44px; display: grid; place-items: center; padding: 0; color: var(--accent, var(--text)); }
-.reader-body .bible-text { font-family: var(--font-book); font-size: 22px; line-height: 1.65; color: var(--title); }
+.reader-body .bible-text { font-family: var(--font-book); font-size: 22px; line-height: 1.65; color: var(--text-body); }
 .reader-missing { margin: 20px 0; padding: 16px; border-radius: var(--r); background: var(--surface); display: grid; gap: 4px; }
 .reader-missing p { margin: 0 0 8px; color: var(--text-2); }
 .reader-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 28px; }
@@ -934,7 +934,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .bible-line { display: block; padding-left: 1.8em; text-indent: -0.9em; }
 .bible-verse.target { background: rgba(var(--link-rgb), 0.1); border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .bible-verse.speaking { background: rgba(var(--link-rgb), 0.16); border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
-.bible-text { font-family: var(--font-book); font-size: 20px; line-height: 1.62; color: var(--title); white-space: normal; -webkit-hyphens: none; hyphens: none; }
+.bible-text { font-family: var(--font-book); font-size: 20px; line-height: 1.62; color: var(--text-body); white-space: normal; -webkit-hyphens: none; hyphens: none; }
 .bible-chap { float: left; font-family: var(--font-display); font-weight: 700; font-size: 52px; line-height: 0.9; color: var(--verse-num); margin: 8px 12px 0 0; }
 .bible-v { font-family: var(--font-display); font-weight: 700; font-size: 0.86em; color: var(--verse-num); margin: 0 8px 0 4px; }
 .ref-sheet-source { display: block; margin-top: 8px; font-size: 13px; color: var(--text-3); }
@@ -1137,7 +1137,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .swipe-del { position: absolute; top: 0; right: 0; bottom: 0; width: 88px; display: grid; place-items: center; background: #ef4444; color: #fff; font-size: 15px; font-weight: 600; }
 .swipe-front { position: relative; background: var(--surface); transition: transform 0.25s var(--ease); touch-action: pan-y; }
 .undo-bar { position: fixed; z-index: 8; left: 16px; right: 16px; bottom: calc(var(--tabbar) + 14px); display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 14px; background: rgba(var(--surface-rgb), 0.96); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid var(--line-strong); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); font-size: 15px; animation: toast-in-plain 0.25s var(--ease); }
-.undo-bar button { min-height: 36px; padding: 0 16px; border-radius: 10px; font-weight: 600; color: var(--link); }
+.undo-bar button { min-height: var(--tap); margin-block: -4px; padding: 0 16px; border-radius: 10px; font-weight: 600; color: var(--link); }
 @keyframes toast-in-plain { from { opacity: 0; transform: translateY(8px); } }
 .options.two { grid-template-columns: 1fr 1fr; }
 .options.two .option { min-height: 72px; text-align: center; font-size: 20px; font-weight: 600; }
@@ -1147,7 +1147,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .results-label { margin: 12px 16px 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); }
 .pass-wrap { position: relative; display: block; }
 .pass-wrap .input { padding-right: 84px; }
-.pass-toggle { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); min-height: 36px; padding: 0 12px; border-radius: 8px; font-size: 15px; font-weight: 500; color: var(--link); }
+.pass-toggle { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); min-height: var(--tap); padding: 0 12px; border-radius: 8px; font-size: 15px; font-weight: 500; color: var(--link); }
 
 /* Pantallas chicas: que nada empuje fuera de la pantalla (los hijos de grid/flex se pueden encoger) */
 .search { min-width: 0; }
@@ -1162,7 +1162,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .today-verse { font-family: Georgia, 'Times New Roman', serif; font-size: 20px; line-height: 1.5; color: var(--text); font-style: italic; }
 .today-sub { font-size: 13px; color: var(--text-2); }
 .today-sub.pending, .entry-sub.pending { font-style: italic; color: var(--text-3); }
-.today-add { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border-radius: 999px; font-size: 15px; font-weight: 500; color: var(--text); background: rgba(var(--fg-rgb), 0.06); border: 1px solid var(--line-strong); }
+.today-add { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 16px; border-radius: 999px; font-size: 15px; font-weight: 500; color: var(--text); background: rgba(var(--fg-rgb), 0.06); border: 1px solid var(--line-strong); }
 .today-add:active { background: rgba(var(--fg-rgb), 0.1); }
 /* "Hoy": los pasos del día */
 .library-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; margin: 8px 0 4px; padding: 0 2px; font-size: 20px; font-weight: 700; color: var(--title); }
@@ -1181,7 +1181,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .plan-list li + li .plan-row { border-top: 1px solid var(--line); }
 .plan-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 0; text-align: left; }
 .plan-row .chev { color: var(--text-3); display: grid; }
-.plan-check { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--line-strong); color: var(--bg); }
+.plan-check { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid color-mix(in srgb, var(--text-3) 75%, transparent); color: var(--bg); }
 .plan-row.done .plan-check { background: var(--ok); border-color: var(--ok); }
 .plan-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
 .plan-row.done .plan-title { color: var(--text-2); font-weight: 500; }
@@ -1275,7 +1275,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-list { margin: 0 0 20px; padding-left: 24px; color: var(--text-body); font-size: 15px; line-height: 1.5; }
 .at-list.plain { list-style: disc; }
 .at-list li { margin: 0 0 8px; }
-.at-list button { text-align: left; color: var(--text); min-height: 32px; font-size: 15px; }
+.at-list button { text-align: left; color: var(--text); min-height: var(--tap); margin-block: -6px; font-size: 15px; }
 .at-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .at-progress .progress { flex: 1; }
 /* Subtítulo del artículo: una línea fina arriba y letra marcada, para separar cada sección. */
@@ -1292,21 +1292,21 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-run { background: var(--hl); color: var(--title); border-radius: 3px; padding: 2px 0; margin: 0 -2px; padding-left: 2px; padding-right: 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .at-jw { display: inline-flex; align-items: center; min-height: 44px; margin: -8px 0 8px; font-size: 15px; color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
 .at-extras { margin: 0 0 16px; font-size: 15px; color: var(--text-2); line-height: 1.5; }
-.at-extras summary { min-height: 36px; display: flex; align-items: center; color: var(--text-3); font-size: 13px; }
+.at-extras summary { min-height: var(--tap); display: flex; align-items: center; color: var(--text-3); font-size: 13px; }
 .at-extras p { margin: 8px 0 12px; white-space: pre-line; }
 .at-keys { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 .at-keys span { padding: 4px 12px; border-radius: 6px; background: var(--hl); color: var(--title); font-size: 15px; }
 /* Tu respuesta en una tarjeta, no como cuadro de formulario. */
 .at-answer { display: block; margin: 0 0 20px; padding: 16px 16px 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
 .at-answer:focus-within { border-color: var(--text-3); }
-.at-answer-label { display: block; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+.at-answer-label { display: block; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); margin-bottom: 8px; }
 .at-answer .input { border: 0; background: transparent; padding: 0; border-radius: 0; box-shadow: none; line-height: 1.5; }
 .at-answer .input:focus { outline: none; box-shadow: none; }
 .at-nav { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
 .at-nav .primary, .at-nav .secondary { margin-top: 0; }
 /* Entre semana: colores de cada sección como en la Guía de actividades. */
 :root { --mw-tesoros: #6f9aa3; --mw-maestros: #d29a2c; --mw-vida: #c4545b; }
-:root[data-theme='light'] { --mw-tesoros: #3f6f79; --mw-maestros: #a06b06; --mw-vida: #a3343b; }
+:root[data-theme='light'] { --mw-tesoros: #3f6f79; --mw-maestros: #946500; --mw-vida: #a3343b; }
 .mw-sec { display: inline-block; margin: 8px 0 12px; padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
 .mw-sec.tesoros { color: var(--mw-tesoros); background: color-mix(in srgb, var(--mw-tesoros) 16%, transparent); }
 .mw-sec.maestros { color: var(--mw-maestros); background: color-mix(in srgb, var(--mw-maestros) 16%, transparent); }
@@ -1363,7 +1363,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* Estudio bíblico: el párrafo se abre al tocarlo. */
 .mw-study { margin: 8px 0 4px; }
 .mw-para { margin: 0 0 12px; font-size: 15px; line-height: 1.55; color: var(--text-body); }
-.mw-para summary { min-height: 36px; display: flex; align-items: center; color: var(--text-2); font-size: 15px; cursor: pointer; }
+.mw-para summary { min-height: var(--tap); display: flex; align-items: center; color: var(--text-2); font-size: 15px; cursor: pointer; }
 .mw-para p { font-family: Georgia, 'Times New Roman', serif; font-size: 17px; margin: 0 0 12px; }
 .mw-chap { margin: 8px 0 2px; font-size: 22px; font-weight: 700; color: var(--title); }
 .mw-chap-tema { margin: 0 0 12px; font-style: italic; color: var(--text-2); }
@@ -1372,7 +1372,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mw-lectura p { margin: 0 0 4px; }
 .mw-study-sec { margin: 20px 0 8px; font-size: 20px; font-weight: 700; color: var(--title); }
 /* Sin etiqueta, la estrella va a la derecha de la pregunta y no ocupa un renglón sola. */
-.mw-qcard .at-answer-head:has(.at-answer-label:empty) { float: right; margin: -8px -8px 0 12px; }
+.mw-qcard .at-answer-head:has(.at-answer-label:empty) { float: right; margin: -6px -8px -16px 12px; }
 .mw-qcard .mw-q { display: block; font-size: 17px; font-weight: 400; line-height: 1.4; color: var(--title); margin: 0 0 12px; }
 .at-missing { display: flex; flex-wrap: wrap; gap: 8px; }
 .at-missing button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 15px; }
@@ -1382,7 +1382,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .cx-card { display: grid; gap: 8px; }
 .cx-head { display: flex; align-items: center; justify-content: space-between; }
 .cx-head .at-answer-label { margin: 0; }
-.cx-remove { min-height: 36px; padding: 0 4px; font-size: 15px; color: var(--text-3); }
+.cx-remove { min-height: var(--tap); margin-block: -4px; padding: 0 4px; font-size: 15px; color: var(--text-3); }
 .cx-title { font-size: 20px !important; font-weight: 650; color: var(--title); }
 .cx-sub { margin: 12px 0 0; }
 .cx-tip { margin: 0; font-size: 13px; color: var(--warn, #f59e0b); }
@@ -1415,11 +1415,11 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* Como en JW Library: las publicaciones con letra normal y grande; solo la Biblia lleva letra de libro. */
 :root[data-style='jw'] .at-text,
 :root[data-style='jw'] .mw-text,
-:root[data-style='jw'] .mw-para p { font-family: var(--font); font-size: 20px; line-height: 1.6; color: var(--title); }
-:root[data-style='jw'] .at-theme,
-:root[data-style='jw'] .today-verse,
-:root[data-style='jw'] .entry-row.daily .entry-title { font-family: var(--font); }
-:root[data-style='jw'] .today-verse { font-style: normal; font-size: 20px; color: var(--title); }
+:root[data-style='jw'] .mw-para p { font-family: var(--font); font-size: 20px; line-height: 1.6; color: var(--text-body); }
+:root[data-style='jw'] .at-theme { font-family: var(--font); }
+/* El versículo del Texto diario es Biblia: letra de libro en "Hoy", en la lista y al estudiarlo. */
+:root[data-style='jw'] :is(.today-verse, .entry-row.daily .entry-title) { font-family: var(--font-book); font-style: normal; }
+:root[data-style='jw'] .today-verse { font-size: 20px; color: var(--text-body); }
 
 /* Encabezado de Estudio y Juegos: barra gris fija con el título al centro e íconos lavanda. */
 :root[data-style='jw'] .page-bar { opacity: 1; transform: none; height: calc(var(--sat) + 52px); align-items: center; justify-content: center; padding: var(--sat) 104px 0; background: rgb(var(--bar-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none; }
@@ -1476,7 +1476,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .mw-aside { font-size: inherit; color: var(--text); }
 :root[data-style='jw'] .mw-aside .ref-link { color: var(--link); }
 :root[data-style='jw'] { --mw-tesoros: #6db3c0; --mw-maestros: #d9a43a; --mw-vida: #cf5f52; }
-:root[data-style='jw'][data-theme='light'] { --mw-tesoros: #2f7f8c; --mw-maestros: #a87406; --mw-vida: #a8382c; }
+:root[data-style='jw'][data-theme='light'] { --mw-tesoros: #2f7f8c; --mw-maestros: #946500; --mw-vida: #a8382c; }
 
 /* La Atalaya: número del artículo y canción en la portada; "Escuchar" el párrafo. */
 .at-art-num { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
@@ -1539,7 +1539,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* Estrellita: las respuestas que vas a comentar (salen primero en el modo reunión). */
 .at-answer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .at-answer-head .at-answer-label { margin-bottom: 0; }
-.star-btn { flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 2px 0 8px; font-size: 13px; font-weight: 600; color: var(--text-3); }
+.star-btn { flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: var(--tap); margin-block: -4px; padding: 0 2px 0 8px; font-size: 13px; font-weight: 600; color: var(--text-3); }
 .star-btn.on { color: var(--gold-text); }
 :root[data-style='jw'] .star-btn.on { color: #e3b341; }
 .at-answer .at-answer-head { margin-bottom: 8px; }
@@ -1561,7 +1561,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .today-text, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
 :root[data-style='jw'] .continue-label { color: var(--text-3); }
 /* Las etiquetas de las respuestas ("Mi respuesta", "Para meditar", "Mis notas") en letra normal, sin MAYÚSCULAS. */
-:root[data-style='jw'] .at-answer-label { font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-3); }
+:root[data-style='jw'] .at-answer-label { font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-2); }
 :root[data-style='jw'] .kind-card { min-height: 120px; }
 /* Las etiquetas de los campos un poco más claras y separadas, como en los formularios de JW Library. */
 :root[data-style='jw'] .sfield-label { font-size: 15px; font-weight: 600; color: var(--text-2); }
@@ -1580,7 +1580,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .practice-log { margin: 12px 0 0; font-size: 13px; color: var(--text-3); line-height: 1.5; }
 
 /* ---------- Texto diario por pasos (DailyStudy.jsx) ---------- */
-.dt-verse { font-family: var(--font-book); font-size: 20px; line-height: 1.5; color: var(--title); margin: 0 0 8px; }
+.dt-verse { font-family: var(--font-book); font-size: 20px; line-height: 1.5; color: var(--text-body); margin: 0 0 8px; }
 .dt-verse.flat { margin: 0; }
 .dt-more { margin: 0 0 16px; color: var(--text-2); font-size: 15px; line-height: 1.5; }
 .dt-more summary { min-height: 44px; display: flex; align-items: center; color: var(--link); cursor: pointer; }
@@ -1666,7 +1666,7 @@ input[type='time'].input { min-height: var(--tap); }
 .select { padding-right: 36px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16'%3E%3Cpath d='m7 10 5 5 5-5' fill='none' stroke='%2391919b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .seg2.wrap { flex-wrap: wrap; }
 .seg2.wrap button { flex: 1 0 auto; padding: 0 12px; }
-.link-btn { display: inline-flex; align-items: center; min-height: 36px; margin: -8px 0 12px; color: var(--link); font-size: 15px; }
+.link-btn { display: inline-flex; align-items: center; min-height: var(--tap); margin: -12px 0 8px; color: var(--link); font-size: 15px; }
 .hint.small { font-size: 13px; margin: -8px 0 16px; }
 .sfield .hint.small { margin: 8px 0 0; }
 .slot-card { margin: 0 0 16px; padding: 12px; background: var(--bg-raise, var(--surface)); border: 1px solid var(--line); border-radius: var(--r); }
@@ -1674,7 +1674,7 @@ input[type='time'].input { min-height: var(--tap); }
 .slot-head { display: flex; align-items: center; margin-bottom: 8px; }
 .slot-head .sfield-label { margin: 0; }
 .day-picks { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px; }
-.day-picks button { min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); font-size: 13px; font-weight: 500; }
+.day-picks button { min-height: var(--tap); border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); font-size: 13px; font-weight: 500; }
 .day-picks button.on { background: var(--check); border-color: var(--check); color: var(--check-ink); font-weight: 600; }
 
 /* ---------- Como JW: una sola forma y tarjetas sin borde ----------
@@ -1718,7 +1718,7 @@ input[type='time'].input { min-height: var(--tap); }
 .lib-list li + li .entry-row::before { left: 60px; }
 
 /* Constancia en un renglón bajo "Hoy". */
-.plan-streak { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: -8px 0 0; font-size: 15px; color: var(--text-3); }
+.plan-streak { justify-self: start; display: inline-flex; align-items: center; gap: 4px; min-height: var(--tap); margin: -12px 0 -4px; font-size: 15px; color: var(--text-3); }
 .plan-streak span { font-weight: 600; color: var(--accent, var(--text)); }
 .plan-streak svg { color: var(--text-3); }
 
@@ -1731,3 +1731,10 @@ input[type='time'].input { min-height: var(--tap); }
 @media (prefers-reduced-motion: reduce) {
   .overlay, .overlay:has(> .bar > .bar-btn.back) { animation: fade 0.2s; }
 }
+
+/* Renglones mejor cortados (Safari; donde no existe no cambia nada): los párrafos no terminan con una palabra
+   sola, los títulos se parten parejo y las comillas de un versículo cuelgan fuera del margen. Solo el estilo
+   del corte (text-wrap-style), para no deshacer los títulos de un renglón con "…". */
+:is(.at-text p, .mw-text, .mw-para p, .bible-text, .dt-verse, .dt-comment, .today-verse, .md p, .card-back, .explain, .mm-a) { text-wrap-style: pretty; }
+:is(.at-title, .at-sub, .at-question, .at-h, .mw-title, .mw-cover-title, .mw-q, .note-title, .sheet-h, .peek-title, .quiz-prompt, .mm-title, .empty-title, .plan-title) { text-wrap-style: balance; }
+:is(.today-verse, .dt-verse, .at-theme) { hanging-punctuation: first; }
