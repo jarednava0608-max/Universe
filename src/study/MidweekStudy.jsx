@@ -414,17 +414,24 @@ function Part({ pt, time, who, fields, fecha, onAnswer, onSet, onStar, onMarks, 
   return (
     <>
       <p className={'mw-sec ' + pt.sec}>{pt.seccion}</p>
-      <p className="at-qnum mw-meta">{pt.extra ? 'Parte de la congregación' : `Parte ${pt.num}`}{mins ? ` · ${mins} min` : ''}</p>
+      <p className="at-qnum mw-meta">{pt.extra ? 'Parte de la congregación' : `Parte ${pt.num}`}</p>
       <h2 className={'mw-title ' + pt.sec} data-num={pt.extra ? undefined : pt.num}>{pt.titulo}</h2>
-      {mins > 0 && <p className="mw-mins">({mins} mins.){mins !== pt.minutos && pt.minutos ? ` · la Guía dice ${pt.minutos}` : ''}</p>}
-      {time && <p className="mw-time">De {time.inicio} a {time.fin}</p>}
-      {who?.nombres.length > 0 && <p className="mw-who">{whoLabel(who.nombres)}{who.salaB.length > 0 && <span>Sala B: {whoLabel(who.salaB)}</span>}</p>}
+      {(mins > 0 || time || who?.nombres.length > 0) && (
+        <p className="mw-info">
+          {[
+            mins > 0 && `${mins} min${mins !== pt.minutos && pt.minutos ? ` (la Guía dice ${pt.minutos})` : ''}`,
+            time && `${time.inicio} a ${time.fin}`,
+            who?.nombres.length > 0 && whoLabel(who.nombres),
+          ].filter(Boolean).join(' · ')}
+          {who?.salaB.length > 0 && <span>Sala B: {whoLabel(who.salaB)}</span>}
+        </p>
+      )}
       {pt.lineas.some((l) => !l.q && !l.media) && <p className="at-tip small">Toca 2 o 3 palabras clave para subrayarlas.</p>}
       {pt.lineas.map((l, i) => {
         if (l.q) return (
           <label key={i} className="at-answer mw-qcard">
             <span className="at-answer-head">
-              <span className="at-answer-label">{l.meditar ? 'Para meditar' : 'Pregunta'}</span>
+              <span className="at-answer-label">{l.meditar ? 'Para meditar' : ''}</span>
               <StarButton on={isStarred(fields, l.key)} onClick={() => onStar(l.key)} />
             </span>
             <span className="mw-q"><Rich text={l.text} /></span>
@@ -499,7 +506,7 @@ function StudyChapter({ fields, onSet, onAnswer, onStar }) {
               {b.seccion && b.seccion !== blocks[i - 1]?.seccion && <p className="mw-study-sec">{b.seccion}</p>}
               <div className="at-answer mw-qcard">
                 <span className="at-answer-head">
-                  <span className="at-answer-label">{b.seccion ? (b.label === b.seccion ? 'Pregunta' : `Pregunta ${b.n}`) : b.label}</span>
+                  <span className="at-answer-label">{b.seccion ? (b.label === b.seccion ? '' : `Pregunta ${b.n}`) : b.label}</span>
                   <StarButton on={isStarred(fields, 'e:' + b.key)} onClick={() => onStar('e:' + b.key)} />
                 </span>
                 <span className="mw-q"><Rich text={b.pregunta} /></span>
