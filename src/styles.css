@@ -1438,7 +1438,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] :is(.today-card, .kind-card, .continue-card) { background: var(--surface); }
 
 /* "Hoy" como el inicio de JW Library: la fecha en lavanda. */
-:root[data-style='jw'] .today-label { font-size: 17px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--accent); }
+:root[data-style='jw'] .today-label { font-size: 17px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--title); }
+/* El lavanda solo en lo que se toca: los momentos del día y las etiquetas de las tarjetas van en gris. */
+:root[data-style='jw'] .plan-moment { color: var(--text-3); }
 
 /* La Guía de actividades: la semana grande en gris, la lectura en azul, una línea y cada sección
    con su color y su cuadro; el título de cada parte va numerado y en el color de su sección. */
@@ -1553,7 +1555,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] :is(.game-icon, .kind-icon) { color: var(--accent); background: var(--accent-soft); }
 :root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .today-text, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
 :root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .today-text, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
-:root[data-style='jw'] .continue-label { color: var(--accent); }
+:root[data-style='jw'] .continue-label { color: var(--text-3); }
+/* Las etiquetas de las respuestas ("Mi respuesta", "Para meditar", "Mis notas") en letra normal, sin MAYÚSCULAS. */
+:root[data-style='jw'] .at-answer-label { font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-3); }
 :root[data-style='jw'] .kind-card { min-height: 120px; }
 /* Las etiquetas de los campos un poco más claras y separadas, como en los formularios de JW Library. */
 :root[data-style='jw'] .sfield-label { font-size: 14px; font-weight: 600; color: var(--text-2); }
