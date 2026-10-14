@@ -402,7 +402,7 @@ function Block({ b, enlace, n, total, answer, marks, starred, onStar, onAnswer, 
       )}
       <label className="at-answer">
         <span className="at-answer-head">
-          <span className="at-answer-label">Mi respuesta, con mis palabras</span>
+          <span className="at-answer-label">Mi respuesta</span>
           <StarButton on={starred} onClick={onStar} />
         </span>
         <AutoText value={answer} placeholder="Una idea corta, como para comentarla en la reunión" onChange={onAnswer} minRows={3} />
