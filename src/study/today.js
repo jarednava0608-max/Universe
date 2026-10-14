@@ -1,12 +1,12 @@
-// "Hoy" (arriba en Estudio): lo que toca hacer hoy según tu rutina, en orden, para que al abrir la app
-// sepas qué sigue. Cada paso se marca solo cuando lo haces:
+// "Hoy" (arriba en Estudio): lo que toca hacer hoy, en orden, para que al abrir la app sepas qué
+// sigue. Cada paso se marca solo cuando lo haces:
 //   1. Texto diario (pegarlo y analizarlo).
-//      Lectura de la Biblia, si te pusiste una meta (los capítulos que tocan hoy).
-//   2. La Atalaya, desde 3 días antes de la reunión del fin de semana (cuántas preguntas llevas).
-//   3. La reunión de entre semana, desde 2 días antes.
-//      Tu asignación, desde 7 días antes (se marca hecha si ya la practicaste hoy).
+//   2. La Atalaya, desde 3 días antes de la reunión del fin de semana (cuántas preguntas llevas),
+//      o la reunión de entre semana, desde 2 días antes.
+//   3. Tu asignación, desde 7 días antes (se marca hecha si ya la practicaste hoy).
 //   4. Repasar hoy (lo que toca y las nuevas).
-//   5. Reto del día.
+//   5. Lectura de la Biblia, si te pusiste una meta (los capítulos que tocan hoy).
+//   6. Reto del día.
 import { clock, dailyMinimum, dailyVerse, partLabel, practicedOn } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { addDays, roundSize } from '../games/progress.js'
@@ -65,21 +65,7 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     create: diario ? null : { kind: 'diario', fields: { fecha: day } },
   })
 
-  const lectura = readingToday(leidos, plan, now)
-  if (lectura && !lectura.finished) {
-    items.push({
-      key: 'lectura',
-      title: 'Lectura de la Biblia',
-      sub: lectura.expired ? 'Tu meta ya pasó · Elige otra'
-        : lectura.ok ? `Hecho: ${chaptersLabel(lectura.done, BOOKS)}`
-        : chaptersLabel(lectura.next, BOOKS),
-      done: lectura.ok,
-      // El primer capítulo que toca (para abrirlo en el lector).
-      ref: lectura.next[0] ? `${BOOKS[lectura.next[0][0] - 1]} ${lectura.next[0][1]}` : null,
-    })
-  }
-
-  // Se prepara la reunión que sigue (en las mañanas): después de la de entre semana, La Atalaya, y al
+  // Se prepara la reunión que sigue: después de la de entre semana, La Atalaya, y al
   // revés. La otra solo sale si ya la empezaste y te falta.
   const finDays = meetings?.fin != null ? nextDay(meetings.fin, now).days : null
   const semDays = meetings?.semana != null ? nextDay(meetings.semana, now).days : null
@@ -153,6 +139,20 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     done: n === 0 || !!review.round,
   })
 
+  const lectura = readingToday(leidos, plan, now)
+  if (lectura && !lectura.finished) {
+    items.push({
+      key: 'lectura',
+      title: 'Lectura de la Biblia',
+      sub: lectura.expired ? 'Tu meta ya pasó · Elige otra'
+        : lectura.ok ? `Hecho: ${chaptersLabel(lectura.done, BOOKS)}`
+        : chaptersLabel(lectura.next, BOOKS),
+      done: lectura.ok,
+      // El primer capítulo que toca (para abrirlo en el lector).
+      ref: lectura.next[0] ? `${BOOKS[lectura.next[0][0] - 1]} ${lectura.next[0][1]}` : null,
+    })
+  }
+
   items.push({
     key: 'reto',
     title: 'Reto del día',
@@ -160,41 +160,12 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     done: !!challenge,
   })
 
-  // Cada paso en su momento del día, como en tu calendario.
-  const wd = now.getDay()
-  const order = Object.fromEntries(MOMENTS.map((m, i) => [m.key, i]))
-  for (const it of items) {
-    it.moment = it.key === 'lectura' || it.key === 'reto' ? 'noche'
-      : wd === 0 && (it.key === 'atalaya' || it.key === 'entresemana') ? 'tarde'
-      : 'manana'
-  }
-  return items.sort((a, b) => order[a.moment] - order[b.moment])
+  return items
 }
 
-// Los momentos de tu rutina (de tu calendario): entre semana sales a las 6:30 con el texto diario y
-// la reunión; el fin de semana, texto diario a las 6:45; el domingo a las 3:00, estudio personal; y
-// cada noche a las 9:00, lectura de la Biblia y oración. `from` = la hora en que empieza a contar.
-export const MOMENTS = [
-  { key: 'manana', title: 'Mañana', from: 0 },
-  { key: 'tarde', title: 'Tarde', from: 15 },
-  { key: 'noche', title: 'Noche', from: 18 },
-]
-export function momentLabel(key, now = new Date()) {
-  const wd = now.getDay()
-  if (key === 'manana') return wd >= 1 && wd <= 5 ? 'Mañana · 6:30 · camino a clase' : 'Mañana · 6:45'
-  if (key === 'tarde') return 'Tarde · 3:00 · estudio personal'
-  return 'Noche · 9:00 · antes de orar'
-}
-
-// Lo que sigue: el primer paso sin hacer de este momento del día o de uno anterior; si ya hiciste
-// todo lo de ahora, el primero de más tarde (later: true). null si ya terminaste el día.
-export function nextStep(items, now = new Date()) {
-  const h = now.getHours()
-  const started = new Set(MOMENTS.filter((m) => m.from <= h).map((m) => m.key))
-  const pending = items.filter((it) => !it.done)
-  const nowItem = pending.find((it) => !it.moment || started.has(it.moment))
-  if (nowItem) return nowItem
-  return pending[0] ? { ...pending[0], later: true } : null
+// Lo que sigue: el primer paso sin hacer, o null si ya terminaste el día.
+export function nextStep(items) {
+  return items.find((it) => !it.done) ?? null
 }
 
 // ¿Lo copiado parece el texto diario? (un texto con su cita entre paréntesis: "… (Heb. 10:1).").

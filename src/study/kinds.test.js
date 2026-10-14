@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyTextUrl, dailyTextAppUrl, partMinutes, clock } from './kinds.js'
+import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyBody,dailyTextUrl, dailyTextAppUrl, partMinutes, clock } from './kinds.js'
 
 describe('Estudio', () => {
   it('detecta citas bíblicas sin repetir', () => {
@@ -106,6 +106,17 @@ describe('Notas', async () => {
 describe('Texto diario', () => {
   it('toma solo el versículo con su cita', () => {
     expect(dailyVerse('\nNo calumnia con su lengua (Sal. 15:3).\n\nEl salmista (Sal. 15:1).')).toBe('No calumnia con su lengua (Sal. 15:3).')
+  })
+  it('se salta el renglón de la fecha que copia JW Library', () => {
+    const texto = 'Miércoles 14 de octubre\nNo calumnia con su lengua (Sal. 15:3).\nEl salmista (Sal. 15:1).'
+    expect(dailyVerse(texto)).toBe('No calumnia con su lengua (Sal. 15:3).')
+    expect(dailyVerse('miércoles, 14 de octubre de 2026\n\nNo calumnia con su lengua (Sal. 15:3).')).toBe('No calumnia con su lengua (Sal. 15:3).')
+    expect(dailyVerse('14 de octubre\nNo calumnia con su lengua (Sal. 15:3).')).toBe('No calumnia con su lengua (Sal. 15:3).')
+    expect(dailyBody(texto)).toBe('No calumnia con su lengua (Sal. 15:3).\nEl salmista (Sal. 15:1).')
+  })
+  it('no quita un primer renglón que no es fecha', () => {
+    expect(dailyVerse('Sábado de descanso (Éx. 20:8).')).toBe('Sábado de descanso (Éx. 20:8).')
+    expect(dailyBody('No calumnia (Sal. 15:3).')).toBe('No calumnia (Sal. 15:3).')
   })
   it('arma el enlace al texto diario de esa fecha', () => {
     expect(dailyTextUrl('2026-10-04')).toBe('https://wol.jw.org/es/wol/dt/r4/lp-s/2026/10/4')

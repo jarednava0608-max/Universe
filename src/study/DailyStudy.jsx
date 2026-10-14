@@ -1,7 +1,7 @@
 import { createRef, useEffect, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
-import { DAILY_QUESTIONS, DAILY_STEPS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyType, dailyVerse, dailyTextUrl, dailyTextAppUrl, entryForClaude } from './kinds.js'
+import { DAILY_QUESTIONS, DAILY_STEPS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyType, dailyVerse, dailyBody, dailyTextUrl, dailyTextAppUrl, entryForClaude } from './kinds.js'
 
 const filled = (v) => !!String(v ?? '').trim()
 
@@ -89,8 +89,8 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
   const next = DAILY_STEPS[i + 1]
   const prev = DAILY_STEPS[i - 1]
   const verse = dailyVerse(fields.texto)
-  // El comentario: lo pegado sin el versículo de arriba.
-  const comment = String(fields.texto ?? '').trim().replace(verse, '').trim()
+  // El comentario: lo pegado sin la fecha ni el versículo de arriba.
+  const comment = dailyBody(fields.texto).replace(verse, '').trim()
   // La lección arranca con las frases del tipo de texto que adivina la app ("Jehová promete…").
   const type = DAILY_TYPES.find((t) => t.key === dailyType(fields))
   // Las frases solo ayudan a arrancar: se quitan las que ya usaste y todas cuando ya escribiste

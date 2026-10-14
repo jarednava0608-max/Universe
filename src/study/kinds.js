@@ -355,10 +355,19 @@ function clip(s, n) {
 function lines(s) {
   return String(s ?? '').split('\n').map((l) => l.replace(/^[-•*]\s*/, '').trim()).filter(Boolean)
 }
+// Lo copiado de JW Library empieza con la fecha ("Miércoles 14 de octubre"); sin ese renglón,
+// "Hoy" y la lista mostraban la fecha en lugar del versículo.
+const DATE_LINE = /^((lunes|martes|miercoles|jueves|viernes|sabado|domingo),?\s+)?\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)(\s+(de|del)\s+\d{4})?\.?$/
+// El Texto diario sin el renglón de la fecha.
+export function dailyBody(texto) {
+  const s = String(texto ?? '').trim()
+  const first = s.split('\n')[0]
+  return DATE_LINE.test(foldText(first)) ? s.slice(first.length).trim() : s
+}
 // Solo el texto bíblico del Texto diario: el primer renglón, hasta su cita
-// ("No calumnia con su lengua (Sal. 15:3)."), sin el comentario que sigue.
+// ("No calumnia con su lengua (Sal. 15:3)."), sin la fecha ni el comentario que sigue.
 export function dailyVerse(texto) {
-  const line = String(texto ?? '').split('\n').map((l) => l.trim()).find(Boolean) ?? ''
+  const line = dailyBody(texto).split('\n').map((l) => l.trim()).find(Boolean) ?? ''
   const m = line.match(/^.*?\([^()]*\d[^()]*\)[.»”"]?/)
   return m ? m[0] : line
 }

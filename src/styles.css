@@ -1158,26 +1158,19 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* ---------- Estudio: Texto de hoy y Seguir donde te quedaste ---------- */
 .today-card { display: grid; gap: 12px; padding: 16px 20px; margin: -4px 0 12px; border-radius: 18px; background: linear-gradient(160deg, var(--surface-2), var(--surface) 70%); border: 1px solid var(--line); }
 .today-label { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
-.today-text { display: grid; gap: 8px; text-align: left; }
-.today-verse { font-family: Georgia, 'Times New Roman', serif; font-size: 20px; line-height: 1.5; color: var(--text); font-style: italic; }
-.today-sub { font-size: 13px; color: var(--text-2); }
-.today-sub.pending, .entry-sub.pending { font-style: italic; color: var(--text-3); }
-.today-add { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 16px; border-radius: 999px; font-size: 15px; font-weight: 500; color: var(--text); background: rgba(var(--fg-rgb), 0.06); border: 1px solid var(--line-strong); }
-.today-add:active { background: rgba(var(--fg-rgb), 0.1); }
+.entry-sub.pending { font-style: italic; color: var(--text-3); }
 /* "Hoy": los pasos del día */
 .library-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; margin: 8px 0 4px; padding: 0 2px; font-size: 20px; font-weight: 700; color: var(--title); }
 .library-toggle .chev { color: var(--text-3); display: grid; transform: rotate(90deg); transition: transform 0.2s; }
 .library-toggle.open .chev { transform: rotate(-90deg); }
-.plan-next { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; width: 100%; margin: 4px 0 2px; padding: 12px 16px; text-align: left; }
-.plan-next.later { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
-.plan-group { display: grid; grid-template-columns: minmax(0, 1fr); }
-.plan-moment { margin: 12px 0 0; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent, var(--text-3)); }
+.plan-next { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; width: 100%; margin: 4px 0 0; padding: 12px 16px; text-align: left; }
 .plan-next-label { font-size: 17px; font-weight: 600; }
 .plan-next-sub { font-size: 13px; font-weight: 400; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .today-card.plan { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-bottom: 12px; }
 .plan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .plan-count { flex: none; font-size: 13px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums; }
-.plan-list { list-style: none; margin: 2px 0 0; padding: 0; }
+/* Una sola lista, con aire bajo el botón grande (ya no hay encabezados de momento del día). */
+.plan-list { list-style: none; margin: 8px 0 0; padding: 0; }
 .plan-list li + li .plan-row { border-top: 1px solid var(--line); }
 .plan-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 0; text-align: left; }
 .plan-row .chev { color: var(--text-3); display: grid; }
@@ -1186,7 +1179,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .plan-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
 .plan-row.done .plan-title { color: var(--text-2); font-weight: 500; }
 .plan-sub { font-size: 13px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.plan-foot { margin: 2px 0 0; font-size: 13px; color: var(--text-3); }
+.plan-foot { margin: 4px 0 0;font-size: 13px; color: var(--text-3); }
 .plan-change { padding: 12px 8px; margin: -12px 0 -12px 4px; font: inherit; color: var(--link); }
 .plan-setup { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .plan-setup-q { margin: 0; font-size: 15px; color: var(--text-2); line-height: 1.45; }
@@ -1428,9 +1421,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .dt-comment,
 :root[data-style='jw'] .dt-more p { font-family: var(--font); font-size: 20px; line-height: 1.6; color: var(--text-body); }
 :root[data-style='jw'] .at-theme { font-family: var(--font); }
-/* El versículo del Texto diario es Biblia: letra de libro en "Hoy", en la lista y al estudiarlo. */
-:root[data-style='jw'] :is(.today-verse, .entry-row.daily .entry-title) { font-family: var(--font-book); font-style: normal; }
-:root[data-style='jw'] .today-verse { font-size: 20px; color: var(--text-body); }
+/* El versículo del Texto diario es Biblia: letra de libro en la lista y al estudiarlo. */
+:root[data-style='jw'] .entry-row.daily .entry-title { font-family: var(--font-book); font-style: normal; }
 
 /* Encabezado de Estudio y Juegos: barra gris fija con el título al centro e íconos lavanda. */
 :root[data-style='jw'] .page-bar { opacity: 1; transform: none; height: calc(var(--sat) + 52px); align-items: center; justify-content: center; padding: var(--sat) 104px 0; background: rgb(var(--bar-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none; }
@@ -1461,8 +1453,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 
 /* "Hoy" como el inicio de JW Library: la fecha en lavanda. */
 :root[data-style='jw'] .today-label { font-size: 17px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--title); }
-/* El lavanda solo en lo que se toca: los momentos del día y las etiquetas de las tarjetas van en gris. */
-:root[data-style='jw'] .plan-moment { color: var(--text-3); }
 
 /* La Guía de actividades: la semana grande en gris, la lectura en azul, una línea y cada sección
    con su color y su cuadro; el título de cada parte va numerado y en el color de su sección. */
@@ -1575,8 +1565,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] :is(.game-card, .progress-card, .mode-card, .medal, .mb-world, .mb-goal, .result-stats, .order-built, .missed-item) { border-radius: 6px; background: var(--surface); box-shadow: none; }
 :root[data-style='jw'] :is(.game-icon, .kind-icon, .daily-icon, .flame) { border-radius: 6px; }
 :root[data-style='jw'] :is(.game-icon, .kind-icon) { color: var(--accent); background: var(--accent-soft); }
-:root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .today-text, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
-:root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .today-text, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
+:root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
+:root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
 :root[data-style='jw'] .continue-label { color: var(--text-3); }
 /* Las etiquetas de las respuestas ("Mi respuesta", "Para meditar", "Mis notas") en letra normal, sin MAYÚSCULAS. */
 :root[data-style='jw'] .at-answer-label { font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-2); }
@@ -1587,7 +1577,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .sfield-label.at-q { font-size: 17px; color: var(--title); }
 :root[data-style='jw'] .input { border-radius: 6px; }
 :root[data-style='jw'] .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
-:root[data-style='jw'] .today-add { border-radius: 6px; color: var(--accent); background: var(--accent-soft); border-color: transparent; font-weight: 600; }
 
 /* Mis asignaciones: cronómetro para practicar la parte. */
 .practice { padding: 16px; background: var(--bg-raise); border: 1px solid var(--line); border-radius: var(--r); }
@@ -1705,7 +1694,7 @@ input[type='time'].input { min-height: var(--tap); }
   .propose-card, .game-card, .game-icon, .soon-tag, .option, .mode-card, .pair-chip, .flashcard, .soon-badge, .ref-chip, .due-tag,
   .progress-card, .flame, .quiz-run, .missed-item, .order-built, .order-chip, .book-list, .medal, .medal-icon, .note-search, .tb-btn,
   .tidy-banner, .tidy-banner button, .related-row, .mb-world, .mb-goal, .mb-more, .record-tag, .result-stats, .mb-world-hero, .game-pill,
-  .empty-state .empty-icon, .daily-card, .daily-icon, .level-note, .undo-bar, .today-card, .today-add, .continue-card, .at-card, .at-cover,
+  .empty-state .empty-icon, .daily-card, .daily-icon, .level-note, .undo-bar, .today-card, .continue-card, .at-card, .at-cover,
   .at-answer, .at-missing button, .cite-blank, .dt-chip, .constancia-text, .new-task, .chips button span, .fold-row.alone, .plan-next) { border-radius: var(--r); }
 :root[data-style='jw'] :is(.kind-card, .entry-list, .propose-card, .game-card, .mode-card, .progress-card, .book-list, .related-row, .mb-world,
   .result-stats, .daily-card, .continue-card, .at-card, .at-answer, .constancia-text, .new-task, .menu-group, .note-search, .missed-item) { border-color: transparent; }
@@ -1756,9 +1745,9 @@ input[type='time'].input { min-height: var(--tap); }
 /* Renglones mejor cortados (Safari; donde no existe no cambia nada): los párrafos no terminan con una palabra
    sola, los títulos se parten parejo y las comillas de un versículo cuelgan fuera del margen. Solo el estilo
    del corte (text-wrap-style), para no deshacer los títulos de un renglón con "…". */
-:is(.at-text p, .mw-text, .mw-para p, .bible-text, .dt-verse, .dt-comment, .dt-more p, .today-verse, .md p, .card-back, .explain, .mm-a) { text-wrap-style: pretty; }
+:is(.at-text p, .mw-text, .mw-para p, .bible-text, .dt-verse, .dt-comment, .dt-more p, .md p, .card-back, .explain, .mm-a) { text-wrap-style: pretty; }
 :is(.at-title, .at-sub, .at-question, .at-h, .mw-title, .mw-cover-title, .mw-q, .note-title, .sheet-h, .peek-title, .quiz-prompt, .mm-title, .empty-title, .plan-title) { text-wrap-style: balance; }
-:is(.today-verse, .dt-verse, .at-theme) { hanging-punctuation: first; }
+:is(.dt-verse, .at-theme) { hanging-punctuation: first; }
 
 /* Área para el dedo de 44 px en chips y botones segmentados, sin cambiar cómo se ven (se extiende hacia
    el espacio de alrededor). */
@@ -1766,9 +1755,6 @@ input[type='time'].input { min-height: var(--tap); }
 :is(.ref-chip, .at-missing button, .level-tabs button, .seg-modes.small button)::after { content: ''; position: absolute; inset: -5px 0; }
 :is(.seg2, .seg-modes:not(.small), .galaxies) button::after { content: ''; position: absolute; inset: -3px 0; }
 
-/* En "Hoy", en la noche: lo que te propusiste en la mañana con el texto diario (para cerrar el día y orar). */
-.plan-recall { display: grid; gap: 2px; margin: 8px 0 4px; font-size: 15px; line-height: 1.45; color: var(--text-body); text-wrap-style: pretty; }
-.plan-recall span { font-size: 13px; color: var(--text-2); }
 .at-card + .at-missing { margin-top: -4px; margin-bottom: 20px; }
 
 /* Juegos: después de contestar, "Siguiente" siempre en el mismo lugar, abajo y a la mano del pulgar (aunque la
