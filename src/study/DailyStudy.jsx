@@ -201,8 +201,10 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
               </div>
             ) : (
               <div className="action-stack">
-                <button className="primary" disabled={missing.length > 0} onClick={finish}>{missing.length ? `Te falta: ${missing.map((s) => s.label).join(' y ')}` : 'Listo'}</button>
-                {missing.map((s) => <button key={s.key} className="secondary" onClick={() => go(s.key)}>Ir a {s.label}</button>)}
+                {missing.length > 0 && <p className="at-tip small">Te falta {missing.map((s) => s.short).join(' y ')}.</p>}
+                {missing.length > 0
+                  ? <button className="primary" onClick={() => go(missing[0].key)}>Contestar: {missing[0].q}</button>
+                  : <button className="primary" onClick={finish}>Listo</button>}
                 <button className="secondary icon-left" onClick={async () => {
                   try { await navigator.clipboard.writeText(entryForClaude({ ...base.current, fields })); toast('Copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
                 }}>

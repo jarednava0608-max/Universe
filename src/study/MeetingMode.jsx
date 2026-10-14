@@ -33,7 +33,7 @@ export default function MeetingMode({ kicker, title, items, starred = [], onClos
       <div className="editor-body mm-body">
         <p className="at-cover-kicker">{kicker}</p>
         <h1 className="mm-title">{title}</h1>
-        <p className="mm-count">{done} de {items.length} contestadas</p>
+        <p className="mm-count">{done} de {items.length} respondidas</p>
         {/* Lo que marcaste para comentar va primero, para tenerlo a la mano al levantar la mano. */}
         {items.some((x) => starred.includes(x.key)) && (
           <section className="mm-stars">

@@ -164,7 +164,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
               <p className="at-cover-kicker">Vida y Ministerio{prog.semana ? ` · ${prog.semana}` : ''}</p>
               {prog.semana && <p className="mw-week">{prog.semana}</p>}
               <p className="mw-cover-title">{fields.titulo || prog.lectura || 'Reunión de entre semana'}</p>
-              <p className="at-summary">{meetingDay(fields.fecha)}{count.total ? ` · ${count.done} de ${count.total} contestadas` : ''}</p>
+              <p className="at-summary">{meetingDay(fields.fecha)}{count.total ? ` · ${count.done} de ${count.total} respondidas` : ''}</p>
             </div>
             {count.done > 0 && (
               <button className="secondary mm-open" onClick={() => setMeeting(true)}>Modo reunión: solo mis respuestas</button>
@@ -337,20 +337,19 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
 
         {step === 'listo' && (
           <>
-            <h2 className="at-h">{count.done === count.total ? 'Lista para la reunión' : 'Casi lista'}</h2>
+            <h2 className="at-h">{count.done === count.total ? 'Lista para la reunión' : count.total - count.done === 1 ? 'Te falta 1 pregunta' : `Te faltan ${count.total - count.done} preguntas`}</h2>
             <div className="at-card">
               <p className="at-cover-kicker">{['Vida y Ministerio', prog.semana].filter(Boolean).join(' · ')}</p>
               <p className="at-title">{fields.titulo || 'Reunión de entre semana'}</p>
               {count.total > 0 && (
                 <>
                   <div className="progress"><span style={{ width: `${(count.done / count.total) * 100}%` }} /></div>
-                  <p className="at-summary">Contestaste {count.done} de {count.total} {count.total === 1 ? 'pregunta' : 'preguntas'}.</p>
+                  <p className="at-summary">Respondiste {count.done} de {count.total} {count.total === 1 ? 'pregunta' : 'preguntas'}.</p>
                 </>
               )}
             </div>
             {count.done < count.total && (
               <>
-                <p className="at-label">Te faltan</p>
                 <div className="at-missing">
                   {partes.map((p, i) => p.lineas.some((l) => l.q && !answerOf(fields, l.key).trim()) && (
                     <button key={p.num} onClick={() => go('partes', i)}>Parte {p.num}</button>
@@ -366,7 +365,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
             )}
             <label className="sfield">
               <span className="sfield-label">¿Cómo lo aplico en mi vida?</span>
-              <AutoText value={fields.aplicacion ?? ''} placeholder="Algo concreto para esta semana" onChange={(v) => set({ aplicacion: v })} />
+              <AutoText value={fields.aplicacion ?? ''} placeholder="Cuando…, voy a… (algo concreto de esta semana)" onChange={(v) => set({ aplicacion: v })} />
             </label>
             <label className="sfield">
               <span className="sfield-label">Notas</span>
@@ -500,7 +499,7 @@ function StudyChapter({ fields, onSet, onAnswer, onStar }) {
               {chap.lectura.map((t, i) => <p key={i}><Rich text={t} /></p>)}
             </div>
           )}
-          <p className="at-label">Preguntas · {done} de {blocks.length} contestadas</p>
+          <p className="at-label">Preguntas · {done} de {blocks.length} respondidas</p>
           {blocks.map((b, i) => (
             <Fragment key={b.key}>
               {b.seccion && b.seccion !== blocks[i - 1]?.seccion && <p className="mw-study-sec">{b.seccion}</p>}
@@ -597,8 +596,9 @@ function kindOf(p) {
   return t[0].toUpperCase() + t.slice(1)
 }
 
-// Si ya pegaste ese capítulo en Mi Biblia: "Guardado", "9 de 16" o "Pegar".
+// Si ya pegaste ese capítulo en Mi Biblia: "En Mi Biblia", "9 de 16 vers." o "Sin pegar" (es un estado, no un
+// botón: el capítulo se pega tocando su nombre).
 function savedLabel({ saved, expected }) {
-  if (expected && saved >= expected) return 'Guardado'
-  return saved ? `${saved} de ${expected}` : 'Pegar'
+  if (expected && saved >= expected) return 'En Mi Biblia'
+  return saved ? `${saved} de ${expected} vers.` : 'Sin pegar'
 }

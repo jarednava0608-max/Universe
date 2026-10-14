@@ -11,6 +11,9 @@ import {
 } from './tasks.js'
 import { deviceHasPush, enableDevicePush, pushState, testPush } from '../lib/push.js'
 
+// La tecla "Listo" del teclado del iPhone cierra el teclado, para ver la fecha, el aviso y "Guardar".
+const doneKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() } }
+
 // Pestaña Pendientes (antes la app Centro): pendientes con fecha y aviso, y hábitos de cada día.
 const GROUPS = [
   ['atrasados', 'Atrasados'],
@@ -325,7 +328,7 @@ function TaskEditor({ entry, isNew, now, onClose, onSave, onDelete }) {
     >
       <label className="field">
         <span>Qué</span>
-        <input className="input" value={title} placeholder="Por ejemplo: entregar la actividad 5" autoFocus={isNew} enterKeyHint="done" onChange={(e) => setTitle(e.target.value)} />
+        <input className="input" value={title} placeholder="Por ejemplo: entregar la actividad 5" autoFocus={isNew} enterKeyHint="done" onKeyDown={doneKey} onChange={(e) => setTitle(e.target.value)} />
       </label>
       <div className="field">
         <span>Tipo</span>
@@ -411,7 +414,7 @@ function HabitEditor({ entry, isNew, onClose, onSave, onDelete }) {
     >
       <label className="field">
         <span>Hábito</span>
-        <input className="input" value={title} placeholder="Por ejemplo: ejercicio" autoFocus={isNew} onChange={(e) => setTitle(e.target.value)} />
+        <input className="input" value={title} placeholder="Por ejemplo: ejercicio" autoFocus={isNew} enterKeyHint="done" onKeyDown={doneKey} onChange={(e) => setTitle(e.target.value)} />
       </label>
       <label className="field">
         <span>Meta (opcional)</span>

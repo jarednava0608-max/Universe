@@ -3,7 +3,7 @@
 Pestaña **Pendientes** (`src/tasks/TasksTab.jsx`, lógica en `src/tasks/tasks.js` con pruebas). Se juntó aquí la app Centro (tareas con avisos y hábitos) para tener todo en una sola app. Las decisiones están en `DECISIONES.md`.
 
 ## Qué tiene
-- **Nuevo pendiente** hasta arriba (no un +, porque chocaba con la luna y la nube en el estilo Original).
+- **Nuevo pendiente** hasta arriba (no un +, porque chocaba con la luna y la nube en el estilo Original). Al escribir el título, la tecla "Listo" del teclado lo cierra para ver la fecha, el aviso y "Guardar" (también en un hábito).
 - **Hábitos de hoy**: los hábitos a los que les toca hoy, por hora, para palomear (se guarda el día en `fields.log`, últimos 120 días; "N seguidos" si llevas racha). Se ocultan mientras filtras.
 - **Filtros**: lupa (buscar sin acentos en título, notas y categoría; sale con más de 8 pendientes) y categorías (Universidad / Trabajo / Personal; tocar la activa quita el filtro).
 - **Lista por fecha**: Atrasados (en rojo), Hoy, Mañana, Próximos 7 días, Después, Sin fecha y **Hechos** (cerrado, los 30 más recientes). En "Próximos 7 días" y "Después" los de tipo Recordatorio se juntan en un renglón "N recordatorios programados" que se abre al tocarlo, para que se vean los pendientes de verdad.

@@ -9,7 +9,7 @@ const newId = () => Math.random().toString(36).slice(2, 9)
 // Paso "Conceptos" (Texto diario, La Atalaya y entre semana): de lo que estudiaste sacas pocas ideas
 // firmes para tu mapa. Cada una: título corto, qué es con tus palabras y en qué texto se apoya.
 // "Poner en el mapa" crea un nodo por concepto (los que ya están solo dicen "En el mapa").
-export default function ConceptsStep({ entry, fields, set, nodes = [], onToMap, onOpenNode, onPrev, onNext, nextLabel = 'Terminar' }) {
+export default function ConceptsStep({ entry, fields, set, nodes = [], onToMap, onOpenNode, onPrev, onNext, nextLabel = 'Siguiente' }) {
   const list = fields.conceptos ?? []
   const current = { ...entry, fields }
   const ideas = useMemo(() => conceptIdeas(current, list.map((c) => c.titulo)), [fields]) // eslint-disable-line react-hooks/exhaustive-deps

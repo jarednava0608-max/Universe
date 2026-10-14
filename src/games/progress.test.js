@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { streak, withDay, review, isDue, byPriority, dueCount, lastWeek, addDays, newToday, isKnown } from './progress.js'
+import { streak, withDay, review, isDue, byPriority, dueCount, lastWeek, addDays, newToday, isKnown, roundSize, mergeProgress } from './progress.js'
 
 const T = '2026-10-10'
 
@@ -80,5 +80,20 @@ describe('constancia', () => {
     const m = mergeConstancia({ start: '2026-10-01', best: 30, at: 1 }, { start: '2026-10-09', best: 4, at: 2 })
     expect(m).toEqual({ start: '2026-10-09', best: 30, at: 2 })
     expect(mergeConstancia(undefined, { start: '2026-10-01' })).toEqual({ start: '2026-10-01' })
+  })
+})
+
+describe('una ronda de Repasar hoy', () => {
+  it('trae hasta 8: primero lo que toca y luego hasta 4 nuevas', () => {
+    expect(roundSize({ due: 0, fresh: 10 })).toBe(4)
+    expect(roundSize({ due: 3, fresh: 10 })).toBe(7)
+    expect(roundSize({ due: 6, fresh: 10 })).toBe(8)
+    expect(roundSize({ due: 12, fresh: 2 })).toBe(8)
+    expect(roundSize({ due: 0, fresh: 0 })).toBe(0)
+  })
+  it('al juntar dos teléfonos queda el último día en que terminaste una ronda', () => {
+    expect(mergeProgress({ repaso: '2026-10-13' }, { repaso: '2026-10-14' }).repaso).toBe('2026-10-14')
+    expect(mergeProgress({ repaso: '2026-10-14' }, {}).repaso).toBe('2026-10-14')
+    expect(mergeProgress({}, {}).repaso).toBeUndefined()
   })
 })

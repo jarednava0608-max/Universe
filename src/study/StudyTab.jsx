@@ -7,7 +7,7 @@ import { KINDS, KIND_ORDER, partLabel, partMinutes, clock, makeEntry, entrySortK
 import { answeredCount } from './atalaya.js'
 import { midweekCount } from './midweek.js'
 import { readMeetings } from './meetings.js'
-import { nextDay } from './today.js'
+import { ASSIGNMENT_FROM, nextDay } from './today.js'
 import BibleHome from '../components/BibleHome.jsx'
 import { readCount, TOTAL_CHAPTERS } from '../lib/reading.js'
 import TodayPlan from './TodayPlan.jsx'
@@ -24,7 +24,7 @@ import AtalayaStudy from './AtalayaStudy.jsx'
 import MidweekStudy from './MidweekStudy.jsx'
 import DailyStudy from './DailyStudy.jsx'
 import PasteFields from './PasteFields.jsx'
-import { constanciaDays } from '../games/progress.js'
+import { addDays, constanciaDays } from '../games/progress.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
@@ -59,7 +59,11 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
   const openRecent = (r) => (r.node ? setPeekNode(r.node.id) : setEditing({ entry: r.entry, isNew: false }))
   // Arriba en Estudio: "Hoy" (lo que toca hacer hoy, en orden) y "Seguir donde te quedaste" (lo último que editaste esta semana).
   const todayEntry = byKind.diario.find((e) => e.fields.fecha === today())
-  const last = recent[0] && recent[0].entry?.id !== todayEntry?.id && Date.now() - recent[0].at < 7 * 864e5 ? recent[0] : null
+  const inToday = (e) => {
+    const f = String(e?.fields?.fecha ?? '')
+    return !!e && (e.id === todayEntry?.id || (e.kind === 'reunion' && f >= today()) || (e.kind === 'asignacion' && f >= today() && f <= addDays(today(), ASSIGNMENT_FROM)))
+  }
+  const last = recent[0] && !inToday(recent[0].entry) && Date.now() - recent[0].at < 7 * 864e5 ? recent[0] : null
 
   return (
     <div className="page">
@@ -499,7 +503,7 @@ const isAtalaya = (e) => e.kind === 'reunion' && e.fields.tipo !== 'entresemana'
 const isMidweek = (e) => e.kind === 'reunion' && e.fields.tipo === 'entresemana'
 function midweekSub(f) {
   const c = midweekCount(f)
-  return c.total ? `Entre semana · ${c.done === c.total ? 'Lista para la reunión' : `${c.done} de ${c.total} contestadas`}` : 'Entre semana'
+  return c.total ? `Entre semana · ${c.done === c.total ? 'Lista para la reunión' : `${c.done} de ${c.total} respondidas`}` : 'Entre semana'
 }
 
 // Lo último que tocaste: entradas de Estudio y nodos del mapa.
@@ -850,14 +854,17 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onSaveQuiet
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const [paste, setPaste] = useState(false)
   const [proposal, setProposal] = useState(null)
+  // Lo último que quedó guardado (al abrir o al guardar una práctica): "Cancelar" pregunta antes de tirar lo demás.
+  const saved = useRef(JSON.stringify(entry.fields))
   const set = (k, v) => setFields((f) => ({ ...f, [k]: v }))
   const draft = () => ({ ...entry, fields })
+  const cancel = () => (JSON.stringify(fields) === saved.current || confirm('¿Salir sin guardar? Se pierde lo que cambiaste.')) && onCancel()
   const linked = entry.mapNodeId && nodes.find((n) => n.id === entry.mapNodeId)
 
   return (
     <div className="overlay">
       <header className="bar">
-        <button className="bar-btn" onClick={onCancel}>Cancelar</button>
+        <button className="bar-btn" onClick={cancel}>Cancelar</button>
         <span className="bar-title">{def.short}</span>
         <button className="bar-btn strong" onClick={() => onSave(draft())}>Guardar</button>
       </header>
@@ -875,6 +882,7 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onSaveQuiet
               setFields(next)
               // La práctica se guarda de una vez, aunque luego salgas con "Cancelar".
               onSaveQuiet?.({ ...entry, fields: next })
+              saved.current = JSON.stringify(next)
               toast(`Práctica guardada: ${clock(secs)}.`)
             }}
           />

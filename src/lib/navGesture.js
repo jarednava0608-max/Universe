@@ -65,7 +65,8 @@ export function installNavGestures() {
   document.addEventListener('touchstart', (e) => {
     drag = null
     const t = e.touches[0]
-    if (e.touches.length !== 1 || t.clientX > EDGE || reduced()) return
+    // Con "Reducir movimiento" también: lo mueve tu dedo, como en el iPhone.
+    if (e.touches.length !== 1 || t.clientX > EDGE) return
     const ov = e.target.closest?.('.overlay')
     // Los juegos ya tienen su propio deslizar para salir.
     if (!ov || ov.classList.contains('game') || ov.classList.contains('leaving')) return

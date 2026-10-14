@@ -71,7 +71,7 @@ export default function TodayPlan({ streak, chain, entries, review, challenge, l
       )}
       {next && (
         <button className={'primary plan-next' + (next.later ? ' later' : '')} onClick={doNext}>
-          <span className="plan-next-label">{next.later ? `Para la ${next.moment === 'noche' ? 'noche' : 'tarde'}` : done ? 'Sigue' : 'Empieza'}: {next.title}</span>
+          <span className="plan-next-label">{next.later ? `Para la ${next.moment === 'noche' ? 'noche' : 'tarde'}` : done || next.entry ? 'Sigue' : 'Empieza'}: {next.title}</span>
           <span className="plan-next-sub">{next.key === 'diario' && !diario.verse ? 'Copia el texto en JW Library y toca aquí' : next.sub}</span>
         </button>
       )}
@@ -80,6 +80,10 @@ export default function TodayPlan({ streak, chain, entries, review, challenge, l
         return group.length > 0 && (
           <div key={m.key} className="plan-group">
             <p className="plan-moment">{momentLabel(m.key)}</p>
+            {m.key === 'noche' && diario.done && diario.entry?.fields.aplicacion?.trim() && (
+              // Antes de orar, lo que te propusiste en la mañana con el texto diario.
+              <p className="plan-recall"><span>Lo que te propusiste hoy</span>{clip(diario.entry.fields.aplicacion.trim())}</p>
+            )}
             <ul className="plan-list">
               {group.map((it) => (
                 <li key={it.key}>

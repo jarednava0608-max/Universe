@@ -283,11 +283,14 @@ export function articleDate(iso) {
   if (!y || !m || !d) return ''
   return new Date(y, m - 1, d).toLocaleDateString('es', { day: 'numeric', month: 'long' })
 }
+// Solo con 3 artículos o más: con menos no hay entre qué elegir (y la fecha no es lo que hay que recordar).
+export const SOURCE_MIN_ARTICLES = 3
 export function atalayaSourceCards(entries) {
   const out = []
   const list = entries
     .filter((e) => e.kind === 'reunion' && e.fields.tipo !== 'entresemana' && String(e.fields.articulo ?? '').trim())
     .sort((a, b) => String(b.fields.fecha ?? '').localeCompare(String(a.fields.fecha ?? '')) || (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+  if (list.length < SOURCE_MIN_ARTICLES) return out
   for (const e of list) {
     const title = e.fields.titulo || 'La Atalaya'
     const date = articleDate(e.fields.fecha)
@@ -303,8 +306,7 @@ export function atalayaSourceCards(entries) {
   return out
 }
 
-// Sin trampa: elegir el artículo entre tus otras Atalayas. Con un solo artículo, la semana en que
-// se estudió (su fecha y otras semanas cercanas). null si no hay con qué armar opciones.
+// Sin trampa: elegir el artículo entre tus otras Atalayas. null si no hay con qué armar opciones.
 export function atalayaSourceCheck(card, cards, rnd = Math.random) {
   const seen = new Set([card.group])
   const others = []
@@ -313,21 +315,13 @@ export function atalayaSourceCheck(card, cards, rnd = Math.random) {
     seen.add(c.group)
     others.push(c.back)
   }
-  if (others.length && !others.includes(card.back)) {
-    const options = shuffle([card.back, ...others], rnd)
-    return { ask: '¿De qué Atalaya es?', options, answer: options.indexOf(card.back) }
-  }
-  if (!card.date) return null
-  const [y, m, d] = card.fecha.split('-').map(Number)
-  const near = shuffle([-21, -14, -7, 7, 14, 21], rnd).slice(0, 3).map((k) => {
-    const t = new Date(y, m - 1, d + k)
-    return articleDate(`${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`)
-  })
-  const options = shuffle([card.date, ...near], rnd)
-  return { ask: '¿Qué semana estudiaste este artículo?', options, answer: options.indexOf(card.date) }
+  if (!others.length || others.includes(card.back)) return null
+  const options = shuffle([card.back, ...others], rnd)
+  return { ask: '¿De qué Atalaya es?', options, answer: options.indexOf(card.back) }
 }
 
-// Junta tus respuestas y los trozos de "¿De qué Atalaya es?": uno de estos cada `every` respuestas.
+// Junta tus respuestas y los trozos de "¿De qué Atalaya es?": uno de estos cada `every` respuestas, nunca
+// más (lo que hay que recordar son tus respuestas).
 export function withSources(answers, sources, every = 3) {
   const out = []
   const s = [...sources]
@@ -335,7 +329,7 @@ export function withSources(answers, sources, every = 3) {
     out.push(a)
     if ((i + 1) % every === 0 && s.length) out.push(s.shift())
   })
-  return [...out, ...s]
+  return out
 }
 
 // ---------- "¿Con qué texto lo pruebas?" ----------

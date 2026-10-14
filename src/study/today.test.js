@@ -25,6 +25,14 @@ describe('Hoy: lo que toca según tu rutina', () => {
     expect(items[2]).toMatchObject({ sub: '5 preguntas · 1 min', done: false })
   })
 
+  it('Repasar hoy dice lo que trae la ronda (hasta 4 nuevas) y se palomea al terminar una ronda', () => {
+    const repaso = (review) => todayPlan({ now: MON, review }).find((x) => x.key === 'repaso')
+    expect(repaso({ due: 0, fresh: 10 })).toMatchObject({ sub: '4 cosas · unos 2 min', done: false })
+    expect(repaso({ due: 0, fresh: 6, round: true })).toMatchObject({ sub: 'Hecho · otra ronda si quieres', done: true })
+    expect(repaso({ due: 0, fresh: 0, round: true })).toMatchObject({ sub: 'Hecho', done: true })
+    expect(repaso({ due: 0, fresh: 0 })).toMatchObject({ sub: 'Al día', done: true })
+  })
+
   it('el texto diario se marca hecho cuando ya lo analizaste', () => {
     const diario = { id: 'd', kind: 'diario', fields: { fecha: '2026-10-05', texto: 'Texto (Sal. 16:8).' } }
     expect(todayPlan({ now: MON, entries: [diario] })[0]).toMatchObject({ sub: '3 preguntas cortas · unos 5 min', done: false, verse: 'Texto (Sal. 16:8).' })
@@ -37,7 +45,7 @@ describe('Hoy: lo que toca según tu rutina', () => {
   it('la de entre semana con el programa pegado dice cuántas llevas', () => {
     const programa = 'TESOROS DE LA BIBLIA\n1. Perlas\n(10 mins.)\n¿Pregunta uno?\nRespuesta\n¿Pregunta dos?\nRespuesta'
     const e = { id: 'm', kind: 'reunion', fields: { tipo: 'entresemana', fecha: '2026-10-07', programa, respuestas: { '1-0': 'Algo' } }, updatedAt: 1 }
-    expect(todayPlan({ now: MON, meetings, entries: [e] }).find((x) => x.key === 'entresemana')).toMatchObject({ sub: 'El miércoles · 1 de 2 contestadas', done: false })
+    expect(todayPlan({ now: MON, meetings, entries: [e] }).find((x) => x.key === 'entresemana')).toMatchObject({ sub: 'El miércoles · 1 de 2 respondidas', done: false })
     const lista = { ...e, fields: { ...e.fields, respuestas: { '1-0': 'Algo', '1-1': 'Otra' } } }
     expect(todayPlan({ now: MON, meetings, entries: [lista] }).find((x) => x.key === 'entresemana')).toMatchObject({ sub: 'El miércoles · Lista para la reunión', done: true })
   })

@@ -491,7 +491,13 @@ export default function App() {
         </div>
       )}
 
-      <TabBar tab={tab} onChange={(t) => { setTab(t); setSearchOpen(false) }} dots={{ juegos: store.ready && !dailyDone(store.progress), pendientes: tasksDue > 0 }} />
+      <TabBar tab={tab} onChange={(t) => {
+        // Tocar la pestaña en la que ya estás sube hasta arriba, como en las apps del iPhone (tocar la hora no
+        // llega a las listas de la app).
+        if (t === tab) document.querySelector('.page .page-scroll')?.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+        setTab(t)
+        setSearchOpen(false)
+      }} dots={{ juegos: store.ready && !dailyDone(store.progress), pendientes: tasksDue > 0 }} />
 
       {store.error && <p className="banner">{store.error}</p>}
 

@@ -60,6 +60,14 @@ export function lastWeek(days, today = todayISO()) {
 
 // Cosas nuevas por día en el repaso (lo demás es repasar lo que ya viste).
 export const NEW_PER_DAY = 10
+// Una ronda de Repasar hoy: corta (unos 3 minutos) y con pocas nuevas.
+export const SESSION = 8
+export const NEW_PER_SESSION = 4
+// Cuántas cosas trae la próxima ronda (lo mismo que arma Review.jsx), para que Hoy y Juegos digan lo real.
+export function roundSize({ due = 0, fresh = 0 } = {}) {
+  const d = Math.min(due, SESSION)
+  return d + Math.min(fresh, NEW_PER_SESSION, SESSION - d)
+}
 // Desde esta caja algo cuenta como "conocido": lo acertaste en dos días distintos.
 export const KNOWN_BOX = 2
 export const isKnown = (item) => (item?.box ?? 0) >= KNOWN_BOX
@@ -144,7 +152,9 @@ export function mergeProgress(a = {}, b = {}) {
   // Meta de lectura: gana el cambio más reciente.
   const plan = mergePlan(a.plan, b.plan)
   const constancia = mergeConstancia(a.constancia, b.constancia)
-  return { ...b, ...a, days, srs, best, triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}), ...(constancia ? { constancia } : {}) }
+  // Último día en que terminaste una ronda de Repasar hoy: el más reciente.
+  const repaso = [a.repaso, b.repaso].filter(Boolean).sort().at(-1)
+  return { ...b, ...a, days, srs, best, ...(repaso ? { repaso } : {}), triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}), ...(constancia ? { constancia } : {}) }
 }
 
 // Constancia: `{ start, best, at }`. Días desde `start` (el día en que empezó o volvió a empezar).

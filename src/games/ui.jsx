@@ -482,7 +482,8 @@ export function SwipeCard({ front, back, onAnswer }) {
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* sin captura */ }
   }
   function move(e) {
-    if (!start.current || gone) return
+    // Antes de ver la respuesta no se puede deslizar: primero se voltea (nada de "Me la sé" a ojo).
+    if (!start.current || gone || !flip) return
     const x = e.clientX - start.current.x
     if (Math.abs(x) < 6 && !moved.current) return
     moved.current = x
@@ -521,10 +522,14 @@ export function SwipeCard({ front, back, onAnswer }) {
           <span className="card-hint">{flip ? 'Desliza a la derecha si te la sabías' : 'Toca para ver la respuesta'}</span>
         </button>
       </div>
-      <div className="two-btn">
-        <button className="secondary" onClick={() => { setGone(-1); setTimeout(() => onAnswer(false), 220) }}>Repasar otra vez</button>
-        <button className="primary" onClick={() => { setGone(1); setTimeout(() => onAnswer(true), 220) }}>Me la sé</button>
-      </div>
+      {flip ? (
+        <div className="two-btn">
+          <button className="secondary" onClick={() => { setGone(-1); setTimeout(() => onAnswer(false), 220) }}>Repasar otra vez</button>
+          <button className="primary" onClick={() => { setGone(1); setTimeout(() => onAnswer(true), 220) }}>Me la sé</button>
+        </div>
+      ) : (
+        <button className="primary" onClick={() => setFlip(true)}>Ver la respuesta</button>
+      )}
     </>
   )
 }

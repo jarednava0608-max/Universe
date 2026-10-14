@@ -1,23 +1,23 @@
 import { useState } from 'react'
 import { atalayaCards, atalayaCheck, atalayaSourceCards, atalayaSourceCheck, withSources, buildCards, cardCheck, citeSteps, dailyCards, dailyCheck, dailyMix } from './logic.js'
 import { GameScreen, Result, SwipeCard } from './ui.jsx'
-import { NEW_PER_DAY, isDue, newToday, review } from './progress.js'
+import { NEW_PER_DAY, NEW_PER_SESSION, SESSION, isDue, newToday, review, roundSize, todayISO } from './progress.js'
 import { CiteQuiz } from './Memorize.jsx'
 import { findRefs } from '../lib/bible.js'
 import RefLink from '../components/RefLink.jsx'
 
 const LABEL = { atalaya: 'Tu Atalaya', card: 'Tu concepto', daily: 'Tu texto diario', verse: 'Texto para memorizar', trivia: 'Pregunta', person: 'Personaje' }
-// Rondas cortas (unos 3 minutos) para que dé ganas de entrar; al terminar, "Otra ronda" si queda algo.
-export const SESSION = 8
-const NEW_PER_SESSION = 4
+// Rondas cortas (SESSION en progress.js, unos 3 minutos) para que dé ganas de entrar; al terminar,
+// "Otra ronda" si queda algo.
 
 // Solo lo que estudiaste tú: tus reuniones (La Atalaya y entre semana), tus textos diarios y los
 // conceptos de tu mapa. Los personajes, la trivia y Memorizar se practican en sus juegos.
+// El texto diario de hoy entra mañana: recordarlo después de dormir se queda más que justo al escribirlo.
 function pools(store) {
   return {
     atalaya: withSources(atalayaCards(store.entries), atalayaSourceCards(store.entries)),
     cards: buildCards(store.nodes),
-    daily: dailyCards(store.entries),
+    daily: dailyCards(store.entries).filter((c) => c.fecha !== todayISO()),
   }
 }
 
@@ -30,17 +30,13 @@ export function reviewItems(store) {
   return dailyMix(pools(store), srs, (s) => isDue(s), SESSION, Math.random, Math.min(NEW_PER_SESSION, freshLeft(srs)))
 }
 
-// Para la tarjeta de Juegos: cuántas toca repasar (todas) y cuántas nuevas hay hoy.
+// Para la tarjeta de Juegos y para Hoy: cuántas toca repasar (todas), cuántas nuevas hay hoy y si
+// hoy ya terminaste una ronda (`round`: así Hoy la palomea aunque queden nuevas para otra ronda).
 export function reviewSummary(store) {
   const srs = store.progress.srs ?? {}
   const all = dailyMix(pools(store), srs, (s) => isDue(s), Infinity, () => 0.5, freshLeft(srs))
   const fresh = all.filter((x) => x.fresh).length
-  return { due: all.length - fresh, fresh }
-}
-
-const left = (store) => {
-  const { due, fresh } = reviewSummary(store)
-  return due + fresh
+  return { due: all.length - fresh, fresh, round: store.progress.repaso === todayISO() }
 }
 
 export default function Review(props) {
@@ -61,7 +57,8 @@ function ReviewRound({ store, onExit, back, onMore }) {
   const doneNew = newToday(store.progress.srs ?? {}) > 0
 
   async function answer(knew) {
-    store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [item.key]: review(f.srs?.[item.key], knew) } }))
+    const last = i + 1 === items.length
+    store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [item.key]: review(f.srs?.[item.key], knew) }, ...(last ? { repaso: todayISO() } : {}) }))
     if (knew) setGood((g) => g + 1)
     else setMissed((m) => [...m, item])
     setI(i + 1)
@@ -79,8 +76,8 @@ function ReviewRound({ store, onExit, back, onMore }) {
         <Result
           pct={Math.round((good / items.length) * 100)}
           msg={`Repasaste ${items.length} ${items.length === 1 ? 'cosa' : 'cosas'} y te sabías ${good}.${missed.length ? ' Lo que fallaste vuelve pronto.' : ''}`}
-          onAgain={left(store) > 0 ? onMore : undefined}
-          againLabel={`Otra ronda (${Math.min(left(store), SESSION)})`}
+          onAgain={roundSize(reviewSummary(store)) > 0 ? onMore : undefined}
+          againLabel={`Otra ronda (${roundSize(reviewSummary(store))})`}
           onDone={onExit}
           doneLabel="Terminar"
         >

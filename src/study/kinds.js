@@ -376,16 +376,17 @@ export const DAILY_STEPS = [
     hint: 'Una o dos oraciones',
   },
   {
-    key: 'principio', label: 'Lección', q: '¿Qué lección me deja?',
+    key: 'principio', label: 'Lección', short: 'la lección', q: '¿Qué lección me deja?',
     guide: 'Dila en una oración, como si se la explicaras a un amigo.',
     starters: ['Aprendo que', 'Jehová me pide', 'Puedo confiar en que'],
     hint: 'Una sola oración',
   },
   {
-    key: 'aplicacion', label: 'Hoy', q: '¿Dónde lo necesito hoy?',
-    guide: 'Piensa en algo real de hoy: ¿con quién o dónde? ¿Qué vas a hacer o decir?',
-    starters: ['Hoy voy a', 'Cuando', 'En casa', 'En la escuela', 'En la predicación'],
-    hint: 'Hoy voy a…',
+    key: 'aplicacion', label: 'Hoy', short: 'qué hago hoy', q: '¿Dónde lo necesito hoy?',
+    // Un plan "Cuando…, voy a…" (con el momento y lo que harás) se cumple mucho más que "hoy voy a…".
+    guide: 'Elige un momento real de hoy (¿cuándo, con quién o dónde?) y qué vas a hacer o decir.',
+    starters: ['Cuando', 'voy a', 'En casa', 'En la escuela', 'En la predicación'],
+    hint: 'Cuando…, voy a…',
   },
   {
     key: 'resumen', label: 'Recordar', q: 'Tu frase del día',

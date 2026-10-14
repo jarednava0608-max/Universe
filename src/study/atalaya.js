@@ -148,6 +148,26 @@ export function words(text) {
   return String(text ?? '').split(/\s+/).filter(Boolean)
 }
 
+// Para cada palabra de un párrafo (en el mismo orden que words), la parte que es cita: { pre, cita, post, ref }
+// o null. Así las citas salen en azul y tocables sin cambiar la posición de las palabras marcadas.
+export function wordRefs(text, refs) {
+  const t = String(text ?? '')
+  const spans = []
+  for (const r of refs) {
+    for (let i = t.indexOf(r); i >= 0; i = t.indexOf(r, i + r.length)) spans.push([i, i + r.length, r])
+  }
+  spans.sort((a, b) => a[0] - b[0])
+  return [...t.matchAll(/\S+/g)].map((m) => {
+    const a = m.index
+    const z = a + m[0].length
+    const s = spans.find(([x, y]) => x < z && y > a)
+    if (!s) return null
+    const from = Math.max(0, s[0] - a)
+    const to = Math.min(m[0].length, s[1] - a)
+    return { pre: m[0].slice(0, from), cita: m[0].slice(from, to), post: m[0].slice(to), ref: s[2] }
+  })
+}
+
 // Las palabras marcadas de un bloque, en orden, juntando las seguidas ("conocimiento exacto").
 export function keyPhrases(bloque, marks = []) {
   const all = bloque.parrafos.flatMap(words)

@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
 import { RefChips } from '../components/RefLink.jsx'
-import { findAllRefs } from '../lib/verses.js'
+import { findAllRefs, openRef } from '../lib/verses.js'
 import { entryForClaude, formatDate } from './kinds.js'
-import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
+import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, wordRefs, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
 import MeetingMode from './MeetingMode.jsx'
 import JwLinks from './JwLinks.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
@@ -274,7 +274,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
             </label>
             <label className="sfield">
               <span className="sfield-label">¿Cómo lo aplico en mi vida?</span>
-              <AutoText value={fields.aplicacion ?? ''} placeholder="Algo concreto para esta semana" onChange={(v) => set({ aplicacion: v })} />
+              <AutoText value={fields.aplicacion ?? ''} placeholder="Cuando…, voy a… (algo concreto de esta semana)" onChange={(v) => set({ aplicacion: v })} />
             </label>
             <label className="sfield">
               <span className="sfield-label">Notas</span>
@@ -290,7 +290,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
 
         {step === 'listo' && (
           <>
-            <h2 className="at-h">{answered === bloques.length ? 'Listo para la reunión' : 'Casi listo'}</h2>
+            <h2 className="at-h">{answered === bloques.length ? 'Lista para la reunión' : bloques.length - answered === 1 ? 'Te falta 1 pregunta' : `Te faltan ${bloques.length - answered} preguntas`}</h2>
             <div className="at-card">
               <p className="at-title">{fields.titulo || 'La Atalaya'}</p>
               <div className="progress"><span style={{ width: `${bloques.length ? (answered / bloques.length) * 100 : 0}%` }} /></div>
@@ -298,7 +298,6 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
             </div>
             {answered < bloques.length && (
               <>
-                <p className="at-label">Te faltan</p>
                 <div className="at-missing">
                   {bloques.map((b, i) => !answerOf(fields, b.key).trim() && (
                     <button key={b.key} onClick={() => go('parrafos', i)}>Párr. {b.key}</button>
@@ -347,11 +346,12 @@ function Block({ b, enlace, n, total, answer, marks, starred, onStar, onAnswer, 
   const phrases = keyPhrases(b, marks)
   // Palabras de cada párrafo con el número de la primera (las marcas cuentan seguido en todo el bloque).
   let count = 0
+  // Las citas de cada párrafo van en azul y se abren con un toque (como en entre semana).
   const paras = b.parrafos.map((p) => {
     const ws = words(p)
     const o = count
     count += ws.length
-    return { ws, o }
+    return { ws, o, cites: wordRefs(p, findAllRefs(p)) }
   })
   return (
     <>
@@ -360,13 +360,15 @@ function Block({ b, enlace, n, total, answer, marks, starred, onStar, onAnswer, 
       {b.pregunta && <p className="at-question">{b.pregunta}</p>}
       <p className="at-tip small">Lee buscando la respuesta y toca 2 o 3 palabras clave para subrayarlas.</p>
       <div className="at-text">
-        {paras.map(({ ws, o }, pi) => (
+        {paras.map(({ ws, o, cites }, pi) => (
           <p key={pi}>
             {runsOf(ws, (k) => marked.has(o + k)).map((run) => {
               // Las palabras marcadas seguidas van en una sola pieza amarilla (sin rayitas entre ellas).
               const items = run.words.map((word, k) => {
                 const i = o + run.start + k
-                return <span key={i} className="at-word" onClick={() => toggle(i)}>{word}{k < run.words.length - 1 ? ' ' : ''}</span>
+                const c = cites[run.start + k]
+                const text = c ? <>{c.pre}<span className="ref-link" onClick={(e) => { e.stopPropagation(); openRef(c.ref) }}>{c.cita}</span>{c.post}</> : word
+                return <span key={i} className="at-word" onClick={() => toggle(i)}>{text}{k < run.words.length - 1 ? ' ' : ''}</span>
               })
               return <span key={run.start}>{run.on ? <mark className="at-run">{items}</mark> : items} </span>
             })}
@@ -391,7 +393,7 @@ function Block({ b, enlace, n, total, answer, marks, starred, onStar, onAnswer, 
       )}
       {refs.length > 0 && (
         <div className="sfield">
-          <span className="sfield-label">Textos · lee también los que no están citados</span>
+          <span className="sfield-label">Textos · lee también los que no dicen «lea»</span>
           <RefChips refs={refs} />
         </div>
       )}

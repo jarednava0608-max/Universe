@@ -9,7 +9,7 @@
 //   5. Reto del día.
 import { clock, dailyMinimum, dailyVerse, partLabel, practicedOn } from './kinds.js'
 import { answeredCount } from './atalaya.js'
-import { addDays } from '../games/progress.js'
+import { addDays, roundSize } from '../games/progress.js'
 import { midweekCount } from './midweek.js'
 import { BOOKS, findRefs } from '../lib/bible.js'
 import { chaptersLabel, readingToday } from '../lib/reading.js'
@@ -17,7 +17,7 @@ import { chaptersLabel, readingToday } from '../lib/reading.js'
 export const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 const ATALAYA_FROM = 3 // días antes de la reunión en que empieza a salir
 const MIDWEEK_FROM = 2
-const ASSIGNMENT_FROM = 7
+export const ASSIGNMENT_FROM = 7
 
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
@@ -42,7 +42,7 @@ const when = (days, weekday) => (days === 0 ? 'Hoy' : `El ${DAYS[weekday]}`)
 const hasContent = (f) => ['idea', 'aplicacion', 'notas'].some((k) => String(f[k] ?? '').trim()) || (f.parrafos ?? []).some((p) => String(p.nota ?? '').trim()) || Object.values(f.respuestas ?? {}).some((v) => String(v ?? '').trim())
 
 // meetings: { semana: 0-6, fin: 0-6 } (días de la semana, 0 = domingo) o null si aún no los eliges.
-// review: { due, fresh } de Repasar hoy. challenge: el resultado del Reto del día de hoy o null.
+// review: { due, fresh, round } de Repasar hoy (round: hoy ya terminaste una ronda). challenge: el resultado del Reto del día de hoy o null.
 // leidos / plan: capítulos leídos y la meta de lectura (del progreso).
 export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challenge = null, meetings = null, leidos = {}, plan = null, now = new Date() } = {}) {
   const day = iso(now)
@@ -111,7 +111,7 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
       const progress = e && String(e.fields.programa ?? '').trim() ? midweekCount(e.fields) : null
       const ready = progress?.total ? progress.done === progress.total : !!e && hasContent(e.fields)
       const state = ready ? 'Lista para la reunión'
-        : progress?.total ? `${progress.done} de ${progress.total} contestadas`
+        : progress?.total ? `${progress.done} de ${progress.total} respondidas`
         : e ? (String(e.fields.programa ?? '').trim() ? 'Sigue preparándola' : 'Pega el programa')
         : 'Prepárala'
       items.push({
@@ -143,12 +143,14 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     })
   }
 
-  const n = Math.min(review.due + review.fresh, 8) // una ronda de Repasar hoy (SESSION en Review.jsx)
+  // Lo que trae la próxima ronda (la misma cuenta que Review.jsx). Con una ronda terminada hoy ya está
+  // hecho; si quedan nuevas, se ofrece otra sin dejar el paso abierto.
+  const n = roundSize(review)
   items.push({
     key: 'repaso',
     title: 'Repasar hoy',
-    sub: n ? `${n} ${n === 1 ? 'cosa' : 'cosas'} · unos ${Math.max(1, Math.ceil(n / 3))} min` : 'Al día',
-    done: n === 0,
+    sub: review.round ? (n ? 'Hecho · otra ronda si quieres' : 'Hecho') : n ? `${n} ${n === 1 ? 'cosa' : 'cosas'} · unos ${Math.max(1, Math.ceil(n / 3))} min` : 'Al día',
+    done: n === 0 || !!review.round,
   })
 
   items.push({

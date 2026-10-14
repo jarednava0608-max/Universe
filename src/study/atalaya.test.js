@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseArticle, questionNums, withAnswer, answerOf, keyPhrases, firstUnanswered, withReview, reviewAnswer, paragraphUrl, highlightArticle, meetingItems } from './atalaya.js'
+import { wordRefs, words, parseArticle, questionNums, withAnswer, answerOf, keyPhrases, firstUnanswered, withReview, reviewAnswer, paragraphUrl, highlightArticle, meetingItems } from './atalaya.js'
 import { proposeNode } from './kinds.js'
 import { markdownToHtml } from '../lib/markdown.js'
 
@@ -189,5 +189,17 @@ describe('La Atalaya: cuántas llevas (lista de Reuniones)', () => {
       ['¿Qué responderías?', 'Repaso'],
     ])
     expect(items[1]).toMatchObject({ question: '¿Cuál es la voluntad de Jehová? (1 Timoteo 2:3, 4).', answer: 'Que todos lo conozcan.' })
+  })
+})
+
+describe('citas dentro de los párrafos', () => {
+  it('marca qué parte de cada palabra es cita, sin cambiar cuántas palabras hay', () => {
+    const p = 'Jehová no lo regañó (1 Rey. 19:4). Le dio fuerzas (Isa. 40:29).'
+    const w = wordRefs(p, ['1 Rey. 19:4', 'Isa. 40:29'])
+    expect(w).toHaveLength(words(p).length)
+    expect(w[4]).toEqual({ pre: '(', cita: '1', post: '', ref: '1 Rey. 19:4' })
+    expect(w[6]).toEqual({ pre: '', cita: '19:4', post: ').', ref: '1 Rey. 19:4' })
+    expect(w[0]).toBe(null)
+    expect(w.at(-1)).toEqual({ pre: '', cita: '40:29', post: ').', ref: 'Isa. 40:29' })
   })
 })

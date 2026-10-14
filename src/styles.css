@@ -145,7 +145,7 @@
   --title: #000000;
   --text-body: #2c2c2e;
   --text-2: #545458;
-  --text-3: #6e6e73;
+  --text-3: #6a6a6f;
   --accent: #5e48a8;
   --accent-soft: rgba(94, 72, 168, 0.12);
   --link: #4a64b8;
@@ -587,7 +587,7 @@ mark:not([data-color]) { background: var(--hl); color: inherit; border-radius: 2
 
 /* Formularios de Estudio */
 .sfield { display: block; margin-bottom: 20px; }
-.sfield-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-2); margin: 0 0 8px 2px; }
+.sfield-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-2); margin: 0 0 8px; }
 .input.auto { resize: none; overflow: hidden; line-height: 1.55; }
 input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .seg2 { display: flex; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
@@ -1168,13 +1168,13 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .library-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; margin: 8px 0 4px; padding: 0 2px; font-size: 20px; font-weight: 700; color: var(--title); }
 .library-toggle .chev { color: var(--text-3); display: grid; transform: rotate(90deg); transition: transform 0.2s; }
 .library-toggle.open .chev { transform: rotate(-90deg); }
-.plan-next { display: grid; gap: 2px; width: 100%; margin: 4px 0 2px; padding: 12px 16px; text-align: left; }
+.plan-next { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; width: 100%; margin: 4px 0 2px; padding: 12px 16px; text-align: left; }
 .plan-next.later { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
-.plan-group { display: grid; }
+.plan-group { display: grid; grid-template-columns: minmax(0, 1fr); }
 .plan-moment { margin: 12px 0 0; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent, var(--text-3)); }
 .plan-next-label { font-size: 17px; font-weight: 600; }
 .plan-next-sub { font-size: 13px; font-weight: 400; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.today-card.plan { gap: 8px; padding-bottom: 12px; }
+.today-card.plan { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-bottom: 12px; }
 .plan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .plan-count { flex: none; font-size: 13px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .plan-list { list-style: none; margin: 2px 0 0; padding: 0; }
@@ -1271,7 +1271,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .at-cover .at-theme { font-size: 20px; padding-left: 12px; border-left: 2px solid var(--line); }
 .at-theme { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 17px; line-height: 1.5; color: var(--text); margin: 0; }
 .at-summary { color: var(--text-2); font-size: 15px; line-height: 1.5; margin: 0; }
-.at-label { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); margin: 24px 0 8px; }
+.at-label { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); margin: 24px 0 8px; }
 .at-list { margin: 0 0 20px; padding-left: 24px; color: var(--text-body); font-size: 15px; line-height: 1.5; }
 .at-list.plain { list-style: disc; }
 .at-list li { margin: 0 0 8px; }
@@ -1402,20 +1402,30 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .bar,
 :root[data-style='jw'] .at-bars { background: rgba(var(--bar-rgb), 0.94); }
 :root[data-style='jw'] .tabbar { background: rgb(var(--bar-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none; }
-:root[data-style='jw'] .tab { margin: 8px 4px; border-radius: 14px; }
-:root[data-style='jw'] .tab.on { color: var(--accent); background: var(--accent-soft); }
+/* La pestaña ocupa todo el alto de la barra (más fácil de tocar); solo la pastilla lavanda se ve más chica. */
+:root[data-style='jw'] .tab { position: relative; isolation: isolate; color: var(--text-2); }
+:root[data-style='jw'] .tab::before { content: ''; position: absolute; inset: 8px 4px; border-radius: 14px; z-index: -1; }
+:root[data-style='jw'] .tab.on { color: var(--accent); }
+:root[data-style='jw'] .tab.on::before { background: var(--accent-soft); }
+:root[data-style='jw'] .tab-dot { background: var(--accent); border-color: rgb(var(--bar-rgb)); }
 :root[data-style='jw'] .bar-btn.back,
 :root[data-style='jw'] .back-link,
 :root[data-style='jw'] .bar-btn.strong { color: var(--accent); }
 :root[data-style='jw'] .account-btn { color: var(--accent); }
 :root[data-style='jw'] .at-step.on { background: var(--accent); color: var(--btn-ink); }
 :root[data-style='jw'] .at-jump-num.on { background: var(--accent); border-color: var(--accent); color: var(--btn-ink); }
+:root[data-style='jw'] .at-jump-num.done:not(.on) { background: var(--accent-soft); color: var(--accent); }
 :root[data-style='jw'] .seg2 button.on { color: var(--accent); }
 :root[data-style='jw'] .mw-edit, :root[data-style='jw'] .at-jw { color: var(--accent); }
+/* El azul es solo para citas bíblicas; los demás enlaces y acciones van en lavanda. */
+:root[data-style='jw'] :is(.plan-change, .dt-link, .dt-more summary, .undo-bar button, .link-btn, .pass-toggle) { color: var(--accent); }
+:root[data-style='jw'] .dt-link { text-decoration: underline; text-underline-offset: 3px; }
 /* Como en JW Library: las publicaciones con letra normal y grande; solo la Biblia lleva letra de libro. */
 :root[data-style='jw'] .at-text,
 :root[data-style='jw'] .mw-text,
-:root[data-style='jw'] .mw-para p { font-family: var(--font); font-size: 20px; line-height: 1.6; color: var(--text-body); }
+:root[data-style='jw'] .mw-para p,
+:root[data-style='jw'] .dt-comment,
+:root[data-style='jw'] .dt-more p { font-family: var(--font); font-size: 20px; line-height: 1.6; color: var(--text-body); }
 :root[data-style='jw'] .at-theme { font-family: var(--font); }
 /* El versículo del Texto diario es Biblia: letra de libro en "Hoy", en la lista y al estudiarlo. */
 :root[data-style='jw'] :is(.today-verse, .entry-row.daily .entry-title) { font-family: var(--font-book); font-style: normal; }
@@ -1427,9 +1437,16 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .page-scroll { padding-top: calc(var(--sat) + 52px + 20px); }
 :root[data-style='jw'] .page-title { display: none; }
 :root[data-style='jw'] .page-head { justify-content: flex-end; }
-:root[data-style='jw'] .top-actions { top: calc(var(--sat) + 6px); gap: 2px; }
+:root[data-style='jw'] .top-actions { top: calc(var(--sat) + 4px); right: calc(var(--sar) + 8px); gap: 4px; }
+:root[data-style='jw'] .account-btn { width: var(--tap); height: var(--tap); }
+:root[data-style='jw'] .account-btn .sync-dot { right: 9px; bottom: 10px; }
+.account-btn:active { opacity: 0.5; }
+/* En pantallas angostas (320 px) el título va a la izquierda para no chocar con los íconos. */
+@media (max-width: 359px) { :root[data-style='jw'] .page-bar:not(.nav) { justify-content: flex-start; padding-left: calc(var(--sal) + 20px); padding-right: 156px; } }
 :root[data-style='jw'] .account-btn { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border: 0; box-shadow: none; }
 :root[data-style='jw'] .section-label { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; text-transform: none; color: var(--title); margin: 28px 0 12px; }
+:root[data-style='jw'] .library-toggle { padding: 0; }
+:root[data-style='jw'] .library-toggle:not(.done-toggle) { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
 
 /* Pestañas de pasos como las de JW Library: MAYÚSCULAS y una raya lavanda bajo la activa. */
 :root[data-style='jw'] .at-steps { gap: 0; padding-top: 0; padding-bottom: 0; background: rgb(var(--bar-rgb)); overflow-x: auto; scrollbar-width: none; }
@@ -1522,11 +1539,11 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .bh-book { background: #3a3448; color: #fff; }
 :root[data-style='jw'] .bh-book.lv1 { background: #4c4560; }
 :root[data-style='jw'] .bh-book.lv2 { background: #5f5778; }
-:root[data-style='jw'] .bh-book.lv3 { background: #77708a; }
+:root[data-style='jw'] .bh-book.lv3 { background: var(--accent); color: var(--btn-ink); }
 :root[data-style='jw'][data-theme='light'] .bh-book { background: #e6e2f0; color: #1c1c1e; }
 :root[data-style='jw'][data-theme='light'] .bh-book.lv1 { background: #d3cce6; }
 :root[data-style='jw'][data-theme='light'] .bh-book.lv2 { background: #b9aed8; }
-:root[data-style='jw'][data-theme='light'] .bh-book.lv3 { background: #9a8cc6; }
+:root[data-style='jw'][data-theme='light'] .bh-book.lv3 { background: var(--accent); color: var(--btn-ink); }
 .bh-chapters { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px; }
 .bh-ch { position: relative; aspect-ratio: 1; display: grid; place-items: center; font-size: 17px; font-weight: 600; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line); color: var(--text); }
 .bh-ch.read { background: var(--accent, var(--btn)); border-color: transparent; color: var(--btn-ink); }
@@ -1565,6 +1582,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .kind-card { min-height: 120px; }
 /* Las etiquetas de los campos un poco más claras y separadas, como en los formularios de JW Library. */
 :root[data-style='jw'] .sfield-label { font-size: 15px; font-weight: 600; color: var(--text-2); }
+/* Las preguntas del Repaso son lo que hay que recordar: se ven como las de Párrafos, no como etiquetas grises. */
+:root[data-style='jw'] .sfield-label.at-q { font-size: 17px; color: var(--title); }
 :root[data-style='jw'] .input { border-radius: 6px; }
 :root[data-style='jw'] .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
 :root[data-style='jw'] .today-add { border-radius: 6px; color: var(--accent); background: var(--accent-soft); border-color: transparent; font-weight: 600; }
@@ -1729,12 +1748,32 @@ input[type='time'].input { min-height: var(--tap); }
 @keyframes push-in { from { transform: translateX(100%); } }
 .overlay.dragging, .overlay.leaving { box-shadow: -12px 0 32px rgba(0, 0, 0, 0.35); }
 @media (prefers-reduced-motion: reduce) {
-  .overlay, .overlay:has(> .bar > .bar-btn.back) { animation: fade 0.2s; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .overlay, .overlay:has(> .bar > .bar-btn.back) { animation: fade 0.2s !important; }
 }
 
 /* Renglones mejor cortados (Safari; donde no existe no cambia nada): los párrafos no terminan con una palabra
    sola, los títulos se parten parejo y las comillas de un versículo cuelgan fuera del margen. Solo el estilo
    del corte (text-wrap-style), para no deshacer los títulos de un renglón con "…". */
-:is(.at-text p, .mw-text, .mw-para p, .bible-text, .dt-verse, .dt-comment, .today-verse, .md p, .card-back, .explain, .mm-a) { text-wrap-style: pretty; }
+:is(.at-text p, .mw-text, .mw-para p, .bible-text, .dt-verse, .dt-comment, .dt-more p, .today-verse, .md p, .card-back, .explain, .mm-a) { text-wrap-style: pretty; }
 :is(.at-title, .at-sub, .at-question, .at-h, .mw-title, .mw-cover-title, .mw-q, .note-title, .sheet-h, .peek-title, .quiz-prompt, .mm-title, .empty-title, .plan-title) { text-wrap-style: balance; }
 :is(.today-verse, .dt-verse, .at-theme) { hanging-punctuation: first; }
+
+/* Área para el dedo de 44 px en chips y botones segmentados, sin cambiar cómo se ven (se extiende hacia
+   el espacio de alrededor). */
+:is(.ref-chip, .at-missing button, .seg2 button, .seg-modes button, .level-tabs button, .galaxies button) { position: relative; }
+:is(.ref-chip, .at-missing button, .level-tabs button, .seg-modes.small button)::after { content: ''; position: absolute; inset: -5px 0; }
+:is(.seg2, .seg-modes:not(.small), .galaxies) button::after { content: ''; position: absolute; inset: -3px 0; }
+
+/* En "Hoy", en la noche: lo que te propusiste en la mañana con el texto diario (para cerrar el día y orar). */
+.plan-recall { display: grid; gap: 2px; margin: 8px 0 4px; font-size: 15px; line-height: 1.45; color: var(--text-body); text-wrap-style: pretty; }
+.plan-recall span { font-size: 13px; color: var(--text-2); }
+.at-card + .at-missing { margin-top: -4px; margin-bottom: 20px; }
+
+/* Juegos: después de contestar, "Siguiente" siempre en el mismo lugar, abajo y a la mano del pulgar (aunque la
+   explicación sea larga o corta). La explicación se lee arriba de él. */
+.game-body > .quiz { flex-grow: 1; }
+.quiz > .feedback { display: contents; }
+.quiz > .feedback > :first-child { margin-top: 20px; }
+.quiz > .feedback > * { animation: fade 0.2s; }
+.quiz > .feedback > .primary:last-child { margin-top: auto; position: sticky; bottom: calc(var(--sab) + 12px); z-index: 1; }

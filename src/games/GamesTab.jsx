@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
 import { memorizeSources } from './logic.js'
-import { achievements, lastWeek, streak, todayISO } from './progress.js'
-import Review, { SESSION, reviewSummary } from './Review.jsx'
+import { achievements, lastWeek, roundSize, streak, todayISO } from './progress.js'
+import Review, { reviewSummary } from './Review.jsx'
 import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
 import { GameScreen, Quiz } from './ui.jsx'
 import Sheet from '../components/Sheet.jsx'
@@ -128,7 +128,7 @@ function ProgressCard({ store, onReview, onMedals }) {
   const got = medals.filter((m) => m.done).length
   // Lo que ya viste y hoy toca repasar, y las cosas nuevas de hoy (unas pocas por día).
   const { due, fresh } = useMemo(() => reviewSummary(store), [store.nodes, store.entries, p]) // eslint-disable-line react-hooks/exhaustive-deps
-  const today = Math.min(due + fresh, SESSION)
+  const today = roundSize({ due, fresh })
 
   return (
     <section className="progress-card">
@@ -138,7 +138,7 @@ function ProgressCard({ store, onReview, onMedals }) {
         </span>
         <div>
           <p className="streak-num">{current} {current === 1 ? 'día' : 'días'}</p>
-          <p className="streak-sub">{current ? 'seguidos estudiando' : 'Estudia hoy para empezar tu racha'}{best > current ? ` · récord ${best}` : ''}</p>
+          <p className="streak-sub">{current ? (current === 1 ? 'seguido estudiando' : 'seguidos estudiando') : 'Estudia hoy para empezar tu racha'}{best > current ? ` · récord ${best}` : ''}</p>
         </div>
       </div>
       <div className="week">
