@@ -2,9 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import './styles.css'
+import { installNavGestures } from './lib/navGesture.js'
 
 // Evita que iOS haga zoom a toda la página: el zoom es solo del grafo.
 document.addEventListener('gesturestart', (e) => e.preventDefault())
+
+// Pantallas que entran y salen por la derecha, y deslizar desde la orilla para regresar.
+installNavGestures()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

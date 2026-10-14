@@ -66,12 +66,8 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
       {!section ? (
         <PageScroll title="Estudio">
           <h1 className="page-title">Estudio</h1>
-          <button className="continue-card constancia-card" onClick={onConstancia}>
-            <span className="continue-label">Constancia</span>
-            <span className="continue-title">{constancia?.start ? `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}` : 'Empezar'}</span>
-            <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-          </button>
           <TodayPlan
+            streak={{ label: constancia?.start ? `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}` : 'Empezar', onClick: onConstancia }}
             chain={chain}
             entries={entries}
             review={review}
@@ -108,22 +104,26 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           </button>
           {libOpen && (
             <>
-              <button className="continue-card bible-card" onClick={() => setBibleOpen(true)}>
-                <span className="continue-label">Leer la Biblia</span>
-                <span className="continue-title">{readCount(leidos)} de {TOTAL_CHAPTERS} capítulos</span>
-                <span className="progress"><span style={{ width: `${(readCount(leidos) / TOTAL_CHAPTERS) * 100}%` }} /></span>
-                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-              </button>
-              <div className="kind-grid">
-                {KIND_ORDER.map((k) => (
-                  <button key={k} className="kind-card" onClick={() => setSection(k)}>
-                    <span className={'kind-icon k-' + k}><Icon d={KINDS[k].icon} size={20} /></span>
-                    <span className="kind-label">{KINDS[k].label}</span>
-                    <span className="kind-desc">{KINDS[k].desc}</span>
-                    <span className="kind-count">{byKind[k].length || 'Vacío'}</span>
+              <ul className="entry-list lib-list">
+                <li>
+                  <button className="entry-row" onClick={() => setBibleOpen(true)}>
+                    <span className="kind-icon k-biblia"><Icon d={ICONS.estudio} size={18} /></span>
+                    <span className="entry-main"><span className="entry-title">Leer la Biblia</span></span>
+                    <span className="lib-count">{readCount(leidos)} de {TOTAL_CHAPTERS}</span>
+                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
                   </button>
+                </li>
+                {KIND_ORDER.map((k) => (
+                  <li key={k}>
+                    <button className="entry-row" onClick={() => setSection(k)}>
+                      <span className={'kind-icon k-' + k}><Icon d={KINDS[k].icon} size={18} /></span>
+                      <span className="entry-main"><span className="entry-title">{KINDS[k].label}</span></span>
+                      {byKind[k].length > 0 && <span className="lib-count">{byKind[k].length}</span>}
+                      <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                    </button>
+                  </li>
                 ))}
-              </div>
+              </ul>
 
               {recent.length > 0 && (
                 <>
@@ -158,7 +158,16 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           )}
         </PageScroll>
       ) : (
-        <PageScroll key={section} title={KINDS[section].label}>
+        <PageScroll
+          key={section}
+          title={KINDS[section].label}
+          back={{ label: 'Estudio', onClick: () => { setSection(null); setQuery('') } }}
+          action={(
+            <button className="bar-btn page-bar-add" aria-label="Nueva entrada" onClick={() => setEditing({ entry: newEntry(section), isNew: true })}>
+              <Icon d={ICONS.plus} size={22} stroke={2} />
+            </button>
+          )}
+        >
           <button className="back-link" onClick={() => { setSection(null); setQuery('') }}>
             <Icon d={ICONS.back} size={18} stroke={2} /> Estudio
           </button>

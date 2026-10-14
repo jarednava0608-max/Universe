@@ -30,7 +30,7 @@ export default function BibleHome({ leidos, plan, onSetPlan, entries, onClose })
   return (
     <div className="overlay bible-home">
       <header className="bar">
-        <button className="bar-btn back" onClick={() => (book ? setBook(null) : onClose())}>
+        <button className="bar-btn back" data-inner={book ? '1' : undefined} onClick={() => (book ? setBook(null) : onClose())}>
           <Icon d={ICONS.back} size={18} stroke={2} /> {book ? 'Libros' : 'Estudio'}
         </button>
         <span className="bar-title">{book ? BOOKS[book - 1] : 'Leer la Biblia'}</span>

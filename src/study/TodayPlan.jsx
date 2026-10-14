@@ -9,7 +9,7 @@ const clip = (s, n = 160) => (s.length > n ? s.slice(0, n).replace(/\s+\S*$/, ''
 
 // "Hoy": el texto de hoy arriba y, abajo, los pasos del día en orden. Cada paso se toca para hacerlo
 // y se marca solo cuando ya está hecho (ver today.js).
-export default function TodayPlan({ chain, entries, review, challenge, leidos, plan, onBible, onOpenEntry, onCreate, onPasteDaily, onReview, onChallenge, toast }) {
+export default function TodayPlan({ streak, chain, entries, review, challenge, leidos, plan, onBible, onOpenEntry, onCreate, onPasteDaily, onReview, onChallenge, toast }) {
   const [meetings, setMeetings] = useMeetings()
   const [changing, setChanging] = useState(false)
   const items = todayPlan({ entries, review, challenge, meetings, leidos, plan })
@@ -51,6 +51,13 @@ export default function TodayPlan({ chain, entries, review, challenge, leidos, p
         <span className="today-label">Hoy · {fecha}</span>
         <span className="plan-count">{done} de {items.length}</span>
       </div>
+      {streak && (
+        // Constancia en un renglón bajo la fecha: lo primero que se ve al abrir es "Hoy".
+        <button className="plan-streak" onClick={streak.onClick}>
+          Constancia <span>{streak.label}</span>
+          <Icon d={ICONS.chev} size={14} stroke={2} />
+        </button>
+      )}
       {diario.verse && (
         <button className="today-text" onClick={() => onOpenEntry(diario.entry)}>
           <span className="today-verse">{clip(diario.verse)}</span>

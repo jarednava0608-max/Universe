@@ -471,7 +471,7 @@ export default function App() {
       {tab === 'pendientes' && <TasksTab store={store} toast={toast} />}
 
       {tab !== 'mapa' && (
-        <div className="top-actions">
+        <div className={'top-actions' + (tab === 'estudio' && !studyHome ? ' in-list' : '')}>
           {tab === 'estudio' && studyHome && (
             <button className="account-btn" aria-label="Buscar en todo" onClick={() => setSearchOpen(true)}>
               <Icon d={ICONS.buscar} size={19} />
