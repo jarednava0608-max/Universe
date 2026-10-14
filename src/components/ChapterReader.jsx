@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from './Icon.jsx'
 import BibleText from './BibleText.jsx'
-import { BOOKS } from '../lib/bible.js'
+import { BOOKS, refUrl } from '../lib/bible.js'
 import { savedChapterVerses, neighborChapter, chapterSaved, jwLibraryUrl } from '../lib/verses.js'
 import { canSpeak, useSpeech } from '../lib/speech.js'
 import VoiceSheet from './VoiceSheet.jsx'
@@ -11,7 +11,8 @@ const nameOf = (book, chapter) => `${BOOKS[book - 1]} ${chapter}`
 // Un capítulo de Mi Biblia a pantalla completa, como la Biblia de JW Library: el texto corrido con la
 // poesía en sus renglones, el capítulo anterior y el siguiente (botones o deslizar) y "Escuchar",
 // que lo lee en voz alta con la voz del iPhone marcando el versículo que va.
-// Si el capítulo no está guardado completo, se ofrece pegarlo (abre la hoja de Mi Biblia).
+// Si el capítulo no está guardado completo, se ofrece pegarlo (abre la hoja de Mi Biblia). Siempre a la vista:
+// el capítulo en wol.jw.org (En línea) y en la app JW Library.
 export default function ChapterReader({ book, chapter, verse, entries, read, onToggleRead, onGo, onPaste, onClose }) {
   const verses = useMemo(() => savedChapterVerses(entries, book, chapter), [entries, book, chapter])
   const { saved, expected } = chapterSaved(entries, nameOf(book, chapter))
@@ -81,7 +82,6 @@ export default function ChapterReader({ book, chapter, verse, entries, read, onT
           <div className="reader-missing">
             <p>{saved ? `Tienes ${saved} de ${expected} versículos de este capítulo.` : 'Aún no tienes este capítulo en Mi Biblia.'}</p>
             <button className="primary" onClick={() => onPaste(nameOf(book, chapter))}>Pegar el capítulo</button>
-            <a className="secondary as-btn" data-direct="1" href={jwLibraryUrl(nameOf(book, chapter))} target="_blank" rel="noopener noreferrer">Abrir en JW Library</a>
           </div>
         )}
         {verses.length > 0 && onToggleRead && (
@@ -90,6 +90,10 @@ export default function ChapterReader({ book, chapter, verse, entries, read, onT
             {read ? 'Leído' : 'Marcar como leído'}
           </button>
         )}
+        <div className="reader-links">
+          <a className="secondary as-btn" data-direct="1" href={refUrl(nameOf(book, chapter))} target="_blank" rel="noopener noreferrer">En línea</a>
+          <a className="secondary as-btn" data-direct="1" href={jwLibraryUrl(nameOf(book, chapter))} target="_blank" rel="noopener noreferrer">JW Library</a>
+        </div>
         <nav className="reader-nav">
           <button className="secondary" disabled={!prev} onClick={() => onGo(prev)}>{prev ? `‹ ${nameOf(prev.book, prev.chapter)}` : ' '}</button>
           <button className="secondary" disabled={!next} onClick={() => onGo(next)}>{next ? `${nameOf(next.book, next.chapter)} ›` : ' '}</button>

@@ -923,6 +923,9 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .reader-body .bible-text { font-family: var(--font-book); font-size: 22px; line-height: 1.65; color: var(--title); }
 .reader-missing { margin: 20px 0; padding: 16px; border-radius: var(--r); background: var(--surface); display: grid; gap: 4px; }
 .reader-missing p { margin: 0 0 6px; color: var(--text-2); }
+.reader-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 28px; }
+.reader-links .secondary { margin-top: 0; font-size: 15px; }
+.reader-links + .reader-nav { margin-top: 8px; }
 .reader-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 28px; }
 .reader-nav .secondary { margin-top: 0; font-size: 15px; }
 .reader-open { margin: 0 0 8px; width: 100%; }
