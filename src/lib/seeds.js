@@ -343,7 +343,11 @@ const same = (a, b) => String(a ?? '').replace(/\s+/g, ' ').trim() === String(b 
 // verses: [[cita, texto]] se guardan en "Mi Biblia" si esa cita aún no tiene texto guardado.
 // trivia: [{ id, fields }] se agregan a Trivia si esa pregunta (id) no existe.
 // entries: [{ id, kind, fields }] entradas de Estudio (Reuniones, Texto diario…) si ese id no existe.
-export function planSeed(seed, nodes, edges = [], entries = []) {
+// skipNodes: no toca nodos (solo versículos, Trivia y entradas). Se usa cuando más adelante viene un "mapa en
+// blanco" que este teléfono aún no aplica: esos nodos se borrarían de todos modos, pero como se crean con la
+// fecha de hoy el borrado ya no los alcanzaba y un teléfono nuevo volvía a tener el mapa viejo.
+export function planSeed(seed, nodes, edges = [], entries = [], { skipNodes = false } = {}) {
+  if (skipNodes) seed = { ...seed, wipe: null, fixed: null, replace: null, restore: null, remove: null, data: null }
   const byKey = new Map(nodes.map((n) => [normKey(n.title), n]))
   const put = []
   const del = []

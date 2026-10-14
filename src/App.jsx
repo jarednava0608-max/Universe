@@ -158,12 +158,16 @@ export default function App() {
     if (!store.ready || seedsRunning) return
     seedsRunning = true
     ;(async () => {
-      for (const seed of SEEDS) {
+      for (const [i, seed] of SEEDS.entries()) {
         if (await getMeta('seed:' + seed.id)) continue
         try {
+          // Si más adelante viene un "mapa en blanco" que este teléfono aún no aplica (un teléfono nuevo),
+          // los nodos de este paquete no se crean: se borrarían igual.
+          let skipNodes = false
+          for (const later of SEEDS.slice(i + 1)) if (later.wipe && !(await getMeta('seed:' + later.id))) skipNodes = true
           // Se lee lo guardado en ese momento (el paquete anterior pudo haber cambiado nodos).
           const { nodes: now, edges: nowEdges, entries: nowEntries } = await loadAll()
-          const { put, del, verses, trivia, entries: study } = planSeed(seed, now, nowEdges, nowEntries)
+          const { put, del, verses, trivia, entries: study } = planSeed(seed, now, nowEdges, nowEntries, { skipNodes })
           if (put.length) await store.applyImport({ newNodes: put.map((n) => ({ ...n, updatedAt: Date.now() })), updatedNodes: [], newEdges: [] })
           if (seed.wipe && del.length) await setMeta('backup:' + seed.id, { nodes: now, edges: nowEdges, t: Date.now() })
           if (del.length) await store.deleteNodes(del)

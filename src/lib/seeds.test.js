@@ -5,11 +5,12 @@ import { makeRoot } from './model.js'
 // Los paquetes hasta antes del mapa en blanco (para probar los anteriores).
 const BEFORE_WIPE = SEEDS.slice(0, SEEDS.findIndex((s) => s.wipe))
 
-// Aplica los paquetes en orden sobre una lista de nodos (como lo hace App).
+// Aplica los paquetes en orden sobre una lista de nodos (como lo hace App: si más adelante en la lista viene
+// un mapa en blanco, los paquetes de antes no tocan nodos).
 function run(nodes, seeds = BEFORE_WIPE) {
   let cur = nodes
-  for (const seed of seeds) {
-    const { put, del } = planSeed(seed, cur)
+  for (const [i, seed] of seeds.entries()) {
+    const { put, del } = planSeed(seed, cur, [], [], { skipNodes: seeds.slice(i + 1).some((s) => s.wipe) })
     cur = [...cur.filter((n) => !del.includes(n.id) && !put.some((p) => p.id === n.id)), ...put]
   }
   return cur
@@ -172,6 +173,14 @@ describe('Mapa en blanco y conceptos de la reunión del 8 de octubre', () => {
       expect(n.title.length).toBeLessThanOrEqual(32)
       expect(n.note).toMatch(/Se apoya en /)
     }
+  })
+  it('los paquetes de antes del mapa en blanco no crean nodos, pero sí guardan textos, Trivia y entradas', () => {
+    const seed = SEEDS.find((s) => s.trivia && s.data) ?? SEEDS.find((s) => s.data)
+    const plan = planSeed(seed, [makeRoot()], [], [], { skipNodes: true })
+    expect(plan.put).toHaveLength(0)
+    expect(plan.del).toHaveLength(0)
+    const withVerses = SEEDS.find((s) => s.verses)
+    expect(planSeed(withVerses, [makeRoot()], [], [], { skipNodes: true }).verses.length).toBeGreaterThan(0)
   })
   it('no borra lo que se editó después ni repite los conceptos', () => {
     const later = { ...makeRoot(), id: 'nuevo', title: 'Fe', note: 'Mía', updatedAt: wipe.wipe.before + 1000 }
