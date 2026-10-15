@@ -121,6 +121,7 @@ export function describe(status) {
 }
 
 function translate(m) {
+  if (/load failed|failed to fetch|networkerror/i.test(m)) return 'Sin conexión: revisa que tengas internet (datos o Wi‑Fi) y vuelve a intentar.'
   if (/invalid login credentials/i.test(m)) return 'Correo o contraseña incorrectos.'
   if (/email not confirmed/i.test(m)) return 'Primero confirma tu correo (revisa tu bandeja de entrada).'
   if (/already registered/i.test(m)) return 'Ese correo ya tiene cuenta. Toca “Entrar”.'
