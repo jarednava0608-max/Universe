@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { TOTAL_CHAPTERS, BOOK_ABBR, withRead, isRead, readCount, bookRead, mergeLeidos, makePlan, readingToday, chaptersLabel } from './reading.js'
+import { TOTAL_CHAPTERS, BOOK_ABBR, withRead, isRead, readCount, bookRead, mergeLeidos, makePlan, readingToday, chaptersLabel, lastRead } from './reading.js'
 import { BOOKS } from './bible.js'
 import { mergeProgress } from '../games/progress.js'
 
@@ -71,5 +71,14 @@ describe('plan de lectura con meta', () => {
     const b = { plan: { off: true, t: 9 } }
     expect(mergeProgress(a, b).plan).toEqual(b.plan)
     expect(mergeProgress(b, a).plan).toEqual(b.plan)
+  })
+})
+
+describe('lastRead', () => {
+  it('da el último capítulo marcado y el siguiente sin leer', () => {
+    const leidos = { '1:1': { on: true, t: 5 }, '24:40': { on: true, t: 9 }, '24:41': { on: true, t: 2 }, '1:2': { on: false, t: 20 } }
+    expect(lastRead(leidos)).toEqual({ book: 24, chapter: 40, t: 9, next: [24, 42] })
+    expect(lastRead({})).toBeNull()
+    expect(lastRead({ '66:22': { on: true, t: 1 } }).next).toBeNull()
   })
 })

@@ -3,7 +3,7 @@ import Icon, { ICONS } from './Icon.jsx'
 import { BOOKS } from '../lib/bible.js'
 import { chapterSaved, openRef } from '../lib/verses.js'
 import { hasBible, importBible, useBible } from '../lib/nwt.js'
-import { BOOK_ABBR, TOTAL_CHAPTERS, PLAN_LENGTHS, bookRead, chaptersOf, hasPlan, isRead, makePlan, readCount, readingToday } from '../lib/reading.js'
+import { BOOK_ABBR, TOTAL_CHAPTERS, PLAN_LENGTHS, bookRead, chaptersOf, hasPlan, isRead, lastRead, makePlan, readCount, readingToday } from '../lib/reading.js'
 
 // Leer toda la Biblia, como la pestaña "Libros" de JW Library: los 66 libros en cuadros (más
 // claros mientras más llevas leído), y al tocar uno, sus capítulos con los leídos marcados.
@@ -14,6 +14,7 @@ export default function BibleHome({ leidos, plan, onSetPlan, entries, toast, onC
   const full = hasBible()
   const total = readCount(leidos)
   const pct = Math.floor((total / TOTAL_CHAPTERS) * 100)
+  const last = lastRead(leidos)
 
   const grid = (from, to) => (
     <div className="bh-grid">
@@ -47,6 +48,7 @@ export default function BibleHome({ leidos, plan, onSetPlan, entries, toast, onC
               <div className="progress"><span style={{ width: `${(total / TOTAL_CHAPTERS) * 100}%` }} /></div>
               <p className="hint">Marca cada capítulo al terminar de leerlo (abajo, en el lector). Los de la lectura de la semana también cuentan.</p>
             </div>
+            {last && <LeftOff last={last} />}
             {onSetPlan && <ReadingGoal leidos={leidos} plan={plan} onSetPlan={onSetPlan} />}
             {!full && <BibleImport toast={toast} />}
             <h2 className="bh-h">Escrituras Hebreoarameas</h2>
@@ -62,12 +64,13 @@ export default function BibleHome({ leidos, plan, onSetPlan, entries, toast, onC
                 const ref = `${BOOKS[book - 1]} ${c}`
                 const saved = !full && chapterSaved(entries, ref).saved > 0
                 return (
-                  <button key={c} className={'bh-ch' + (isRead(leidos, book, c) ? ' read' : '') + (saved ? ' saved' : '')} onClick={() => openRef(ref)}>
+                  <button key={c} className={'bh-ch' + (isRead(leidos, book, c) ? ' read' : '') + (saved ? ' saved' : '') + (last?.book === book && last.chapter === c ? ' last' : '')} onClick={() => openRef(ref)}>
                     {c}
                   </button>
                 )
               })}
             </div>
+            {last?.book === book && <p className="hint">El del borde es donde te quedaste.</p>}
             {!full && <p className="hint">Los capítulos con un punto ya los tienes en Mi Biblia; los demás se pegan una vez desde JW Library.</p>}
           </>
         )}
@@ -104,6 +107,36 @@ function BibleImport({ toast }) {
         <input type="file" hidden disabled={busy} onChange={pick} />
       </label>
       <a className="secondary as-btn" data-direct="1" href="https://www.jw.org/es/biblioteca/biblia/" target="_blank" rel="noopener noreferrer">Ir a la Biblia en jw.org</a>
+    </div>
+  )
+}
+
+// "hoy", "ayer" o "el 12 de octubre" (con el año si no es este).
+function whenLabel(t, now = new Date()) {
+  const d = new Date(t)
+  const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5)
+  if (days <= 0) return 'hoy'
+  if (days === 1) return 'ayer'
+  return 'el ' + d.toLocaleDateString('es', { day: 'numeric', month: 'long', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) })
+}
+
+// Dónde te quedaste: el último capítulo que marcaste y un botón para seguir con el que sigue.
+function LeftOff({ last }) {
+  const [nb, nc] = last.next ?? []
+  return (
+    <div className="bh-goal">
+      <p className="bh-goal-title">Te quedaste en</p>
+      <div className="bh-goal-chapters">
+        <button className="bh-goal-ch" onClick={() => openRef(`${BOOKS[last.book - 1]} ${last.chapter}`)}>
+          {BOOKS[last.book - 1]} {last.chapter}
+        </button>
+        {last.next && (
+          <button className="bh-goal-ch next" onClick={() => openRef(`${BOOKS[nb - 1]} ${nc}`)}>
+            Sigue: {BOOKS[nb - 1]} {nc}
+          </button>
+        )}
+      </div>
+      <p className="plan-foot">Lo marcaste como leído {whenLabel(last.t)}</p>
     </div>
   )
 }
