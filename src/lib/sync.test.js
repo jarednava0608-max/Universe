@@ -118,6 +118,32 @@ describe('sincronización', () => {
     expect(cloud.tables.universe_nodes.get(U + '|' + n.id).note).toBe('nuevo local')
   })
 
+  it('lo que guardas mientras baja la nube no se pisa con lo que acabas de subir', async () => {
+    const a = await device()
+    const e = { id: 'd1', kind: 'diario', fields: { principio: '' }, createdAt: 1, updatedAt: 100 }
+    await a.db.commit({ putEntries: [e] })
+    await a.sync.syncOnce(cloud, U)
+    // La fila recién subida vuelve a bajar (se pide unos segundos atrás) y justo entonces escribes.
+    const from = cloud.from.bind(cloud)
+    let saved = false
+    cloud.from = (name) => {
+      const t = from(name)
+      if (name !== 'universe_entries') return t
+      return { ...t, select: () => {
+        const q = t.select()
+        const then = q.then
+        q.then = async (res, rej) => {
+          if (!saved) { saved = true; await a.db.commit({ putEntries: [{ ...e, fields: { principio: 'Jehová me cuida' }, updatedAt: 200 }] }) }
+          return then(res, rej)
+        }
+        return q
+      } }
+    }
+    await a.sync.syncOnce(cloud, U)
+    expect((await a.db.get('entries', 'd1')).fields.principio).toBe('Jehová me cuida')
+    expect(cloud.tables.universe_entries.get(U + '|d1').fields.principio).toBe('Jehová me cuida')
+  })
+
   it('los borrados viajan como lápidas', async () => {
     const a = await device()
     const n = a.model.makeNode({ title: 'Temporal' })

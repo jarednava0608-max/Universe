@@ -104,12 +104,13 @@ export async function ackOutbox(kind, entries) {
   await tx.done
 }
 
-export async function dropOutbox(kind, ids) {
-  if (!ids.length) return
+// entries: [id, ent] tal como se leyeron; si mientras tanto cambió (otra versión), se queda para subirse.
+export async function dropOutbox(kind, entries) {
+  if (!entries.length) return
   const d = await db()
   const tx = d.transaction('meta', 'readwrite')
   const ob = readOutbox(await tx.store.get('outbox'))
-  for (const id of ids) delete ob[kind][id]
+  for (const [id, ent] of entries) if (ob[kind][id]?.v === ent.v) delete ob[kind][id]
   tx.store.put(ob, 'outbox')
   await tx.done
 }

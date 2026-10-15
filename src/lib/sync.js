@@ -135,7 +135,7 @@ async function pull(client, userId) {
             const merged = { ...local, fields, updatedAt: Math.max(local.updatedAt ?? 0, remote.updatedAt) }
             change.putEntries.push(merged)
             if (JSON.stringify(fields) !== JSON.stringify(remote.fields)) progressToPush = merged
-            else if (ob.entries[row.id]) resolved.entries.push(row.id)
+            else if (ob.entries[row.id]) resolved.entries.push([row.id, ob.entries[row.id]])
           }
           continue
         }
@@ -143,11 +143,12 @@ async function pull(client, userId) {
         const remoteT = Number(row.updated_at)
         // Si aquí hay un cambio pendiente más nuevo, se queda el local (y se subirá).
         if (pending && pending.t > remoteT) continue
-        if (pending) resolved[kind].push(row.id)
+        if (pending) resolved[kind].push([row.id, pending])
         const local = await db.get(kind, row.id)
         if (row.deleted) {
           if (local) change[DEL[kind]].push(row.id)
-        } else if (!local || local.updatedAt !== remoteT) {
+        } else if (!local || (local.updatedAt ?? 0) < remoteT) {
+          // Solo si la nube es más nueva: lo que guardaste mientras bajaba (más nuevo) no se pisa.
           change[PUT[kind]].push(fromRow[kind](row))
         }
       }
