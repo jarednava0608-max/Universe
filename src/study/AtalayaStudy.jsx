@@ -127,7 +127,8 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
       <div className="editor-body at-body" ref={top} onScroll={onScroll}>
         <div className={'at-bars' + (barsHidden ? ' hidden' : '')}>
         <nav className="at-steps" aria-label="Pasos">
-          {STEPS.filter((s) => !s.hidden).map((s) => (
+          {/* Con el artículo ya pegado, la pestaña Artículo no sale (así caben los pasos): se cambia en Vistazo. */}
+          {STEPS.filter((s) => !s.hidden && (s.key !== 'articulo' || step === 'articulo' || !bloques.length)).map((s) => (
             <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={!canGo(s.key)} onClick={() => go(s.key)}>{s.label}</button>
           ))}
         </nav>
@@ -202,7 +203,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
               <button className="secondary icon-left mm-open" onClick={() => setMeeting(true)}>Modo reunión: solo mis respuestas</button>
             )}
 
-            <p className="at-tip">Antes de leer, fíjate en el título y el texto temático, en cómo cada subtítulo se relaciona con el tema y en las imágenes. Las preguntas de repaso te dicen las ideas principales.</p>
+            <p className="at-tip">Fíjate en el título, el texto temático y los subtítulos.</p>
             <div className="at-card at-cover">
               <p className="at-cover-kicker">La Atalaya{fields.fecha ? ` · ${formatDate(fields.fecha)}` : ''}</p>
               {articleNumber(fields.articulo) && <p className="at-art-num">Artículo de estudio {articleNumber(fields.articulo)}</p>}
@@ -234,6 +235,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
             <button className="primary" onClick={() => go('parrafos', firstUnanswered(bloques, fields))}>
               {answered ? 'Seguir párrafo por párrafo' : 'Empezar párrafo por párrafo'}
             </button>
+            <button className="mw-edit" onClick={() => go('articulo')}>Cambiar fecha, título o artículo</button>
           </>
         )}
 
@@ -268,10 +270,13 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
                 <AutoText value={reviewAnswer(fields, q)} placeholder="Mi respuesta" onChange={(v) => setFields((f) => withReview(f, q, v))} />
               </label>
             ))}
-            <label className="sfield">
-              <span className="sfield-label">Idea principal del artículo</span>
-              <AutoText value={fields.idea ?? ''} placeholder="En una o dos frases" onChange={(v) => set({ idea: v })} />
-            </label>
+            {/* Las preguntas de repaso ya sacan la idea principal: la caja solo sale si ya tiene algo (como en entre semana). */}
+            {String(fields.idea ?? '').trim() && (
+              <label className="sfield">
+                <span className="sfield-label">Idea principal del artículo</span>
+                <AutoText value={fields.idea ?? ''} placeholder="En una o dos frases" onChange={(v) => set({ idea: v })} />
+              </label>
+            )}
             <label className="sfield">
               <span className="sfield-label">¿Cómo lo aplico en mi vida?</span>
               <AutoText value={fields.aplicacion ?? ''} placeholder="Cuando…, voy a… (algo concreto de esta semana)" onChange={(v) => set({ aplicacion: v })} />
@@ -358,7 +363,6 @@ function Block({ b, enlace, n, total, answer, marks, starred, onStar, onAnswer, 
       {b.subtitulo && <h3 className="at-sub">{b.subtitulo}</h3>}
       <p className="at-qnum">{b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} {b.key}</p>
       {b.pregunta && <p className="at-question">{b.pregunta}</p>}
-      <p className="at-tip small">Lee buscando la respuesta y toca 2 o 3 palabras clave para subrayarlas.</p>
       <div className="at-text">
         {paras.map(({ ws, o, cites }, pi) => (
           <p key={pi}>

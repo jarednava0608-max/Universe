@@ -425,7 +425,6 @@ function Part({ pt, time, who, fields, fecha, onAnswer, onSet, onStar, onMarks, 
           {who?.salaB.length > 0 && <span>Sala B: {whoLabel(who.salaB)}</span>}
         </p>
       )}
-      {pt.lineas.some((l) => !l.q && !l.media) && <p className="at-tip small">Toca 2 o 3 palabras clave para subrayarlas.</p>}
       {pt.lineas.map((l, i) => {
         if (l.q) return (
           <label key={i} className="at-answer mw-qcard">

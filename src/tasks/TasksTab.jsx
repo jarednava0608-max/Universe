@@ -238,7 +238,8 @@ function GroupSection({ id, label, items, now, foldReminders, onToggle, onOpen, 
   const shown = reminders.length ? items.filter((e) => e.fields.type !== 'Recordatorio') : items
   return (
     <section>
-      <h2 className={'section-label' + (id === 'atrasados' ? ' late' : '')}>{label}{shown.length ? ` · ${shown.length}` : ''}</h2>
+      {/* Sin el número de cuántos faltan (pesaba); la lista ya se ve. "Hechos · 12" sí lo lleva. */}
+      <h2 className={'section-label' + (id === 'atrasados' ? ' late' : '')}>{label}</h2>
       {shown.length > 0 && <TaskList items={shown} now={now} onToggle={onToggle} onOpen={onOpen} onDelete={onDelete} />}
       {reminders.length > 0 && (
         <>

@@ -137,7 +137,6 @@ export default function DailyStudy({ entry, isNew, toast, onSave, onDelete, onCl
               </>
             ) : (
               <>
-                <p className="at-tip">Léelo despacio, con el comentario. Fíjate en la frase que más te llegue.</p>
                 <p className="dt-verse">{verse}</p>
                 {comment && <p className="dt-comment">{comment}</p>}
                 {wol}

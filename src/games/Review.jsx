@@ -76,10 +76,11 @@ function ReviewRound({ store, onExit, back, onMore }) {
         <Result
           pct={Math.round((good / items.length) * 100)}
           msg={`Repasaste ${items.length} ${items.length === 1 ? 'cosa' : 'cosas'} y te sabías ${good}.${missed.length ? ' Lo que fallaste vuelve pronto.' : ''}`}
-          onAgain={roundSize(reviewSummary(store)) > 0 ? onMore : undefined}
-          againLabel={`Otra ronda (${roundSize(reviewSummary(store))})`}
-          onDone={onExit}
-          doneLabel="Terminar"
+          // Terminar es el botón grande (terminar se siente bien) y "Otra ronda", el chico.
+          onAgain={onExit}
+          againLabel="Terminar"
+          onDone={roundSize(reviewSummary(store)) > 0 ? onMore : undefined}
+          doneLabel={`Otra ronda (${roundSize(reviewSummary(store))})`}
         >
           {missed.length > 0 && (
             <div className="missed">
