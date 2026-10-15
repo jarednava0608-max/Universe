@@ -15,6 +15,7 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
   const [meetings, setMeetings] = useMeetings()
   const items = todayPlan({ entries, meetings, leidos, plan })
   const diario = items[0]
+  const frase = String(diario.entry?.fields?.resumen ?? '').trim()
   const done = items.filter((x) => x.done).length
   const now = new Date()
   const weekday = cap(now.toLocaleDateString('es', { weekday: 'long' }))
@@ -65,7 +66,11 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
           <span className="plan-next-sub">{next.key === 'diario' && !diario.verse ? 'Copia el texto en JW Library y toca aquí' : next.sub}</span>
         </button>
       ) : (
-        <p className="plan-done">Listo por hoy. Lo demás es cuando tú quieras.</p>
+        <>
+          <p className="plan-done">Listo por hoy. Lo demás es cuando tú quieras.</p>
+          {/* Para cerrar el día: la frase que escribiste en el Texto diario (Recordar). */}
+          {frase && <p className="hoy-frase"><span>Tu frase de hoy</span>{frase}</p>}
+        </>
       )}
       {setup && <MeetingDays value={meetings} onChange={setMeetings} />}
     </section>

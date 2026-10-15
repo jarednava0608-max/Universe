@@ -101,6 +101,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
           )}
+          {/* Tres listas cortas, como la Biblioteca de JW Library: lo de cada semana, tus notas y lo demás. */}
           <ul className="entry-list lib-list">
             <li>
               <button className="entry-row" onClick={() => setBibleOpen(true)}>
@@ -110,23 +111,24 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
                 <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
               </button>
             </li>
-            {KIND_ORDER.map((k) => (
-              <li key={k}>
-                <button className="entry-row" onClick={() => setSection(k)}>
-                  <span className={'kind-icon k-' + k}><Icon d={KINDS[k].icon} size={18} /></span>
-                  <span className="entry-main"><span className="entry-title">{KINDS[k].label}</span></span>
-                  {byKind[k].length > 0 && <span className="lib-count">{byKind[k].length}</span>}
-                  <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-                </button>
-              </li>
-            ))}
+            {LIB_STUDY.map((k) => <KindRow key={k} kind={k} count={byKind[k].length} onOpen={() => setSection(k)} />)}
+          </ul>
+          <ul className="entry-list lib-list">
+            {LIB_NOTES.map((k) => <KindRow key={k} kind={k} count={byKind[k].length} onOpen={() => setSection(k)} />)}
           </ul>
           <ul className="entry-list lib-list">
             <li>
               <button className="entry-row" onClick={onOpenMap}>
                 <span className="kind-icon k-mapa"><Icon d={ICONS.mapa} size={18} /></span>
                 <span className="entry-main"><span className="entry-title">Mapa</span></span>
-                {nodes.length > 1 && <span className="lib-count">{nodes.length}</span>}
+                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+              </button>
+            </li>
+            <li>
+              <button className="entry-row" onClick={() => setSection('nodos')}>
+                <span className="kind-icon k-nodos"><Icon d={ICONS.nodo} size={18} /></span>
+                <span className="entry-main"><span className="entry-title">Tus nodos</span></span>
+                {allNodes.length > 0 && <span className="lib-count">{allNodes.length}</span>}
                 <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
               </button>
             </li>
@@ -139,29 +141,31 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
             </li>
           </ul>
           <MeetingDaysRow />
-
-          {allNodes.length > 0 && (
-            <>
-              <h2 className="section-label">Tus nodos · {allNodes.length}</h2>
-              <ul className="entry-list">
-                {allNodes.map((n) => {
-                  const def = firstSentence(definitionText(n.note))
-                  return (
-                    <li key={n.id}>
-                      <button className="entry-row" onClick={() => setPeekNode(n.id)}>
-                        <span className={'node-dot' + (n.id === ROOT_ID ? ' root' : '')} />
-                        <span className="entry-main">
-                          <span className="entry-title">{n.title}</span>
-                          <span className="entry-sub">{def || 'Sin definición todavía'}</span>
-                        </span>
-                        <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </>
-          )}
+        </PageScroll>
+      ) : section === 'nodos' ? (
+        // Tus nodos: antes era una lista larga al final de Biblioteca; ahora es su propia pantalla.
+        <PageScroll key="nodos" title="Tus nodos" back={{ label: 'Biblioteca', onClick: () => setSection(null) }}>
+          <button className="back-link" onClick={() => setSection(null)}>
+            <Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca
+          </button>
+          <h1 className="page-title">Tus nodos</h1>
+          <ul className="entry-list">
+            {allNodes.map((n) => {
+              const def = firstSentence(definitionText(n.note))
+              return (
+                <li key={n.id}>
+                  <button className="entry-row" onClick={() => setPeekNode(n.id)}>
+                    <span className={'node-dot' + (n.id === ROOT_ID ? ' root' : '')} />
+                    <span className="entry-main">
+                      <span className="entry-title">{n.title}</span>
+                      <span className="entry-sub">{def || 'Sin definición todavía'}</span>
+                    </span>
+                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
         </PageScroll>
       ) : (
         <PageScroll
@@ -505,6 +509,23 @@ const isMidweek = (e) => e.kind === 'reunion' && e.fields.tipo === 'entresemana'
 function midweekSub(f) {
   const c = midweekCount(f)
   return c.total ? `Entre semana · ${c.done === c.total ? 'Lista para la reunión' : `${c.done} de ${c.total} respondidas`}` : 'Entre semana'
+}
+
+// Biblioteca: primero lo de cada semana y después tus notas (los apartados de KINDS, en dos listas).
+const LIB_STUDY = ['diario', 'reunion', 'asignacion']
+const LIB_NOTES = ['reflexion', 'idea', 'estudio'].concat(KIND_ORDER.filter((k) => !['diario', 'reunion', 'asignacion', 'reflexion', 'idea', 'estudio'].includes(k)))
+
+function KindRow({ kind, count, onOpen }) {
+  return (
+    <li>
+      <button className="entry-row" onClick={onOpen}>
+        <span className={'kind-icon k-' + kind}><Icon d={KINDS[kind].icon} size={18} /></span>
+        <span className="entry-main"><span className="entry-title">{KINDS[kind].label}</span></span>
+        {count > 0 && <span className="lib-count">{count}</span>}
+        <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+      </button>
+    </li>
+  )
 }
 
 function filterNotes(list, query) {

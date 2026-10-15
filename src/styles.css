@@ -1179,6 +1179,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .hoy-verse { margin: 8px 0; font-family: var(--font-book, inherit); font-size: 22px; line-height: 1.45; color: var(--text-body); text-wrap: pretty; }
 .hoy .plan-next { margin-top: 8px; }
 .hoy .plan-setup { margin-top: 8px; }
+.hoy-frase { display: grid; gap: 4px; margin: 8px 0 0; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--title); text-wrap: balance; }
+.hoy-frase span { font-size: 15px; font-weight: 400; color: var(--text-2); }
 .lib-list + .lib-list { margin-top: 16px; }
 .plan-foot.lib-meetings { margin: 16px 2px 24px; }
 .plan-check { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid color-mix(in srgb, var(--text-3) 75%, transparent); color: var(--bg); }
