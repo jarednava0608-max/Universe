@@ -29,6 +29,26 @@ export function bookRead(leidos, book) {
   return { read, total }
 }
 
+// Dónde te quedaste: el último capítulo que marcaste como leído y el siguiente que no has leído
+// después de él (null si no has marcado ninguno). { book, chapter, t, next: [libro, cap] | null }
+export function lastRead(leidos = {}) {
+  let last = null
+  for (const [k, v] of Object.entries(leidos ?? {})) {
+    if (v?.on && v.t && (!last || v.t > last.t)) {
+      const [book, chapter] = k.split(':').map(Number)
+      last = { book, chapter, t: v.t }
+    }
+  }
+  if (!last) return null
+  let next = null
+  let after = false
+  for (const [b, c] of allChapters()) {
+    if (after && !isRead(leidos, b, c)) { next = [b, c]; break }
+    if (b === last.book && c === last.chapter) after = true
+  }
+  return { ...last, next }
+}
+
 // Para combinar entre teléfonos: por capítulo gana el cambio más reciente.
 export function mergeLeidos(a = {}, b = {}) {
   const out = { ...b }

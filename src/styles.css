@@ -1543,6 +1543,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .bh-ch.read { background: var(--accent, var(--btn)); border-color: transparent; color: var(--btn-ink); }
 .bh-ch.saved::after { content: ''; position: absolute; right: 6px; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--link); }
 .bh-ch.read.saved::after { background: var(--btn-ink); }
+.bh-ch.last { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent, var(--title)); }
+.bh-goal-ch.next { background: var(--accent, var(--btn)); border-color: transparent; color: var(--btn-ink); }
 .reader-read { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 48px; margin-top: 24px; border-radius: var(--r); border: 1px solid var(--line-strong); font-size: 17px; font-weight: 600; color: var(--text); }
 .reader-read.on { color: var(--ok); border-color: var(--ok); }
 .reader-read.on .plan-check { background: var(--ok); border-color: var(--ok); }
