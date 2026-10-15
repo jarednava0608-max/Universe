@@ -1170,6 +1170,17 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .today-card.plan { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-bottom: 12px; }
 .plan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .plan-done { margin: 4px 0 0; font-size: 17px; line-height: 1.4; color: var(--text-2); text-wrap: pretty; }
+/* Pestaña Hoy: una sola pantalla tranquila (fecha, versículo de hoy y un botón) */
+.hoy { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-top: 24px; }
+.hoy-head { display: grid; gap: 4px; }
+.hoy-weekday { margin: 0; font-size: 17px; color: var(--text-2); }
+.hoy-date { margin: 0; font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--title); text-wrap: balance; }
+.hoy .plan-streak { margin: -8px 0 0; }
+.hoy-verse { margin: 8px 0; font-family: var(--font-book, inherit); font-size: 22px; line-height: 1.45; color: var(--text-body); text-wrap: pretty; }
+.hoy .plan-next { margin-top: 8px; }
+.hoy .plan-setup { margin-top: 8px; }
+.lib-list + .lib-list { margin-top: 16px; }
+.plan-foot.lib-meetings { margin: 16px 2px 24px; }
 .plan-check { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid color-mix(in srgb, var(--text-3) 75%, transparent); color: var(--bg); }
 .plan-foot { margin: 4px 0 0; font-size: 13px; color: var(--text-3); }
 .plan-change { padding: 12px 8px; margin: -12px 0 -12px 4px; font: inherit; color: var(--link); }

@@ -9,8 +9,8 @@ import { GameScreen, Quiz } from './ui.jsx'
 import Sheet from '../components/Sheet.jsx'
 import PageScroll from '../components/PageScroll.jsx'
 
-// Pestaña Juegos: menú armado desde registry.js.
-export default function GamesTab({ store, toast }) {
+// Juegos (se abre desde Biblioteca): menú armado desde registry.js.
+export default function GamesTab({ store, toast, onBack }) {
   const [open, setOpen] = useState(null)
   const [reviewing, setReviewing] = useState(false)
   const [medals, setMedals] = useState(false)
@@ -20,7 +20,12 @@ export default function GamesTab({ store, toast }) {
 
   return (
     <div className="page">
-      <PageScroll title="Juegos">
+      <PageScroll title="Juegos" back={onBack && { label: 'Biblioteca', onClick: onBack }}>
+        {onBack && (
+          <button className="back-link" onClick={onBack}>
+            <Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca
+          </button>
+        )}
         <h1 className="page-title">Juegos</h1>
         <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
         <DailyCard store={store} onOpen={() => setDaily(true)} />

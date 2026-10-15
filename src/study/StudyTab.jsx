@@ -10,7 +10,7 @@ import { readMeetings } from './meetings.js'
 import { ASSIGNMENT_FROM, nextDay } from './today.js'
 import BibleHome from '../components/BibleHome.jsx'
 import { readCount, TOTAL_CHAPTERS } from '../lib/reading.js'
-import TodayPlan from './TodayPlan.jsx'
+import TodayPlan, { MeetingDaysRow } from './TodayPlan.jsx'
 import SearchAll from './SearchAll.jsx'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -28,15 +28,14 @@ import { addDays, constanciaDays } from '../games/progress.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
-// Pestaña Estudio: 5 apartados, cada uno con su lista de entradas.
-export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
+// Pestañas Hoy y Biblioteca (`view`): Hoy es solo lo de hoy; Biblioteca, los apartados con sus listas,
+// Leer la Biblia, el Mapa y los Juegos. Los editores se abren encima desde las dos.
+export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
   const [bibleOpen, setBibleOpen] = useState(false)
-  const [libOpen, setLibOpen] = useState(() => { try { return localStorage.getItem('universe-library-open') === '1' } catch { return false } })
-  const toggleLib = () => setLibOpen((o) => { try { localStorage.setItem('universe-library-open', o ? '0' : '1') } catch { /* sin almacenamiento */ } return !o })
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
   const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
   useEffect(() => { onHome?.(!section) }, [section]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -50,13 +49,13 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
     return m
   }, [entries])
 
-  // Recientes: entradas de Estudio y nodos del mapa juntos, por última edición (un nodo se abre como nota).
+  // Lo último que editaste: entradas de Estudio y nodos del mapa juntos (un nodo se abre como nota).
   const recent = useMemo(() => [
     ...entries.filter((e) => KINDS[e.kind]).map((e) => ({ entry: e, at: e.updatedAt })),
     ...nodes.map((n) => ({ node: n, at: n.updatedAt || n.createdAt || 0 })),
   ].sort((a, b) => b.at - a.at).slice(0, 6), [entries, nodes])
   const openRecent = (r) => (r.node ? setPeekNode(r.node.id) : setEditing({ entry: r.entry, isNew: false }))
-  // Arriba en Estudio: "Hoy" (lo que toca hacer hoy, en orden) y "Seguir donde te quedaste" (lo último que editaste esta semana).
+  // Arriba en Biblioteca: "Seguir donde te quedaste" (lo último que editaste esta semana, si no es algo que ya sale en Hoy).
   const todayEntry = byKind.diario.find((e) => e.fields.fecha === today())
   const inToday = (e) => {
     const f = String(e?.fields?.fecha ?? '')
@@ -66,9 +65,9 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
 
   return (
     <div className="page">
-      {!section ? (
-        <PageScroll title="Estudio">
-          <h1 className="page-title">Estudio</h1>
+      {view === 'hoy' ? (
+        // Pestaña Hoy: solo lo de hoy, en una pantalla tranquila.
+        <PageScroll title="Hoy">
           <TodayPlan
             // En 0 (recién volviste a empezar) dice "Hoy empieza" en vez de un cero.
             streak={{ label: !constancia?.start ? 'Empezar' : constanciaDays(constancia) === 0 ? 'Hoy empieza' : `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}`, onClick: onConstancia }}
@@ -89,6 +88,11 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
             }}
             toast={toast}
           />
+        </PageScroll>
+      ) : !section ? (
+        // Pestaña Biblioteca: todo lo demás (como la Biblioteca de JW Library), también el Mapa y los Juegos.
+        <PageScroll title="Biblioteca">
+          <h1 className="page-title">Biblioteca</h1>
           {last && (
             <button className="continue-card" onClick={() => openRecent(last)}>
               <span className="continue-label">Seguir donde te quedaste</span>
@@ -97,62 +101,65 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
           )}
-          <button className={'library-toggle' + (libOpen ? ' open' : '')} onClick={toggleLib} aria-expanded={libOpen}>
-            <span>Mi biblioteca</span>
-            <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-          </button>
-          {libOpen && (
+          <ul className="entry-list lib-list">
+            <li>
+              <button className="entry-row" onClick={() => setBibleOpen(true)}>
+                <span className="kind-icon k-biblia"><Icon d={ICONS.estudio} size={18} /></span>
+                <span className="entry-main"><span className="entry-title">Leer la Biblia</span></span>
+                <span className="lib-count">{readCount(leidos)} de {TOTAL_CHAPTERS}</span>
+                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+              </button>
+            </li>
+            {KIND_ORDER.map((k) => (
+              <li key={k}>
+                <button className="entry-row" onClick={() => setSection(k)}>
+                  <span className={'kind-icon k-' + k}><Icon d={KINDS[k].icon} size={18} /></span>
+                  <span className="entry-main"><span className="entry-title">{KINDS[k].label}</span></span>
+                  {byKind[k].length > 0 && <span className="lib-count">{byKind[k].length}</span>}
+                  <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <ul className="entry-list lib-list">
+            <li>
+              <button className="entry-row" onClick={onOpenMap}>
+                <span className="kind-icon k-mapa"><Icon d={ICONS.mapa} size={18} /></span>
+                <span className="entry-main"><span className="entry-title">Mapa</span></span>
+                {nodes.length > 1 && <span className="lib-count">{nodes.length}</span>}
+                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+              </button>
+            </li>
+            <li>
+              <button className="entry-row" onClick={onOpenGames}>
+                <span className="kind-icon k-juegos"><Icon d={ICONS.juegos} size={18} /></span>
+                <span className="entry-main"><span className="entry-title">Juegos</span></span>
+                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+              </button>
+            </li>
+          </ul>
+          <MeetingDaysRow />
+
+          {allNodes.length > 0 && (
             <>
-              <ul className="entry-list lib-list">
-                <li>
-                  <button className="entry-row" onClick={() => setBibleOpen(true)}>
-                    <span className="kind-icon k-biblia"><Icon d={ICONS.estudio} size={18} /></span>
-                    <span className="entry-main"><span className="entry-title">Leer la Biblia</span></span>
-                    <span className="lib-count">{readCount(leidos)} de {TOTAL_CHAPTERS}</span>
-                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-                  </button>
-                </li>
-                {KIND_ORDER.map((k) => (
-                  <li key={k}>
-                    <button className="entry-row" onClick={() => setSection(k)}>
-                      <span className={'kind-icon k-' + k}><Icon d={KINDS[k].icon} size={18} /></span>
-                      <span className="entry-main"><span className="entry-title">{KINDS[k].label}</span></span>
-                      {byKind[k].length > 0 && <span className="lib-count">{byKind[k].length}</span>}
-                      <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-                    </button>
-                  </li>
-                ))}
+              <h2 className="section-label">Tus nodos · {allNodes.length}</h2>
+              <ul className="entry-list">
+                {allNodes.map((n) => {
+                  const def = firstSentence(definitionText(n.note))
+                  return (
+                    <li key={n.id}>
+                      <button className="entry-row" onClick={() => setPeekNode(n.id)}>
+                        <span className={'node-dot' + (n.id === ROOT_ID ? ' root' : '')} />
+                        <span className="entry-main">
+                          <span className="entry-title">{n.title}</span>
+                          <span className="entry-sub">{def || 'Sin definición todavía'}</span>
+                        </span>
+                        <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
-
-              {recent.length > 0 && (
-                <>
-                  <h2 className="section-label">Recientes</h2>
-                  <RecentList items={recent} onOpen={openRecent} />
-                </>
-              )}
-
-              {allNodes.length > 0 && (
-                <>
-                  <h2 className="section-label">Tus nodos · {allNodes.length}</h2>
-                  <ul className="entry-list">
-                    {allNodes.map((n) => {
-                      const def = firstSentence(definitionText(n.note))
-                      return (
-                        <li key={n.id}>
-                          <button className="entry-row" onClick={() => setPeekNode(n.id)}>
-                            <span className={'node-dot' + (n.id === ROOT_ID ? ' root' : '')} />
-                            <span className="entry-main">
-                              <span className="entry-title">{n.title}</span>
-                              <span className="entry-sub">{def || 'Sin definición todavía'}</span>
-                            </span>
-                            <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </>
-              )}
             </>
           )}
         </PageScroll>
@@ -160,7 +167,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         <PageScroll
           key={section}
           title={KINDS[section].label}
-          back={{ label: 'Estudio', onClick: () => { setSection(null); setQuery('') } }}
+          back={{ label: 'Biblioteca', onClick: () => { setSection(null); setQuery('') } }}
           action={(
             <button className="bar-btn page-bar-add" aria-label="Nueva entrada" onClick={() => setEditing({ entry: newEntry(section), isNew: true })}>
               <Icon d={ICONS.plus} size={22} stroke={2} />
@@ -168,7 +175,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           )}
         >
           <button className="back-link" onClick={() => { setSection(null); setQuery('') }}>
-            <Icon d={ICONS.back} size={18} stroke={2} /> Estudio
+            <Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca
           </button>
           <div className="page-head">
             <h1 className="page-title">{KINDS[section].label}</h1>
@@ -498,45 +505,6 @@ const isMidweek = (e) => e.kind === 'reunion' && e.fields.tipo === 'entresemana'
 function midweekSub(f) {
   const c = midweekCount(f)
   return c.total ? `Entre semana · ${c.done === c.total ? 'Lista para la reunión' : `${c.done} de ${c.total} respondidas`}` : 'Entre semana'
-}
-
-// Lo último que tocaste: entradas de Estudio y nodos del mapa.
-function RecentList({ items, onOpen }) {
-  return (
-    <ul className="entry-list">
-      {items.map((r) => {
-        const key = r.node ? 'n-' + r.node.id : r.entry.id
-        if (r.node) {
-          return (
-            <li key={key}>
-              <button className="entry-row" onClick={() => onOpen(r)}>
-                <span className={'node-dot' + (r.node.id === ROOT_ID ? ' root' : '')} />
-                <span className="entry-main">
-                  <span className="entry-title">{r.node.title}</span>
-                  <span className="entry-sub">Nodo · {noteDate(r.at)}</span>
-                </span>
-                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-              </button>
-            </li>
-          )
-        }
-        const e = r.entry
-        const def = KINDS[e.kind]
-        return (
-          <li key={key}>
-            <button className="entry-row" onClick={() => onOpen(r)}>
-              <span className="entry-main">
-                <span className="entry-title">{def.title(e)}</span>
-                <span className="entry-sub">{[def.short, def.notes ? noteDate(e.updatedAt) : def.subtitle(e)].filter(Boolean).join(' · ')}</span>
-              </span>
-              {e.mapNodeId && <span className="in-map" title="En el mapa"><Icon d={ICONS.nodo} size={14} /></span>}
-              <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-            </button>
-          </li>
-        )
-      })}
-    </ul>
-  )
 }
 
 function filterNotes(list, query) {

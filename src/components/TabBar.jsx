@@ -1,15 +1,18 @@
 import Icon, { ICONS } from './Icon.jsx'
 
+// Solo 3 pestañas (al usuario lo abrumaban 4): el Mapa y los Juegos se abren desde Biblioteca
+// ('estudio'), y mientras están abiertos se marca Biblioteca.
 export const TABS = [
-  { id: 'mapa', label: 'Mapa' },
-  { id: 'estudio', label: 'Estudio' },
+  { id: 'hoy', label: 'Hoy' },
+  { id: 'estudio', label: 'Biblioteca' },
   { id: 'pendientes', label: 'Pendientes' },
-  { id: 'juegos', label: 'Juegos' },
 ]
+const IN_LIBRARY = ['mapa', 'juegos']
 
 // Barra de pestañas inferior (estilo iOS).
 // `dots`: pestañas con algo pendiente (un puntito, como en iOS).
-export default function TabBar({ tab, onChange, dots = {} }) {
+export default function TabBar({ tab: open, onChange, dots = {} }) {
+  const tab = IN_LIBRARY.includes(open) ? 'estudio' : open
   return (
     <nav className="tabbar">
       {TABS.map((t) => (

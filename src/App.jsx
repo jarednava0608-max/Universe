@@ -35,7 +35,7 @@ import { planVerseSave, cleanSavedVerses, wrongThirdJohn } from './lib/verseSave
 
 let seedsRunning = false
 
-const TAB_IDS = ['mapa', 'estudio', 'pendientes', 'juegos']
+const TAB_IDS = ['hoy', 'estudio', 'pendientes', 'mapa', 'juegos']
 function initialTab() {
   try {
     const t = new URLSearchParams(location.search).get('tab')
@@ -44,7 +44,7 @@ function initialTab() {
       return t
     }
   } catch { /* sin URL */ }
-  return 'estudio'
+  return 'hoy'
 }
 
 const LAST_NODE = 'universe-last-node'
@@ -63,9 +63,9 @@ export default function App() {
   const { nodes, edges } = store
   const graph = useRef()
 
-  // La app abre en Estudio: arriba está "Hoy", lo que toca hacer hoy.
-  // Un aviso de Pendientes abre la app con ?tab=pendientes.
-  const [tab, setTab] = useState(initialTab) // 'mapa' | 'estudio' | 'pendientes' | 'juegos'
+  // La app abre en Hoy: solo lo que toca hacer hoy. Abajo: Hoy, Biblioteca ('estudio') y Pendientes;
+  // el Mapa y los Juegos se abren desde Biblioteca. Un aviso de Pendientes abre la app con ?tab=pendientes.
+  const [tab, setTab] = useState(initialTab) // 'hoy' | 'estudio' | 'pendientes' | 'mapa' | 'juegos'
   const [searchOpen, setSearchOpen] = useState(false) // Buscar en todo (lupa en Estudio)
   const [studyHome, setStudyHome] = useState(true) // la lupa solo sale en el inicio de Estudio (en las listas el título es largo)
   const [play, setPlay] = useState(null) // 'constancia': abierta desde "Hoy"
@@ -441,8 +441,11 @@ export default function App() {
 
       </div>
 
-      {tab === 'estudio' && (
+      {(tab === 'hoy' || tab === 'estudio') && (
         <StudyTab
+          view={tab === 'hoy' ? 'hoy' : 'biblioteca'}
+          onOpenMap={() => setTab('mapa')}
+          onOpenGames={() => setTab('juegos')}
           entries={store.entries}
           nodes={nodes}
           onSaveEntry={store.saveEntry}
@@ -463,11 +466,12 @@ export default function App() {
           onHome={setStudyHome}
         />
       )}
-      {play === 'constancia' && <Constancia store={store} toast={toast} back="Estudio" onExit={() => setPlay(null)} />}
-      {tab === 'juegos' && <GamesTab store={store} toast={toast} />}
+      {play === 'constancia' && <Constancia store={store} toast={toast} back="Hoy" onExit={() => setPlay(null)} />}
+      {tab === 'juegos' && <GamesTab store={store} toast={toast} onBack={() => setTab('estudio')} />}
       {tab === 'pendientes' && <TasksTab store={store} toast={toast} />}
 
-      {tab !== 'mapa' && (
+      {tab !== 'mapa' && tab !== 'hoy' && (
+        // En Hoy no hay botones arriba: solo lo de hoy.
         <div className={'top-actions' + (tab === 'estudio' && !studyHome ? ' in-list' : '')}>
           {tab === 'estudio' && studyHome && (
             <button className="account-btn" aria-label="Buscar en todo" onClick={() => setSearchOpen(true)}>
