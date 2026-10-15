@@ -373,7 +373,7 @@ export function dailyVerse(texto) {
 }
 
 // El Texto diario (DailyStudy.jsx): leer y tres preguntas cortas, una a la vez, que van del corazón
-// a la acción, y una frase para llevártelo en la mente todo el día (sale en "Hoy"). El usuario
+// a la acción, y una frase para llevártelo en la mente todo el día (sale en la lista del Texto diario). El usuario
 // sentía el método de antes muy largo (Contexto, Relato, Concepto…) y uno de dos cajas, muy corto.
 // "La lección" (principio) es la que luego te pregunta Repasar hoy.
 export const DAILY_STEPS = [
@@ -399,7 +399,7 @@ export const DAILY_STEPS = [
   },
   {
     key: 'resumen', label: 'Recordar', q: 'Tu frase del día',
-    guide: 'De 3 a 5 palabras, para llevarte el texto en la mente. Te la muestro en Hoy.',
+    guide: 'De 3 a 5 palabras, para llevarte el texto en la mente.',
     hint: 'Jehová no me suelta',
   },
 ]

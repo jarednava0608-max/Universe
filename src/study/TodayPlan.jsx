@@ -6,8 +6,8 @@ import { openRef } from '../lib/verses.js'
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
 
-// "Hoy": un botón grande con lo que sigue y, abajo, una sola lista con los pasos del día en orden.
-// Cada paso se toca para hacerlo y se marca solo cuando ya está hecho (ver today.js).
+// "Hoy": solo un botón grande con lo que sigue; al terminarlo, el botón pasa al siguiente paso
+// (ver today.js). Sin lista: el usuario solo quiere entrar y hacer lo que toca.
 export default function TodayPlan({ streak, chain, entries, review, challenge, leidos, plan, onBible, onOpenEntry, onCreate, onPasteDaily, onReview, onChallenge, toast }) {
   const [meetings, setMeetings] = useMeetings()
   const [changing, setChanging] = useState(false)
@@ -63,26 +63,6 @@ export default function TodayPlan({ streak, chain, entries, review, challenge, l
           <span className="plan-next-sub">{next.key === 'diario' && !diario.verse ? 'Copia el texto en JW Library y toca aquí' : next.sub}</span>
         </button>
       )}
-      <ul className="plan-list">
-        {items.map((it) => (
-          <li key={it.key}>
-            <button className={'plan-row' + (it.done ? ' done' : '')} onClick={() => act(it)}>
-              <span className="plan-check" aria-label={it.done ? 'Hecho' : 'Pendiente'}>
-                {it.done && (
-                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                    <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-              <span className="entry-main">
-                <span className="plan-title">{it.title}</span>
-                <span className="plan-sub">{it.sub}</span>
-              </span>
-              <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-            </button>
-          </li>
-        ))}
-      </ul>
       {setup ? (
         <MeetingDays value={meetings} onChange={(next) => { setMeetings(next); if (next.semana != null && next.fin != null) setChanging(false) }} />
       ) : (

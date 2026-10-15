@@ -1169,17 +1169,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .today-card.plan { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-bottom: 12px; }
 .plan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .plan-count { flex: none; font-size: 13px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums; }
-/* Una sola lista, con aire bajo el botón grande (ya no hay encabezados de momento del día). */
-.plan-list { list-style: none; margin: 8px 0 0; padding: 0; }
-.plan-list li + li .plan-row { border-top: 1px solid var(--line); }
-.plan-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 0; text-align: left; }
-.plan-row .chev { color: var(--text-3); display: grid; }
 .plan-check { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid color-mix(in srgb, var(--text-3) 75%, transparent); color: var(--bg); }
-.plan-row.done .plan-check { background: var(--ok); border-color: var(--ok); }
-.plan-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
-.plan-row.done .plan-title { color: var(--text-2); font-weight: 500; }
-.plan-sub { font-size: 13px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.plan-foot { margin: 4px 0 0;font-size: 13px; color: var(--text-3); }
+.plan-foot { margin: 4px 0 0; font-size: 13px; color: var(--text-3); }
 .plan-change { padding: 12px 8px; margin: -12px 0 -12px 4px; font: inherit; color: var(--link); }
 .plan-setup { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .plan-setup-q { margin: 0; font-size: 15px; color: var(--text-2); line-height: 1.45; }
@@ -1565,8 +1556,8 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] :is(.game-card, .progress-card, .mode-card, .medal, .mb-world, .mb-goal, .result-stats, .order-built, .missed-item) { border-radius: 6px; background: var(--surface); box-shadow: none; }
 :root[data-style='jw'] :is(.game-icon, .kind-icon, .daily-icon, .flame) { border-radius: 6px; }
 :root[data-style='jw'] :is(.game-icon, .kind-icon) { color: var(--accent); background: var(--accent-soft); }
-:root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
-:root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .plan-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
+:root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
+:root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
 :root[data-style='jw'] .continue-label { color: var(--text-3); }
 /* Las etiquetas de las respuestas ("Mi respuesta", "Para meditar", "Mis notas") en letra normal, sin MAYÚSCULAS. */
 :root[data-style='jw'] .at-answer-label { font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-2); }
@@ -1746,7 +1737,7 @@ input[type='time'].input { min-height: var(--tap); }
    sola, los títulos se parten parejo y las comillas de un versículo cuelgan fuera del margen. Solo el estilo
    del corte (text-wrap-style), para no deshacer los títulos de un renglón con "…". */
 :is(.at-text p, .mw-text, .mw-para p, .bible-text, .dt-verse, .dt-comment, .dt-more p, .md p, .card-back, .explain, .mm-a) { text-wrap-style: pretty; }
-:is(.at-title, .at-sub, .at-question, .at-h, .mw-title, .mw-cover-title, .mw-q, .note-title, .sheet-h, .peek-title, .quiz-prompt, .mm-title, .empty-title, .plan-title) { text-wrap-style: balance; }
+:is(.at-title, .at-sub, .at-question, .at-h, .mw-title, .mw-cover-title, .mw-q, .note-title, .sheet-h, .peek-title, .quiz-prompt, .mm-title, .empty-title) { text-wrap-style: balance; }
 :is(.dt-verse, .at-theme) { hanging-punctuation: first; }
 
 /* Área para el dedo de 44 px en chips y botones segmentados, sin cambiar cómo se ven (se extiende hacia
