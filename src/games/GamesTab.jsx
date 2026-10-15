@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
 import { memorizeSources } from './logic.js'
-import { achievements, lastWeek, roundSize, streak, todayISO } from './progress.js'
+import { achievements, roundSize, todayISO } from './progress.js'
 import Review, { reviewSummary } from './Review.jsx'
 import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
 import { GameScreen, Quiz } from './ui.jsx'
@@ -66,7 +66,7 @@ function DailyCard({ store, onOpen }) {
         <span className="game-title">Reto del día</span>
         <span className="entry-sub">{done ? `Hecho: ${done.score} de ${DAILY_SIZE}. Mañana hay otro` : `${DAILY_SIZE} preguntas nuevas cada día`}</span>
       </span>
-      {done ? <span className="daily-dots">{Array.from({ length: DAILY_SIZE }, (_, i) => <i key={i} className={i < done.score ? 'on' : ''} />)}</span> : <span className="game-pill due">Hoy</span>}
+      {done ? <span className="daily-dots">{Array.from({ length: DAILY_SIZE }, (_, i) => <i key={i} className={i < done.score ? 'on' : ''} />)}</span> : <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>}
     </button>
   )
 }
@@ -110,61 +110,29 @@ function useNewMedals(store, toast) {
   }, [key, store.ready]) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-const DAY_LETTERS = ['D', 'L', 'M', 'M', 'J', 'V', 'S']
-
-// Racha de días seguidos estudiando, la semana y lo que toca repasar hoy.
 function useStats(store) {
   const verses = memorizeSources(store.entries)
   return { verses, memorized: verses.filter((v) => (v.fields.nivel ?? 0) >= 3).length }
 }
 
+// Arriba en Juegos: solo Repasar hoy y los logros. Sin racha, semana ni cifras de lo que falta: al usuario
+// lo abrumaba que la app le contara lo que debía (el progreso se sigue guardando y los logros lo usan).
 function ProgressCard({ store, onReview, onMedals }) {
   const p = store.progress
-  const days = p.days ?? []
-  const { current, best } = streak(days)
-  const week = lastWeek(days)
-  const { verses, memorized } = useStats(store)
+  const { memorized } = useStats(store)
   const medals = achievements(p, { nodes: store.nodes.length, memorized })
   const got = medals.filter((m) => m.done).length
-  // Lo que ya viste y hoy toca repasar, y las cosas nuevas de hoy (unas pocas por día).
   const { due, fresh } = useMemo(() => reviewSummary(store), [store.nodes, store.entries, p]) // eslint-disable-line react-hooks/exhaustive-deps
   const today = roundSize({ due, fresh })
 
   return (
-    <section className="progress-card">
-      <div className="streak">
-        <span className={'flame' + (current ? ' on' : '')}>
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2c1 3.5 5 5.5 5 10.5A5 5 0 0 1 7 12.5c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3 0-6 1-9z" fill="currentColor" /></svg>
-        </span>
-        <div>
-          <p className="streak-num">{current} {current === 1 ? 'día' : 'días'}</p>
-          <p className="streak-sub">{current ? (current === 1 ? 'seguido estudiando' : 'seguidos estudiando') : 'Estudia hoy para empezar tu racha'}{best > current ? ` · récord ${best}` : ''}</p>
-        </div>
-      </div>
-      <div className="week">
-        {week.map((d) => {
-          const [y, m, dd] = d.day.split('-').map(Number)
-          return (
-            <span key={d.day} className={'week-day' + (d.done ? ' done' : '')}>
-              <i />
-              {DAY_LETTERS[new Date(y, m - 1, dd).getDay()]}
-            </span>
-          )
-        })}
-      </div>
-      <div className="stats-row">
-        <div><b>{due}</b><span>para repasar hoy</span></div>
-        <div><b>{fresh}</b><span>{fresh === 1 ? 'nueva hoy' : 'nuevas hoy'}</span></div>
-        <div><b>{memorized}<small>/{verses.length}</small></b><span>textos memorizados</span></div>
-      </div>
-      <div className="progress-actions">
-        <button className="primary" onClick={onReview}>{today ? `Repasar hoy · ${today}` : 'Repasar hoy'}</button>
-        <button className="secondary medals-btn" onClick={onMedals}>
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 14.5 6 22l6-3 6 3-2-7.5M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          {got}/{medals.length}
-        </button>
-      </div>
-    </section>
+    <div className="progress-actions top">
+      <button className="primary" onClick={onReview}>{today ? `Repasar hoy · ${today}` : 'Repasar hoy'}</button>
+      <button className="secondary medals-btn" onClick={onMedals}>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 14.5 6 22l6-3 6 3-2-7.5M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        {got}/{medals.length}
+      </button>
+    </div>
   )
 }
 

@@ -56,7 +56,8 @@ export function dueAlerts(entries, now, tz) {
       const late = (now - at) / 60000
       if (late >= 0 && late < WINDOW_MIN) out.push({ key: `p:${e.id}:${at.toISOString()}`, kind: 'pendiente', entry: e, at })
     } else if (e.kind === 'habito') {
-      if (f.active === false) continue
+      // Si hoy ya lo palomeaste, no suena (ni en sus otros horarios del día).
+      if (f.active === false || f.log?.[local.day]) continue
       for (const slot of f.slots ?? []) {
         if (!slot?.time || !slotOnDay(slot, local.day, local.dow)) continue
         const late = local.min - toMin(slot.time)

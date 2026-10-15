@@ -138,7 +138,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
       <div className="editor-body at-body" ref={top} onScroll={onScroll}>
         <div className={'at-bars' + (barsHidden ? ' hidden' : '')}>
           <nav className="at-steps" aria-label="Pasos">
-            {STEPS.map((s) => (
+            {STEPS.filter((s) => !s.hidden).map((s) => (
               <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={s.key !== 'programa' && !partes.length} onClick={() => go(s.key)}>{s.label}</button>
             ))}
           </nav>
@@ -327,17 +327,17 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
             onMarks={(k, m) => setFields((f) => ({ ...f, marcas: { ...(f.marcas ?? {}), [k]: m } }))}
             last={idx === partes.length - 1}
             onPrev={() => (idx > 0 ? go('partes', idx - 1) : go('programa'))}
-            onNext={() => (idx < partes.length - 1 ? go('partes', idx + 1) : go('conceptos'))}
+            onNext={() => (idx < partes.length - 1 ? go('partes', idx + 1) : go('listo'))}
           />
         )}
 
         {step === 'conceptos' && (
-          <ConceptsStep entry={base.current} fields={fields} set={set} nodes={nodes} onToMap={(list) => onToMap(list, { ...base.current, fields })} onOpenNode={onOpenNode} onPrev={() => go('partes', Math.max(0, partes.length - 1))} onNext={() => go('listo')} />
+          <ConceptsStep entry={base.current} fields={fields} set={set} nodes={nodes} onToMap={(list) => onToMap(list, { ...base.current, fields })} onOpenNode={onOpenNode} onPrev={() => go('partes', Math.max(0, partes.length - 1))} onNext={() => go('listo')} nextLabel="Listo" />
         )}
 
         {step === 'listo' && (
           <>
-            <h2 className="at-h">{count.done === count.total ? 'Lista para la reunión' : count.total - count.done === 1 ? 'Te falta 1 pregunta' : `Te faltan ${count.total - count.done} preguntas`}</h2>
+            <h2 className="at-h">{count.done === count.total ? 'Lista para la reunión' : 'Lo que llevas'}</h2>
             <div className="at-card">
               <p className="at-cover-kicker">{['Vida y Ministerio', prog.semana].filter(Boolean).join(' · ')}</p>
               <p className="at-title">{fields.titulo || 'Reunión de entre semana'}</p>

@@ -549,8 +549,9 @@ export function timedPoints(msLeft, msTotal) {
 // ---------- Repasar hoy ----------
 
 // Una sesión de repaso: primero lo que ya viste y hoy toca (lo más atrasado primero, alternando tipos);
-// después, si queda lugar, hasta `fresh` cosas nuevas (`fresh: true`). Lo nuevo de tu Atalaya va primero
-// y en orden; lo demás, alternado. Los personajes solo entran si ya los viste en Memoria Bíblica.
+// después, si queda lugar, hasta `fresh` cosas nuevas (`fresh: true`). Lo nuevo se turna por tipo (tu Atalaya
+// en orden, lo demás revuelto): antes la Atalaya iba toda primero y los textos diarios casi nunca entraban.
+// Los personajes solo entran si ya los viste en Memoria Bíblica.
 export function dailyMix({ atalaya = [], cards = [], daily = [], verses = [], trivia = [], people = [] }, srs, isDueFn, limit = 20, rnd = Math.random, fresh = Infinity) {
   const tag = (type, prefix, list) => list.map((item) => ({ type, key: prefix + item.id, item }))
   // Los textos diarios usan la clave 'c:' de antes (eran tarjetas) para no perder su avance.
@@ -558,7 +559,7 @@ export function dailyMix({ atalaya = [], cards = [], daily = [], verses = [], tr
   const due = lists.map((l) => shuffle(l.filter((x) => srs[x.key] && isDueFn(srs[x.key])), rnd).sort((a, b) => (srs[a.key].due ?? '').localeCompare(srs[b.key].due ?? '')))
   const out = alternate(due, limit)
   const [mine, ...rest] = lists.slice(0, 5).map((l) => l.filter((x) => !srs[x.key]).map((x) => ({ ...x, fresh: true })))
-  const news = [...mine, ...alternate(rest.map((l) => shuffle(l, rnd)), Infinity)]
+  const news = alternate([mine, ...rest.map((l) => shuffle(l, rnd))], Infinity)
   return [...out, ...news.slice(0, Math.max(0, Math.min(fresh, limit - out.length)))]
 }
 

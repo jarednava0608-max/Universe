@@ -212,3 +212,15 @@ describe('Tipo del texto diario', () => {
     expect(dailyPeople('Gómer, la esposa de Oseas, dejó al profeta por otros hombres.')).toEqual(['Gómer', 'Oseas'])
   })
 })
+
+import { otherDayText } from './kinds.js'
+
+describe('otherDayText', () => {
+  const TUE = new Date(2026, 9, 6, 9)
+  it('avisa si lo copiado es de otro día y deja pasar el de hoy o uno sin fecha', () => {
+    expect(otherDayText('Lunes 5 de octubre\nTexto (Sal. 16:8).', TUE)).toBe('5 de octubre')
+    expect(otherDayText('Martes 6 de octubre\nTexto (Sal. 16:8).', TUE)).toBeNull()
+    expect(otherDayText('Miércoles, 6 de octubre de 2026\nTexto (Sal. 16:8).', TUE)).toBeNull()
+    expect(otherDayText('Texto (Sal. 16:8).', TUE)).toBeNull()
+  })
+})

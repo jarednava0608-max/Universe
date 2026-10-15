@@ -38,6 +38,9 @@ function meetingEntry(entries, midweek, day) {
 }
 
 const when = (days, weekday) => (days === 0 ? 'Hoy' : `El ${DAYS[weekday]}`)
+// ¿Ya le avanzaste hoy? La reunión cuenta como hecha por hoy, aunque falten preguntas: así "Hoy" sí
+// llega a "Listo por hoy" y se prepara un poco cada día en vez de quedar pendiente toda la semana.
+const touchedToday = (e, day) => !!e?.updatedAt && iso(new Date(e.updatedAt)) === day
 const hasContent = (f) => ['idea', 'aplicacion', 'notas'].some((k) => String(f[k] ?? '').trim()) || (f.parrafos ?? []).some((p) => String(p.nota ?? '').trim()) || Object.values(f.respuestas ?? {}).some((v) => String(v ?? '').trim())
 
 // meetings: { semana: 0-6, fin: 0-6 } (días de la semana, 0 = domingo) o null si aún no los eliges.
@@ -75,11 +78,12 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
     const progress = e && String(e.fields.articulo ?? '').trim() ? answeredCount(e.fields) : null
     if ((semDays == null ? days <= ATALAYA_FROM : nextIsFin) || (e && progress && progress.done < progress.total)) {
       const ready = !!progress?.total && progress.done === progress.total
+      const today = !ready && progress?.done > 0 && touchedToday(e, day)
       items.push({
         key: 'atalaya',
         title: 'La Atalaya',
-        sub: `${when(days, meetings.fin)} · ${ready ? 'Lista para la reunión' : progress?.total ? `${progress.done} de ${progress.total} respondidas` : e ? 'Pega el artículo' : 'Prepárala por pasos'}`,
-        done: ready,
+        sub: `${when(days, meetings.fin)} · ${ready ? 'Lista para la reunión' : progress?.total ? `${today ? 'Hoy ya le avanzaste · ' : ''}${progress.done} de ${progress.total} respondidas` : e ? 'Pega el artículo' : 'Prepárala por pasos'}`,
+        done: ready || today,
         entry: e,
         create: e ? null : { kind: 'reunion', fields: { tipo: 'atalaya', fecha: date } },
       })
@@ -94,15 +98,16 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
       // Con el programa pegado cuenta las preguntas; sin él, basta con haber escrito algo.
       const progress = e && String(e.fields.programa ?? '').trim() ? midweekCount(e.fields) : null
       const ready = progress?.total ? progress.done === progress.total : !!e && hasContent(e.fields)
+      const today = !ready && progress?.done > 0 && touchedToday(e, day)
       const state = ready ? 'Lista para la reunión'
-        : progress?.total ? `${progress.done} de ${progress.total} respondidas`
+        : progress?.total ? `${today ? 'Hoy ya le avanzaste · ' : ''}${progress.done} de ${progress.total} respondidas`
         : e ? (String(e.fields.programa ?? '').trim() ? 'Sigue preparándola' : 'Pega el programa')
         : 'Prepárala'
       items.push({
         key: 'entresemana',
         title: 'Reunión de entre semana',
         sub: `${when(days, meetings.semana)} · ${state}`,
-        done: ready,
+        done: ready || today,
         entry: e,
         create: e ? null : { kind: 'reunion', fields: { tipo: 'entresemana', fecha: date } },
       })
@@ -127,13 +132,13 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
     })
   }
 
+  // Una meta vencida no se queda para siempre en Hoy: se elige otra en Leer la Biblia.
   const lectura = readingToday(leidos, plan, now)
-  if (lectura && !lectura.finished) {
+  if (lectura && !lectura.finished && !lectura.expired) {
     items.push({
       key: 'lectura',
       title: 'Lectura de la Biblia',
-      sub: lectura.expired ? 'Tu meta ya pasó · Elige otra'
-        : lectura.ok ? `Hecho: ${chaptersLabel(lectura.done, BOOKS)}`
+      sub: lectura.ok ? `Hecho: ${chaptersLabel(lectura.done, BOOKS)}`
         : chaptersLabel(lectura.next, BOOKS),
       done: lectura.ok,
       // El primer capítulo que toca (para abrirlo en el lector).

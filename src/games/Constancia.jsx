@@ -47,7 +47,7 @@ export default function Constancia({ store, toast, onExit, back }) {
       <div className="constancia">
         <p className="constancia-num">{days}</p>
         <p className="constancia-label">{days === 1 ? 'día' : 'días'}</p>
-        <p className="hint center">{best > days ? `Tu mejor: ${best} días` : days > 0 ? 'Es tu mejor racha' : 'Hoy empieza'}</p>
+        <p className="hint center">{days === 0 ? 'Hoy empieza' : best > days ? `Tu mejor: ${best} días` : 'Es tu mejor racha'}</p>
       </div>
       <div className="constancia-text">
         <p>{msg}</p>

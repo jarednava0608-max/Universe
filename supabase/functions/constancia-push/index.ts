@@ -54,7 +54,9 @@ Deno.serve(async (req) => {
     const days = daysSince(c.start, now.day)
     const t = due[due.length - 1]
     const line = LINES[(times.indexOf(t) + Number(now.day.slice(-2))) % LINES.length]
-    const payload = JSON.stringify({ title: 'Constancia', body: `${days} ${days === 1 ? 'día' : 'días'}. ${line}`, tag: `constancia-${t}` })
+    // En 0 (recién volvió a empezar) no se le recuerda un cero: "Hoy empieza".
+    const count = days === 0 ? 'Hoy empieza' : `${days} ${days === 1 ? 'día' : 'días'}`
+    const payload = JSON.stringify({ title: 'Constancia', body: `${count}. ${line}`, tag: `constancia-${t}` })
     try {
       await webpush.sendNotification({ endpoint: r.endpoint, keys: { p256dh: r.p256dh, auth: r.auth } }, payload, { TTL: 3600 })
       sent++

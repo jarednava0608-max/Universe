@@ -30,6 +30,8 @@ describe('avisos de pendientes (función de Supabase)', () => {
     expect(dueAlerts([h], utc('2026-10-10T12:00:00Z'), TZ).map((x) => x.key)).toEqual(['h:h1:2026-10-10:06:00'])
     // En pausa no suena
     expect(dueAlerts([{ ...h, fields: { ...h.fields, active: false } }], utc('2026-10-10T12:00:00Z'), TZ)).toEqual([])
+    // Ya palomeado hoy (sábado 10) no suena
+    expect(dueAlerts([{ ...h, fields: { ...h.fields, log: { '2026-10-10': true } } }], utc('2026-10-10T12:00:00Z'), TZ)).toEqual([])
     expect(slotOnDay({ days: [1], biweekly: '2026-09-28' }, '2026-10-05', 1)).toBe(false)
   })
 

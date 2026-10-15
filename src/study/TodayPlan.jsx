@@ -3,6 +3,7 @@ import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { DAYS, nextStep, todayPlan, looksLikeDailyText } from './today.js'
 import { openRef } from '../lib/verses.js'
+import { otherDayText } from './kinds.js'
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
 
@@ -32,6 +33,11 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
     }
     if (!looksLikeDailyText(text)) {
       toast?.('Primero copia el texto de hoy en JW Library (con su cita) y vuelve a tocar aquí.')
+      return
+    }
+    const other = otherDayText(text)
+    if (other) {
+      toast?.(`Ese es el texto del ${other}. Copia el de hoy en JW Library y vuelve a tocar aquí.`)
       return
     }
     onPasteDaily(text.trim(), diario.entry)

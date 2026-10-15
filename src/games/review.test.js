@@ -101,10 +101,11 @@ describe('Repasar hoy: lo que toca y unas pocas nuevas', () => {
     expect(dailyMix({ cards: ids(5, 'c') }, srs, due, 20, mulberry(1), 0).map((x) => x.key)).toEqual(['c:c0'])
   })
 
-  it('lo nuevo de tu Atalaya va primero y en orden', () => {
-    const mix = dailyMix({ atalaya: ids(3, 'a'), trivia: ids(5, 'q') }, {}, due, 20, mulberry(2), 4)
-    expect(mix.map((x) => x.key)).toEqual(['a:a0', 'a:a1', 'a:a2', mix[3].key])
-    expect(mix[3].type).toBe('trivia')
+  it('lo nuevo se turna por tipo: tu Atalaya en orden y los textos diarios también entran', () => {
+    const mix = dailyMix({ atalaya: ids(30, 'a'), daily: ids(5, 'd'), trivia: ids(5, 'q') }, {}, due, 20, mulberry(2), 4)
+    expect(mix.filter((x) => x.type === 'atalaya').map((x) => x.key)).toEqual(['a:a0', 'a:a1'])
+    expect(mix.some((x) => x.type === 'daily')).toBe(true)
+    expect(mix[0].key).toBe('a:a0')
   })
 })
 

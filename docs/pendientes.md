@@ -33,3 +33,4 @@ SQL en `supabase/pendientes.sql` (con cómo deshacerlo).
 ## Pasar de Centro a Universe
 1. Copia hecha el 10 oct 2026 (66 pendientes y 5 hábitos, ids `centro-<id>` y `centro-habito-<id>`). Para traer lo que se agregue en Centro después, Claude puede repetirla con `supabase/centro-a-universe.py` (no duplica ni pisa lo editado; las palomitas puestas en Centro después de la copia no se pasan solas).
 2. Cuando ya uses Universe: prender Avisos en Pendientes, cambiar la URL de ChatGPT a `pendientes-intake` y apagar Centro (ver "Qué falta" en `DECISIONES.md`).
+- **Puntito de la pestaña solo por lo de hoy** (`dueCount`): los atrasados ya no lo prenden (con uno viejo se quedaba prendido siempre y pesaba en toda la app); siguen hasta arriba de la lista. Un hábito que ya palomeaste hoy no vuelve a sonar ese día (`dueAlerts` revisa `fields.log`).

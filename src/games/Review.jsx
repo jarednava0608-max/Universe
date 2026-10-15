@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { atalayaCards, atalayaCheck, atalayaSourceCards, atalayaSourceCheck, withSources, buildCards, cardCheck, citeSteps, dailyCards, dailyCheck, dailyMix } from './logic.js'
+import { atalayaCards, atalayaCheck, buildCards, cardCheck, citeSteps, dailyCards, dailyCheck, dailyMix } from './logic.js'
 import { GameScreen, Result, SwipeCard } from './ui.jsx'
 import { NEW_PER_DAY, NEW_PER_SESSION, SESSION, isDue, newToday, review, roundSize, todayISO } from './progress.js'
 import { CiteQuiz } from './Memorize.jsx'
@@ -15,7 +15,8 @@ const LABEL = { atalaya: 'Tu Atalaya', card: 'Tu concepto', daily: 'Tu texto dia
 // El texto diario de hoy entra mañana: recordarlo después de dormir se queda más que justo al escribirlo.
 function pools(store) {
   return {
-    atalaya: withSources(atalayaCards(store.entries), atalayaSourceCards(store.entries)),
+    // Solo tus respuestas (ya no "¿De qué Atalaya es?": recordar de qué artículo es un trozo no ayuda a aprenderlo).
+    atalaya: atalayaCards(store.entries),
     cards: buildCards(store.nodes),
     daily: dailyCards(store.entries).filter((c) => c.fecha !== todayISO()),
   }
@@ -49,7 +50,6 @@ function ReviewRound({ store, onExit, back, onMore }) {
   const [cards] = useState(() => buildCards(store.nodes))
   const [days] = useState(() => dailyCards(store.entries))
   const [mine] = useState(() => atalayaCards(store.entries))
-  const [sources] = useState(() => atalayaSourceCards(store.entries))
   const [i, setI] = useState(0)
   const [good, setGood] = useState(0)
   const [missed, setMissed] = useState([])
@@ -100,8 +100,7 @@ function ReviewRound({ store, onExit, back, onMore }) {
             <span className="quiz-count">{i + 1} de {items.length}</span>
             <span className="review-kind">{item.item?.midweek ? 'Tu reunión entre semana' : LABEL[item.type]}{item.fresh ? ' · Nueva' : ''}</span>
           </div>
-          {item.type === 'atalaya' && item.item.kind === 'source' && <SourceStep key={item.key} card={item.item} cards={sources} onAnswer={answer} />}
-          {item.type === 'atalaya' && item.item.kind !== 'source' && <AtalayaStep key={item.key} card={item.item} cards={mine} onAnswer={answer} />}
+          {item.type === 'atalaya' && <AtalayaStep key={item.key} card={item.item} cards={mine} onAnswer={answer} />}
           {item.type === 'card' && <CardStep key={item.key} card={item.item} cards={cards} onAnswer={answer} />}
           {item.type === 'daily' && <DailyStep key={item.key} card={item.item} cards={days} onAnswer={answer} />}
         </>
@@ -131,32 +130,6 @@ function AtalayaStep({ card, cards, onAnswer }) {
         <div className="feedback">
           <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : 'Esa no era'}</p>
           {card.back !== q.options[q.answer] && <p className="explain">{card.back}</p>}
-          <button className="primary" onClick={() => onAnswer(picked === q.answer)}>Siguiente</button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// "¿De qué Atalaya es?": un trozo de un párrafo y elegir el artículo (o la semana, si solo hay uno).
-function SourceStep({ card, cards, onAnswer }) {
-  const [q] = useState(() => atalayaSourceCheck(card, cards))
-  const [picked, setPicked] = useState(null)
-  const answered = picked != null
-  if (!q) return <SwipeCard front={card.front} back={card.back} onAnswer={onAnswer} />
-  return (
-    <div className="quiz">
-      <p className="hint">{q.ask}</p>
-      <p className="quiz-prompt long">«{card.front}»</p>
-      <div className="options long">
-        {q.options.map((o, k) => (
-          <button key={k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => setPicked(k)}>{o}</button>
-        ))}
-      </div>
-      {answered && (
-        <div className="feedback">
-          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : 'Esa no era'}</p>
-          <p className="explain">{card.back} · {card.label}</p>
           <button className="primary" onClick={() => onAnswer(picked === q.answer)}>Siguiente</button>
         </div>
       )}

@@ -139,10 +139,10 @@ export function groupTasks(entries, now = new Date(), filter = {}) {
   return groups
 }
 
-// Cuántos hay atrasados o para hoy (el puntito de la pestaña).
+// Cuántos hay para hoy (el puntito de la pestaña). Los atrasados no lo prenden: con uno viejo se quedaba
+// prendido siempre y pesaba en toda la app; siguen hasta arriba de la lista de Pendientes.
 export function dueCount(entries, now = new Date()) {
-  const g = groupTasks(entries, now)
-  return g.atrasados.length + g.hoy.length
+  return groupTasks(entries, now).hoy.length
 }
 
 // Categorías en uso, en el orden de siempre (y las que vengan de otro lado al final).

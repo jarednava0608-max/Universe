@@ -9,7 +9,8 @@ export const STEPS = [
   { key: 'vistazo', label: 'Vistazo' },
   { key: 'parrafos', label: 'Párrafos' },
   { key: 'repaso', label: 'Repaso' },
-  { key: 'conceptos', label: 'Conceptos' },
+  // Conceptos ya no es un paso obligado (pesaba): se abre desde Listo, "Conceptos para el mapa".
+  { key: 'conceptos', label: 'Conceptos', hidden: true },
   { key: 'listo', label: 'Listo' },
 ]
 

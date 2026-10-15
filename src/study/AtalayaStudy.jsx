@@ -127,7 +127,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
       <div className="editor-body at-body" ref={top} onScroll={onScroll}>
         <div className={'at-bars' + (barsHidden ? ' hidden' : '')}>
         <nav className="at-steps" aria-label="Pasos">
-          {STEPS.map((s) => (
+          {STEPS.filter((s) => !s.hidden).map((s) => (
             <button key={s.key} className={'at-step' + (s.key === step ? ' on' : '')} disabled={!canGo(s.key)} onClick={() => go(s.key)}>{s.label}</button>
           ))}
         </nav>
@@ -280,17 +280,17 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
               <span className="sfield-label">Notas</span>
               <AutoText value={fields.notas ?? ''} placeholder="Lo que quieras recordar" onChange={(v) => set({ notas: v })} />
             </label>
-            <button className="primary" onClick={() => go('conceptos')}>Siguiente</button>
+            <button className="primary" onClick={() => go('listo')}>Siguiente</button>
           </>
         )}
 
         {step === 'conceptos' && (
-          <ConceptsStep entry={base.current} fields={fields} set={set} nodes={nodes} onToMap={(list) => onToMap(list, { ...base.current, fields })} onOpenNode={onOpenNode} onPrev={() => go('repaso')} onNext={() => go('listo')} />
+          <ConceptsStep entry={base.current} fields={fields} set={set} nodes={nodes} onToMap={(list) => onToMap(list, { ...base.current, fields })} onOpenNode={onOpenNode} onPrev={() => go('repaso')} onNext={() => go('listo')} nextLabel="Listo" />
         )}
 
         {step === 'listo' && (
           <>
-            <h2 className="at-h">{answered === bloques.length ? 'Lista para la reunión' : bloques.length - answered === 1 ? 'Te falta 1 pregunta' : `Te faltan ${bloques.length - answered} preguntas`}</h2>
+            <h2 className="at-h">{answered === bloques.length ? 'Lista para la reunión' : 'Lo que llevas'}</h2>
             <div className="at-card">
               <p className="at-title">{fields.titulo || 'La Atalaya'}</p>
               <div className="progress"><span style={{ width: `${bloques.length ? (answered / bloques.length) * 100 : 0}%` }} /></div>

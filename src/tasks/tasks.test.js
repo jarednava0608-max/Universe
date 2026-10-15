@@ -38,7 +38,7 @@ describe('pendientes', () => {
     const g = groupTasks([pasado, futuro, tarea], now)
     expect(g.hechos.map((e) => e.fields.title)).toEqual(['Faltan 3 días'])
     expect(g.atrasados.map((e) => e.fields.title)).toEqual(['Entregar'])
-    expect(dueCount([pasado, futuro, tarea], now)).toBe(1)
+    expect(dueCount([pasado, futuro, tarea], now)).toBe(0) // un atrasado no prende el puntito
   })
 
   it('filtra por categoría y busca sin acentos', () => {

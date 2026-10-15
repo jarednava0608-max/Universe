@@ -8,7 +8,8 @@ import { parseArticle } from './atalaya.js'
 export const STEPS = [
   { key: 'programa', label: 'Programa' },
   { key: 'partes', label: 'Partes' },
-  { key: 'conceptos', label: 'Conceptos' },
+  // Conceptos ya no es un paso obligado (pesaba): se abre desde Listo, "Conceptos para el mapa".
+  { key: 'conceptos', label: 'Conceptos', hidden: true },
   { key: 'listo', label: 'Listo' },
 ]
 

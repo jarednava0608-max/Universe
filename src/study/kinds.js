@@ -364,6 +364,16 @@ export function dailyBody(texto) {
   const first = s.split('\n')[0]
   return DATE_LINE.test(foldText(first)) ? s.slice(first.length).trim() : s
 }
+// Si lo copiado empieza con una fecha ("Martes 6 de octubre") que no es la de hoy, esa fecha ("6 de octubre");
+// si es de hoy o no trae fecha, null. Así no se guarda el texto de ayer como el de hoy.
+const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+export function otherDayText(texto, now = new Date()) {
+  const first = foldText(String(texto ?? '').trim().split('\n')[0])
+  if (!DATE_LINE.test(first)) return null
+  const [, d, m] = first.match(/(\d{1,2})\s+de\s+([a-z]+)/) ?? []
+  const month = m === 'setiembre' ? 8 : MONTHS.indexOf(m)
+  return Number(d) === now.getDate() && month === now.getMonth() ? null : `${Number(d)} de ${MONTHS[month]}`
+}
 // Solo el texto bíblico del Texto diario: el primer renglón, hasta su cita
 // ("No calumnia con su lengua (Sal. 15:3)."), sin la fecha ni el comentario que sigue.
 export function dailyVerse(texto) {

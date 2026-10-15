@@ -70,7 +70,8 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
         <PageScroll title="Estudio">
           <h1 className="page-title">Estudio</h1>
           <TodayPlan
-            streak={{ label: constancia?.start ? `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}` : 'Empezar', onClick: onConstancia }}
+            // En 0 (recién volviste a empezar) dice "Hoy empieza" en vez de un cero.
+            streak={{ label: !constancia?.start ? 'Empezar' : constanciaDays(constancia) === 0 ? 'Hoy empieza' : `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}`, onClick: onConstancia }}
             entries={entries}
             leidos={leidos}
             plan={readingPlan}

@@ -136,3 +136,20 @@ describe('Hoy: en orden, sin momentos del día', () => {
     expect(fri.some((x) => x.key === 'entresemana')).toBe(false)
   })
 })
+
+describe('Hoy: se puede terminar', () => {
+  const ARTICULO3 = '1. ¿Uno?\n\n1 Uno.\n\n2. ¿Dos?\n\n2 Dos.\n\n3. ¿Tres?\n\n3 Tres.'
+  const FRI = new Date(2026, 9, 9, 9, 0)
+  const cal = { semana: 4, fin: 6 }
+
+  it('la reunión cuenta como hecha por hoy si hoy ya le avanzaste', () => {
+    const at = { id: 'a', kind: 'reunion', updatedAt: new Date(2026, 9, 9, 8).getTime(), fields: { tipo: 'atalaya', fecha: '2026-10-10', articulo: ARTICULO3, parrafos: [{ num: '1', nota: 'Sí.' }] } }
+    expect(todayPlan({ now: FRI, meetings: cal, entries: [at] }).find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'El sábado · Hoy ya le avanzaste · 1 de 3 respondidas', done: true })
+    const ayer = { ...at, updatedAt: new Date(2026, 9, 8, 20).getTime() }
+    expect(todayPlan({ now: FRI, meetings: cal, entries: [ayer] }).find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'El sábado · 1 de 3 respondidas', done: false })
+  })
+
+  it('una meta de lectura vencida no se queda en Hoy', () => {
+    expect(todayPlan({ now: FRI, plan: { start: '2025-01-01', end: '2025-12-31', t: 1 } }).some((x) => x.key === 'lectura')).toBe(false)
+  })
+})

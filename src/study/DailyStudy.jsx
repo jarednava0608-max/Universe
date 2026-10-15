@@ -8,7 +8,7 @@ const filled = (v) => !!String(v ?? '').trim()
 // El Texto diario: leer y tres preguntas cortas, una a la vez (Jehová → la lección → dónde lo
 // necesito hoy), y una frase para recordarlo todo el día. Se guarda sola y al volver sigue en el
 // paso donde te quedaste (fields.paso).
-export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDelete, onClose }) {
+export default function DailyStudy({ entry, isNew, toast, onSave, onDelete, onClose }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const [step, setStep] = useState(() => {
     const f = entry.fields
@@ -78,7 +78,7 @@ export default function DailyStudy({ onDone, entry, isNew, toast, onSave, onDele
   async function finish() {
     await flush()
     toast('Lo de hoy, listo.')
-    ;(onDone ?? onClose)()
+    onClose()
   }
   function go(next) {
     setStep(next)
