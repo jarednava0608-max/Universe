@@ -15,14 +15,12 @@ import AccountSheet from './components/AccountSheet.jsx'
 import DigList from './components/DigList.jsx'
 import { buildSupport, connectionCount } from './lib/support.js'
 import TabBar from './components/TabBar.jsx'
-import { dailyDone } from './games/daily.js'
 import Icon, { ICONS } from './components/Icon.jsx'
 import StudyTab from './study/StudyTab.jsx'
-import GamesTab, { Daily } from './games/GamesTab.jsx'
+import GamesTab from './games/GamesTab.jsx'
 import Constancia from './games/Constancia.jsx'
 import TasksTab from './tasks/TasksTab.jsx'
 import { dueCount } from './tasks/tasks.js'
-import Review, { reviewSummary } from './games/Review.jsx'
 import RefSheet from './components/RefSheet.jsx'
 import ChapterReader from './components/ChapterReader.jsx'
 import { isRead, withRead } from './lib/reading.js'
@@ -70,7 +68,7 @@ export default function App() {
   const [tab, setTab] = useState(initialTab) // 'mapa' | 'estudio' | 'pendientes' | 'juegos'
   const [searchOpen, setSearchOpen] = useState(false) // Buscar en todo (lupa en Estudio)
   const [studyHome, setStudyHome] = useState(true) // la lupa solo sale en el inicio de Estudio (en las listas el título es largo)
-  const [play, setPlay] = useState(null) // 'review' | 'daily': Repasar hoy o el Reto del día, abiertos desde "Hoy"
+  const [play, setPlay] = useState(null) // 'constancia': abierta desde "Hoy"
   const [stack, setStack] = useState([]) // notas abiertas (para volver atrás)
   const [focusId, setFocusId] = useState(null)
   // Último nodo que viste: el mapa abre ahí (preferencia de este teléfono).
@@ -382,8 +380,6 @@ export default function App() {
     navigator.serviceWorker.addEventListener('message', onMsg)
     return () => navigator.serviceWorker.removeEventListener('message', onMsg)
   }, [])
-  // Para "Hoy" en Estudio: cuánto toca repasar y si ya hiciste el Reto del día.
-  const reviewToday = useMemo(() => (store.ready && tab === 'estudio' ? reviewSummary(store) : { due: 0, fresh: 0 }), [store.ready, tab, store.nodes, store.entries, store.progress]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!store.ready) return <div className="boot" />
 
@@ -456,10 +452,6 @@ export default function App() {
           onOpenNode={openNodeFromStudy}
           onSaveNode={store.saveNode}
           toast={toast}
-          review={reviewToday}
-          challenge={dailyDone(store.progress)}
-          onReview={() => setPlay('review')}
-          onChallenge={() => setPlay('daily')}
           constancia={store.progress.constancia}
           onConstancia={() => setPlay('constancia')}
           leidos={store.progress.leidos}
@@ -471,8 +463,6 @@ export default function App() {
           onHome={setStudyHome}
         />
       )}
-      {play === 'review' && <Review store={store} back="Estudio" onExit={() => setPlay(null)} />}
-      {play === 'daily' && <Daily store={store} back="Estudio" onExit={() => setPlay(null)} />}
       {play === 'constancia' && <Constancia store={store} toast={toast} back="Estudio" onExit={() => setPlay(null)} />}
       {tab === 'juegos' && <GamesTab store={store} toast={toast} />}
       {tab === 'pendientes' && <TasksTab store={store} toast={toast} />}
@@ -500,7 +490,7 @@ export default function App() {
         if (t === tab) document.querySelector('.page .page-scroll')?.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
         setTab(t)
         setSearchOpen(false)
-      }} dots={{ juegos: store.ready && !dailyDone(store.progress), pendientes: tasksDue > 0 }} />
+      }} dots={{ pendientes: tasksDue > 0 }} />
 
       {store.error && <p className="banner">{store.error}</p>}
 

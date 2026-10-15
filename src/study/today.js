@@ -1,15 +1,14 @@
-// "Hoy" (arriba en Estudio): lo que toca hacer hoy, en orden, para que al abrir la app sepas qué
-// sigue. Cada paso se marca solo cuando lo haces:
+// "Hoy" (arriba en Estudio): solo lo esencial de hoy, en orden, para que al abrir la app sepas qué
+// sigue y puedas terminar. Cada paso se marca solo cuando lo haces:
 //   1. Texto diario (pegarlo y analizarlo).
 //   2. La Atalaya, desde 3 días antes de la reunión del fin de semana (cuántas preguntas llevas),
 //      o la reunión de entre semana, desde 2 días antes.
 //   3. Tu asignación, desde 7 días antes (se marca hecha si ya la practicaste hoy).
-//   4. Repasar hoy (lo que toca y las nuevas).
-//   5. Lectura de la Biblia, si te pusiste una meta (los capítulos que tocan hoy).
-//   6. Reto del día.
+//   4. Lectura de la Biblia, si te pusiste una meta (los capítulos que tocan hoy).
+// Repasar hoy y el Reto del día ya no van aquí (al usuario lo abrumaba): siguen en Juegos, para cuando quiera.
 import { clock, dailyMinimum, dailyVerse, partLabel, practicedOn } from './kinds.js'
 import { answeredCount } from './atalaya.js'
-import { addDays, roundSize } from '../games/progress.js'
+import { addDays } from '../games/progress.js'
 import { midweekCount } from './midweek.js'
 import { BOOKS, findRefs } from '../lib/bible.js'
 import { chaptersLabel, readingToday } from '../lib/reading.js'
@@ -42,9 +41,8 @@ const when = (days, weekday) => (days === 0 ? 'Hoy' : `El ${DAYS[weekday]}`)
 const hasContent = (f) => ['idea', 'aplicacion', 'notas'].some((k) => String(f[k] ?? '').trim()) || (f.parrafos ?? []).some((p) => String(p.nota ?? '').trim()) || Object.values(f.respuestas ?? {}).some((v) => String(v ?? '').trim())
 
 // meetings: { semana: 0-6, fin: 0-6 } (días de la semana, 0 = domingo) o null si aún no los eliges.
-// review: { due, fresh, round } de Repasar hoy (round: hoy ya terminaste una ronda). challenge: el resultado del Reto del día de hoy o null.
 // leidos / plan: capítulos leídos y la meta de lectura (del progreso).
-export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challenge = null, meetings = null, leidos = {}, plan = null, now = new Date() } = {}) {
+export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = null, now = new Date() } = {}) {
   const day = iso(now)
   const items = []
 
@@ -129,16 +127,6 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
     })
   }
 
-  // Lo que trae la próxima ronda (la misma cuenta que Review.jsx). Con una ronda terminada hoy ya está
-  // hecho; si quedan nuevas, se ofrece otra sin dejar el paso abierto.
-  const n = roundSize(review)
-  items.push({
-    key: 'repaso',
-    title: 'Repasar hoy',
-    sub: review.round ? (n ? 'Hecho · otra ronda si quieres' : 'Hecho') : n ? `${n} ${n === 1 ? 'cosa' : 'cosas'} · unos ${Math.max(1, Math.ceil(n / 3))} min` : 'Al día',
-    done: n === 0 || !!review.round,
-  })
-
   const lectura = readingToday(leidos, plan, now)
   if (lectura && !lectura.finished) {
     items.push({
@@ -152,13 +140,6 @@ export function todayPlan({ entries = [], review = { due: 0, fresh: 0 }, challen
       ref: lectura.next[0] ? `${BOOKS[lectura.next[0][0] - 1]} ${lectura.next[0][1]}` : null,
     })
   }
-
-  items.push({
-    key: 'reto',
-    title: 'Reto del día',
-    sub: challenge ? `Hecho: ${challenge.score} de 5` : '5 preguntas · 1 min',
-    done: !!challenge,
-  })
 
   return items
 }

@@ -1168,7 +1168,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .plan-next-sub { font-size: 13px; font-weight: 400; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .today-card.plan { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-bottom: 12px; }
 .plan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.plan-count { flex: none; font-size: 13px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.plan-done { margin: 4px 0 0; font-size: 17px; line-height: 1.4; color: var(--text-2); text-wrap: pretty; }
 .plan-check { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid color-mix(in srgb, var(--text-3) 75%, transparent); color: var(--bg); }
 .plan-foot { margin: 4px 0 0; font-size: 13px; color: var(--text-3); }
 .plan-change { padding: 12px 8px; margin: -12px 0 -12px 4px; font: inherit; color: var(--link); }

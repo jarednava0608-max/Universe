@@ -29,13 +29,12 @@ import { addDays, constanciaDays } from '../games/progress.js'
 const RichNote = lazy(() => import('./RichNote.jsx'))
 
 // Pestaña Estudio: 5 apartados, cada uno con su lista de entradas.
-export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, review, challenge, onReview, onChallenge, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
+export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
   const [section, setSection] = useState(null) // kind abierto
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
   const [bibleOpen, setBibleOpen] = useState(false)
-  const [chain, setChain] = useState(null) // { from, t }: al terminar un paso, "Hoy" abre el que sigue
   const [libOpen, setLibOpen] = useState(() => { try { return localStorage.getItem('universe-library-open') === '1' } catch { return false } })
   const toggleLib = () => setLibOpen((o) => { try { localStorage.setItem('universe-library-open', o ? '0' : '1') } catch { /* sin almacenamiento */ } return !o })
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
@@ -72,10 +71,7 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
           <h1 className="page-title">Estudio</h1>
           <TodayPlan
             streak={{ label: constancia?.start ? `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}` : 'Empezar', onClick: onConstancia }}
-            chain={chain}
             entries={entries}
-            review={review}
-            challenge={challenge}
             leidos={leidos}
             plan={readingPlan}
             onBible={() => setBibleOpen(true)}
@@ -91,8 +87,6 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
               setEditing({ entry: saved ?? e, isNew: false })
             }}
             toast={toast}
-            onReview={onReview}
-            onChallenge={onChallenge}
           />
           {last && (
             <button className="continue-card" onClick={() => openRecent(last)}>
@@ -289,7 +283,6 @@ export default function StudyTab({ entries, nodes, onSaveEntry, onDeleteEntry, o
       {editing && editing.entry.kind === 'diario' && (
         <DailyStudy
           key={editing.entry.id}
-          onDone={() => { setEditing(null); setChain({ from: 'diario', t: Date.now() }) }}
           entry={editing.entry}
           isNew={editing.isNew}
           toast={toast}

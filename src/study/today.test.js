@@ -17,20 +17,10 @@ describe('Hoy: lo que toca según tu rutina', () => {
     expect(nextDay(3, MON)).toEqual({ iso: '2026-10-07', days: 2 })
   })
 
-  it('sin reuniones elegidas: texto diario, repasar y reto', () => {
-    const items = todayPlan({ now: MON, review: { due: 4, fresh: 5 } })
-    expect(keys(items)).toEqual(['diario', 'repaso', 'reto'])
+  it('sin reuniones elegidas: solo el texto diario', () => {
+    const items = todayPlan({ now: MON })
+    expect(keys(items)).toEqual(['diario'])
     expect(items[0]).toMatchObject({ sub: 'Léelo y 3 preguntas cortas · unos 5 min', done: false, create: { kind: 'diario', fields: { fecha: '2026-10-05' } } })
-    expect(items[1]).toMatchObject({ sub: '8 cosas · unos 3 min', done: false })
-    expect(items[2]).toMatchObject({ sub: '5 preguntas · 1 min', done: false })
-  })
-
-  it('Repasar hoy dice lo que trae la ronda (hasta 4 nuevas) y se palomea al terminar una ronda', () => {
-    const repaso = (review) => todayPlan({ now: MON, review }).find((x) => x.key === 'repaso')
-    expect(repaso({ due: 0, fresh: 10 })).toMatchObject({ sub: '4 cosas · unos 2 min', done: false })
-    expect(repaso({ due: 0, fresh: 6, round: true })).toMatchObject({ sub: 'Hecho · otra ronda si quieres', done: true })
-    expect(repaso({ due: 0, fresh: 0, round: true })).toMatchObject({ sub: 'Hecho', done: true })
-    expect(repaso({ due: 0, fresh: 0 })).toMatchObject({ sub: 'Al día', done: true })
   })
 
   it('el texto diario se marca hecho cuando ya lo analizaste', () => {
@@ -51,10 +41,10 @@ describe('Hoy: lo que toca según tu rutina', () => {
   })
 
   it('la reunión de entre semana sale 2 días antes; La Atalaya 3 días antes', () => {
-    expect(keys(todayPlan({ now: MON, meetings }))).toEqual(['diario', 'entresemana', 'repaso', 'reto'])
+    expect(keys(todayPlan({ now: MON, meetings }))).toEqual(['diario', 'entresemana'])
     const mon = todayPlan({ now: MON, meetings }).find((x) => x.key === 'entresemana')
     expect(mon).toMatchObject({ title: 'Reunión de entre semana', sub: 'El miércoles · Prepárala', create: { kind: 'reunion', fields: { tipo: 'entresemana', fecha: '2026-10-07' } } })
-    expect(keys(todayPlan({ now: THU, meetings }))).toEqual(['diario', 'atalaya', 'repaso', 'reto'])
+    expect(keys(todayPlan({ now: THU, meetings }))).toEqual(['diario', 'atalaya'])
     expect(todayPlan({ now: THU, meetings })[1]).toMatchObject({ sub: 'El domingo · Prepárala por pasos', create: { kind: 'reunion', fields: { tipo: 'atalaya', fecha: '2026-10-11' } } })
   })
 
@@ -68,9 +58,9 @@ describe('Hoy: lo que toca según tu rutina', () => {
     expect(todayPlan({ now: SUN, meetings, entries: [lista] }).find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'Hoy · Lista para la reunión', done: true })
   })
 
-  it('repasar y reto se marcan hechos', () => {
-    const items = todayPlan({ now: MON, review: { due: 0, fresh: 0 }, challenge: { day: '2026-10-05', score: 4 } })
-    expect(items.slice(1).map((x) => [x.sub, x.done])).toEqual([['Al día', true], ['Hecho: 4 de 5', true]])
+  it('Repasar hoy y el Reto del día ya no son pasos de Hoy (siguen en Juegos)', () => {
+    const items = todayPlan({ now: MON, meetings })
+    expect(items.some((x) => x.key === 'repaso' || x.key === 'reto')).toBe(false)
   })
 
   it('reconoce el texto diario copiado de JW Library', () => {
@@ -118,19 +108,19 @@ describe('Hoy: tu asignación', () => {
 describe('nextStep', () => {
   it('es el primer paso sin hacer; null si ya terminaste', async () => {
     const { nextStep } = await import('./today.js')
-    expect(nextStep([{ key: 'diario', done: true }, { key: 'repaso', done: false }, { key: 'reto', done: false }])?.key).toBe('repaso')
-    expect(nextStep([{ key: 'diario', done: true }, { key: 'reto', done: true }])).toBeNull()
+    expect(nextStep([{ key: 'diario', done: true }, { key: 'atalaya', done: false }, { key: 'lectura', done: false }])?.key).toBe('atalaya')
+    expect(nextStep([{ key: 'diario', done: true }, { key: 'lectura', done: true }])).toBeNull()
     expect(nextStep([])).toBeNull()
   })
 })
 
 describe('Hoy: en orden, sin momentos del día', () => {
-  it('la lectura va después de repasar y antes del reto', async () => {
+  it('la lectura va al final', async () => {
     const { nextStep } = await import('./today.js')
     const plan = { start: '2026-10-05', end: '2027-10-04', t: 1 }
     const e = { id: 'x', kind: 'asignacion', fields: { fecha: '2026-10-08', parte: 'lectura', titulo: '' } }
-    const items = todayPlan({ now: MON, meetings, plan, entries: [e], review: { due: 2, fresh: 0 } })
-    expect(keys(items)).toEqual(['diario', 'entresemana', 'asignacion', 'repaso', 'lectura', 'reto'])
+    const items = todayPlan({ now: MON, meetings, plan, entries: [e] })
+    expect(keys(items)).toEqual(['diario', 'entresemana', 'asignacion', 'lectura'])
     expect(items.some((x) => 'moment' in x)).toBe(false)
     const done = items.map((x) => (x.key === 'diario' || x.key === 'entresemana' ? { ...x, done: true } : x))
     expect(nextStep(done)?.key).toBe('asignacion')
@@ -140,7 +130,7 @@ describe('Hoy: en orden, sin momentos del día', () => {
     // Jueves y sábado, como en el calendario.
     const cal = { semana: 4, fin: 6 }
     const sun = todayPlan({ now: new Date(2026, 9, 11, 9), meetings: cal })
-    expect(keys(sun)).toEqual(['diario', 'entresemana', 'repaso', 'reto'])
+    expect(keys(sun)).toEqual(['diario', 'entresemana'])
     const fri = todayPlan({ now: new Date(2026, 9, 9, 7), meetings: cal })
     expect(fri.find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'El sábado · Prepárala por pasos' })
     expect(fri.some((x) => x.key === 'entresemana')).toBe(false)
