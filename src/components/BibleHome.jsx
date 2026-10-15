@@ -100,7 +100,8 @@ function BibleImport({ toast }) {
       <p className="hint">Baja la Traducción del Nuevo Mundo en EPUB desde jw.org (la Biblia, botón de descargar, EPUB) y elige aquí el archivo. Se guarda solo en este teléfono.</p>
       <label className={'primary as-btn' + (busy ? ' disabled' : '')}>
         {busy ? 'Leyendo la Biblia…' : 'Elegir el archivo EPUB'}
-        <input type="file" accept=".epub,application/epub+zip" hidden disabled={busy} onChange={pick} />
+        {/* Sin `accept`: el iPhone deja gris el .epub si se filtra por tipo; el archivo se revisa al leerlo. */}
+        <input type="file" hidden disabled={busy} onChange={pick} />
       </label>
       <a className="secondary as-btn" data-direct="1" href="https://www.jw.org/es/biblioteca/biblia/" target="_blank" rel="noopener noreferrer">Ir a la Biblia en jw.org</a>
     </div>

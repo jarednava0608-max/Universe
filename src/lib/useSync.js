@@ -4,12 +4,16 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { forgetUser, pendingCount, syncOnce } from './sync.js'
 
+const isNetworkError = (e) => /load failed|failed to fetch|networkerror|network request failed|network connection was lost/i.test(e?.message || String(e))
+
 export function useSync(store) {
   const [session, setSession] = useState(null)
   const [checked, setChecked] = useState(false) // ya se sabe si hay sesión o no
   const [status, setStatus] = useState({ state: 'off', lastSync: null, pending: 0, error: '' })
   const running = useRef(false)
   const again = useRef(false)
+  const retry = useRef(null)
+  const runRef = useRef(null)
   const userId = session?.user?.id
   const { mergeRemote, ready, rev } = store
 
@@ -42,11 +46,25 @@ export function useSync(store) {
         setStatus({ state: 'ok', lastSync: Date.now(), pending: await pendingCount(), error: '' })
       } while (again.current)
     } catch (e) {
-      setStatus({ state: 'error', lastSync: null, pending: await pendingCount().catch(() => 0), error: e?.message || String(e) })
+      // "Load failed" (Safari) / "Failed to fetch": el teléfono no alcanzó la nube (señal débil, cambio de red).
+      // No es un error de tus datos: se dice claro y se vuelve a intentar solo en un rato.
+      const net = isNetworkError(e)
+      setStatus({
+        state: 'error',
+        lastSync: null,
+        pending: await pendingCount().catch(() => 0),
+        error: net ? 'No se pudo conectar con la nube (señal débil o sin internet). Todo sigue guardado en el teléfono; lo intento otra vez solo.' : e?.message || String(e),
+      })
+      if (net) {
+        clearTimeout(retry.current)
+        retry.current = setTimeout(() => runRef.current?.(), 30_000)
+      }
     } finally {
       running.current = false
     }
   }, [userId, ready, mergeRemote])
+  runRef.current = run
+  useEffect(() => () => clearTimeout(retry.current), [])
 
   // Al iniciar sesión / abrir la app.
   useEffect(() => {
