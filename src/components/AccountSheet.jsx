@@ -42,6 +42,7 @@ export default function AccountSheet({ sync, onClose }) {
               Todo tu estudio (mapa, entradas de Estudio y juegos) se guarda en el teléfono y se copia a la nube automáticamente. Si entras con esta cuenta en otro dispositivo, verás lo mismo.
             </p>
             <button className="secondary" disabled={status.state === 'syncing'} onClick={sync.syncNow}>Sincronizar ahora</button>
+            <ChangePassword sync={sync} />
             <button className="delete-btn" onClick={() => confirm('¿Cerrar sesión? Tus datos se quedan en este teléfono y en la nube.') && sync.signOut()}>
               Cerrar sesión
             </button>
@@ -73,6 +74,42 @@ export default function AccountSheet({ sync, onClose }) {
   )
 }
 
+// Poner una contraseña nueva estando dentro (por si te dieron una temporal o quieres cambiarla).
+function ChangePassword({ sync }) {
+  const [open, setOpen] = useState(false)
+  const [pass, setPass] = useState('')
+  const [show, setShow] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState('')
+  const [error, setError] = useState('')
+  if (!open) return <button className="secondary" onClick={() => setOpen(true)}>Cambiar contraseña</button>
+  async function save() {
+    setError('')
+    if (pass.length < 6) return setError('Escribe al menos 6 caracteres.')
+    setBusy(true)
+    const { error } = await sync.changePassword(pass)
+    setBusy(false)
+    if (error) return setError(translate(error.message))
+    setNote('Listo: tu contraseña nueva ya quedó. Úsala la próxima vez que entres.')
+    setPass('')
+    setOpen(false)
+  }
+  return (
+    <>
+      {error && <p className="error">{error}</p>}
+      {note && <p className="notice">{note}</p>}
+      <label className="field">
+        <span>Contraseña nueva</span>
+        <span className="pass-wrap">
+          <input className="input" type={show ? 'text' : 'password'} autoComplete="new-password" autoCapitalize="off" autoCorrect="off" value={pass} onChange={(e) => setPass(e.target.value)} />
+          <button type="button" className="pass-toggle" onClick={(e) => { e.preventDefault(); setShow((v) => !v) }}>{show ? 'Ocultar' : 'Mostrar'}</button>
+        </span>
+      </label>
+      <button className="primary" disabled={busy} onClick={save}>Guardar contraseña</button>
+    </>
+  )
+}
+
 export function describe(status) {
   switch (status.state) {
     case 'syncing': return 'Sincronizando…'
@@ -87,6 +124,7 @@ function translate(m) {
   if (/invalid login credentials/i.test(m)) return 'Correo o contraseña incorrectos.'
   if (/email not confirmed/i.test(m)) return 'Primero confirma tu correo (revisa tu bandeja de entrada).'
   if (/already registered/i.test(m)) return 'Ese correo ya tiene cuenta. Toca “Entrar”.'
+  if (/should be different/i.test(m)) return 'Esa es la misma contraseña que ya tienes.'
   if (/rate limit/i.test(m)) return 'Demasiados intentos. Espera unos minutos.'
   return m
 }

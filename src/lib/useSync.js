@@ -93,10 +93,11 @@ export function useSync(store) {
   const signIn = (email, password) => supabase.auth.signInWithPassword({ email, password })
   const signUp = (email, password) =>
     supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } })
+  const changePassword = (password) => supabase.auth.updateUser({ password })
   const signOut = async () => {
     if (userId) await forgetUser(userId)
     await supabase.auth.signOut()
   }
 
-  return { session, checked, status, syncNow: run, signIn, signUp, signOut }
+  return { session, checked, status, syncNow: run, signIn, signUp, signOut, changePassword }
 }
