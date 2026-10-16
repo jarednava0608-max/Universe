@@ -290,6 +290,7 @@ function TaskList({ items, now, onToggle, onOpen, onDelete }) {
         const finished = isFinished(f, now)
         const late = !finished && f.dueAt && new Date(f.dueAt) < now
         const extra = [
+          f.priority === 'Alta' && !finished ? 'Importante' : null,
           f.type && f.type !== 'Tarea' ? f.type : null,
           f.category || null,
           f.repeat && f.repeat !== 'none' ? 'se repite' : null,
@@ -300,7 +301,7 @@ function TaskList({ items, now, onToggle, onOpen, onDelete }) {
             <div className={'entry-row task-row' + (finished ? ' done' : '')}>
               <CheckButton done={finished} label={f.title} onClick={() => onToggle(e)} />
               <button className="entry-main task-main" onClick={() => onOpen(e)}>
-                <span className="entry-title">{f.priority === 'Alta' && !finished && <i className="prio-dot" aria-label="Prioridad alta" />}{f.title || 'Sin título'}</span>
+                <span className="entry-title">{f.title || 'Sin título'}</span>
                 <span className={'entry-sub' + (late ? ' late' : '')}>
                   {dueLabel(f.dueAt, now)}
                   {extra.length ? ` · ${extra.join(' · ')}` : ''}
