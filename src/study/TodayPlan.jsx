@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { DAYS, nextStep, todayPlan, looksLikeDailyText } from './today.js'
+import { DAYS, nextStep, todayPlan, looksLikeDailyText, yesterdayLesson } from './today.js'
 import { openRef } from '../lib/verses.js'
-import { otherDayText } from './kinds.js'
+import { otherDayText, dailyTextAppUrl } from './kinds.js'
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
 
@@ -16,6 +16,10 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
   const items = todayPlan({ entries, meetings, leidos, plan })
   const diario = items[0]
   const frase = String(diario.entry?.fields?.resumen ?? '').trim()
+  // Ya hecho el texto de hoy, tu "Cuando…, voy a…" queda a la vista para acordarte durante el día.
+  const planHoy = diario.done ? String(diario.entry?.fields?.aplicacion ?? '').trim() : ''
+  // Antes de pegar el de hoy: el de ayer, para recordar qué te enseñó antes de verlo.
+  const ayer = diario.verse ? null : yesterdayLesson(entries)
   // El día de la reunión: un toque al Modo reunión (tus respuestas), sin buscarla en Biblioteca.
   const reunion = items.find((x) => x.meetingToday && x.entry)
   const done = items.filter((x) => x.done).length
@@ -62,12 +66,24 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
         </button>
       )}
       {diario.verse && <p className="hoy-verse">{diario.verse}</p>}
-      {next ? (
+      {planHoy && <p className="hoy-plan"><span>Tu plan de hoy</span>{planHoy}</p>}
+      {ayer && (
+        <details className="hoy-ayer">
+          <summary><span>Ayer</span>{ayer.verse}<b>¿Qué te enseñó? Ver</b></summary>
+          <p>{ayer.lesson}</p>
+        </details>
+      )}
+      {next && (
         <button className="primary plan-next" onClick={doNext}>
           <span className="plan-next-label">{done || next.entry ? 'Sigue' : 'Empieza'}: {next.title}</span>
           <span className="plan-next-sub">{next.key === 'diario' && !diario.verse ? 'Copia el texto en JW Library y toca aquí' : next.sub}</span>
         </button>
-      ) : (
+      )}
+      {next?.key === 'diario' && !diario.verse && (
+        // Para copiarlo sin buscarlo: abre el texto de hoy en JW Library.
+        <a className="hoy-jwl" data-direct="1" href={dailyTextAppUrl(diario.create?.fields?.fecha ?? diario.entry?.fields?.fecha)} target="_blank" rel="noopener noreferrer">Abrir el texto de hoy en JW Library</a>
+      )}
+      {!next && (
         <>
           <p className="plan-done">Listo por hoy. Lo demás es cuando tú quieras.</p>
           {/* Para cerrar el día: la frase que escribiste en el Texto diario (Recordar). */}

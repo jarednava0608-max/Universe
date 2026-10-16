@@ -166,3 +166,13 @@ describe('Hoy: el día de la reunión de entre semana', () => {
     expect(todayPlan({ now: MON, meetings: { semana: 3, fin: 0 }, entries: [e] }).find((x) => x.key === 'entresemana')).toMatchObject({ meetingToday: false })
   })
 })
+
+describe('Hoy: lo de ayer', () => {
+  it('el texto de ayer con su lección, para recordarla antes de verla', async () => {
+    const { yesterdayLesson } = await import('./today.js')
+    const ayer = { id: 'y', kind: 'diario', fields: { fecha: '2026-10-04', texto: 'Domingo 4 de octubre\nJehová es mi pastor (Sal. 23:1).\n\nComentario.', principio: 'Jehová me guía.' } }
+    expect(yesterdayLesson([ayer], MON)).toEqual({ verse: 'Jehová es mi pastor (Sal. 23:1).', lesson: 'Jehová me guía.' })
+    expect(yesterdayLesson([{ ...ayer, fields: { ...ayer.fields, principio: '' } }], MON)).toBeNull()
+    expect(yesterdayLesson([], MON)).toBeNull()
+  })
+})

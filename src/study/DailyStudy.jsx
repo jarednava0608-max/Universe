@@ -1,7 +1,10 @@
 import { createRef, useEffect, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
-import { DAILY_QUESTIONS, DAILY_STEPS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyType, dailyVerse, dailyBody, dailyTextUrl, dailyTextAppUrl, entryForClaude } from './kinds.js'
+import { DAILY_QUESTIONS, DAILY_STEPS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyType, dailyVerse, dailyBody, dailyTextUrl, dailyTextAppUrl, entryForClaude, otherDayText } from './kinds.js'
+import { findAllRefs } from '../lib/verses.js'
+import { splitRefs } from './midweek.js'
+import RefLink from '../components/RefLink.jsx'
 
 const filled = (v) => !!String(v ?? '').trim()
 
@@ -70,6 +73,10 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
     try {
       const t = (await navigator.clipboard.readText()).trim()
       if (!t) return toast('No hay nada copiado. Copia el texto en JW Library.')
+      // Si lo copiado es de otro día (el de ayer seguía en el portapapeles), se avisa y no se pega.
+      const [y, m, d] = String(fields.fecha ?? '').split('-').map(Number)
+      const other = y ? otherDayText(t, new Date(y, m - 1, d)) : null
+      if (other) return toast(`Ese es el texto del ${other}. Copia el de este día en JW Library.`)
       set({ texto: t })
     } catch {
       toast('No se pudo pegar. Mantén presionado el cuadro y toca Pegar.')
@@ -137,8 +144,8 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
               </>
             ) : (
               <>
-                <p className="dt-verse">{verse}</p>
-                {comment && <p className="dt-comment">{comment}</p>}
+                <p className="dt-verse"><Refs text={verse} /></p>
+                {comment && <p className="dt-comment"><Refs text={comment} /></p>}
                 {wol}
                 <div className="action-stack">
                   <button className="primary" onClick={() => go('jehova')}>Ya lo leí</button>
@@ -163,11 +170,11 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
 
         {cur.q && (
           <>
-            {verse && <p className="dt-verse">{verse}</p>}
+            {verse && <p className="dt-verse"><Refs text={verse} /></p>}
             {comment && step !== 'resumen' && (
               <details className="dt-more">
                 <summary>Leer el comentario</summary>
-                <p>{comment}</p>
+                <p><Refs text={comment} /></p>
               </details>
             )}
             {step !== 'resumen' && wol}
@@ -221,4 +228,11 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
       </div>
     </div>
   )
+}
+
+// El texto con sus citas tocables ("Lea Isaías 41:10"): abren su hoja de Mi Biblia, como en las reuniones.
+function Refs({ text }) {
+  const refs = findAllRefs(text)
+  if (!refs.length) return text
+  return splitRefs(text, refs).map((x, i) => (x.ref ? <RefLink key={i} refText={x.text} /> : x.text))
 }

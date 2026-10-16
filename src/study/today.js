@@ -154,6 +154,15 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
   return items
 }
 
+// El texto diario de ayer con su lección, para recordarla en Hoy antes de pegar el de hoy (null si no hay).
+export function yesterdayLesson(entries = [], now = new Date()) {
+  const day = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))
+  const e = entries.find((x) => x.kind === 'diario' && x.fields.fecha === day)
+  const verse = e ? dailyVerse(e.fields.texto) : ''
+  const lesson = String(e?.fields?.principio ?? '').trim()
+  return verse && lesson ? { verse, lesson } : null
+}
+
 // Lo que sigue: el primer paso sin hacer, o null si ya terminaste el día.
 export function nextStep(items) {
   return items.find((it) => !it.done) ?? null

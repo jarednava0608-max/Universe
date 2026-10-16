@@ -1351,6 +1351,16 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .at-jump-num.star::after { background: #e3b341; }
 .mm-keys { margin: 0; font-size: 17px; line-height: 1.4; color: var(--text-2); }
 /* Hoy, el día de la reunión: un toque a tus respuestas */
+.hoy-plan { display: grid; gap: 4px; margin: -4px 0 0; font-size: 17px; line-height: 1.4; color: var(--text-body); text-wrap: pretty; }
+.hoy-plan span, .hoy-ayer summary span { font-size: 13px; color: var(--text-2); }
+.hoy-ayer { margin: 0; }
+.hoy-ayer summary { display: grid; gap: 4px; list-style: none; cursor: pointer; font-family: var(--font-book, inherit); font-size: 17px; line-height: 1.45; color: var(--text-body); }
+.hoy-ayer summary::-webkit-details-marker { display: none; }
+.hoy-ayer summary span { font-family: var(--font-display); }
+.hoy-ayer summary b { display: inline-flex; align-items: center; min-height: var(--tap); margin: -4px 0 -8px; font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--accent, var(--text)); }
+.hoy-ayer[open] summary b { display: none; }
+.hoy-ayer p { margin: 8px 0 0; font-size: 20px; font-weight: 600; line-height: 1.35; color: var(--title); text-wrap: balance; }
+.hoy-jwl { justify-self: start; display: inline-flex; align-items: center; min-height: var(--tap); margin: -8px 0 0; font-size: 15px; color: var(--accent, var(--text-2)); }
 .hoy-meeting { display: flex; align-items: center; gap: 8px; min-height: var(--tap); margin: -4px 0 0; font-size: 17px; color: var(--text-2); text-align: left; }
 .hoy-meeting b { font-weight: 600; color: var(--accent, var(--text)); }
 .hoy-meeting svg { color: var(--accent, var(--text-3)); }
