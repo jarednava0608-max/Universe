@@ -153,8 +153,10 @@ export function mergeProgress(a = {}, b = {}) {
   const plan = mergePlan(a.plan, b.plan)
   const constancia = mergeConstancia(a.constancia, b.constancia)
   // Último día en que terminaste una ronda de Repasar hoy: el más reciente.
+  // Juego de hoy: el día más reciente.
+  const juegoHoy = [a.juegoHoy, b.juegoHoy].filter(Boolean).sort((x, y) => (x.day > y.day ? 1 : -1)).at(-1)
   const repaso = [a.repaso, b.repaso].filter(Boolean).sort().at(-1)
-  return { ...b, ...a, days, srs, best, ...(repaso ? { repaso } : {}), triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}), ...(constancia ? { constancia } : {}) }
+  return { ...b, ...a, days, srs, best, ...(repaso ? { repaso } : {}), ...(juegoHoy ? { juegoHoy } : {}), triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}), ...(constancia ? { constancia } : {}) }
 }
 
 // Constancia: `{ start, best, at }`. Días desde `start` (el día en que empezó o volvió a empezar).

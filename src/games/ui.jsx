@@ -653,80 +653,104 @@ export function Empty({ children, action }) {
   )
 }
 
-// Parejas: tocar uno de la izquierda y luego su pareja de la derecha, con tiempo.
+// Memorama: todas las cartas boca abajo; se voltean de dos en dos y las parejas (mismo id) se quedan descubiertas.
 // build() da { left: [{ id, text }], right: [{ id, text }] } (mismos id en ambos lados) o null.
 // best/onBest = récord en segundos (menos es mejor). onPair(id, ok) opcional, por si cuenta para el repaso.
-export function PairsGame({ title = 'Parejas', back, era, build, best, onBest, onExit, onPair, hint = 'Toca uno de la izquierda y luego su pareja.', empty = 'Todavía no hay suficientes para este juego.' }) {
+function buildDeck(build) {
+  const b = build()
+  if (!b) return null
+  const cards = [
+    ...b.left.map((x) => ({ key: 'l' + x.id, id: x.id, text: x.text, title: true })),
+    ...b.right.map((x) => ({ key: 'r' + x.id, id: x.id, text: x.text, title: false })),
+  ]
+  return { cards: shuffle(cards), pairs: b.left.length, wide: cards.every((c) => String(c.text).length <= 28) }
+}
+
+export function PairsGame({ title = 'Memorama', back, era, build, best, onBest, onExit, onPair, hint = 'Toca una carta y busca su pareja.', empty = 'Todavía no hay suficientes para este juego.' }) {
   const [prevBest, setPrevBest] = useState(best)
-  const [board, setBoard] = useState(build)
-  const [left, setLeft] = useState(null)
-  const [done, setDone] = useState(() => new Set())
-  const [miss, setMiss] = useState(null)
-  const [errors, setErrors] = useState(0)
-  const startRef = useRef(Date.now())
-  const missed = useRef(new Set())
+  const [deck, setDeck] = useState(() => buildDeck(build))
+  const [up, setUp] = useState([]) // claves de las cartas volteadas ahora (máx. 2)
+  const [done, setDone] = useState(() => new Set()) // ids ya emparejados
+  const [tries, setTries] = useState(0)
   const [secs, setSecs] = useState(0)
+  const startRef = useRef(null)
+  const failed = useRef(new Set())
+  const timer = useRef(null)
+  useEffect(() => () => clearTimeout(timer.current), [])
 
-  if (!board) return <GameScreen title={title} back={back} era={era} onExit={onExit}><Empty>{empty}</Empty></GameScreen>
+  if (!deck) return <GameScreen title={title} back={back} era={era} onExit={onExit}><Empty>{empty}</Empty></GameScreen>
 
-  const finished = done.size === board.left.length
-  function pickRight(id) {
-    if (!left || done.has(id)) return
-    if (left === id) {
-      const next = new Set(done).add(id)
-      setDone(next)
-      setLeft(null)
-      onPair?.(id, !missed.current.has(id))
-      if (next.size === board.left.length) {
-        const t = Math.max(1, Math.round((Date.now() - startRef.current) / 1000))
-        setSecs(t)
-        onBest?.(t)
-      }
+  const finished = done.size === deck.pairs
+  function flip(c) {
+    if (up.length >= 2 || up.includes(c.key) || done.has(c.id)) return
+    if (!startRef.current) startRef.current = Date.now()
+    const next = [...up, c.key]
+    setUp(next)
+    if (next.length < 2) return
+    const a = deck.cards.find((x) => x.key === next[0])
+    setTries((t) => t + 1)
+    if (a.id === c.id) {
+      const ok = !failed.current.has(a.key) && !failed.current.has(c.key)
+      onPair?.(c.id, ok)
+      const set = new Set(done).add(c.id)
+      timer.current = setTimeout(() => {
+        setDone(set)
+        setUp([])
+        if (set.size === deck.pairs) {
+          const t = Math.max(1, Math.round((Date.now() - startRef.current) / 1000))
+          setSecs(t)
+          onBest?.(t)
+        }
+      }, 500)
     } else {
-      missed.current.add(left)
-      setMiss(id)
-      setErrors((e) => e + 1)
-      setTimeout(() => setMiss(null), 450)
+      failed.current.add(a.key)
+      failed.current.add(c.key)
+      timer.current = setTimeout(() => setUp([]), 1000)
     }
   }
   function again() {
+    clearTimeout(timer.current)
     setPrevBest(best)
-    setBoard(build())
+    setDeck(buildDeck(build))
     setDone(new Set())
-    setLeft(null)
-    setErrors(0)
-    missed.current = new Set()
-    startRef.current = Date.now()
+    setUp([])
+    setTries(0)
+    failed.current = new Set()
+    startRef.current = null
   }
 
   return (
     <GameScreen title={title} back={back} era={era} onExit={onExit}>
       {finished ? (
         <Result
-          pct={Math.round((board.left.length / (board.left.length + errors)) * 100)}
+          pct={Math.round((deck.pairs / Math.max(tries, 1)) * 100)}
           value={fmtTime(secs)}
           unit=""
-          msg={errors === 0 ? '¡Perfecto, sin errores!' : `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.`}
+          msg={`Lo hiciste en ${tries} ${tries === 1 ? 'intento' : 'intentos'}`}
           record={prevBest != null && secs < prevBest}
-          stats={[['Parejas', board.left.length], ['Errores', errors], ['Récord', fmtTime(Math.min(prevBest ?? Infinity, secs))]]}
+          stats={[['Parejas', deck.pairs], ['Intentos', tries], ['Récord', fmtTime(Math.min(prevBest ?? Infinity, secs))]]}
           onAgain={again}
           againLabel="Otra ronda"
           onDone={onExit}
         />
       ) : (
         <>
-          <p className="hint">{hint}</p>
-          <div className="pairs">
-            <div className="pairs-col">
-              {board.left.map((x) => (
-                <button key={x.id} className={'pair-chip title' + (done.has(x.id) ? ' done' : left === x.id ? ' on' : '')} disabled={done.has(x.id)} onClick={() => setLeft(x.id)}>{x.text}</button>
-              ))}
-            </div>
-            <div className="pairs-col">
-              {board.right.map((x) => (
-                <button key={x.id} className={'pair-chip' + (done.has(x.id) ? ' done' : miss === x.id ? ' miss' : '')} disabled={done.has(x.id)} onClick={() => pickRight(x.id)}>{x.text}</button>
-              ))}
-            </div>
+          {tries === 0 && up.length === 0 && <p className="hint">{hint}</p>}
+          <p className="mem-status">Parejas {done.size}/{deck.pairs} · {tries} {tries === 1 ? 'intento' : 'intentos'}</p>
+          <div className={'pairs ' + (deck.wide ? 'cols3' : 'cols2')}>
+            {deck.cards.map((c) => {
+              const matched = done.has(c.id)
+              const shown = matched || up.includes(c.key)
+              return (
+                <button key={c.key} className={'pair-chip' + (shown ? ' up' : '') + (matched ? ' done' : '') + (c.title ? ' title' : '')}
+                  aria-label={shown ? c.text : 'Carta boca abajo'} aria-pressed={shown} onClick={() => flip(c)}>
+                  <span className="mem-in">
+                    <span className="mem-face mem-back" aria-hidden="true" />
+                    <span className="mem-face mem-front">{c.text}</span>
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </>
       )}
