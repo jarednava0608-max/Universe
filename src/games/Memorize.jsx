@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { chunkText, citeSteps, clozeWords, foldLetter, initials, makeVerse, parseVerses, typeWords, memorizeSources, VERSES_FORMAT } from './logic.js'
-import { GameScreen, PasteJson, Empty, OrderPuzzle } from './ui.jsx'
+import { GameScreen, PasteJson, Empty, OrderPuzzle, PairsGame } from './ui.jsx'
+import { versePairs } from './verse-pairs.js'
 import { findRefs } from '../lib/bible.js'
 import { cleanVerseText } from '../lib/verses.js'
 import RefLink from '../components/RefLink.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
-import { byPriority, isDue, review } from './progress.js'
+import { byPriority, isDue, review, withBestTime } from './progress.js'
 
 const LEVELS = ['Fácil', 'Medio', 'Difícil', 'De memoria']
 // En el orden en que conviene practicar un texto nuevo: de lo más fácil a lo más difícil.
@@ -35,9 +36,24 @@ export default function Memorize({ store, toast, onExit }) {
   const [current, setCurrent] = useState(null)
   const [adding, setAdding] = useState(false)
   const [paste, setPaste] = useState(false)
+  const [pairs, setPairs] = useState(false)
   // Solo tus textos se borran aquí (los del Texto diario se quitan desde Estudio).
   const undoDel = useUndoDelete((v) => store.deleteEntry(v.id), (v) => store.saveEntry(v))
 
+  if (pairs) {
+    return (
+      <PairsGame
+        title="Parejas"
+        back="Textos"
+        build={() => versePairs(verses)}
+        best={store.progress.best?.['textos-parejas-tiempo']}
+        onBest={(secs) => store.updateProgress((f) => withBestTime(f, 'textos-parejas-tiempo', secs))}
+        onExit={() => setPairs(false)}
+        hint="Toca una cita y luego su texto."
+        empty="Agrega al menos 3 textos para jugar Parejas."
+      />
+    )
+  }
   if (current) return <Practice key={current.id} verse={current} store={store} onSaved={setCurrent} onBack={() => setCurrent(null)} />
 
   return (
@@ -61,6 +77,7 @@ export default function Memorize({ store, toast, onExit }) {
             })}
           </ul>
           <button className="secondary" style={{ marginTop: 14 }} onClick={() => setPaste(true)}>Agregar textos de Claude</button>
+          {verses.length >= 3 && <button className="secondary" style={{ marginTop: 8 }} onClick={() => setPairs(true)}>Parejas: une cada cita con su texto</button>}
         </>
       ) : (
         <Empty action={<><button className="primary" onClick={() => setAdding(true)}>Agregar un texto</button><button className="secondary" onClick={() => setPaste(true)}>Agregar textos de Claude</button></>}>
