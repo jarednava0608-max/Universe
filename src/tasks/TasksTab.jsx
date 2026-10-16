@@ -24,6 +24,7 @@ const GROUPS = [
   ['sinFecha', 'Sin fecha'],
 ]
 const DONE_SHOWN = 30
+const SHOW_HABITS = false
 // En estas secciones los recordatorios ("faltan 3 días"...) se juntan en un renglón para que se vean
 // los pendientes de verdad; los de hoy y mañana sí se ven sueltos.
 const FOLD = new Set(['semana', 'despues'])
@@ -57,7 +58,8 @@ export default function TasksTab({ store, toast }) {
   const [habitEdit, setHabitEdit] = useState(null) // { entry, isNew }
   const [sheet, setSheet] = useState(null) // 'habitos' | 'avisos'
   const [showDone, setShowDone] = useState(false)
-  const today = useMemo(() => todayItems(entries, now), [entries, now])
+  // Hábitos ocultos por ahora (el usuario no los usa); los datos se quedan guardados.
+  const today = useMemo(() => todayItems(SHOW_HABITS ? entries : entries.filter((e) => e.kind !== HABIT), now), [entries, now])
   // "Todo lo demás" (mañana, la semana, filtros, hábitos, avisos) cerrado, como "Más" en Biblioteca.
   const [more, setMore] = useState(() => { try { return localStorage.getItem('universe-tasks-more') === '1' } catch { return false } })
   useEffect(() => { try { localStorage.setItem('universe-tasks-more', more ? '1' : '0') } catch {} }, [more])
@@ -182,6 +184,7 @@ export default function TasksTab({ store, toast }) {
 
         <h2 className="section-label">Más</h2>
         <ul className="entry-list">
+          {SHOW_HABITS && (
           <li>
             <button className="entry-row" onClick={() => setSheet('habitos')}>
               <span className="entry-main">
@@ -191,6 +194,7 @@ export default function TasksTab({ store, toast }) {
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
           </li>
+          )}
           <li>
             <button className="entry-row" onClick={() => setSheet('avisos')}>
               <span className="entry-main">
