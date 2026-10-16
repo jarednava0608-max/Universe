@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { newId } from '../lib/model.js'
 import { parseTrivia, shuffle, triviaToQuestion, TRIVIA_FORMAT } from './logic.js'
-import { GameScreen, Quiz, PasteJson, Empty, ModeCard, Survival } from './ui.jsx'
-import { byPriority, dueCount, isDue, review, withBest } from './progress.js'
+import { GameScreen, Quiz, PasteJson, Empty, ModeCard, Survival, PairsGame, fmtTime } from './ui.jsx'
+import { byPriority, dueCount, isDue, review, withBest, withBestTime } from './progress.js'
+import { triviaPairs } from './trivia-pairs.js'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
 
@@ -17,6 +18,7 @@ export default function Trivia({ store, toast, onExit }) {
   const [nonce, setNonce] = useState(0)
   const [paste, setPaste] = useState(false)
   const [list, setList] = useState(false)
+  const [pairs, setPairs] = useState(false)
 
   const srs = store.progress.srs ?? {}
   const keys = bank.map((e) => 'q:' + e.id)
@@ -57,6 +59,22 @@ export default function Trivia({ store, toast, onExit }) {
   const bestTimed = store.progress.best?.['trivia-reloj'] ?? 0
   const n = Math.min(10, bank.length)
 
+  const bestPairs = store.progress.best?.['trivia-parejas-tiempo']
+  if (pairs) {
+    return (
+      <PairsGame
+        title="Parejas"
+        back="Trivia"
+        build={() => triviaPairs(bank)}
+        best={bestPairs}
+        onBest={(secs) => store.updateProgress((f) => withBestTime(f, 'trivia-parejas-tiempo', secs))}
+        onExit={() => setPairs(false)}
+        hint="Toca una pregunta y luego su respuesta."
+        empty="Necesitas al menos 3 preguntas con respuestas distintas."
+      />
+    )
+  }
+
   if (list) return <QuestionList bank={bank} store={store} onBack={() => setList(false)} />
 
   return (
@@ -81,6 +99,7 @@ export default function Trivia({ store, toast, onExit }) {
             <ModeCard title="Normal" desc={`${n} preguntas a tu ritmo. Primero las que fallaste.`} badge={due ? `${due} hoy` : null} onClick={() => start(false)} />
             <ModeCard title="Contra reloj" badge={bestTimed ? `Récord ${bestTimed}` : null} desc={`${SECONDS} segundos por pregunta. Más rápido, más puntos.`} onClick={() => start(true)} />
             {bank.length >= 3 && <ModeCard title="Sin fallar" badge={bestRun ? `Récord ${bestRun}` : null} desc="Todas tus preguntas revueltas. ¿Hasta dónde llegas sin un error?" onClick={startSurvival} />}
+            {bank.length >= 3 && <ModeCard title="Parejas" badge={bestPairs != null ? `Récord ${fmtTime(bestPairs)}` : null} desc="Une cada pregunta con su respuesta, contra reloj." onClick={() => setPairs(true)} />}
             {failed > 0 && <ModeCard title="Solo las que fallé" badge={`${failed}`} desc="Las preguntas que fallaste o que ya toca repasar." onClick={startDue} />}
           </div>
           <button className="secondary" onClick={() => setPaste(true)}>Agregar preguntas de Claude</button>
