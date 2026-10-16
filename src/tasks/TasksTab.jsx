@@ -7,7 +7,7 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 import {
   CATEGORIES, DAYS, HABIT, PRIORITIES, REMINDERS, REPEATS, SETTINGS_ID, TASK, TYPES,
   categoriesIn, dueLabel, groupTasks, habitStreak, habitsToday, isFinished, joinLocal, makeHabit, makeSettings, makeTask,
-  nextOccurrence, reminderLabel, splitLocal, timeLabel, toggleHabitDay,
+  nextOccurrence, reminderLabel, splitLocal, timeLabel, todayItems, toggleHabitDay,
 } from './tasks.js'
 import { deviceHasPush, enableDevicePush, pushState, testPush } from '../lib/push.js'
 
@@ -57,6 +57,12 @@ export default function TasksTab({ store, toast }) {
   const [habitEdit, setHabitEdit] = useState(null) // { entry, isNew }
   const [sheet, setSheet] = useState(null) // 'habitos' | 'avisos'
   const [showDone, setShowDone] = useState(false)
+  const today = useMemo(() => todayItems(entries, now), [entries, now])
+  // "Todo lo demás" (mañana, la semana, filtros, hábitos, avisos) cerrado, como "Más" en Biblioteca.
+  const [more, setMore] = useState(() => { try { return localStorage.getItem('universe-tasks-more') === '1' } catch { return false } })
+  useEffect(() => { try { localStorage.setItem('universe-tasks-more', more ? '1' : '0') } catch {} }, [more])
+  const toggleItem = (x) => (x.type === 'habit' ? store.saveEntry(toggleHabitDay(x.entry, now)) : toggleDone(x.entry))
+  const openItem = (x) => (x.type === 'habit' ? setHabitEdit({ entry: x.entry, isNew: false }) : setEditing({ entry: x.entry, isNew: false }))
 
   const undoDel = useUndoDelete((e) => store.deleteEntry(e.id), (e) => store.saveEntry(e))
   const pendingCount = GROUPS.reduce((n, [k]) => n + groups[k].length, 0)
@@ -77,22 +83,32 @@ export default function TasksTab({ store, toast }) {
     <div className="page">
       <PageScroll title="Pendientes">
         <h1 className="page-title">Pendientes</h1>
-        <button className="new-task" onClick={newTask}>
-          <span className="new-task-plus"><Icon d={ICONS.plus} size={18} stroke={2.2} /></span>
-          Nuevo pendiente
-        </button>
-
-        {todayHabits.length > 0 && !filtering && (
+        {/* Solo lo de hoy: lo que sigue en grande y el resto del día abajo (al usuario lo abrumaba la lista entera). */}
+        {today.next ? (
+          <div className="task-now">
+            <p className="task-now-label">{today.next.late ? 'Se quedó pendiente' : 'Lo que sigue'}</p>
+            <button className="task-now-title" onClick={() => openItem(today.next)}>{today.next.slot?.label || today.next.entry.fields.title || 'Sin título'}</button>
+            <p className={'task-now-time' + (today.next.late ? ' late' : '')}>{today.next.late ? dueLabel(today.next.entry.fields.dueAt, now) : timeLabel(today.next.at)}</p>
+            <button className="primary" onClick={() => toggleItem(today.next)}>Hecho</button>
+          </div>
+        ) : (
+          <div className="task-now">
+            <p className="task-now-label">Hoy</p>
+            <p className="task-now-title">Todo listo</p>
+            <p className="task-now-time">Nada más para hoy.</p>
+          </div>
+        )}
+        {today.items.some((x) => x !== today.next) && (
           <>
-            <h2 className="section-label first">Hábitos de hoy</h2>
+            <h2 className="section-label">{today.next ? 'También hoy' : 'Hoy'}</h2>
             <ul className="entry-list">
-              {todayHabits.map(({ entry, slot, done }) => (
-                <li key={entry.id}>
-                  <div className={'entry-row task-row' + (done ? ' done' : '')}>
-                    <CheckButton done={done} label={entry.fields.title} onClick={() => store.saveEntry(toggleHabitDay(entry, now))} />
-                    <button className="entry-main task-main" onClick={() => setHabitEdit({ entry, isNew: false })}>
-                      <span className="entry-title">{slot.label || entry.fields.title}</span>
-                      <span className="entry-sub">{timeLabel(atTime(now, slot.time))}{streakText(habitStreak(entry, now))}</span>
+              {today.items.filter((x) => x !== today.next).map((x) => (
+                <li key={x.entry.id}>
+                  <div className={'entry-row task-row' + (x.done ? ' done' : '')}>
+                    <CheckButton done={x.done} label={x.entry.fields.title} onClick={() => toggleItem(x)} />
+                    <button className="entry-main task-main" onClick={() => openItem(x)}>
+                      <span className="entry-title">{x.slot?.label || x.entry.fields.title || 'Sin título'}</span>
+                      <span className={'entry-sub' + (x.late ? ' late' : '')}>{x.late ? dueLabel(x.entry.fields.dueAt, now) : timeLabel(x.at)}</span>
                     </button>
                   </div>
                 </li>
@@ -100,7 +116,14 @@ export default function TasksTab({ store, toast }) {
             </ul>
           </>
         )}
-
+        <button className="lib-more" onClick={newTask}>
+          <Icon d={ICONS.plus} size={16} stroke={2.2} /> Agregar pendiente
+        </button>
+        <button className="lib-more" aria-expanded={more} onClick={() => setMore((m) => !m)}>
+          {more ? 'Menos' : 'Todo lo demás'}
+          <Icon d={ICONS.chev} size={14} stroke={2} />
+        </button>
+        {more && (<>
         {(cats.length > 1 || total > 8) && (
           <div className="task-filters">
             {/* Tocar una categoría filtra; tocarla otra vez quita el filtro. */}
@@ -119,7 +142,7 @@ export default function TasksTab({ store, toast }) {
         )}
 
         {GROUPS.map(([key, label]) =>
-          groups[key].length ? (
+          groups[key].length && (filtering || (key !== 'atrasados' && key !== 'hoy')) ? (
             <GroupSection
               key={key}
               id={key}
@@ -178,6 +201,7 @@ export default function TasksTab({ store, toast }) {
             </button>
           </li>
         </ul>
+        </>)}
       </PageScroll>
 
       {undoDel.pending && <UndoBar text={undoDel.pending.kind === HABIT ? 'Hábito eliminado' : 'Pendiente eliminado'} onUndo={undoDel.undo} />}

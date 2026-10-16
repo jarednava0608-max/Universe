@@ -1825,3 +1825,11 @@ input[type='time'].input { min-height: var(--tap); }
 .lib-more { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; min-height: 44px; margin: 16px 0 8px; font-size: 15px; color: var(--accent, var(--text-2)); }
 .lib-more svg { transform: rotate(90deg); transition: transform 0.2s; }
 .lib-more[aria-expanded='true'] svg { transform: rotate(-90deg); }
+
+/* Pendientes: lo que sigue, en grande */
+.task-now { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px 0 24px; }
+.task-now-label { margin: 0; font-size: 15px; color: var(--text-2); }
+.task-now-title { margin: 0; padding: 0; font-size: 28px; font-weight: 700; line-height: 1.2; color: var(--title, var(--text)); text-align: left; text-wrap: balance; }
+.task-now-time { margin: 0 0 8px; font-size: 17px; color: var(--text-2); }
+.task-now-time.late { color: var(--danger); }
+.task-now .primary { width: 100%; }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   categoriesIn, cleanTitle, dueCount, dueLabel, fireAt, groupTasks, habitsToday, habitStreak, isFinished, isPlannerEntry,
-  joinLocal, makeHabit, makeSettings, makeTask, matches, nextOccurrence, reminderLabel, slotOn, splitLocal, toggleHabitDay,
+  joinLocal, makeHabit, makeSettings, makeTask, matches, nextOccurrence, reminderLabel, slotOn, splitLocal, todayItems, toggleHabitDay,
 } from './tasks.js'
 
 const at = (y, m, d, h = 12, mi = 0) => new Date(y, m - 1, d, h, mi)
@@ -114,5 +114,22 @@ describe('hábitos', () => {
     h = toggleHabitDay(h, now)
     expect(habitStreak(h, now)).toBe(1)
     expect(habitStreak(makeHabit({ slots: [] }), now)).toBe(0)
+  })
+})
+
+describe('solo lo de hoy', () => {
+  it('atrasado primero, luego hábitos y pendientes de hoy por hora; lo que sigue es lo primero sin hacer', () => {
+    const now = at(2026, 10, 10, 8) // sábado
+    let h = makeHabit({ title: 'Oración', slots: [{ days: [6], time: '06:00' }] })
+    const late = makeTask({ title: 'Viejo', dueAt: at(2026, 10, 8, 9).toISOString() })
+    const hoy = makeTask({ title: 'Llamar', dueAt: at(2026, 10, 10, 7).toISOString() })
+    const manana = makeTask({ title: 'Mañana', dueAt: at(2026, 10, 11, 9).toISOString() })
+    let r = todayItems([h, late, hoy, manana], now)
+    expect(r.items.map((x) => x.entry.fields.title)).toEqual(['Viejo', 'Oración', 'Llamar'])
+    expect(r.next.entry.fields.title).toBe('Viejo')
+    h = toggleHabitDay(h, now)
+    r = todayItems([h, hoy], now)
+    expect(r.next.entry.fields.title).toBe('Llamar')
+    expect(todayItems([toggleHabitDay(makeHabit({ slots: [{ days: [6], time: '06:00' }] }), now)], now).next).toBeNull()
   })
 })
