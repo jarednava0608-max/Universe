@@ -9,7 +9,6 @@ import { midweekCount } from './midweek.js'
 import { readMeetings } from './meetings.js'
 import { ASSIGNMENT_FROM, nextDay } from './today.js'
 import BibleHome from '../components/BibleHome.jsx'
-import { readCount, TOTAL_CHAPTERS } from '../lib/reading.js'
 import TodayPlan, { MeetingDaysRow } from './TodayPlan.jsx'
 import DailyTextsImport from '../components/DailyTextsImport.jsx'
 import { hasDailyTexts, dailyTextYears, useDailyTexts } from '../lib/dailytexts.js'
@@ -39,6 +38,8 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
   const [bibleOpen, setBibleOpen] = useState(false)
+  const [more, setMore] = useState(() => { try { return localStorage.getItem('universe-lib-more') === '1' } catch { return false } })
+  useEffect(() => { try { localStorage.setItem('universe-lib-more', more ? '1' : '0') } catch {} }, [more])
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
   const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
   useEffect(() => { onHome?.(!section) }, [section]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -107,46 +108,39 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
               <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
             </button>
           )}
-          {/* Tres listas cortas, como la Biblioteca de JW Library: lo de cada semana, tus notas y lo demás. */}
-          <ul className="entry-list lib-list">
-            <li>
-              <button className="entry-row" onClick={() => setBibleOpen(true)}>
-                <span className="kind-icon k-biblia"><Icon d={ICONS.estudio} size={18} /></span>
-                <span className="entry-main"><span className="entry-title">Leer la Biblia</span></span>
-                <span className="lib-count">{readCount(leidos)} de {TOTAL_CHAPTERS}</span>
-                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-              </button>
-            </li>
-            {LIB_STUDY.map((k) => <KindRow key={k} kind={k} count={byKind[k].length} onOpen={() => setSection(k)} />)}
-          </ul>
-          <ul className="entry-list lib-list">
-            {LIB_NOTES.map((k) => <KindRow key={k} kind={k} count={byKind[k].length} onOpen={() => setSection(k)} />)}
-          </ul>
-          <ul className="entry-list lib-list">
-            <li>
-              <button className="entry-row" onClick={onOpenMap}>
-                <span className="kind-icon k-mapa"><Icon d={ICONS.mapa} size={18} /></span>
-                <span className="entry-main"><span className="entry-title">Mapa</span></span>
-                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-              </button>
-            </li>
-            <li>
-              <button className="entry-row" onClick={() => setSection('nodos')}>
-                <span className="kind-icon k-nodos"><Icon d={ICONS.nodo} size={18} /></span>
-                <span className="entry-main"><span className="entry-title">Tus nodos</span></span>
-                {allNodes.length > 0 && <span className="lib-count">{allNodes.length}</span>}
-                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-              </button>
-            </li>
-            <li>
-              <button className="entry-row" onClick={onOpenGames}>
-                <span className="kind-icon k-juegos"><Icon d={ICONS.juegos} size={18} /></span>
-                <span className="entry-main"><span className="entry-title">Juegos</span></span>
-                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-              </button>
-            </li>
-          </ul>
-          <MeetingDaysRow />
+          {/* Solo 4 cosas grandes, sin números (al usuario lo abrumaban 10 renglones con cifras). Lo demás, en "Más". */}
+          <div className="lib-grid">
+            <LibTile icon={ICONS.estudio} label="Leer la Biblia" onClick={() => setBibleOpen(true)} />
+            <LibTile icon={KINDS.diario.icon} label={KINDS.diario.label} onClick={() => setSection('diario')} />
+            <LibTile icon={KINDS.reunion.icon} label={KINDS.reunion.label} onClick={() => setSection('reunion')} />
+            <LibTile icon={ICONS.juegos} label="Juegos" onClick={onOpenGames} />
+          </div>
+          <button className="lib-more" aria-expanded={more} onClick={() => setMore((m) => !m)}>
+            {more ? 'Menos' : 'Más'}
+            <Icon d={ICONS.chev} size={14} stroke={2} />
+          </button>
+          {more && (
+            <>
+              <ul className="entry-list lib-list">
+                {LIB_MORE.map((k) => <KindRow key={k} kind={k} onOpen={() => setSection(k)} />)}
+                <li>
+                  <button className="entry-row" onClick={onOpenMap}>
+                    <span className="kind-icon k-mapa"><Icon d={ICONS.mapa} size={18} /></span>
+                    <span className="entry-main"><span className="entry-title">Mapa</span></span>
+                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                  </button>
+                </li>
+                <li>
+                  <button className="entry-row" onClick={() => setSection('nodos')}>
+                    <span className="kind-icon k-nodos"><Icon d={ICONS.nodo} size={18} /></span>
+                    <span className="entry-main"><span className="entry-title">Tus nodos</span></span>
+                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                  </button>
+                </li>
+              </ul>
+              <MeetingDaysRow />
+            </>
+          )}
         </PageScroll>
       ) : section === 'nodos' ? (
         // Tus nodos: antes era una lista larga al final de Biblioteca; ahora es su propia pantalla.
@@ -544,17 +538,24 @@ function midweekSub(f) {
   return c.total ? `Entre semana · ${c.done === c.total ? 'Lista para la reunión' : `${c.done} de ${c.total} respondidas`}` : 'Entre semana'
 }
 
-// Biblioteca: primero lo de cada semana y después tus notas (los apartados de KINDS, en dos listas).
-const LIB_STUDY = ['diario', 'reunion', 'asignacion']
-const LIB_NOTES = ['reflexion', 'idea', 'estudio'].concat(KIND_ORDER.filter((k) => !['diario', 'reunion', 'asignacion', 'reflexion', 'idea', 'estudio'].includes(k)))
+// Biblioteca: Texto diario y Reuniones van en los cuadros grandes; los demás apartados, en "Más".
+const LIB_MORE = ['asignacion', 'reflexion', 'idea', 'estudio'].concat(KIND_ORDER.filter((k) => !['diario', 'reunion', 'asignacion', 'reflexion', 'idea', 'estudio'].includes(k)))
 
-function KindRow({ kind, count, onOpen }) {
+function LibTile({ icon, label, onClick }) {
+  return (
+    <button className="lib-tile" onClick={onClick}>
+      <Icon d={icon} size={28} />
+      <span>{label}</span>
+    </button>
+  )
+}
+
+function KindRow({ kind, onOpen }) {
   return (
     <li>
       <button className="entry-row" onClick={onOpen}>
         <span className={'kind-icon k-' + kind}><Icon d={KINDS[kind].icon} size={18} /></span>
         <span className="entry-main"><span className="entry-title">{KINDS[kind].label}</span></span>
-        {count > 0 && <span className="lib-count">{count}</span>}
         <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
       </button>
     </li>

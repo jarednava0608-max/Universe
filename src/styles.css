@@ -1813,3 +1813,15 @@ input[type='time'].input { min-height: var(--tap); }
 .today-game-sub { margin: 0 0 16px; font-size: 15px; color: var(--text-2); }
 .today-game .primary, .today-game .secondary { width: 100%; margin-top: 0; }
 .today-more { display: block; width: 100%; min-height: 44px; font-size: 15px; color: var(--accent, var(--text-2)); text-align: center; }
+
+/* Biblioteca: 4 cuadros grandes y "Más" (sin números) */
+.lib-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lib-tile {
+  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 16px;
+  min-height: 120px; padding: 16px; text-align: left; background: var(--surface); border-radius: var(--r, 12px); color: var(--accent, var(--text));
+}
+.lib-tile span { font-size: 17px; font-weight: 600; line-height: 1.25; color: var(--title, var(--text)); text-wrap: balance; }
+.lib-tile:active { background: var(--surface-2); }
+.lib-more { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; min-height: 44px; margin: 16px 0 8px; font-size: 15px; color: var(--accent, var(--text-2)); }
+.lib-more svg { transform: rotate(90deg); transition: transform 0.2s; }
+.lib-more[aria-expanded='true'] svg { transform: rotate(-90deg); }
