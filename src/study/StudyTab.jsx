@@ -199,9 +199,12 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           ) : (
             <div className="empty-state">
               <span className={'empty-icon kind-icon k-' + section}><Icon d={KINDS[section].icon} size={26} /></span>
-              <p className="empty-title">Aún no hay nada aquí</p>
-              <p>{KINDS[section].desc}.</p>
-              <button className="primary" onClick={() => setEditing({ entry: makeEntry(section), isNew: true })}>{KINDS[section].notes ? 'Nueva nota' : 'Nueva entrada'}</button>
+              <p className="empty-title">{KINDS[section].desc}</p>
+              {/* Botones que dicen qué vas a hacer (no "Nueva entrada"). */}
+              {(EMPTY_ACTIONS[section] ?? [['Empezar', null]]).map(([label, fields], i) => {
+                const e = newEntry(section)
+                return <button key={label} className={i ? 'secondary' : 'primary'} onClick={() => setEditing({ entry: fields ? { ...e, fields: { ...e.fields, ...fields() } } : e, isNew: true })}>{label}</button>
+              })}
             </div>
           )}
         </PageScroll>
@@ -503,6 +506,19 @@ function assignmentSub(f) {
 
 // Una entrada nueva. La Atalaya empieza con la fecha de tu próxima reunión del fin de semana
 // (la de entre semana la toma del programa que pegas).
+// Lo que dice el botón de una lista vacía; en Reuniones, uno por reunión.
+const EMPTY_ACTIONS = {
+  diario: [['Empezar el texto de hoy', null]],
+  reunion: [
+    ['Preparar La Atalaya', null],
+    ['Preparar la de entre semana', () => ({ tipo: 'entresemana', fecha: readMeetings()?.semana != null ? nextDay(readMeetings().semana).iso : today() })],
+  ],
+  asignacion: [['Agregar mi asignación', null]],
+  estudio: [['Preparar un estudio', null]],
+  reflexion: [['Escribir una nota', null]],
+  idea: [['Agregar una idea', null]],
+}
+
 function newEntry(kind) {
   const e = makeEntry(kind)
   const fin = readMeetings()?.fin

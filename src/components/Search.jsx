@@ -3,7 +3,7 @@ import { nodeColor, normKey } from '../lib/model.js'
 import { plainText } from '../lib/markdown.js'
 
 // Barra de búsqueda minimalista: busca en títulos y en el texto de las notas.
-export default function Search({ nodes, onPick, onMenu, alert, below }) {
+export default function Search({ nodes, onPick, onMenu, onBack, alert, below }) {
   const [q, setQ] = useState('')
   const [focused, setFocused] = useState(false)
 
@@ -40,6 +40,12 @@ export default function Search({ nodes, onPick, onMenu, alert, below }) {
     <>
       <div className="topbar-wrap">
       <div className="topbar">
+        {onBack && (
+          // El Mapa se abre desde Biblioteca: este botón regresa ahí (también la pestaña de abajo).
+          <button className="icon-btn map-back" aria-label="Regresar a Biblioteca" onClick={onBack}>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m15 18-6-6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+        )}
         <div className="search">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />

@@ -263,6 +263,16 @@ export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting =
         {step === 'programa' && (!partes.length || editingProgram) && (
           <>
             <h2 className="at-h">{partes.length ? 'Fecha y programa' : 'Pega el programa'}</h2>
+            {!String(fields.programa ?? '').trim() && (
+              // De un toque: lee lo copiado en JW Library y, si trae las partes, muestra la portada.
+              <button className="primary" onClick={async () => {
+                let t = ''
+                try { t = (await navigator.clipboard.readText()).trim() } catch { return toast('No se pudo pegar. Mantén presionado el cuadro y toca Pegar.') }
+                if (!parseProgram(t).partes.length) return toast('No encontré las partes en lo copiado. Copia la semana completa de la Guía de actividades.')
+                setProgram(t)
+                setEditingProgram(false)
+              }}>Pegar la semana copiada</button>
+            )}
             {!partes.length && (
               <div className="sfield">
                 <div className="seg2">

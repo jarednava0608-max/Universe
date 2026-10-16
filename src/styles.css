@@ -238,6 +238,7 @@ a { color: inherit; }
 }
 .icon-btn { width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--text); }
 .icon-btn { position: relative; }
+.map-back { color: var(--accent, var(--text)); }
 .menu-alert { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--yo); }
 .menu-warn { color: var(--yo); }
 .search-results {
@@ -583,7 +584,8 @@ a { color: inherit; }
 mark:not([data-color]) { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px; }
 .empty-state { text-align: center; padding: 48px 12px; color: var(--text-2); }
 .empty-state p { margin: 0 0 16px; }
-.empty-state .primary { max-width: 300px; }
+.empty-state :is(.primary, .secondary) { max-width: 300px; }
+.empty-state :is(.primary, .secondary) + .secondary { margin-top: 12px; }
 
 /* Formularios de Estudio */
 .sfield { display: block; margin-bottom: 20px; }

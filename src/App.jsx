@@ -402,6 +402,7 @@ export default function App() {
         nodes={galNodes}
         onPick={openNote}
         onMenu={() => setSheet('menu')}
+        onBack={() => { closeAll(); setTab('estudio') }}
         alert={backupStale}
         below={
           <div className="galaxies" role="tablist" aria-label="Galaxias">

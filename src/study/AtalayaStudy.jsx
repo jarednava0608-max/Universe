@@ -154,6 +154,16 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
         {step === 'articulo' && (
           <>
             <h2 className="at-h">Pega el artículo</h2>
+            {!String(fields.articulo ?? '').trim() && (
+              // De un toque: lee lo copiado en JW Library y, si trae las preguntas, sigue al Vistazo.
+              <button className="primary" onClick={async () => {
+                let t = ''
+                try { t = (await navigator.clipboard.readText()).trim() } catch { return toast('No se pudo pegar. Mantén presionado el cuadro y toca Pegar.') }
+                if (!parseArticle(t).bloques.length) return toast('No encontré las preguntas en lo copiado. Copia el artículo completo en JW Library.')
+                setArticle(t)
+                go('vistazo')
+              }}>Pegar el artículo copiado</button>
+            )}
             <div className="sfield">
               <div className="seg2">
                 <button type="button" className="on">La Atalaya</button>
