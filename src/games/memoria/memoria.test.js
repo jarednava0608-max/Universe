@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { CHARACTERS, WORLDS } from './characters.js'
-import { unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, inWorld, KEY, sprintQuestion, stars, trueFalseRound } from './logic.js'
+import { unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, inWorld, KEY, sprintQuestion, stars, trueFalseRound, pairsRound } from './logic.js'
 import { parseRef } from '../../lib/bible.js'
 import { mulberry } from '../logic.js'
 
@@ -94,5 +94,26 @@ describe('opciones sin dos respuestas correctas', () => {
       for (const q of whoRound([adan], {}, rnd, inWorld(1))) expect(q.options).not.toContain('Eva')
       for (const q of whoRound([silas], {}, rnd, inWorld(8))) expect(q.options).not.toContain('Timoteo')
     }
+  })
+})
+
+describe('Parejas', () => {
+  it('mismos id en ambos lados, sin repetir quién fue ni juntar a Adán y Eva', () => {
+    const rnd = mulberry(5)
+    for (const w of WORLDS) {
+      for (let i = 0; i < 50; i++) {
+        const b = pairsRound(inWorld(w.id), rnd)
+        expect(b.left.length).toBeGreaterThanOrEqual(3)
+        expect(b.left.length).toBeLessThanOrEqual(5)
+        expect(b.right.map((x) => x.id).sort()).toEqual(b.left.map((x) => x.id).sort())
+        expect(new Set(b.right.map((x) => x.text)).size).toBe(b.right.length)
+        const names = b.left.map((x) => x.text)
+        expect(names.includes('Adán') && names.includes('Eva')).toBe(false)
+        expect(names.includes('Silas') && names.includes('Timoteo')).toBe(false)
+      }
+    }
+  })
+  it('null con menos de 3', () => {
+    expect(pairsRound(inWorld(1).slice(0, 2))).toBeNull()
   })
 })
