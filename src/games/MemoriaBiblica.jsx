@@ -50,10 +50,10 @@ export default function MemoriaBiblica({ store, onExit }) {
     const key = `mb-w${screen.world}-parejas-tiempo`
     return (
       <PairsGame
-        title="Parejas"
+        title="Memorama"
         back={`Mundo ${screen.world}`}
         era={screen.world}
-        build={() => pairsRound(inWorld(screen.world))}
+        build={() => pairsRound(inWorld(screen.world), Math.random, 6)}
         best={best[key]}
         onBest={(t) => store.updateProgress((f) => withBestTime(f, key, t))}
         onPair={(id, ok) => { const ch = CHARACTERS.find((c) => KEY(c) === id); if (ch) answer(ch, ok) }}
@@ -162,9 +162,9 @@ function World({ world, srs, best, bests, next, onBack, onMode }) {
       </div>
       {next && best < PASS && <p className="mb-goal">Saca {PASS} % o más en cualquier modo para abrir «{next.name}».</p>}
       <div className="mode-list">
+        <ModeCard title="Memorama" badge={bests[`mb-w${world.id}-parejas-tiempo`] ? `Récord ${fmtTime(bests[`mb-w${world.id}-parejas-tiempo`])}` : null} desc="Voltea las cartas y encuentra cada personaje con quién fue." onClick={() => onMode('pairs')} />
         <ModeCard title="¿Quién soy?" badge={mode('who')} desc="Lee las pistas y adivina el personaje. Con menos pistas, más puntos." onClick={() => onMode('who')} />
         <ModeCard title="¿Qué hizo?" badge={mode('what')} desc="Ves el nombre y eliges quién fue." onClick={() => onMode('what')} />
-        <ModeCard title="Parejas" badge={bests[`mb-w${world.id}-parejas-tiempo`] ? `Récord ${fmtTime(bests[`mb-w${world.id}-parejas-tiempo`])}` : null} desc="Une cada personaje con quién fue, contra reloj." onClick={() => onMode('pairs')} />
         <ModeCard title="¿Cierto o falso?" badge={mode('tf')} desc="¿De verdad eso lo hizo él? Responde rápido." onClick={() => onMode('tf')} />
         <ModeCard title="¿Dónde está?" badge={mode('where')} desc="Elige en qué parte de la Biblia está su historia." onClick={() => onMode('where')} />
         <ModeCard title="Personajes" badge={`${known}/${total}`} desc="Las fichas de todos los personajes de este mundo." onClick={() => onMode('people')} />

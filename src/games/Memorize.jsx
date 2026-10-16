@@ -43,14 +43,14 @@ export default function Memorize({ store, toast, onExit }) {
   if (pairs) {
     return (
       <PairsGame
-        title="Parejas"
+        title="Memorama"
         back="Textos"
         build={() => versePairs(verses)}
         best={store.progress.best?.['textos-parejas-tiempo']}
         onBest={(secs) => store.updateProgress((f) => withBestTime(f, 'textos-parejas-tiempo', secs))}
         onExit={() => setPairs(false)}
-        hint="Toca una cita y luego su texto."
-        empty="Agrega al menos 3 textos para jugar Parejas."
+        hint="Voltea dos cartas: una cita y su texto."
+        empty="Agrega al menos 3 textos para jugar Memorama."
       />
     )
   }
@@ -77,7 +77,7 @@ export default function Memorize({ store, toast, onExit }) {
             })}
           </ul>
           <button className="secondary" style={{ marginTop: 14 }} onClick={() => setPaste(true)}>Agregar textos de Claude</button>
-          {verses.length >= 3 && <button className="secondary" style={{ marginTop: 8 }} onClick={() => setPairs(true)}>Parejas: une cada cita con su texto</button>}
+          {verses.length >= 3 && <button className="secondary" style={{ marginTop: 8 }} onClick={() => setPairs(true)}>Memorama: une cada cita con su texto</button>}
         </>
       ) : (
         <Empty action={<><button className="primary" onClick={() => setAdding(true)}>Agregar un texto</button><button className="secondary" onClick={() => setPaste(true)}>Agregar textos de Claude</button></>}>

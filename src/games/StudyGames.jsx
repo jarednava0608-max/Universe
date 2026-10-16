@@ -21,7 +21,7 @@ export default function StudyGames({ store, onExit }) {
       <div className="mode-list">
         <ModeCard title="¿Qué es?" badge={best['que-es'] ? `Mejor ${best['que-es']} %` : null} desc="Lee una definición y elige qué nodo es." onClick={() => setMode('guess')} />
         <ModeCard title="¿Con qué texto lo pruebas?" badge={best.prueba ? `Mejor ${best.prueba} %` : null} desc="Ve una idea de tu mapa y elige el texto bíblico que la apoya." onClick={() => setMode('proof')} />
-        <ModeCard title="Parejas" badge={best['parejas-tiempo'] ? `Récord ${fmtTime(best['parejas-tiempo'])}` : null} desc="Une cada título con su definición." onClick={() => setMode('pairs')} />
+        <ModeCard title="Memorama" badge={best['parejas-tiempo'] ? `Récord ${fmtTime(best['parejas-tiempo'])}` : null} desc="Voltea las cartas y une cada título con su definición." onClick={() => setMode('pairs')} />
       </div>
     </GameScreen>
   )
@@ -67,7 +67,7 @@ function Proof({ store, best, onBest, onExit }) {
 
 function Pairs({ nodes, best, onBest, onExit }) {
   return (
-    <PairsGame title="Parejas" back="Mi estudio" build={() => buildPairs(nodes)} best={best} onBest={onBest} onExit={onExit}
-      hint="Toca un título y luego su definición." empty="Necesitas al menos 3 nodos con definición en tu mapa para este juego." />
+    <PairsGame title="Memorama" back="Mi estudio" build={() => buildPairs(nodes)} best={best} onBest={onBest} onExit={onExit}
+      hint="Voltea dos cartas: un título y su definición." empty="Necesitas al menos 3 nodos con definición en tu mapa para este juego." />
   )
 }

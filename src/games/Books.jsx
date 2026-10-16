@@ -44,13 +44,13 @@ export default function Books({ store, onExit }) {
   if (mode === 'pairs') {
     return (
       <PairsGame
-        title="Parejas"
+        title="Memorama"
         back="Libros"
         build={() => bookPairs()}
         best={store.progress.best?.['libros-parejas-tiempo']}
         onBest={(t) => store.updateProgress((f) => withBestTime(f, 'libros-parejas-tiempo', t))}
         onExit={exit}
-        hint="Toca un libro y luego su sección."
+        hint="Voltea dos cartas: un libro y su sección."
       />
     )
   }
@@ -63,7 +63,7 @@ export default function Books({ store, onExit }) {
         <ModeCard title="Preguntas" badge={best ? `Mejor ${best} %` : null} desc="¿Qué libro va antes o después? ¿En qué sección está?" onClick={() => { setRound(buildBookQuestions()); setNonce((x) => x + 1); setMode('quiz') }} />
         <ModeCard title="Reto de 60 segundos" badge={store.progress.best?.['libros-reto'] ? `Récord ${store.progress.best['libros-reto']}` : null} desc="Todas las que puedas contra reloj." onClick={() => setMode('sprint')} />
         <ModeCard title="Ordenar" badge={store.progress.best?.['libros-orden'] ? `${store.progress.best['libros-orden']} seguidas` : null} desc="6 libros seguidos o una sección completa." onClick={() => setMode('order')} />
-        <ModeCard title="Parejas" badge={store.progress.best?.['libros-parejas-tiempo'] ? `Récord ${fmtTime(store.progress.best['libros-parejas-tiempo'])}` : null} desc="Une cada libro con su sección, contra reloj." onClick={() => setMode('pairs')} />
+        <ModeCard title="Memorama" badge={store.progress.best?.['libros-parejas-tiempo'] ? `Récord ${fmtTime(store.progress.best['libros-parejas-tiempo'])}` : null} desc="Voltea las cartas y une cada libro con su sección." onClick={() => setMode('pairs')} />
         <ModeCard title="Ver la lista" desc="Los 66 libros por sección, para estudiarlos." onClick={() => setMode('list')} />
       </div>
     </GameScreen>
