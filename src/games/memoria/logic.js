@@ -74,6 +74,21 @@ export function whereRound(chars, srs = {}, rnd = Math.random) {
   }))
 }
 
+// Parejas: nombre ↔ quién fue. Sin repetir el "quién fue" ni juntar a los que se confunden.
+export function pairsRound(chars, rnd = Math.random, count = 5) {
+  const out = []
+  for (const c of shuffle(chars, rnd)) {
+    if (out.length >= count) break
+    if (out.some((x) => x.t === c.t || confusable(x, c))) continue
+    out.push(c)
+  }
+  if (out.length < 3) return null
+  return {
+    left: out.map((c) => ({ id: KEY(c), text: c.n })),
+    right: shuffle(out.map((c) => ({ id: KEY(c), text: c.t })), rnd),
+  }
+}
+
 // Línea del tiempo: 5 personajes de mundos distintos (así el orden es claro) para ordenarlos.
 export function timelineRound(openWorlds, rnd = Math.random) {
   const worlds = shuffle(openWorlds.length >= 3 ? openWorlds : WORLDS.map((w) => w.id), rnd).slice(0, 5)

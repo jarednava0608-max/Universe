@@ -669,16 +669,31 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .mode-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 17px; font-weight: 600; }
 .mode-desc { font-size: 15px; color: var(--text-2); }
 
-.pairs { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; }
-.pairs-col { display: grid; gap: 8px; align-content: start; }
-.pair-chip {
-  min-height: 64px; padding: 12px 12px; text-align: left; font-size: 15px; line-height: 1.35; color: var(--text-2);
-  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; transition: all 0.15s;
+.mem-status { margin: 0 0 12px; font-size: 13px; color: var(--text-2); }
+.pairs { display: grid; gap: 8px; }
+.pairs.cols3 { grid-template-columns: repeat(3, 1fr); }
+.pairs.cols2 { grid-template-columns: repeat(2, 1fr); }
+.pair-chip { position: relative; min-height: 88px; padding: 0; perspective: 600px; background: none; border: 0; border-radius: var(--r); }
+.mem-in { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.4s; }
+.pair-chip.up .mem-in { transform: rotateY(180deg); }
+.mem-face {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: 8px; text-align: center; border-radius: var(--r);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow-wrap: anywhere;
 }
-.pair-chip.title { color: var(--text); font-weight: 600; font-size: 15px; }
-.pair-chip.on { border-color: var(--btn); background: var(--surface-2); }
-.pair-chip.done { opacity: 0.25; border-color: rgba(134, 239, 172, 0.5); }
-.pair-chip.miss { border-color: var(--danger); animation: shake 0.35s; }
+.mem-back {
+  background-color: var(--surface); border: 1px solid var(--line);
+  background-image: repeating-linear-gradient(45deg, transparent 0 8px, color-mix(in srgb, var(--accent) 18%, transparent) 8px 9px);
+}
+.mem-front { transform: rotateY(180deg); font-size: 13px; line-height: 1.35; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--line-strong); }
+.pair-chip.title .mem-front { font-weight: 600; color: var(--text); font-size: 15px; }
+.pair-chip.done .mem-front { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .mem-in { transform: none !important; transition: none; }
+  .mem-face { transition: opacity 0.2s; }
+  .mem-front { transform: none; opacity: 0; }
+  .pair-chip.up .mem-front { opacity: 1; }
+  .pair-chip.up .mem-back { opacity: 0; }
+}
 @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 
 .flashcard {
@@ -1789,3 +1804,12 @@ input[type='time'].input { min-height: var(--tap); }
 .quiz > .feedback > :first-child { margin-top: 20px; }
 .quiz > .feedback > * { animation: fade 0.2s; }
 .quiz > .feedback > .primary:last-child { margin-top: auto; position: sticky; bottom: calc(var(--sab) + 12px); z-index: 1; }
+
+/* Juego de hoy */
+.today-game { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 24px 0; margin: 0 0 16px; }
+.today-game-label { margin: 0; font-size: 13px; color: var(--text-2); }
+.today-game-title { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 28px; font-weight: 700; color: var(--title); }
+.today-game-title svg { color: var(--ok); }
+.today-game-sub { margin: 0 0 16px; font-size: 15px; color: var(--text-2); }
+.today-game .primary, .today-game .secondary { width: 100%; margin-top: 0; }
+.today-more { display: block; width: 100%; min-height: 44px; font-size: 15px; color: var(--accent, var(--text-2)); text-align: center; }

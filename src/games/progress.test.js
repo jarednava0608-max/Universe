@@ -95,5 +95,7 @@ describe('una ronda de Repasar hoy', () => {
     expect(mergeProgress({ repaso: '2026-10-13' }, { repaso: '2026-10-14' }).repaso).toBe('2026-10-14')
     expect(mergeProgress({ repaso: '2026-10-14' }, {}).repaso).toBe('2026-10-14')
     expect(mergeProgress({}, {}).repaso).toBeUndefined()
+    expect(mergeProgress({ juegoHoy: { day: '2026-10-15' } }, { juegoHoy: { day: '2026-10-16' } }).juegoHoy).toEqual({ day: '2026-10-16' })
+    expect(mergeProgress({}, {}).juegoHoy).toBeUndefined()
   })
 })

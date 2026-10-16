@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { bookRun, bookSprintQuestion, buildBookQuestions, sectionRun, SECTIONS } from './logic.js'
-import { GameScreen, Quiz, ModeCard, OrderPuzzle, Result, Sprint } from './ui.jsx'
-import { withBest } from './progress.js'
+import { GameScreen, Quiz, ModeCard, OrderPuzzle, PairsGame, Result, Sprint, fmtTime } from './ui.jsx'
+import { withBest, withBestTime } from './progress.js'
+import { bookPairs } from './books-pairs.js'
 import { BOOKS } from '../lib/bible.js'
 
 // Libros de la Biblia: preguntas (antes / después / sección), ordenar libros seguidos y la lista para estudiarla.
@@ -40,6 +41,19 @@ export default function Books({ store, onExit }) {
       </GameScreen>
     )
   }
+  if (mode === 'pairs') {
+    return (
+      <PairsGame
+        title="Memorama"
+        back="Libros"
+        build={() => bookPairs()}
+        best={store.progress.best?.['libros-parejas-tiempo']}
+        onBest={(t) => store.updateProgress((f) => withBestTime(f, 'libros-parejas-tiempo', t))}
+        onExit={exit}
+        hint="Voltea dos cartas: un libro y su sección."
+      />
+    )
+  }
   if (mode === 'list') return <BookList onExit={exit} />
 
   return (
@@ -49,6 +63,7 @@ export default function Books({ store, onExit }) {
         <ModeCard title="Preguntas" badge={best ? `Mejor ${best} %` : null} desc="¿Qué libro va antes o después? ¿En qué sección está?" onClick={() => { setRound(buildBookQuestions()); setNonce((x) => x + 1); setMode('quiz') }} />
         <ModeCard title="Reto de 60 segundos" badge={store.progress.best?.['libros-reto'] ? `Récord ${store.progress.best['libros-reto']}` : null} desc="Todas las que puedas contra reloj." onClick={() => setMode('sprint')} />
         <ModeCard title="Ordenar" badge={store.progress.best?.['libros-orden'] ? `${store.progress.best['libros-orden']} seguidas` : null} desc="6 libros seguidos o una sección completa." onClick={() => setMode('order')} />
+        <ModeCard title="Memorama" badge={store.progress.best?.['libros-parejas-tiempo'] ? `Récord ${fmtTime(store.progress.best['libros-parejas-tiempo'])}` : null} desc="Voltea las cartas y une cada libro con su sección." onClick={() => setMode('pairs')} />
         <ModeCard title="Ver la lista" desc="Los 66 libros por sección, para estudiarlos." onClick={() => setMode('list')} />
       </div>
     </GameScreen>

@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
 import { memorizeSources } from './logic.js'
-import { achievements, roundSize, todayISO } from './progress.js'
+import { achievements, roundSize, todayISO, review, withBestTime } from './progress.js'
 import Review, { reviewSummary } from './Review.jsx'
 import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
-import { GameScreen, Quiz } from './ui.jsx'
+import { GameScreen, Quiz, PairsGame } from './ui.jsx'
+import { CHARACTERS, WORLDS } from './memoria/characters.js'
+import { KEY, inWorld, unlockedWorlds, pairsRound } from './memoria/logic.js'
 import Sheet from '../components/Sheet.jsx'
 import PageScroll from '../components/PageScroll.jsx'
 
@@ -15,44 +17,96 @@ export default function GamesTab({ store, toast, onBack }) {
   const [reviewing, setReviewing] = useState(false)
   const [medals, setMedals] = useState(false)
   const [daily, setDaily] = useState(false)
+  const [all, setAll] = useState(false)
+  const [playing, setPlaying] = useState(null)
   const game = GAMES.find((g) => g.id === open)
   useNewMedals(store, toast)
+  const best = store.progress.best ?? {}
+  const world = todayWorld(best)
+  const done = store.progress.juegoHoy?.day === todayISO()
 
+  const playBack = () => setPlaying(null)
   return (
     <div className="page">
-      <PageScroll title="Juegos" back={onBack && { label: 'Biblioteca', onClick: onBack }}>
-        {onBack && (
+      <PageScroll title={all ? 'Todos los juegos' : 'Juegos'} back={all ? { label: 'Juegos', onClick: () => setAll(false) } : onBack && { label: 'Biblioteca', onClick: onBack }}>
+        {all ? (
+          <button className="back-link" onClick={() => setAll(false)}>
+            <Icon d={ICONS.back} size={18} stroke={2} /> Juegos
+          </button>
+        ) : onBack && (
           <button className="back-link" onClick={onBack}>
             <Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca
           </button>
         )}
-        <h1 className="page-title">Juegos</h1>
-        <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
-        <DailyCard store={store} onOpen={() => setDaily(true)} />
-        <p className="section-label">Más juegos</p>
-        <div className="game-list">
-          {GAMES.map((g) => {
-            const st = g.stat?.(store)
-            return (
-              <button key={g.id} className="game-card" onClick={() => setOpen(g.id)}>
-                <span className={'game-icon g-' + g.id}><Icon d={g.icon} size={22} /></span>
-                <span className="entry-main">
-                  <span className="game-title">{g.title}{g.soon && <em className="soon-tag">Pronto</em>}</span>
-                  <span className="entry-sub">{g.desc}</span>
-                  {st && <span className={'game-pill' + (st.due ? ' due' : '')}>{st.text}</span>}
-                </span>
-                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-              </button>
-            )
-          })}
-        </div>
+        <h1 className="page-title">{all ? 'Todos los juegos' : 'Juegos'}</h1>
+        {all ? (
+          <>
+            <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
+            <DailyCard store={store} onOpen={() => setDaily(true)} />
+            <div className="game-list">
+              {GAMES.map((g) => {
+                const st = g.stat?.(store)
+                return (
+                  <button key={g.id} className="game-card" onClick={() => setOpen(g.id)}>
+                    <span className={'game-icon g-' + g.id}><Icon d={g.icon} size={22} /></span>
+                    <span className="entry-main">
+                      <span className="game-title">{g.title}{g.soon && <em className="soon-tag">Pronto</em>}</span>
+                      <span className="entry-sub">{g.desc}</span>
+                      {st && <span className={'game-pill' + (st.due ? ' due' : '')}>{st.text}</span>}
+                    </span>
+                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="today-game">
+              <p className="today-game-label">{done ? 'Listo por hoy' : 'Juego de hoy'}</p>
+              <h2 className="today-game-title">
+                {done && (
+                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                )}
+                Memorama
+              </h2>
+              <p className="today-game-sub">Personajes de {world.name}</p>
+              <button className={done ? 'secondary' : 'primary'} onClick={() => setPlaying(world.id)}>{done ? 'Jugar otra vez' : 'Jugar'}</button>
+            </div>
+            <button className="today-more" onClick={() => setAll(true)}>Todos los juegos</button>
+          </>
+        )}
       </PageScroll>
+      {playing != null && (
+        <PairsGame
+          title="Memorama"
+          back="Juegos"
+          era={playing}
+          build={() => pairsRound(inWorld(playing), Math.random, 6)}
+          best={best['memorama-tiempo']}
+          onBest={(t) => store.updateProgress((f) => withBestTime({ ...f, juegoHoy: { day: todayISO() } }, 'memorama-tiempo', t))}
+          onPair={(id, ok) => {
+            const ch = CHARACTERS.find((c) => KEY(c) === id)
+            if (ch) store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [KEY(ch)]: review(f.srs?.[KEY(ch)], ok) } }))
+          }}
+          onExit={playBack}
+        />
+      )}
       {game && <game.Component store={store} toast={toast} onExit={() => setOpen(null)} />}
       {reviewing && <Review store={store} onExit={() => setReviewing(false)} />}
       {medals && <Medals store={store} onClose={() => setMedals(false)} />}
       {daily && <Daily store={store} onExit={() => setDaily(false)} />}
     </div>
   )
+}
+
+// El mundo del día rota entre los mundos abiertos (días desde la época).
+function todayWorld(best) {
+  const open = unlockedWorlds(best)
+  const d = new Date()
+  const days = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000)
+  const id = open[days % open.length]
+  return WORLDS.find((w) => w.id === id) ?? WORLDS[0]
 }
 
 // Reto del día: 5 preguntas iguales todo el día. Muestra si ya lo hiciste y cómo te fue.

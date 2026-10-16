@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { GameScreen, Quiz, ModeCard, OrderPuzzle, Result, Sprint, cheer, fmtTime, toTop } from './ui.jsx'
+import { GameScreen, Quiz, ModeCard, OrderPuzzle, Result, Sprint, PairsGame, cheer, fmtTime, toTop } from './ui.jsx'
 import { CHARACTERS, WORLDS } from './memoria/characters.js'
-import { KEY, PASS, inWorld, knownIn, unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, sprintQuestion, stars, trueFalseRound } from './memoria/logic.js'
-import { isKnown, review, withBest } from './progress.js'
+import { KEY, PASS, inWorld, knownIn, unlockedWorlds, whoRound, whatRound, whereRound, timelineRound, dailyDue, sprintQuestion, stars, trueFalseRound, pairsRound } from './memoria/logic.js'
+import { isKnown, review, withBest, withBestTime } from './progress.js'
 import RefLink from '../components/RefLink.jsx'
 import Sheet from '../components/Sheet.jsx'
 
@@ -45,6 +45,21 @@ export default function MemoriaBiblica({ store, onExit }) {
   }
   if (screen.name === 'what' || screen.name === 'where' || screen.name === 'tf') {
     return <ChoiceMode kind={screen.name} world={screen.world} srs={srs} best={best[`mb-w${screen.world}-${screen.name}`] ?? 0} onAnswer={answer} onFinish={(pct) => finish(screen.world, pct, screen.name)} onBack={() => go('world', { world: screen.world })} />
+  }
+  if (screen.name === 'pairs') {
+    const key = `mb-w${screen.world}-parejas-tiempo`
+    return (
+      <PairsGame
+        title="Memorama"
+        back={`Mundo ${screen.world}`}
+        era={screen.world}
+        build={() => pairsRound(inWorld(screen.world), Math.random, 6)}
+        best={best[key]}
+        onBest={(t) => store.updateProgress((f) => withBestTime(f, key, t))}
+        onPair={(id, ok) => { const ch = CHARACTERS.find((c) => KEY(c) === id); if (ch) answer(ch, ok) }}
+        onExit={() => go('world', { world: screen.world })}
+      />
+    )
   }
   if (screen.name === 'timeline') return <Timeline open={open} best={best['mb-linea'] ?? 0} onRecord={(n) => store.updateProgress((f) => withBest(f, 'mb-linea', n))} onBack={toMap} />
   if (screen.name === 'sprint') {
@@ -147,6 +162,7 @@ function World({ world, srs, best, bests, next, onBack, onMode }) {
       </div>
       {next && best < PASS && <p className="mb-goal">Saca {PASS} % o más en cualquier modo para abrir «{next.name}».</p>}
       <div className="mode-list">
+        <ModeCard title="Memorama" badge={bests[`mb-w${world.id}-parejas-tiempo`] ? `Récord ${fmtTime(bests[`mb-w${world.id}-parejas-tiempo`])}` : null} desc="Voltea las cartas y encuentra cada personaje con quién fue." onClick={() => onMode('pairs')} />
         <ModeCard title="¿Quién soy?" badge={mode('who')} desc="Lee las pistas y adivina el personaje. Con menos pistas, más puntos." onClick={() => onMode('who')} />
         <ModeCard title="¿Qué hizo?" badge={mode('what')} desc="Ves el nombre y eliges quién fue." onClick={() => onMode('what')} />
         <ModeCard title="¿Cierto o falso?" badge={mode('tf')} desc="¿De verdad eso lo hizo él? Responde rápido." onClick={() => onMode('tf')} />
