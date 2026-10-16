@@ -3,7 +3,8 @@ import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { DAYS, nextStep, todayPlan, looksLikeDailyText, yesterdayLesson } from './today.js'
 import { openRef } from '../lib/verses.js'
-import { otherDayText, dailyTextAppUrl } from './kinds.js'
+import { otherDayText, dailyTextAppUrl, today as todayIso } from './kinds.js'
+import { dailyTextFor, useDailyTexts } from '../lib/dailytexts.js'
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1)
 
@@ -13,13 +14,18 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1)
 // está lo de hoy, lo dice y ya. Todo lo demás vive en Biblioteca.
 export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOpenEntry, onOpenMeeting, onCreate, onPasteDaily, toast }) {
   const [meetings, setMeetings] = useMeetings()
-  const items = todayPlan({ entries, meetings, leidos, plan })
+  useDailyTexts()
+  // Con el folleto del año importado, el texto de hoy ya está: no hay que copiarlo ni pegarlo.
+  const imported = dailyTextFor(todayIso())
+  const items = todayPlan({ entries, meetings, leidos, plan, dailyText: imported })
   const diario = items[0]
   const frase = String(diario.entry?.fields?.resumen ?? '').trim()
   // Ya hecho el texto de hoy, tu "Cuando…, voy a…" queda a la vista para acordarte durante el día.
   const planHoy = diario.done ? String(diario.entry?.fields?.aplicacion ?? '').trim() : ''
-  // Antes de pegar el de hoy: el de ayer, para recordar qué te enseñó antes de verlo.
-  const ayer = diario.verse ? null : yesterdayLesson(entries)
+  // Antes de empezar el de hoy: el de ayer, para recordar qué te enseñó antes de verlo.
+  const started = ['jehova', 'principio', 'aplicacion'].some((k) => String(diario.entry?.fields?.[k] ?? '').trim())
+  const ayer = diario.done || started ? null : yesterdayLesson(entries)
+  const hasText = !!String(diario.entry?.fields?.texto ?? '').trim()
   // El día de la reunión: un toque al Modo reunión (tus respuestas), sin buscarla en Biblioteca.
   const reunion = items.find((x) => x.meetingToday && x.entry)
   const done = items.filter((x) => x.done).length
@@ -28,8 +34,8 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
   const date = now.toLocaleDateString('es', { day: 'numeric', month: 'long' })
   const act = (it) => (it.key === 'lectura' ? (it.ref ? openRef(it.ref) : onBible()) : it.entry ? onOpenEntry(it.entry) : onCreate(it.create))
   const next = nextStep(items)
-  // El botón grande hace lo que sigue; sin texto de hoy, lo pega de lo copiado.
-  const doNext = () => (next.key === 'diario' && !diario.verse && onPasteDaily ? pasteDaily() : act(next))
+  // El botón grande hace lo que sigue; sin texto de hoy, lo toma del folleto importado o lo pega de lo copiado.
+  const doNext = () => (next.key === 'diario' && !hasText && onPasteDaily ? (imported ? onPasteDaily(imported, diario.entry, true) : pasteDaily()) : act(next))
   const setup = meetings?.semana == null || meetings?.fin == null
 
   async function pasteDaily() {
@@ -67,12 +73,6 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
       )}
       {diario.verse && <p className="hoy-verse">{diario.verse}</p>}
       {planHoy && <p className="hoy-plan"><span>Tu plan de hoy</span>{planHoy}</p>}
-      {ayer && (
-        <details className="hoy-ayer">
-          <summary><span>Ayer</span>{ayer.verse}<b>¿Qué te enseñó? Ver</b></summary>
-          <p>{ayer.lesson}</p>
-        </details>
-      )}
       {next && (
         <button className="primary plan-next" onClick={doNext}>
           <span className="plan-next-label">{done || next.entry ? 'Sigue' : 'Empieza'}: {next.title}</span>
@@ -82,6 +82,12 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
       {next?.key === 'diario' && !diario.verse && (
         // Para copiarlo sin buscarlo: abre el texto de hoy en JW Library.
         <a className="hoy-jwl" data-direct="1" href={dailyTextAppUrl(diario.create?.fields?.fecha ?? diario.entry?.fields?.fecha)} target="_blank" rel="noopener noreferrer">Abrir el texto de hoy en JW Library</a>
+      )}
+      {ayer && (
+        <details className="hoy-ayer">
+          <summary><span>Ayer</span>{ayer.verse}<b>¿Qué te enseñó? Ver</b></summary>
+          <p>{ayer.lesson}</p>
+        </details>
       )}
       {!next && (
         <>

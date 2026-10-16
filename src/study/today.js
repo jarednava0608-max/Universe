@@ -45,7 +45,8 @@ const hasContent = (f) => ['idea', 'aplicacion', 'notas'].some((k) => String(f[k
 
 // meetings: { semana: 0-6, fin: 0-6 } (días de la semana, 0 = domingo) o null si aún no los eliges.
 // leidos / plan: capítulos leídos y la meta de lectura (del progreso).
-export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = null, now = new Date() } = {}) {
+// dailyText: el texto de hoy si ya se importó el folleto del año (dailytexts.js); así no hay que pegarlo.
+export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = null, dailyText = null, now = new Date() } = {}) {
   const day = iso(now)
   const items = []
 
@@ -61,7 +62,7 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
       : falta.length === 1 || String(diario.fields.jehova ?? '').trim() ? `Te falta: ${falta.join(' y ')}`
       : '3 preguntas cortas · unos 5 min',
     done: analyzed,
-    verse: diario ? dailyVerse(diario.fields.texto) : '',
+    verse: dailyVerse(String(diario?.fields?.texto ?? '').trim() || dailyText || ''),
     entry: diario ?? null,
     create: diario ? null : { kind: 'diario', fields: { fecha: day } },
   })

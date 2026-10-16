@@ -11,6 +11,8 @@ import { ASSIGNMENT_FROM, nextDay } from './today.js'
 import BibleHome from '../components/BibleHome.jsx'
 import { readCount, TOTAL_CHAPTERS } from '../lib/reading.js'
 import TodayPlan, { MeetingDaysRow } from './TodayPlan.jsx'
+import DailyTextsImport from '../components/DailyTextsImport.jsx'
+import { hasDailyTexts, dailyTextYears, useDailyTexts } from '../lib/dailytexts.js'
 import SearchAll from './SearchAll.jsx'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -32,6 +34,7 @@ const RichNote = lazy(() => import('./RichNote.jsx'))
 // Leer la Biblia, el Mapa y los Juegos. Los editores se abren encima desde las dos.
 export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
   const [section, setSection] = useState(null) // kind abierto (o 'nodos')
+  useDailyTexts()
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
@@ -83,10 +86,10 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
               const e = makeEntry(kind)
               setEditing({ entry: { ...e, fields: { ...e.fields, ...fields } }, isNew: true })
             }}
-            onPasteDaily={async (texto, existing) => {
+            onPasteDaily={async (texto, existing, quiet) => {
               const e = existing ?? makeEntry('diario')
               const saved = await onSaveEntry({ ...e, fields: { ...e.fields, fecha: today(), texto } })
-              toast('Texto de hoy guardado. Léelo despacio.')
+              if (!quiet) toast('Texto de hoy guardado. Léelo despacio.')
               setEditing({ entry: saved ?? e, isNew: false })
             }}
             toast={toast}
@@ -190,6 +193,10 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
               <Icon d={ICONS.plus} size={20} stroke={2} />
             </button>
           </div>
+          {/* Texto diario: el folleto del año, una vez, para no pegar el texto cada mañana. */}
+          {section === 'diario' && (hasDailyTexts()
+            ? <p className="hint dt-imported">Los textos de {dailyTextYears().join(' y ')} están en este teléfono: el de cada día sale solo.</p>
+            : <DailyTextsImport toast={toast} />)}
           {KINDS[section].notes && byKind[section].length > 0 && (
             <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
           )}

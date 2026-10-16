@@ -34,6 +34,7 @@ El detalle completo de cada parte vive en `docs/`. Antes de tocar una de estas �
 - Nube: Supabase plan gratis (proyecto "Memoria Bíblica", `jikonxuznepdyhcjyysh`), tablas `universe_nodes`, `universe_edges` y `universe_entries` (Estudio y juegos, `fields` en jsonb), todas con RLS por `user_id`. Inicio de sesión con correo + contraseña desde "Cuenta y nube" (menú del mapa o el botón de nube arriba a la derecha en Estudio y Juegos). Mientras no haya sesión, todo se queda en el teléfono; al entrar por primera vez se sube todo lo local.
 - Avisos de Constancia: tabla `universe_push` + función `constancia-push` (`supabase/functions/`) que llama `pg_cron` cada 5 min. Detalle en `docs/juegos.md`.
 - Avisos de Pendientes: función `pendientes-push` (cron cada minuto vía `pendientes_tick()`, solo si están prendidos) con el mismo `universe_push` y las mismas llaves; `universe_push_log` evita repetidos. Pendientes desde ChatGPT: función `pendientes-intake` (clave en `universe_intake`). SQL en `supabase/pendientes.sql`; detalle en `docs/pendientes.md`.
+- Solo en el teléfono (nunca a la nube ni al repositorio, son publicaciones de jw.org): la Biblia importada del EPUB (`meta.bible`, `src/lib/nwt.js`) y los textos diarios del año (`meta.dailytexts`, `src/lib/dailytexts.js`, del EPUB de "Examinemos las Escrituras todos los días").
 - Respaldo: exportar / importar JSON (`buildExport` incluye nodos, conexiones y entradas de Estudio).
 
 ## Estructura

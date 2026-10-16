@@ -5,6 +5,8 @@ import { DAILY_QUESTIONS, DAILY_STEPS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dai
 import { findAllRefs } from '../lib/verses.js'
 import { splitRefs } from './midweek.js'
 import RefLink from '../components/RefLink.jsx'
+import DailyTextsImport from '../components/DailyTextsImport.jsx'
+import { dailyTextFor, hasDailyTexts, useDailyTexts } from '../lib/dailytexts.js'
 
 const filled = (v) => !!String(v ?? '').trim()
 
@@ -26,6 +28,12 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
   const top = useRef()
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
   const answers = useRef(Object.fromEntries(DAILY_QUESTIONS.map((q) => [q.key, createRef()])))
+  // Con el folleto del año importado, el texto de esa fecha se pone solo (también si cambias la fecha).
+  useDailyTexts()
+  const imported = dailyTextFor(fields.fecha)
+  useEffect(() => {
+    if (!filled(fields.texto) && imported) set({ texto: imported })
+  }, [fields.fecha, imported]) // eslint-disable-line react-hooks/exhaustive-deps
   // Frases para empezar: un toque las escribe donde está el cursor (o al final, en un renglón nuevo,
   // si no estabas escribiendo) y deja el cursor después, listo para seguir.
   function addStarter(key, text) {
@@ -141,6 +149,7 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
                   <span className="at-answer-label">O pégalo aquí</span>
                   <AutoText value={fields.texto ?? ''} placeholder="El texto y el comentario" onChange={(v) => set({ texto: v })} minRows={3} />
                 </label>
+                {!hasDailyTexts() && <DailyTextsImport toast={toast} />}
               </>
             ) : (
               <>

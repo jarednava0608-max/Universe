@@ -26,6 +26,7 @@ import ChapterReader from './components/ChapterReader.jsx'
 import { isRead, withRead } from './lib/reading.js'
 import { OPEN_REF } from './lib/verses.js'
 import { loadBible, useBible } from './lib/nwt.js'
+import { loadDailyTexts } from './lib/dailytexts.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
@@ -208,6 +209,7 @@ export default function App() {
   useBible()
   useEffect(() => {
     loadBible()
+    loadDailyTexts()
     requestPersistence().then(setPersisted)
     getMeta('lastExport').then((v) => v && setLastExport(v)).catch(() => {})
   }, [])
