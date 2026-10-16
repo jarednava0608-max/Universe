@@ -652,3 +652,84 @@ export function Empty({ children, action }) {
     </div>
   )
 }
+
+// Parejas: tocar uno de la izquierda y luego su pareja de la derecha, con tiempo.
+// build() da { left: [{ id, text }], right: [{ id, text }] } (mismos id en ambos lados) o null.
+// best/onBest = récord en segundos (menos es mejor). onPair(id, ok) opcional, por si cuenta para el repaso.
+export function PairsGame({ title = 'Parejas', back, era, build, best, onBest, onExit, onPair, hint = 'Toca uno de la izquierda y luego su pareja.', empty = 'Todavía no hay suficientes para este juego.' }) {
+  const [prevBest, setPrevBest] = useState(best)
+  const [board, setBoard] = useState(build)
+  const [left, setLeft] = useState(null)
+  const [done, setDone] = useState(() => new Set())
+  const [miss, setMiss] = useState(null)
+  const [errors, setErrors] = useState(0)
+  const startRef = useRef(Date.now())
+  const missed = useRef(new Set())
+  const [secs, setSecs] = useState(0)
+
+  if (!board) return <GameScreen title={title} back={back} era={era} onExit={onExit}><Empty>{empty}</Empty></GameScreen>
+
+  const finished = done.size === board.left.length
+  function pickRight(id) {
+    if (!left || done.has(id)) return
+    if (left === id) {
+      const next = new Set(done).add(id)
+      setDone(next)
+      setLeft(null)
+      onPair?.(id, !missed.current.has(id))
+      if (next.size === board.left.length) {
+        const t = Math.max(1, Math.round((Date.now() - startRef.current) / 1000))
+        setSecs(t)
+        onBest?.(t)
+      }
+    } else {
+      missed.current.add(left)
+      setMiss(id)
+      setErrors((e) => e + 1)
+      setTimeout(() => setMiss(null), 450)
+    }
+  }
+  function again() {
+    setPrevBest(best)
+    setBoard(build())
+    setDone(new Set())
+    setLeft(null)
+    setErrors(0)
+    missed.current = new Set()
+    startRef.current = Date.now()
+  }
+
+  return (
+    <GameScreen title={title} back={back} era={era} onExit={onExit}>
+      {finished ? (
+        <Result
+          pct={Math.round((board.left.length / (board.left.length + errors)) * 100)}
+          value={fmtTime(secs)}
+          unit=""
+          msg={errors === 0 ? '¡Perfecto, sin errores!' : `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.`}
+          record={prevBest != null && secs < prevBest}
+          stats={[['Parejas', board.left.length], ['Errores', errors], ['Récord', fmtTime(Math.min(prevBest ?? Infinity, secs))]]}
+          onAgain={again}
+          againLabel="Otra ronda"
+          onDone={onExit}
+        />
+      ) : (
+        <>
+          <p className="hint">{hint}</p>
+          <div className="pairs">
+            <div className="pairs-col">
+              {board.left.map((x) => (
+                <button key={x.id} className={'pair-chip title' + (done.has(x.id) ? ' done' : left === x.id ? ' on' : '')} disabled={done.has(x.id)} onClick={() => setLeft(x.id)}>{x.text}</button>
+              ))}
+            </div>
+            <div className="pairs-col">
+              {board.right.map((x) => (
+                <button key={x.id} className={'pair-chip' + (done.has(x.id) ? ' done' : miss === x.id ? ' miss' : '')} disabled={done.has(x.id)} onClick={() => pickRight(x.id)}>{x.text}</button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </GameScreen>
+  )
+}

@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { buildGuessQuestions, buildPairs, buildProofQuestions } from './logic.js'
-import { GameScreen, Quiz, Empty, ModeCard, Result, fmtTime } from './ui.jsx'
+import { GameScreen, Quiz, Empty, ModeCard, PairsGame, fmtTime } from './ui.jsx'
 import { withBest, withBestTime } from './progress.js'
 import { findSavedVerse } from '../lib/verses.js'
 
@@ -66,75 +66,8 @@ function Proof({ store, best, onBest, onExit }) {
 }
 
 function Pairs({ nodes, best, onBest, onExit }) {
-  const [prevBest, setPrevBest] = useState(best)
-  const [board, setBoard] = useState(() => buildPairs(nodes))
-  const [left, setLeft] = useState(null)
-  const [done, setDone] = useState(() => new Set())
-  const [miss, setMiss] = useState(null)
-  const [errors, setErrors] = useState(0)
-  const startRef = useRef(Date.now())
-  const [secs, setSecs] = useState(0)
-
-  if (!board) return <GameScreen title="Parejas" back="Mi estudio" onExit={onExit}><Empty>Necesitas al menos 3 nodos con definición en tu mapa para este juego.</Empty></GameScreen>
-
-  const finished = done.size === board.left.length
-  function pickRight(id) {
-    if (!left || done.has(id)) return
-    if (left === id) {
-      const next = new Set(done).add(id)
-      setDone(next)
-      setLeft(null)
-      if (next.size === board.left.length) {
-        const t = Math.max(1, Math.round((Date.now() - startRef.current) / 1000))
-        setSecs(t)
-        onBest(t)
-      }
-    } else {
-      setMiss(id)
-      setErrors((e) => e + 1)
-      setTimeout(() => setMiss(null), 450)
-    }
-  }
-  function again() {
-    setPrevBest(best)
-    setBoard(buildPairs(nodes))
-    setDone(new Set())
-    setLeft(null)
-    setErrors(0)
-    startRef.current = Date.now()
-  }
-
   return (
-    <GameScreen title="Parejas" back="Mi estudio" onExit={onExit}>
-      {finished ? (
-        <Result
-          pct={Math.round((board.left.length / (board.left.length + errors)) * 100)}
-          value={fmtTime(secs)}
-          unit=""
-          msg={errors === 0 ? '¡Perfecto, sin errores!' : `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.`}
-          record={prevBest != null && secs < prevBest}
-          stats={[['Parejas', board.left.length], ['Errores', errors], ['Récord', fmtTime(Math.min(prevBest ?? Infinity, secs))]]}
-          onAgain={again}
-          againLabel="Otra ronda"
-          onDone={onExit}
-        />
-      ) : (
-        <>
-          <p className="hint">Toca un título y luego su definición.</p>
-          <div className="pairs">
-            <div className="pairs-col">
-              {board.left.map((x) => (
-                <button key={x.id} className={'pair-chip title' + (done.has(x.id) ? ' done' : left === x.id ? ' on' : '')} disabled={done.has(x.id)} onClick={() => setLeft(x.id)}>{x.text}</button>
-              ))}
-            </div>
-            <div className="pairs-col">
-              {board.right.map((x) => (
-                <button key={x.id} className={'pair-chip' + (done.has(x.id) ? ' done' : miss === x.id ? ' miss' : '')} disabled={done.has(x.id)} onClick={() => pickRight(x.id)}>{x.text}</button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </GameScreen>
+    <PairsGame title="Parejas" back="Mi estudio" build={() => buildPairs(nodes)} best={best} onBest={onBest} onExit={onExit}
+      hint="Toca un título y luego su definición." empty="Necesitas al menos 3 nodos con definición en tu mapa para este juego." />
   )
 }
