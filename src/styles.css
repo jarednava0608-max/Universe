@@ -1336,7 +1336,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mm { z-index: 60; }
 .mm-body { padding-bottom: calc(env(safe-area-inset-bottom) + 40px); }
 .mm-title { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: var(--title); margin: 8px 0 4px; }
-.mm-count { font-size: 15px; color: var(--text-3); margin: 0 0 24px; }
 .mm-item { padding: 16px 0 16px; border-bottom: 1px solid var(--line); }
 .mm-label { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); margin: 0 0 4px; }
 .mm-q { font-size: 15px; line-height: 1.4; color: var(--text-2); margin: 0 0 8px; }
@@ -1345,6 +1344,16 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mm .mw-sec { margin-top: 20px; }
 .mw-sec:not(.tesoros):not(.maestros):not(.vida) { color: var(--text-2); background: var(--surface-2); }
 .mm-open { margin-bottom: 16px; }
+/* Modo reunión: fila fija de números para saltar al párrafo que se está considerando */
+.mm-jump { flex: none; background: var(--bg); }
+.at-jump-num.star { position: relative; }
+.at-jump-num.star::after { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold-text); }
+:root[data-style='jw'] .at-jump-num.star::after { background: #e3b341; }
+.mm-keys { margin: 0; font-size: 17px; line-height: 1.4; color: var(--text-2); }
+/* Hoy, el día de la reunión: un toque a tus respuestas */
+.hoy-meeting { display: flex; align-items: center; gap: 8px; min-height: var(--tap); margin: -4px 0 0; font-size: 17px; color: var(--text-2); text-align: left; }
+.hoy-meeting b { font-weight: 600; color: var(--accent, var(--text)); }
+.hoy-meeting svg { color: var(--accent, var(--text-3)); }
 /* Lectura de la semana: cada capítulo con su palomita. */
 .mw-reading { margin: 0 0 20px; }
 .mw-reading .at-label { margin-top: 4px; }
@@ -1558,9 +1567,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .star-btn.on { color: var(--gold-text); }
 :root[data-style='jw'] .star-btn.on { color: #e3b341; }
 .at-answer .at-answer-head { margin-bottom: 8px; }
-.mm-stars { margin: 0 0 20px; padding: 4px 16px 0; border-radius: var(--r); background: var(--surface); border-left: 3px solid #e3b341; }
-.mm-stars-h { margin: 12px 0 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #e3b341; }
-.mm-stars .mm-item:last-child { border-bottom: 0; }
 .mm-star { color: #e3b341; }
 
 /* ---------- Estilo "Como JW": pulido general ---------- */

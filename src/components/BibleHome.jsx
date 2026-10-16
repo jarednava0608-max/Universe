@@ -8,7 +8,7 @@ import { BOOK_ABBR, TOTAL_CHAPTERS, PLAN_LENGTHS, bookRead, chaptersOf, hasPlan,
 // Leer toda la Biblia, como la pestaña "Libros" de JW Library: los 66 libros en cuadros (más
 // claros mientras más llevas leído), y al tocar uno, sus capítulos con los leídos marcados.
 // Un capítulo se abre en el lector de pantalla completa.
-export default function BibleHome({ leidos, plan, onSetPlan, entries, toast, onClose }) {
+export default function BibleHome({ backLabel = 'Biblioteca', leidos, plan, onSetPlan, entries, toast, onClose }) {
   const [book, setBook] = useState(null)
   useBible()
   const full = hasBible()
@@ -35,7 +35,7 @@ export default function BibleHome({ leidos, plan, onSetPlan, entries, toast, onC
     <div className="overlay bible-home">
       <header className="bar">
         <button className="bar-btn back" data-inner={book ? '1' : undefined} onClick={() => (book ? setBook(null) : onClose())}>
-          <Icon d={ICONS.back} size={18} stroke={2} /> {book ? 'Libros' : 'Estudio'}
+          <Icon d={ICONS.back} size={18} stroke={2} /> {book ? 'Libros' : backLabel}
         </button>
         <span className="bar-title">{book ? BOOKS[book - 1] : 'Leer la Biblia'}</span>
         <span />

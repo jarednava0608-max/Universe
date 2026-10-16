@@ -450,7 +450,7 @@ export function splitRefs(text, refs) {
 export function meetingItems(fields) {
   const out = []
   for (const pt of parseProgram(fields?.programa).partes) {
-    const base = { section: pt.seccion, sec: pt.sec }
+    const base = { section: pt.seccion, sec: pt.sec, jump: String(pt.num) }
     for (const l of pt.lineas) if (l.q) out.push({ ...base, key: l.key, label: `Parte ${pt.num}`, question: qText(l), answer: answerOf(fields, l.key) })
     const study = isStudyPart(pt) ? studyBlocks(fields) : []
     for (const b of study) out.push({ ...base, key: studyKey(b), label: `Estudio bíblico · ${b.label}`, question: b.pregunta, answer: answerOf(fields, studyKey(b)) })

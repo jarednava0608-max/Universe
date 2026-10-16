@@ -16,7 +16,7 @@ import { canSpeak, useSpeech } from '../lib/speech.js'
 // (título, subtítulos y preguntas de repaso), luego cada párrafo buscando la respuesta y
 // subrayando solo palabras clave, y al final el repaso. Se guarda sola y al volver
 // sigue en el paso y la pregunta donde te quedaste.
-export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToForm }) {
+export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting = false, entry, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToForm }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const article = useMemo(() => parseArticle(fields.articulo), [fields.articulo])
   const bloques = article.bloques
@@ -35,7 +35,8 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
   const exists = useRef(!isNew)
   const top = useRef()
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
-  const [meeting, setMeeting] = useState(false)
+  // Abierta desde Hoy el día de la reunión: directo al Modo reunión (y al cerrarlo, de regreso a Hoy).
+  const [meeting, setMeeting] = useState(startInMeeting)
 
   const hasContent = (f) => Boolean(String(f.articulo ?? '').trim() || String(f.titulo ?? '').trim() || (f.parrafos ?? []).some((p) => p.nota?.trim()))
   async function flush(extra = {}) {
@@ -119,7 +120,7 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
   return (
     <div className="overlay at-study">
       <header className="bar">
-        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Reuniones</button>
+        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-title">La Atalaya</span>
         <span />
       </header>
@@ -330,11 +331,13 @@ export default function AtalayaStudy({ entry, isNew, toast, onSave, onDelete, on
       </div>
       {meeting && (
         <MeetingMode
+          id={base.current.id}
+          back={startInMeeting ? backLabel : 'Volver'}
           kicker={['La Atalaya', fields.fecha && formatDate(fields.fecha)].filter(Boolean).join(' · ')}
           title={fields.titulo || 'La Atalaya'}
           items={meetingItems(fields)}
           starred={fields.comentar ?? []}
-          onClose={() => setMeeting(false)}
+          onClose={startInMeeting ? close : () => setMeeting(false)}
         />
       )}
     </div>

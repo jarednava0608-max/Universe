@@ -31,7 +31,7 @@ const RichNote = lazy(() => import('./RichNote.jsx'))
 // Pestañas Hoy y Biblioteca (`view`): Hoy es solo lo de hoy; Biblioteca, los apartados con sus listas,
 // Leer la Biblia, el Mapa y los Juegos. Los editores se abren encima desde las dos.
 export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
-  const [section, setSection] = useState(null) // kind abierto
+  const [section, setSection] = useState(null) // kind abierto (o 'nodos')
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
@@ -39,6 +39,8 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
   const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
   useEffect(() => { onHome?.(!section) }, [section]) // eslint-disable-line react-hooks/exhaustive-deps
+  // "‹ Atrás" dice a dónde regresas: a Hoy, a la lista abierta o a Biblioteca.
+  const backLabel = view === 'hoy' ? 'Hoy' : section === 'nodos' ? 'Tus nodos' : section ? KINDS[section].label : 'Biblioteca'
   // Entrada borrada deslizando, con "Deshacer".
   const undoDel = useUndoDelete((e) => onDeleteEntry(e.id), (e) => onSaveEntry(e))
 
@@ -76,6 +78,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
             plan={readingPlan}
             onBible={() => setBibleOpen(true)}
             onOpenEntry={(e) => setEditing({ entry: e, isNew: false })}
+            onOpenMeeting={(e) => setEditing({ entry: e, isNew: false, meeting: true })}
             onCreate={({ kind, fields }) => {
               const e = makeEntry(kind)
               setEditing({ entry: { ...e, fields: { ...e.fields, ...fields } }, isNew: true })
@@ -215,6 +218,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
 
       {peekNode && nodes.some((n) => n.id === peekNode) && (
         <NodeNote
+          backLabel={backLabel}
           key={peekNode}
           node={nodes.find((n) => n.id === peekNode)}
           nodes={nodes}
@@ -227,6 +231,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
 
       {editing && KINDS[editing.entry.kind].notes && (
         <NoteEditor
+          backLabel={backLabel}
           key={editing.entry.id}
           entry={editing.entry}
           isNew={editing.isNew}
@@ -249,6 +254,8 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
 
       {editing && isAtalaya(editing.entry) && (
         <AtalayaStudy
+          backLabel={backLabel}
+          startInMeeting={!!editing.meeting}
           key={editing.entry.id}
           entry={editing.entry}
           isNew={editing.isNew}
@@ -267,10 +274,12 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
         />
       )}
 
-      {bibleOpen && <BibleHome leidos={leidos} plan={readingPlan} onSetPlan={onSetPlan} entries={entries} toast={toast} onClose={() => setBibleOpen(false)} />}
+      {bibleOpen && <BibleHome backLabel={backLabel} leidos={leidos} plan={readingPlan} onSetPlan={onSetPlan} entries={entries} toast={toast} onClose={() => setBibleOpen(false)} />}
 
       {editing && isMidweek(editing.entry) && (
         <MidweekStudy
+          backLabel={backLabel}
+          startInMeeting={!!editing.meeting}
           key={editing.entry.id}
           entry={editing.entry}
           entries={entries}
@@ -294,6 +303,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
 
       {editing && editing.entry.kind === 'diario' && (
         <DailyStudy
+          backLabel={backLabel}
           key={editing.entry.id}
           entry={editing.entry}
           isNew={editing.isNew}
@@ -345,7 +355,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
 
 // Un nodo del mapa abierto como nota: se lee y se edita con el mismo editor de Notas.
 // Se guarda solo (título y definición en Markdown, con sus [[enlaces]] y subtítulos) y solo si lo cambiaste.
-function NodeNote({ node, nodes, toast, onSave, onClose, onOpenMap }) {
+function NodeNote({ backLabel = 'Biblioteca', node, nodes, toast, onSave, onClose, onOpenMap }) {
   const isRoot = node.id === ROOT_ID
   const [title, setTitle] = useState(node.title)
   const [initialHtml] = useState(() => markdownToHtml(unwrapCallouts(node.note || '')))
@@ -403,7 +413,7 @@ function NodeNote({ node, nodes, toast, onSave, onClose, onOpenMap }) {
   return (
     <div className={'overlay note-editor' + (editing ? ' editing' : '')} style={box.style}>
       <header className="bar">
-        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Estudio</button>
+        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-spacer" />
         <button className="bar-btn" onClick={async () => { if (await flush()) onOpenMap(node.id) }}>Ver en el mapa</button>
       </header>
@@ -562,7 +572,7 @@ function useVisibleBox() {
 const TIDY_ICON = 'M4 6h16M4 12h10M4 18h6M17 14l1.2 2.8L21 18l-2.8 1.2L17 22l-1.2-2.8L13 18l2.8-1.2z'
 const SHARE_ICON = 'M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1'
 
-function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onClose, onPropose, onOpenNode, onOpenEntry }) {
+function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, onSave, onDelete, onClose, onPropose, onOpenNode, onOpenEntry }) {
   const [titulo, setTitulo] = useState(entry.fields.titulo ?? '')
   // El contenido con formato vive en `html`; `texto` es la versión en texto simple (buscar, mapa, citas).
   // No se convierte en cada letra: se lee del editor solo al guardar.
@@ -720,7 +730,7 @@ function NoteEditor({ entry, isNew, nodes, entries, toast, onSave, onDelete, onC
   return (
     <div className={'overlay note-editor' + (editing ? ' editing' : '')} style={box.style}>
       <header className="bar">
-        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Notas</button>
+        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-spacer" />
         <span className="bar-actions">
           <button className="bar-btn tidy-btn" onPointerDown={(e) => e.preventDefault()} onClick={tidy}>Ordenar</button>

@@ -13,7 +13,7 @@ export default function SearchAll({ nodes, entries, onPick, onClose }) {
   return (
     <div className="overlay search-all">
       <header className="bar">
-        <button className="bar-btn back" onClick={onClose}><Icon d={ICONS.back} size={18} stroke={2} /> Estudio</button>
+        <button className="bar-btn back" onClick={onClose}><Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca</button>
         <span className="bar-title">Buscar</span>
         <span />
       </header>

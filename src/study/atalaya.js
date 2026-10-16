@@ -261,8 +261,9 @@ export function meetingItems(fields) {
   let section = ''
   const out = art.bloques.map((b) => {
     if (b.subtitulo) section = b.subtitulo
-    return { key: b.key, section, label: `${b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} ${b.key}`, question: b.pregunta, answer: answerOf(fields, b.key) }
+    // jump: el número en la fila de arriba; keys: tus palabras subrayadas, por si no escribiste respuesta.
+    return { key: b.key, jump: b.key.replace(/,\s*/g, '-'), section, label: `${b.nums.length > 1 ? 'Párrafos' : 'Párrafo'} ${b.key}`, question: b.pregunta, answer: answerOf(fields, b.key), keys: keyPhrases(b, fields?.marcas?.[b.key] ?? []) }
   })
-  art.repaso.forEach((q, i) => out.push({ key: 'r' + i, section: '¿Qué responderías?', label: 'Repaso', question: q, answer: reviewAnswer(fields, q) }))
+  art.repaso.forEach((q, i) => out.push({ key: 'r' + i, jump: 'R', section: '¿Qué responderías?', label: 'Repaso', question: q, answer: reviewAnswer(fields, q) }))
   return out
 }

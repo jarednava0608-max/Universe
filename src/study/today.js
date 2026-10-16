@@ -79,11 +79,14 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
     if ((semDays == null ? days <= ATALAYA_FROM : nextIsFin) || (e && progress && progress.done < progress.total)) {
       const ready = !!progress?.total && progress.done === progress.total
       const today = !ready && progress?.done > 0 && touchedToday(e, day)
+      // El día de la reunión, con algo contestado: ya no se pide prepararla; Hoy ofrece tus respuestas.
+      const meetingToday = days === 0 && progress?.done > 0
       items.push({
         key: 'atalaya',
         title: 'La Atalaya',
         sub: `${when(days, meetings.fin)} · ${ready ? 'Lista para la reunión' : progress?.total ? `${today ? 'Hoy ya le avanzaste · ' : ''}${progress.done} de ${progress.total} respondidas` : e ? 'Pega el artículo' : 'Prepárala por pasos'}`,
-        done: ready || today,
+        done: ready || today || meetingToday,
+        meetingToday,
         entry: e,
         create: e ? null : { kind: 'reunion', fields: { tipo: 'atalaya', fecha: date } },
       })
@@ -99,6 +102,7 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
       const progress = e && String(e.fields.programa ?? '').trim() ? midweekCount(e.fields) : null
       const ready = progress?.total ? progress.done === progress.total : !!e && hasContent(e.fields)
       const today = !ready && progress?.done > 0 && touchedToday(e, day)
+      const meetingToday = days === 0 && (progress ? progress.done > 0 : ready)
       const state = ready ? 'Lista para la reunión'
         : progress?.total ? `${today ? 'Hoy ya le avanzaste · ' : ''}${progress.done} de ${progress.total} respondidas`
         : e ? (String(e.fields.programa ?? '').trim() ? 'Sigue preparándola' : 'Pega el programa')
@@ -107,7 +111,8 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
         key: 'entresemana',
         title: 'Reunión de entre semana',
         sub: `${when(days, meetings.semana)} · ${state}`,
-        done: ready || today,
+        done: ready || today || meetingToday,
+        meetingToday,
         entry: e,
         create: e ? null : { kind: 'reunion', fields: { tipo: 'entresemana', fecha: date } },
       })

@@ -17,7 +17,7 @@ import { DAYS } from './today.js'
 // La reunión de entre semana por pasos, como La Atalaya: se pega el programa de la Guía de
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
 // final cómo lo aplico y, si quieres, tus respuestas pasan al mapa. Se guarda sola y al volver sigue en la parte donde te quedaste.
-export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToAtalaya }) {
+export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting = false, entry, entries = [], leidos, onToggleRead, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToAtalaya }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const prog = useMemo(() => parseProgram(fields.programa), [fields.programa])
   const schedule = weekSchedule(entries, fields.fecha)
@@ -40,7 +40,8 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
   const jump = useRef()
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
   const [editingProgram, setEditingProgram] = useState(false)
-  const [meeting, setMeeting] = useState(false)
+  // Abierta desde Hoy el día de la reunión: directo al Modo reunión (y al cerrarlo, de regreso a Hoy).
+  const [meeting, setMeeting] = useState(startInMeeting)
 
   const hasContent = (f) => Boolean(String(f.programa ?? '').trim() || ['idea', 'aplicacion', 'notas'].some((k) => String(f[k] ?? '').trim()))
   async function flush() {
@@ -130,7 +131,7 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
   return (
     <div className="overlay at-study">
       <header className="bar">
-        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Reuniones</button>
+        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-title">Entre semana</span>
         <span />
       </header>
@@ -391,11 +392,13 @@ export default function MidweekStudy({ entry, entries = [], leidos, onToggleRead
       </div>
       {meeting && (
         <MeetingMode
+          id={base.current.id}
+          back={startInMeeting ? backLabel : 'Volver'}
           kicker={['Vida y Ministerio', prog.semana].filter(Boolean).join(' · ')}
           title={fields.titulo || prog.lectura || 'Reunión de entre semana'}
           items={meetingItems(fields)}
           starred={fields.comentar ?? []}
-          onClose={() => setMeeting(false)}
+          onClose={startInMeeting ? close : () => setMeeting(false)}
         />
       )}
     </div>

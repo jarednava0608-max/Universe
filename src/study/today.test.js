@@ -50,7 +50,10 @@ describe('Hoy: lo que toca según tu rutina', () => {
 
   it('La Atalaya dice cuántas llevas y se marca lista; si ya empezaste, sale aunque falten días', () => {
     const at = { id: 'a', kind: 'reunion', updatedAt: 1, fields: { tipo: 'atalaya', fecha: '2026-10-11', articulo: ARTICULO, parrafos: [{ num: '1', nota: 'Sí.' }] } }
-    expect(todayPlan({ now: SUN, meetings, entries: [at] }).find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'Hoy · 1 de 2 respondidas', done: false, entry: at })
+    // El día de la reunión, con algo contestado: ya no pide prepararla y ofrece tus respuestas (Modo reunión).
+    expect(todayPlan({ now: SUN, meetings, entries: [at] }).find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'Hoy · 1 de 2 respondidas', done: true, meetingToday: true, entry: at })
+    const vacia = { ...at, fields: { ...at.fields, parrafos: [] } }
+    expect(todayPlan({ now: SUN, meetings, entries: [vacia] }).find((x) => x.key === 'atalaya')).toMatchObject({ done: false, meetingToday: false })
     // El lunes 5 (faltan 6 días) ya empezaste esa Atalaya: sigue saliendo.
     const early = { ...at, fields: { ...at.fields, fecha: '2026-10-06' } }
     expect(todayPlan({ now: MON, meetings, entries: [early] }).find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'El domingo · 1 de 2 respondidas' })
@@ -151,5 +154,15 @@ describe('Hoy: se puede terminar', () => {
 
   it('una meta de lectura vencida no se queda en Hoy', () => {
     expect(todayPlan({ now: FRI, plan: { start: '2025-01-01', end: '2025-12-31', t: 1 } }).some((x) => x.key === 'lectura')).toBe(false)
+  })
+})
+
+describe('Hoy: el día de la reunión de entre semana', () => {
+  it('con algo contestado, cuenta como hecha y ofrece tus respuestas', () => {
+    const programa = 'TESOROS DE LA BIBLIA\n1. Perlas\n(10 mins.)\n¿Pregunta uno?\nRespuesta\n¿Pregunta dos?\nRespuesta'
+    const WED = new Date(2026, 9, 7, 9, 0)
+    const e = { id: 'm', kind: 'reunion', fields: { tipo: 'entresemana', fecha: '2026-10-07', programa, respuestas: { '1-0': 'Algo' } }, updatedAt: 1 }
+    expect(todayPlan({ now: WED, meetings: { semana: 3, fin: 0 }, entries: [e] }).find((x) => x.key === 'entresemana')).toMatchObject({ done: true, meetingToday: true })
+    expect(todayPlan({ now: MON, meetings: { semana: 3, fin: 0 }, entries: [e] }).find((x) => x.key === 'entresemana')).toMatchObject({ meetingToday: false })
   })
 })

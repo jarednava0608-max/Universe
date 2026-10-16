@@ -11,11 +11,13 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1)
 // con lo que sigue (ver today.js); al terminarlo, el botón pasa al siguiente paso. Sin lista, sin contador
 // y sin abrir solo lo que sigue: al usuario lo abrumaba sentir que la app siempre le pedía más. Cuando ya
 // está lo de hoy, lo dice y ya. Todo lo demás vive en Biblioteca.
-export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOpenEntry, onCreate, onPasteDaily, toast }) {
+export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOpenEntry, onOpenMeeting, onCreate, onPasteDaily, toast }) {
   const [meetings, setMeetings] = useMeetings()
   const items = todayPlan({ entries, meetings, leidos, plan })
   const diario = items[0]
   const frase = String(diario.entry?.fields?.resumen ?? '').trim()
+  // El día de la reunión: un toque al Modo reunión (tus respuestas), sin buscarla en Biblioteca.
+  const reunion = items.find((x) => x.meetingToday && x.entry)
   const done = items.filter((x) => x.done).length
   const now = new Date()
   const weekday = cap(now.toLocaleDateString('es', { weekday: 'long' }))
@@ -71,6 +73,13 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
           {/* Para cerrar el día: la frase que escribiste en el Texto diario (Recordar). */}
           {frase && <p className="hoy-frase"><span>Tu frase de hoy</span>{frase}</p>}
         </>
+      )}
+      {reunion && (
+        <button className="hoy-meeting" onClick={() => onOpenMeeting(reunion.entry)}>
+          <span>{reunion.key === 'atalaya' ? 'La Atalaya' : 'La reunión'} es hoy</span>
+          <b>Mis respuestas</b>
+          <Icon d={ICONS.chev} size={16} stroke={2} />
+        </button>
       )}
       {setup && <MeetingDays value={meetings} onChange={setMeetings} />}
     </section>

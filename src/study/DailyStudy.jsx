@@ -8,7 +8,7 @@ const filled = (v) => !!String(v ?? '').trim()
 // El Texto diario: leer y tres preguntas cortas, una a la vez (Jehová → la lección → dónde lo
 // necesito hoy), y una frase para recordarlo todo el día. Se guarda sola y al volver sigue en el
 // paso donde te quedaste (fields.paso).
-export default function DailyStudy({ entry, isNew, toast, onSave, onDelete, onClose }) {
+export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onSave, onDelete, onClose }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const [step, setStep] = useState(() => {
     const f = entry.fields
@@ -105,7 +105,7 @@ export default function DailyStudy({ entry, isNew, toast, onSave, onDelete, onCl
   return (
     <div className="overlay at-study">
       <header className="bar">
-        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> Estudio</button>
+        <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-title">Texto diario</span>
         <span />
       </header>
