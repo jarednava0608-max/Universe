@@ -3,6 +3,7 @@
 Pestaña **Pendientes** (`src/tasks/TasksTab.jsx`, lógica en `src/tasks/tasks.js` con pruebas). Se juntó aquí la app Centro (tareas con avisos y hábitos) para tener todo en una sola app. Las decisiones están en `DECISIONES.md`.
 
 ## Qué tiene
+- **Solo lo de hoy a la vista** (el usuario no usaba Pendientes porque la lista entera lo abrumaba): arriba **"Lo que sigue"** en grande con un botón **Hecho** (lo primero sin hacer: atrasados y luego hábitos y pendientes de hoy por hora; `todayItems` en `tasks.js`), debajo **"También hoy"** y un enlace "Agregar pendiente". Todo lo demás (mañana, la semana, después, sin fecha, hechos, filtros, Hábitos y Avisos) va cerrado bajo **"Todo lo demás"** (se recuerda abierto o cerrado en este teléfono). Lo de abajo describe lo que hay ahí.
 - **Nuevo pendiente** hasta arriba (no un +, porque chocaba con la luna y la nube en el estilo Original). Al escribir el título, la tecla "Listo" del teclado lo cierra para ver la fecha, el aviso y "Guardar" (también en un hábito).
 - **Hábitos de hoy**: los hábitos a los que les toca hoy, por hora, para palomear (se guarda el día en `fields.log`, últimos 120 días; "N seguidos" si llevas racha). Se ocultan mientras filtras.
 - **Filtros**: lupa (buscar sin acentos en título, notas y categoría; sale con más de 8 pendientes) y categorías (Universidad / Trabajo / Personal; tocar la activa quita el filtro).

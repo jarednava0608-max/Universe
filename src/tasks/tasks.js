@@ -139,6 +139,23 @@ export function groupTasks(entries, now = new Date(), filter = {}) {
   return groups
 }
 
+// Solo lo de hoy, en una lista (lo que se ve en Pendientes): primero lo atrasado y luego hábitos y
+// pendientes de hoy por hora. `next` = lo primero sin hacer (lo que sigue).
+export function todayItems(entries, now = new Date()) {
+  const g = groupTasks(entries, now)
+  const late = g.atrasados.map((e) => ({ type: 'task', entry: e, at: new Date(e.fields.dueAt), done: false, late: true }))
+  const rest = [
+    ...habitsToday(entries, now).map(({ entry, slot, done }) => {
+      const [h, m] = slot.time.split(':').map(Number)
+      const at = new Date(now); at.setHours(h, m, 0, 0)
+      return { type: 'habit', entry, slot, at, done, late: false }
+    }),
+    ...g.hoy.map((e) => ({ type: 'task', entry: e, at: new Date(e.fields.dueAt), done: false, late: false })),
+  ].sort((a, b) => a.at - b.at)
+  const items = [...late, ...rest]
+  return { items, next: items.find((x) => !x.done) ?? null }
+}
+
 // Cuántos hay para hoy (el puntito de la pestaña). Los atrasados no lo prenden: con uno viejo se quedaba
 // prendido siempre y pesaba en toda la app; siguen hasta arriba de la lista de Pendientes.
 export function dueCount(entries, now = new Date()) {
