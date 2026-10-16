@@ -1706,7 +1706,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .task-row .entry-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
 .task-row.done .entry-title { color: var(--text-3); text-decoration: line-through; }
 .entry-sub.late { color: var(--danger); }
-.prio-dot { display: inline-block; width: 7px; height: 7px; margin: 0 8px 2px 0; border-radius: 50%; background: var(--danger); vertical-align: middle; }
 .done-toggle { font-size: 17px; margin-top: 24px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .field-row .field { min-width: 0; }
