@@ -57,6 +57,9 @@ describe('Hoy: lo que toca según tu rutina', () => {
     // El lunes 5 (faltan 6 días) ya empezaste esa Atalaya: sigue saliendo.
     const early = { ...at, fields: { ...at.fields, fecha: '2026-10-06' } }
     expect(todayPlan({ now: MON, meetings, entries: [early] }).find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'El domingo · 1 de 2 respondidas' })
+    // Solo pegada, sin contestar nada: no le gana a la de entre semana que sigue.
+    const pegada = { ...early, fields: { ...early.fields, parrafos: [] } }
+    expect(keys(todayPlan({ now: MON, meetings, entries: [pegada] }))).toEqual(['diario', 'entresemana'])
     const lista = { ...at, fields: { ...at.fields, parrafos: [{ num: '1', nota: 'Sí.' }, { num: '2', nota: 'No.' }] } }
     expect(todayPlan({ now: SUN, meetings, entries: [lista] }).find((x) => x.key === 'atalaya')).toMatchObject({ sub: 'Hoy · Lista para la reunión', done: true })
   })
