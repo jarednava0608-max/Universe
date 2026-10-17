@@ -1832,3 +1832,6 @@ input[type='time'].input { min-height: var(--tap); }
 .task-now-time { margin: 0 0 8px; font-size: 17px; color: var(--text-2); }
 .task-now-time.late { color: var(--danger); }
 .task-now .primary { width: 100%; }
+
+/* La Atalaya importada (EPUB): artículos para elegir. */
+.wt-list { margin-bottom: 12px; }

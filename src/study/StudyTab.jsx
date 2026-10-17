@@ -12,6 +12,8 @@ import BibleHome from '../components/BibleHome.jsx'
 import TodayPlan, { MeetingDaysRow } from './TodayPlan.jsx'
 import DailyTextsImport from '../components/DailyTextsImport.jsx'
 import { hasDailyTexts, dailyTextYears, useDailyTexts } from '../lib/dailytexts.js'
+import WatchtowerImport from '../components/WatchtowerImport.jsx'
+import { hasWatchtower, watchtowerIssues, useWatchtower } from '../lib/watchtower.js'
 import SearchAll from './SearchAll.jsx'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -34,6 +36,7 @@ const RichNote = lazy(() => import('./RichNote.jsx'))
 export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
   const [section, setSection] = useState(null) // kind abierto (o 'nodos')
   useDailyTexts()
+  useWatchtower()
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
@@ -191,6 +194,10 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           {section === 'diario' && (hasDailyTexts()
             ? <p className="hint dt-imported">Los textos de {dailyTextYears().join(' y ')} están en este teléfono: el de cada día sale solo.</p>
             : <DailyTextsImport toast={toast} />)}
+          {/* Reuniones: La Atalaya de estudio en EPUB, para no pegar el artículo cada semana. */}
+          {section === 'reunion' && (hasWatchtower()
+            ? <p className="hint dt-imported">La Atalaya de {watchtowerIssues().join(' y ')} está en este teléfono: el artículo de cada semana sale solo.</p>
+            : <WatchtowerImport toast={toast} />)}
           {KINDS[section].notes && byKind[section].length > 0 && (
             <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
           )}

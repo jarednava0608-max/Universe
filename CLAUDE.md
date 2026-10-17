@@ -33,7 +33,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 - Local primero: IndexedDB (`db.js`: `nodes`, `edges`, `entries`, `meta`), `storage.persist()`, sin conexión.
 - Supabase ("Memoria Bíblica", `jikonxuznepdyhcjyysh`): `universe_nodes`, `universe_edges`, `universe_entries` (`fields` jsonb), RLS por `user_id`. Correo + contraseña en "Cuenta y nube"; sin sesión todo queda local; al entrar se sube lo local.
 - Avisos: `universe_push` (llaves), `universe_push_log` (evita repetidos); funciones `constancia-push` y `pendientes-push` (pg_cron); entrada de ChatGPT con `pendientes-intake` (clave en `universe_intake`); SQL en `supabase/pendientes.sql`. Detalle en `docs/juegos.md` y `docs/pendientes.md`.
-- **Nunca a la nube ni al repo** (son de jw.org): Biblia del EPUB (`meta.bible`, `nwt.js`) y textos diarios (`meta.dailytexts`, `dailytexts.js`).
+- **Nunca a la nube ni al repo** (son de jw.org): Biblia del EPUB (`meta.bible`, `nwt.js`), textos diarios (`meta.dailytexts`, `dailytexts.js`) y La Atalaya de estudio (`meta.revistas`, `watchtower.js`).
 - Respaldo JSON (`buildExport`: nodos, conexiones, entradas).
 
 ## Estructura
@@ -51,6 +51,18 @@ Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
 Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'idea' | 'asignacion' | 'trivia'|'memoria'|'progreso' | 'biblia' | 'pendiente'|'habito'|'ajustes' /* Pendientes */, fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
 - Títulos de nodos únicos (sin distinguir mayúsculas ni acentos).
+
+## Revisitas (en Notas, sin apartado propio)
+Cuando el usuario dicta una revisita, se guarda como Nota (`kind: 'reflexion'`) titulada "Revisita: Nombre", con este texto; si la persona ya tiene nota, se agrega la visita bajo "Visitas" y se actualiza "Próxima visita":
+```
+## La persona
+- **Nombre:** · **Dirección:** · **Cómo es:** (edad, de dónde es, qué cree) · **Mejor día y hora:**
+## Visitas
+### 17 oct 2026 · con Compañero
+- **Qué usé:** · **Qué dijo:** · **Pregunta para la próxima:**
+## Próxima visita
+- [ ] Volver pronto · - [ ] Contestar la pregunta pendiente con un texto · - [ ] Ofrecerle el curso de la Biblia
+```
 
 ## Pegar conocimiento (mapa)
 `{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`; si el nodo existe se le añade. Respaldo (`app: "universe"`) puede reemplazar todo. Siempre vista previa y confirmación.

@@ -20,7 +20,9 @@ const HEADING = /^#{1,4}\s+(.+)$/
 const SONG = /^canci[oó]n\s+\d+/i
 const REVIEW = /qu[eé] responder[ií]as|preguntas de repaso|repaso|qu[eé] aprendimos/i
 const FOOTNOTES = /^notas?$/i
-const THEME_TEXT = /\(([^()]*\d+:\d+[^()]*)\)\.?$/
+// La cita del texto temático: "(JUAN 17:3)" o, en libros de un capítulo, "(FILEM. 9)".
+const THEME_TEXT = /\(([^()]*\d+(?::\d+)?[^()]*)\)\.?$/
+const THEME_CAPS = /\((?:\d\s)?[A-ZÁÉÍÓÚÑ]{2,}\.?\s\d+(?::\d+)?[^()a-z]*\)\.?$/
 
 // Números de una pregunta: "4, 5" → [4, 5]; "6-8" → [6, 7, 8].
 export function questionNums(s) {
@@ -100,7 +102,8 @@ export function parseArticle(text) {
       continue
     }
     if (section === 'intro') {
-      if (!out.tema && /[“"«]/.test(line) && THEME_TEXT.test(line)) out.tema = line
+      // Con comillas, o sin ellas si la cita va en mayúsculas como en la revista ("… (LUC. 1:74).").
+      if (!out.tema && THEME_TEXT.test(line) && (/[“"«]/.test(line) || THEME_CAPS.test(line))) out.tema = line
       continue
     }
     para.push(line)
