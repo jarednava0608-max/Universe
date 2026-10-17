@@ -52,6 +52,18 @@ Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'idea
 ```
 - Títulos de nodos únicos (sin distinguir mayúsculas ni acentos).
 
+## Revisitas (en Notas, sin apartado propio)
+Cuando el usuario dicta una revisita, se guarda como Nota (`kind: 'reflexion'`) titulada "Revisita: Nombre", con este texto; si la persona ya tiene nota, se agrega la visita bajo "Visitas" y se actualiza "Próxima visita":
+```
+## La persona
+- **Nombre:** · **Dirección:** · **Cómo es:** (edad, de dónde es, qué cree) · **Mejor día y hora:**
+## Visitas
+### 17 oct 2026 · con Compañero
+- **Qué usé:** · **Qué dijo:** · **Pregunta para la próxima:**
+## Próxima visita
+- [ ] Volver pronto · - [ ] Contestar la pregunta pendiente con un texto · - [ ] Ofrecerle el curso de la Biblia
+```
+
 ## Pegar conocimiento (mapa)
 `{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`; si el nodo existe se le añade. Respaldo (`app: "universe"`) puede reemplazar todo. Siempre vista previa y confirmación.
 
