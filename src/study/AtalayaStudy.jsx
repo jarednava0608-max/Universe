@@ -11,22 +11,29 @@ import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { isStarred, withStar } from './midweek.js'
 import { canSpeak, useSpeech } from '../lib/speech.js'
+import { hasWatchtower, useWatchtower, watchtowerArticles, watchtowerFor } from '../lib/watchtower.js'
+import WatchtowerImport from '../components/WatchtowerImport.jsx'
 
 // La Atalaya por pasos, como recomienda jw.org para prepararse: primero una idea general
 // (título, subtítulos y preguntas de repaso), luego cada párrafo buscando la respuesta y
 // subrayando solo palabras clave, y al final el repaso. Se guarda sola y al volver
 // sigue en el paso y la pregunta donde te quedaste.
 export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting = false, entry, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToForm }) {
-  const [fields, setFields] = useState(() => structuredClone(entry.fields))
+  // Con La Atalaya importada (EPUB), el artículo de la semana de esa fecha se pone solo.
+  const [fields, setFields] = useState(() => {
+    const f = structuredClone(entry.fields)
+    const found = !String(f.articulo ?? '').trim() && watchtowerFor(f.fecha)
+    return found ? { ...f, articulo: found.texto, titulo: String(f.titulo ?? '').trim() || found.titulo } : f
+  })
   const article = useMemo(() => parseArticle(fields.articulo), [fields.articulo])
   const bloques = article.bloques
   const [step, setStep] = useState(() => {
-    if (!String(entry.fields.articulo ?? '').trim()) return 'articulo'
+    if (!String(fields.articulo ?? '').trim()) return 'articulo'
     if (entry.fields.paso && STEPS.some((s) => s.key === entry.fields.paso)) return entry.fields.paso
     return (entry.fields.parrafos ?? []).some((p) => p.nota?.trim()) ? 'parrafos' : 'vistazo'
   })
   const [idx, setIdx] = useState(() => {
-    const b = parseArticle(entry.fields.articulo).bloques
+    const b = parseArticle(fields.articulo).bloques
     const i = Number(entry.fields.bloque)
     return Number.isInteger(i) && i >= 0 && i < b.length ? i : firstUnanswered(b, entry.fields)
   })
@@ -103,6 +110,16 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
     onClose()
   }
 
+  // Si cambias la fecha sin artículo, se pone el de esa semana (si la revista está en el teléfono).
+  useWatchtower()
+  const weekArticle = watchtowerFor(fields.fecha)
+  useEffect(() => {
+    if (!String(fields.articulo ?? '').trim() && weekArticle) takeArticle(weekArticle)
+  }, [fields.fecha, weekArticle]) // eslint-disable-line react-hooks/exhaustive-deps
+  function takeArticle(a) {
+    set({ articulo: a.texto, ...(String(fields.titulo ?? '').trim() ? {} : { titulo: a.titulo }) })
+  }
+
   // Al pegar el artículo, si no hay título se toma el primer renglón que parezca título.
   function setArticle(v) {
     const patch = { articulo: v }
@@ -164,6 +181,25 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
                 go('vistazo')
               }}>Pegar el artículo copiado</button>
             )}
+            {!String(fields.articulo ?? '').trim() && (hasWatchtower() ? (
+              // La revista ya está en el teléfono pero esta fecha no es de sus semanas: se elige el artículo.
+              <div className="sfield">
+                <span className="sfield-label">O elige un artículo de la revista</span>
+                <ul className="entry-list wt-list">
+                  {watchtowerArticles().map((a) => (
+                    <li key={a.num}>
+                      <button type="button" className="entry-row meeting" onClick={() => { takeArticle(a); go('vistazo') }}>
+                        <span className="entry-main">
+                          <span className="entry-title">{a.titulo}</span>
+                          <span className="entry-sub">Artículo {a.num}{a.semana ? ` · semana del ${formatDate(a.semana)}` : ''}</span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <WatchtowerImport toast={toast} compact />
+              </div>
+            ) : <WatchtowerImport toast={toast} />)}
             <div className="sfield">
               <div className="seg2">
                 <button type="button" className="on">La Atalaya</button>
