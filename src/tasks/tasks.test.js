@@ -61,6 +61,9 @@ describe('pendientes', () => {
     expect(next.id).not.toBe(weekly.id)
     const monthly = nextOccurrence(makeTask({ repeat: 'monthly', dueAt: at(2026, 10, 18, 9).toISOString() }), now)
     expect(new Date(monthly.fields.dueAt).getTime()).toBe(at(2026, 11, 18, 9).getTime())
+    const fin = makeTask({ repeat: 'monthly', dueAt: at(2026, 1, 31, 9).toISOString() })
+    expect(new Date(nextOccurrence(fin, at(2026, 1, 31, 10)).fields.dueAt).getTime()).toBe(at(2026, 2, 28, 9).getTime())
+    expect(new Date(nextOccurrence(fin, at(2026, 3, 1)).fields.dueAt).getTime()).toBe(at(2026, 3, 31, 9).getTime())
     expect(nextOccurrence(makeTask({ repeat: 'none', dueAt: at(2026, 10, 18).toISOString() }), now)).toBeNull()
   })
 

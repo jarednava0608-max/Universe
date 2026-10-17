@@ -77,7 +77,7 @@ export function todayPlan({ entries = [], meetings = null, leidos = {}, plan = n
     const { iso: date, days } = nextDay(meetings.fin, now)
     const e = meetingEntry(entries, false, date)
     const progress = e && String(e.fields.articulo ?? '').trim() ? answeredCount(e.fields) : null
-    if ((semDays == null ? days <= ATALAYA_FROM : nextIsFin) || (e && progress && progress.done < progress.total)) {
+    if ((semDays == null ? days <= ATALAYA_FROM : nextIsFin) || (e && progress?.done > 0 && progress.done < progress.total)) {
       const ready = !!progress?.total && progress.done === progress.total
       const today = !ready && progress?.done > 0 && touchedToday(e, day)
       // El día de la reunión, con algo contestado: ya no se pide prepararla; Hoy ofrece tus respuestas.

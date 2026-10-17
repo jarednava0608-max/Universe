@@ -174,10 +174,16 @@ export function nextOccurrence(entry, now = new Date()) {
   const f = entry.fields
   if (!f.dueAt || !f.repeat || f.repeat === 'none') return null
   const d = new Date(f.dueAt)
+  const dom = d.getDate()
   const step = () => {
     if (f.repeat === 'daily') d.setDate(d.getDate() + 1)
     else if (f.repeat === 'weekly') d.setDate(d.getDate() + 7)
-    else if (f.repeat === 'monthly') d.setMonth(d.getMonth() + 1)
+    else if (f.repeat === 'monthly') {
+      // El 31 en un mes más corto queda en su último día (no se corre al siguiente).
+      d.setDate(1)
+      d.setMonth(d.getMonth() + 1)
+      d.setDate(Math.min(dom, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()))
+    }
     else return false
     return true
   }
