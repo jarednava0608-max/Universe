@@ -107,19 +107,22 @@ export function parseWatchtower(pages, opf = '') {
   const ident = clean((String(opf).match(/<dc:identifier[^>]*>([^<]*)</) ?? [])[1] ?? '')
   const issue = issueDate(title, ident)
   // Cada página como renglones de texto; un artículo de estudio puede venir en varias páginas (-split).
+  const isQuestion = (l) => /^\d+(?:\s*(?:,|y|-|–)\s*\d+)*\.\s+\S/.test(l)
   const docs = pages.map(toLines)
   const articulos = []
-  for (const lines of docs) {
+  pages.forEach((page, i) => {
+    const lines = docs[i]
     const head = lines.slice(0, 6).map((l) => l.replace(/^#+\s*/, ''))
-    const m = head.map((l) => l.match(STUDY)).find(Boolean)
-    const isQuestion = (l) => /^\d+(?:\s*(?:,|y|-|–)\s*\d+)*\.\s+\S/.test(l)
-    if (m && lines.some(isQuestion)) articulos.push({ num: Number(m[1]), lines })
-    else if (articulos.length && !lines.some((l) => STUDY.test(l)) && !articulos.at(-1).done) {
-      // Continuación del artículo anterior (el EPUB parte los archivos largos), hasta lo que no es del artículo.
-      if (lines.some(isQuestion) || /^\d+\s/.test(lines[0] ?? '') || /responder[ií]as/i.test(lines.join(' '))) articulos.at(-1).lines.push(...lines)
-      else articulos.at(-1).done = true
-    } else if (articulos.length) articulos.at(-1).done = true
-  }
+    const label = head.map((l) => l.match(STUDY)).find(Boolean)
+    const prev = articulos.at(-1)
+    if (lines.some(isQuestion) && (label || !prev || prev.done || head.some((l) => weekIn(l)))) {
+      // Arriba de cada artículo va su semana ("5-11 DE OCTUBRE DE 2026"); antes decía "Artículo de estudio N".
+      const own = head.map((l) => weekIn(l, issue && addDays(issue, 60))).find(Boolean) ?? null
+      articulos.push({ num: label ? Number(label[1]) : (prev?.num ?? 0) + 1, lines, own, titulo: clean((String(page).match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) ?? [])[1] ?? '') })
+    } else if (prev && !prev.done && !lines.some((l) => STUDY.test(l)) && (lines.some(isQuestion) || /^\d+\s/.test(lines[0] ?? '') || /responder[ií]as/i.test(lines.join(' ')))) {
+      prev.lines.push(...lines) // continuación del artículo anterior (el EPUB parte los archivos largos)
+    } else if (prev) prev.done = true
+  })
   if (!articulos.length) return null
 
   // Semana de cada artículo: la del índice (o del propio artículo) junto a "Artículo de estudio N".
@@ -130,15 +133,16 @@ export function parseWatchtower(pages, opf = '') {
   const after = side('after')
   const before = side('before')
   const count = (w) => Object.values(w).filter(Boolean).length
-  const weeks = count(before) > count(after) ? before : after
+  const fromToc = count(before) > count(after) ? before : after
+  const weeks = Object.fromEntries(articulos.map((a) => [a.num, a.own ?? fromToc[a.num]]))
   // Si alguno no la trae, se calcula de otro: un artículo por semana, en orden.
   const known = articulos.find((a) => weeks[a.num])
   const out = articulos.map((a) => {
     const semana = weeks[a.num] ?? (known ? addDays(weeks[known.num], 7 * (a.num - known.num)) : null)
     const texto = a.lines.join('\n\n').replace(/\n{3,}/g, '\n\n').trim()
-    return { num: a.num, titulo: articleTitle(a.lines), semana, texto }
+    return { num: a.num, titulo: a.titulo || articleTitle(a.lines), semana, texto }
   })
-  return { key: ident || title || out.map((a) => a.num).join('-'), titulo: issueName(title, issue), articulos: out }
+  return { key: title || ident || out.map((a) => a.num).join('-'), titulo: issueName(title, issue), articulos: out }
 }
 
 function weekOf(all, num, ref, side) {
@@ -150,12 +154,21 @@ function weekOf(all, num, ref, side) {
       : all.slice(Math.max(0, m.index - 400), m.index).split(STUDY).at(-1)
     const found = [...fold(part).replace(/setiembre/g, 'septiembre').matchAll(new RegExp(WEEK.source, 'g'))].filter((w) => MONTHS.includes(w[4]))
     const w = side === 'after' ? found[0] : found.at(-1)
-    if (!w) continue
-    const semana = `${w[1]}${w[2] ? ` de ${w[2]}` : ''}-${w[3]} de ${w[4]}`
-    const monday = programMonday(semana, w[5] ? `${w[5]}-${String(MONTHS.indexOf(w[4]) + 1).padStart(2, '0')}-15` : ref)
+    const monday = w && mondayOf(w, ref)
     if (monday) return monday
   }
   return null
+}
+
+// La semana escrita en un renglón ("26 DE OCTUBRE-1 DE NOVIEMBRE DE 2026") → su lunes, o null.
+function weekIn(line, ref) {
+  const w = fold(line).replace(/setiembre/g, 'septiembre').match(WEEK)
+  return w && MONTHS.includes(w[4]) ? mondayOf(w, ref) : null
+}
+
+function mondayOf(w, ref) {
+  const semana = `${w[1]}${w[2] ? ` de ${w[2]}` : ''}-${w[3]} de ${w[4]}`
+  return programMonday(semana, w[5] ? `${w[5]}-${String(MONTHS.indexOf(w[4]) + 1).padStart(2, '0')}-15` : ref)
 }
 
 // Fecha (día 1) del número, del título ("La Atalaya … agosto de 2026") o del símbolo ("w_S_202608").
@@ -182,9 +195,16 @@ function articleTitle(lines) {
 export function toLines(xhtml) {
   let s = String(xhtml)
   s = (s.match(/<body\b[^>]*>([\s\S]*)<\/body>/) ?? [])[1] ?? s
+  // Lo que va después del artículo (notas al pie y el texto de cada cita) no se lee.
+  s = s.split(/<div\b[^>]*class="(?:groupFootnote|groupExt)\b/)[0]
   s = s
-    .replace(/<(aside|nav|script|style)\b[\s\S]*?<\/\1>/g, '')
-    .replace(/<(sup|a)\b[^>]*epub:type="noteref"[^>]*>[\s\S]*?<\/\1>/g, '')
+    .replace(/<(nav|script|style)\b[\s\S]*?<\/\1>/g, '')
+    .replace(/<aside\b[^>]*epub:type="footnote"[\s\S]*?<\/aside>/g, '')
+    .replace(/<a\b[^>]*href="#footnote[^"]*"[^>]*>[\s\S]*?<\/a>/g, '') // el asterisco de la nota
+    .replace(/<div\b[^>]*class="gen-field\b[^>]*>[\s\S]*?<\/div>/g, '') // el cuadro "Respuesta" de JW Library
+    .replace(/<span\b[^>]*class="pageNum\b[^>]*>[\s\S]*?<\/span>/g, '')
+    .replace(/<span\b[^>]*class="parNum"[^>]*data-pnum="(\d+)"[^>]*>[\s\S]*?<\/span>/g, '$1 ') // "1 Párrafo…"
+    .replace(/<div\b[^>]*class="blockTeach\b[^>]*>[\s\S]*?<\/aside>/g, reviewBox)
     .replace(/<img\b[^>]*>/g, '')
   const out = []
   let h1 = false
@@ -203,6 +223,22 @@ export function toLines(xhtml) {
     out.push(t)
   }
   return out
+}
+
+// El cuadro de repaso del final: su título varía ("¿QUÉ RESPONDERÍAS?", "BASÁNDOTE EN LUCAS 1:68-79,
+// ¿QUÉ CONTESTARÍAS?", "¿QUÉ APRENDEMOS DE LOS SIGUIENTES PERSONAJES BÍBLICOS?"); siempre queda como
+// "## ¿Qué responderías?" para `parseArticle`. Si sus renglones no son preguntas ("Onésimo"), llevan el título.
+function reviewBox(box) {
+  const title = clean((box.match(/class="boxTtl\b[^>]*>([\s\S]*?)<\/div>\s*<\/div>/) ?? [])[1] ?? '')
+  const items = [...box.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((m) => clean(m[1])).filter(Boolean)
+  return '<h2>¿Qué responderías?</h2>' + items.map((t) => `<li>${/[¿?]/.test(t) || !title ? t : `${sentence(title)} ${t}`}</li>`).join('')
+}
+
+// "¿QUÉ APRENDEMOS DE JEHOVÁ?" → "¿Qué aprendemos de Jehová?"
+const NAMES = /\b(jehová|jesús|jesucristo|dios|cristo|biblia|satanás|reino)\b/g
+function sentence(t) {
+  if (t !== t.toUpperCase()) return t
+  return t.toLowerCase().replace(/^([¿¡"“]*)(\p{L})/u, (_, a, b) => a + b.toUpperCase()).replace(NAMES, (w) => w[0].toUpperCase() + w.slice(1))
 }
 
 function clean(html) {
