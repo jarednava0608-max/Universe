@@ -1,52 +1,48 @@
 # Universe — todo mi estudio bíblico en un solo lugar
 
-App personal para el estudio bíblico de un Testigo de Jehová. El usuario la usa **solo desde iPhone (Safari / PWA en la pantalla de inicio)** y se publica en **Vercel** (proyecto `universe`, se despliega solo con cada push). Toda la interfaz está en español.
+App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari / PWA de inicio), en español. **Vercel** (proyecto `universe`) despliega solo con cada push.
 
-Tiene **3 pestañas abajo**: **Hoy**, **Biblioteca** y **Pendientes** (antes eran 4, Mapa · Estudio · Pendientes · Juegos, y el usuario se sentía abrumado al grado de no querer entrar; pidió "un gran cambio"). **La app abre en Hoy**: una sola pantalla tranquila con la fecha, el versículo de hoy y un botón con lo que sigue; sin botones arriba. Hoy pide **solo lo esencial y se puede terminar** (texto diario, la reunión que sigue, tu asignación y la lectura si tiene meta; nada de juegos, contadores ni abrir sola la siguiente cosa). No agregarle más pasos ni avisos que pidan cosas. **Biblioteca** (id interno `estudio`) muestra solo 4 cuadros grandes sin números (Leer la Biblia, Texto diario, Reuniones, Juegos; el usuario se abrumaba con 10 renglones con cifras) y lo demás bajo "Más". Tiene todo lo demás: Leer la Biblia, los apartados de Estudio, y el **Mapa** y los **Juegos** (se abren desde ahí; mientras están abiertos se marca Biblioteca abajo). **Pendientes** es la app Centro (tareas con avisos y hábitos) metida aquí para tener todo en una sola app (decisiones en `DECISIONES.md`).
+**3 pestañas** (más lo abrumaban; ver `DECISIONES.md`):
+- **Hoy** (abre aquí): fecha, versículo y un botón con lo que sigue; sin botones arriba. Solo lo esencial y terminable (texto diario, reunión que sigue, asignación, lectura si tiene meta). Sin juegos, contadores, avisos que pidan cosas ni abrir sola lo siguiente. No agregar pasos.
+- **Biblioteca** (id `estudio`): 4 cuadros grandes sin números (Leer la Biblia, Texto diario, Reuniones, Juegos); lo demás en "Más" (apartados de Estudio, **Mapa**). Con Mapa o Juegos abiertos se marca Biblioteca.
+- **Pendientes**: la app Centro (tareas con avisos, hábitos).
 
 ## Regla de oro
-- **Nada de servicios de paga ni IA dentro de la app.** El análisis lo hace el usuario en su chat con Claude y pega el resultado (JSON) en la app. Todo lo "inteligente" de la app es código local sin costo.
-- Supabase en plan gratis es el único servicio externo.
+**Nada de servicios de paga ni IA en la app.** El usuario analiza en su chat con Claude y pega JSON; lo "inteligente" es código local. Único servicio externo: Supabase gratis.
 
-## Principios de diseño (no romper)
-- **Estudio, Pendientes y Juegos** usan `PageScroll` (`src/components/PageScroll.jsx`): al bajar aparece una barra de vidrio con el título chico para que nada se encime con los botones de arriba.
-- **Movimiento como en el iPhone** (`src/lib/navGesture.js`): toda pantalla con "‹ Atrás" en su barra entra desde la derecha, sale hacia la derecha al tocar "Atrás" y se regresa deslizando desde la orilla izquierda; funciona solo con el botón `.bar-btn.back` de la barra (no hay que tocar cada pantalla). Un "Atrás" que no cierra la pantalla lleva `data-inner`. Las hojas (pegar, cuenta, elegir) suben desde abajo. En las listas de Estudio, "‹ Estudio" y el + van en la barra de arriba (`PageScroll` con `back` y `action`).
-- **Primero iPhone**: respetar notch y barra inferior (`env(safe-area-inset-*)`), áreas táctiles ≥ 44px, inputs con `font-size: 16px` (evita el zoom de iOS), gestos fluidos. La barra de pestañas ocupa `--tabbar`; lo flotante va por encima.
-- Diseño **original negro** (fondo `#09090b`, vidrio esmerilado en barras, tipografía del sistema, botón principal blanco, tarjetas con borde sutil) con versión **blanca** (fondo `#fafafa`, botón principal negro). Se cambia en el menú del mapa (Apariencia: Negro / Blanco) o con la luna/sol arriba a la derecha en Estudio y Juegos; se guarda en el teléfono (`src/lib/theme.js`, `data-theme` en `<html>`, negro por defecto). Todos los colores son variables en `:root` (negro) y `:root[data-theme='light']` (blanco) de `src/styles.css`; el mapa (canvas) lee las variables `--graph-*`. Jehová sigue siendo el único nodo dorado.
-- **Estilo "Como JW"** (el usuario lo pidió para que todo se parezca a JW Library; viene prendido): `data-style='jw'` en `<html>` (`universe-style` en este teléfono, `useTheme` en `src/lib/theme.js` y el script de `index.html`), funciona con Negro y Blanco. Fondo negro puro o blanco, barras grises sólidas, acento lavanda (`--accent`, morado en blanco) en "Atrás", la pestaña activa (con su fondo redondeado, como en JW Library), los pasos y el botón principal; citas y números de versículo en azul (`--link`, `--verse-num`); letra de libro (`--font-book`) en todo lo que se lee (La Atalaya, entre semana, Mi Biblia, el versículo del Texto diario). Detalles como en JW Library: Estudio y Juegos con barra gris fija y el título al centro (`page-bar` siempre visible; el título grande se oculta) y la luna y la nube como íconos lavanda en esa barra; los pasos (Programa / Partes / Listo, y los de La Atalaya) como pestañas en MAYÚSCULAS con raya lavanda; esquinas casi rectas; "Hoy" con la fecha en blanco (o negro) y solo el botón con lo que sigue, sin lista de pasos ni momentos del día (el usuario la sentía muy llena: "solo quiero meterme y hacer lo que tengo que hacer"); las etiquetas de las respuestas ("Mi respuesta", "Para meditar") en letra normal, sin MAYÚSCULAS; los títulos de sección grandes en negritas. La de entre semana como la Guía de actividades: "5-11 DE OCTUBRE" grande en gris (`mw-week`), la lectura en azul y en mayúsculas, una línea, cada sección en su color con un cuadro chico, el título de cada parte en blanco (o negro) con solo el número en el color de su sección, abajo un solo renglón gris "10 min · 7:45 a 7:55 · nombre" (`mw-info`), la pregunta en letra normal sin la etiqueta "Pregunta" (solo "Para meditar" o "Pregunta 3" cuando hace falta), los círculos de las partes sin contorno de color y las citas en azul dentro del texto. Regla: el color se usa poco (lavanda para lo que se toca, el de la sección solo en su encabezado y el número), y las negritas solo en títulos. En las publicaciones la letra es normal; solo la Biblia lleva letra de libro. Pulido general en este estilo: en la lista de un apartado "‹ Estudio" y el + van en el mismo renglón (el título ya está en la barra); todas las tarjetas (también las de Juegos, Memoria Bíblica y resultados) con esquinas de 6px y fondo liso; íconos de apartados y juegos en lavanda sobre fondo lavanda tenue; al tocar una tarjeta se aclara (o se oscurece en blanco); campos con borde lavanda al escribir; en las tarjetas de juegos el avance ("125 preguntas") va debajo de la descripción para no aplastar el título. Se cambia en el menú del mapa: Apariencia → Estilo: Como JW / Original. No se copian el logo, los íconos ni el nombre de JW Library. Jehová sigue siendo el único nodo dorado.
-- **Medidas fijas (no inventar otras):** letra solo en la escala del iPhone: 11, 13, 15, 17, 20, 22, 28 y 34 px (más grandes solo para números de portada); espacios (margin, padding, gap) en múltiplos de 4 px (8, 12, 16, 24...). En el estilo Como JW todas las cajas (tarjetas, botones, etiquetas, avisos) llevan las mismas esquinas casi rectas (`var(--r)`) y solo lo que es círculo sigue redondo; las tarjetas se distinguen por su fondo, sin borde, y no se mete una caja dentro de otra ("Hoy" va directo sobre el fondo y su botón "Empieza" es la única caja). Juegos usa la misma paleta (lavanda en vez de naranja, dorado y verde).
-- **Contraste y lectura (medido, no a ojo):** toda letra con contraste ≥ 4.5:1 sobre su fondo (WCAG AA); el gris más tenue (`--text-3`) es #8e8e93 en negro y #6a6a6f en blanco (Como JW), nunca más claro (también sobre tarjetas y barras: las pestañas de abajo van en `--text-2`), y los círculos para palomear con borde que se ve (3:1). Las etiquetas ("Mi respuesta") en `--text-2`, más fuertes que el texto de ejemplo (`--text-3`). Lo que se lee largo (artículos, Biblia, versículos) va en `--text-body`, no en blanco o negro puro (deslumbra menos); las palabras marcadas sí en `--title`. Todo lo que se toca mide ≥ 44 px aunque se vea más chico (márgenes negativos o un `::after` invisible para que no se mueva nada; las pestañas de abajo ocupan todo el alto y solo la pastilla lavanda es chica). En Como JW el azul (`--link`) es solo para citas bíblicas; los demás enlaces y acciones van en lavanda. En los juegos, después de contestar, "Siguiente" queda siempre en el mismo lugar abajo. Con "Reducir movimiento" del iPhone nada se sacude ni se desliza solo (las pantallas aparecen con un fundido) y el deslizar desde la orilla sigue funcionando. Párrafos y títulos con `text-wrap-style` (pretty / balance) para no dejar una palabra sola en el último renglón.
-- **Siempre el enlace a la página en internet**: donde se lee algo de jw.org (texto diario, reuniones, textos), un enlace visible a su página en wol.jw.org, no escondido en un menú. En la app de la pantalla de inicio, los enlaces a internet salen de la app y se abren en Safari (`x-safari-https://`, iOS 17+; `src/lib/external.js`), no en una hoja encima; las citas bíblicas siguen abriendo su hoja dentro de la app.
-- **Simple antes que ingenioso.** Nada de funciones que el usuario no pidió.
-- **Nunca emojis**: ni en la app ni en el contenido que se le propone (definiciones, nodos, notas).
+## Principios (no romper)
+- **Estilo**: todo en `docs/estilo.md` (Negro/Blanco, "Como JW" por defecto). Colores solo como variables de `src/styles.css`; Jehová, único nodo dorado.
+- **iPhone**: `env(safe-area-inset-*)`, toques ≥ 44px, inputs 16px. Pestañas ocupan `--tabbar`; lo flotante va encima.
+- **Medidas**: letra solo 11/13/15/17/20/22/28/34 px (más, solo números de portada); espacios en múltiplos de 4 px.
+- **Contraste**: letra ≥ 4.5:1; `--text-3` nunca más claro que #8e8e93 / #6a6a6f; texto largo en `--text-body`.
+- **`PageScroll`** en Estudio, Pendientes y Juegos (barra con título chico al bajar). Listas de Estudio: "‹ Estudio" y + en la barra (`back`, `action`).
+- **`navGesture.js`**: toda pantalla con `.bar-btn.back` entra/sale por la derecha y se cierra deslizando desde la orilla (no tocar cada pantalla). "Atrás" que no cierra: `data-inner`. Hojas (pegar, cuenta, elegir) suben desde abajo.
+- **Enlace visible a wol.jw.org** donde se lee algo de jw.org. Enlaces externos salen a Safari (`x-safari-https://`, `src/lib/external.js`); citas bíblicas abren hoja dentro.
+- **Simple**; nada que no se pidió. **Nunca emojis** (app ni contenido propuesto).
 
-## Detalle por área (leer solo lo que la tarea necesite)
-El detalle completo de cada parte vive en `docs/`. Antes de tocar una de estas áreas, lee su archivo:
-- `docs/mapa.md`: pestaña Mapa (galaxias, grafo, notas del mapa, anillos, menú, Por escarbar).
-- `docs/estudio.md`: pestaña Estudio (Hoy, Texto diario, Reuniones, Conceptos, Notas, Ideas, Asignaciones, Leer la Biblia, Buscar en todo).
-- `docs/juegos.md`: pestaña Juegos (Memoria Bíblica, Trivia, Memorizar, Con lo que estudio, Libros, Reto del día, Repasar hoy, Logros, repaso inteligente).
-- `docs/biblia.md`: textos bíblicos tocables, Mi Biblia, lector de capítulo y Publicaciones.
-- `docs/paquetes.md`: paquetes (`SEEDS`) que cambian el mapa; la regla del mapa.
-- `docs/pendientes.md`: pestaña Pendientes (pendientes, hábitos, avisos, entrada desde ChatGPT y Claude, copia desde Centro).
+## Detalle por área (leer solo lo necesario)
+- `docs/estilo.md`: leer antes de tocar estilos, CSS o interfaz.
+- `docs/mapa.md`: Mapa, menú, Por escarbar.
+- `docs/estudio.md`: Hoy y apartados de Estudio, Buscar en todo.
+- `docs/juegos.md`: Juegos, repaso, avisos de Constancia.
+- `docs/biblia.md`: citas tocables, Mi Biblia, lector, Publicaciones.
+- `docs/paquetes.md`: paquetes `SEEDS`, regla del mapa.
+- `docs/pendientes.md`: Pendientes, hábitos, avisos, entrada ChatGPT/Claude.
 
 ## Guardado
-- Local primero: IndexedDB (`src/lib/db.js`, stores `nodes`, `edges`, `entries`, `meta`) con `navigator.storage.persist()`. Funciona sin conexión.
-- Nube: Supabase plan gratis (proyecto "Memoria Bíblica", `jikonxuznepdyhcjyysh`), tablas `universe_nodes`, `universe_edges` y `universe_entries` (Estudio y juegos, `fields` en jsonb), todas con RLS por `user_id`. Inicio de sesión con correo + contraseña desde "Cuenta y nube" (menú del mapa o el botón de nube arriba a la derecha en Estudio y Juegos). Mientras no haya sesión, todo se queda en el teléfono; al entrar por primera vez se sube todo lo local.
-- Avisos de Constancia: tabla `universe_push` + función `constancia-push` (`supabase/functions/`) que llama `pg_cron` cada 5 min. Detalle en `docs/juegos.md`.
-- Avisos de Pendientes: función `pendientes-push` (cron cada minuto vía `pendientes_tick()`, solo si están prendidos) con el mismo `universe_push` y las mismas llaves; `universe_push_log` evita repetidos. Pendientes desde ChatGPT: función `pendientes-intake` (clave en `universe_intake`). SQL en `supabase/pendientes.sql`; detalle en `docs/pendientes.md`.
-- Solo en el teléfono (nunca a la nube ni al repositorio, son publicaciones de jw.org): la Biblia importada del EPUB (`meta.bible`, `src/lib/nwt.js`) y los textos diarios del año (`meta.dailytexts`, `src/lib/dailytexts.js`, del EPUB de "Examinemos las Escrituras todos los días").
-- Respaldo: exportar / importar JSON (`buildExport` incluye nodos, conexiones y entradas de Estudio).
+- Local primero: IndexedDB (`db.js`: `nodes`, `edges`, `entries`, `meta`), `storage.persist()`, sin conexión.
+- Supabase ("Memoria Bíblica", `jikonxuznepdyhcjyysh`): `universe_nodes`, `universe_edges`, `universe_entries` (`fields` jsonb), RLS por `user_id`. Correo + contraseña en "Cuenta y nube"; sin sesión todo queda local; al entrar se sube lo local.
+- Avisos: `universe_push` (llaves), `universe_push_log` (evita repetidos); funciones `constancia-push` y `pendientes-push` (pg_cron); entrada de ChatGPT con `pendientes-intake` (clave en `universe_intake`); SQL en `supabase/pendientes.sql`. Detalle en `docs/juegos.md` y `docs/pendientes.md`.
+- **Nunca a la nube ni al repo** (son de jw.org): Biblia del EPUB (`meta.bible`, `nwt.js`) y textos diarios (`meta.dailytexts`, `dailytexts.js`).
+- Respaldo JSON (`buildExport`: nodos, conexiones, entradas).
 
 ## Estructura
-- `src/App.jsx`: pestañas, notas abiertas del mapa, hojas y avisos.
-- `src/components/`: `TitleArea` (título que crece en varios renglones, sin saltos; Notas, nodos, editor del mapa y Proponer al mapa), `TabBar`, `Icon`, `Graph` (react-force-graph-2d en canvas), `NoteView`, `NodeEditor`, `NodePicker`, `PasteSheet`, `Search`, `Menu`, `AccountSheet`, `DigList` (Por escarbar).
-- `src/study/`: `kinds.js` (definición de apartados, "Pegar de Claude", "Proponer al mapa", detector de citas) y `StudyTab.jsx`.
-- `src/tasks/`: `tasks.js` (pendientes y hábitos: grupos por fecha, avisos, hábitos de hoy, repetir) y `TasksTab.jsx`.
-- `src/games/`: `registry.js` (lista de juegos), `GamesTab.jsx`, `logic.js`, `ui.jsx`, `Trivia.jsx`, `Memorize.jsx`, `StudyGames.jsx`, `Books.jsx`, `Review.jsx`, `MemoriaBiblica.jsx` + `memoria/` (personajes y lógica).
-- `src/lib/model.js`: modelo de nodos y conexiones. `src/lib/store.js`: hook `useStore` (nodos, conexiones, entradas). `src/lib/markdown.js`: render y `[[enlaces]]`. `src/lib/support.js`: en qué se apoya cada idea (niveles, camino hasta un texto, quién la usa, conexiones). `src/lib/importer.js`: "Pegar conocimiento" (`planImport` con vista previa) y respaldos.
-- `src/lib/db.js`: cada cambio local se anota en el outbox (`meta.outbox`) en la misma transacción; los cambios de la nube usan `commit(change, { track: false })`.
-- `src/lib/sync.js`: ciclo bajar (`server_updated_at` > última vez) → subir outbox; gana el `updatedAt` más reciente; borrados como lápidas (`deleted = true`). `src/lib/useSync.js`: sesión y disparadores. `src/lib/supabase.js`: cliente (clave publicable; la seguridad la da RLS).
-- `public/sw.js`: service worker (offline). Si cambian archivos sin hash en `public/`, subir `CACHE`.
+- `src/App.jsx`: pestañas, hojas, avisos. `src/study/` (`kinds.js`: apartados, Pegar de Claude, Proponer al mapa, citas), `src/tasks/`, `src/games/` (`registry.js`, un `.jsx` por juego, `memoria/`).
+- `src/components/`: `TitleArea` (título multirrenglón), `Graph` (react-force-graph-2d), `PageScroll`, `TabBar`, hojas y editores.
+- `src/lib/`: `model.js`, `store.js` (`useStore`), `markdown.js` (`[[enlaces]]`), `support.js`, `importer.js` (`planImport`), `theme.js`.
+- `db.js`: cada cambio local va al outbox (`meta.outbox`) en la misma transacción; los de la nube con `commit(change, { track: false })`.
+- `sync.js`: bajar (`server_updated_at` > última vez) → subir outbox; gana el `updatedAt` más reciente; borrados = lápidas (`deleted`). `useSync.js`: sesión. Clave publicable; seguridad por RLS.
+- `public/sw.js`: si cambian archivos sin hash en `public/`, subir `CACHE`.
 
 ## Modelo de datos
 ```js
@@ -54,12 +50,10 @@ Node  = { id, title, note /* markdown */, type, origin, sources, galaxy /* 'engl
 Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
 Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'idea' | 'asignacion' | 'trivia'|'memoria'|'progreso' | 'biblia' | 'pendiente'|'habito'|'ajustes' /* Pendientes */, fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
-- Los títulos de nodos son únicos (sin distinguir mayúsculas ni acentos).
+- Títulos de nodos únicos (sin distinguir mayúsculas ni acentos).
 
-## Formato de "Pegar conocimiento" (mapa)
-`{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`. Si un nodo ya existe se le añade la información. Un respaldo (`app: "universe"`) puede restaurarse reemplazando todo. Siempre hay vista previa y confirmación.
+## Pegar conocimiento (mapa)
+`{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`; si el nodo existe se le añade. Respaldo (`app: "universe"`) puede reemplazar todo. Siempre vista previa y confirmación.
 
 ## Comandos
-- `npm run dev`: servidor local (`--host` para abrirlo desde el iPhone en la misma red).
-- `npm test`: pruebas (vitest) del importador, enlaces, Estudio, Pendientes (y la lógica de sus avisos) y sincronización.
-- `npm run build`: compila a `dist/`.
+`npm run dev` (`--host` para el iPhone) · `npm test` (vitest) · `npm run build` (`dist/`).

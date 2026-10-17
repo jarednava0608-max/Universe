@@ -1,116 +1,59 @@
 # Decisiones de la fusión Centro → Universe
+10 oct 2026, rama `fusion-centro` (sin tocar `claude/zen-mendel-l8h9lw`, la de Vercel, hasta publicar).
 
-Lo que decidí mientras dormías (10 oct 2026), para que lo revises. Todo está en la rama `fusion-centro`;
-`claude/zen-mendel-l8h9lw` (la que publica Vercel) no se tocó.
+## Armado
+1. Pendientes = pestaña propia (entonces Mapa · Estudio · Pendientes · Juegos), no apartado de Estudio: a un toque, sin revolver el estudio.
+2. Pendientes y hábitos = entradas (`universe_entries`, `kind: 'pendiente'` / `'habito'`): misma sync, sesión y offline; sin tablas nuevas.
+3. Avisos por Supabase, no Render: `pendientes-push` + `pg_cron` cada minuto, llaves y registro de Constancia.
+4. ChatGPT: `pendientes-intake`, mismo formato y clave que Centro (solo se copió la huella SHA-256); cambia la URL.
+5. Claude: `select public.pendiente_nuevo('Título', '2026-10-20 18:00-06', 60);`
 
-## Cómo quedó armado
+## Diseño (qué → por qué)
+- Una lista por fecha (Hechos cerrado) → Centro usaba pestañas; un scroll lo muestra todo.
+- Categorías Universidad / Trabajo / Personal como botones (tocar otra vez quita) → eran pestañas.
+- Lupa solo con más de 8 → no ocupa espacio.
+- Tipos Tarea / Evento / Recordatorio → ChatGPT los manda.
+- Recordatorio vencido va a Hechos (solo vista) → los "faltan 3 días" se acumulaban (~30).
+- Tareas y eventos atrasados se quedan → no se sabe si se hicieron ("Devolverle su linterna a Enrique").
+- Aviso por defecto "A la hora" (Centro: 1 día antes) → uno de hoy nunca sonaba.
+- Repetir día / semana / mes → nadie lo usaba (81 pendientes), pero ChatGPT lo manda.
+- Sin fecha permitido (sin aviso) → cosas sueltas.
+- Sin emojis en títulos (copia y ChatGPT) → regla de Universe.
+- No cuenta como día de estudio → la racha es de estudio bíblico.
+- Hábitos: palomear en "Hábitos de hoy", editar en Más → Hábitos → Centro separaba hábitos y sus recordatorios.
+- Hábitos aparte de "Hoy" de Estudio → juntarlos no se pidió.
+- Sin búsqueda rápida "mañana a las 5..." (vieja, sin uso) ni PIN (Universe usa la cuenta).
 
-1. **Pendientes es una pestaña nueva** (Mapa · Estudio · **Pendientes** · Juegos), no un apartado dentro de Estudio.
-   Centro era una app aparte que abrías seguido; como pestaña queda a un toque y no revuelve el estudio.
-2. **Los pendientes y hábitos se guardan como entradas** (`universe_entries`, `kind: 'pendiente'` y `'habito'`).
-   Así usan la misma sincronización, el mismo inicio de sesión y funcionan sin conexión, igual que todo Universe.
-   No hizo falta ninguna tabla nueva para tus datos.
-3. **Los avisos los manda Supabase**, no Render: función `pendientes-push` + `pg_cron` cada minuto.
-   Usa las mismas llaves y el mismo registro de tu iPhone que los avisos de Constancia.
-4. **ChatGPT puede seguir agregando pendientes** con la función `pendientes-intake`: mismo formato y la
-   **misma clave** que Centro (copié solo su huella SHA-256, nunca vi la clave). Solo cambia la dirección.
-5. **Claude puede agregar pendientes** con una línea de SQL: `select public.pendiente_nuevo('Título', '2026-10-20 18:00-06', 60);`
+## Avisos
+- Apagados de inicio (Pendientes → Más → Avisos); apagados mientras se use Centro, si no llegan dobles.
+- Más de 60 min atrasado no se manda → al prender no llegan los viejos de golpe.
+- `universe_push_log` antes de mandar: nunca doble; hora nueva vuelve a sonar.
+- Hábitos a hora local (America/Monterrey). Tocar el aviso abre Pendientes.
+- El cron solo llama a la función con avisos prendidos (no gasta invocaciones).
 
-## Decisiones de diseño (Pendientes)
+## Supabase (reversible)
+- **Memoria Bíblica**: tablas `universe_push_log`, `universe_intake` (RLS sin políticas: solo servidor); funciones `pendientes_tick()`, `pendiente_nuevo(...)` (no desde la app); cron `pendientes-push`; funciones de borde `pendientes-push`, `pendientes-intake`. Deshacer: inicio de `supabase/pendientes.sql`.
+- **Centro**: arreglado el cron `habitos-diarios` (fallaba desde el 7 oct, ids de `tasks` atrasados, `duplicate key ... Task_pkey`; `setval` y una corrida). Esa función borra recordatorios de hábitos de más de 2 días: se fueron los acumulados desde el 4 oct (solo avisos automáticos). Fue antes de "no borres nada".
 
-| Tema | Lo que hice | Por qué |
-|---|---|---|
-| Lista | Una sola lista por fecha: Atrasados, Hoy, Mañana, Próximos 7 días, Después, Sin fecha y Hechos (cerrado) | En Centro estaba en pestañas (Hoy / Próximos / Vencidos / Hechos); en un solo scroll ves todo sin cambiar de pestaña |
-| Categorías | Botones Universidad / Trabajo / Personal arriba de la lista (tocar otra vez quita el filtro) | En Centro eran pestañas |
-| Búsqueda | Lupa junto a las categorías (aparece si tienes más de 8 pendientes) | Centro tenía buscador; así no ocupa espacio |
-| Tipos | Tarea / Evento / Recordatorio, como en Centro | ChatGPT los manda |
-| Recordatorios viejos | **Un "Recordatorio" cuya hora ya pasó se va solo a Hechos** (no se cambia el dato, solo cómo se ve) | Los avisos "faltan 3 días", "faltan 2 horas"... se quedaban en Vencidos para siempre (tenías ~30) |
-| Tareas viejas | Las tareas y eventos atrasados **sí** se quedan en Atrasados hasta que los palomees o borres | No sé si los hiciste (por ejemplo "Devolverle su linterna a Enrique") |
-| Aviso por defecto | "A la hora" (Centro usaba "1 día antes") | Un pendiente para hoy con aviso de 1 día antes nunca sonaba |
-| Repetir | Se quedó (cada día / semana / mes): al palomearlo aparece el siguiente | Estaba en Centro; ninguno de tus 81 pendientes lo usaba, pero ChatGPT lo puede mandar |
-| Sin fecha | Ahora se puede (sin aviso) | Útil para cosas sueltas; ChatGPT sigue mandando fecha siempre |
-| Emojis | Se quitan de los títulos (al copiar de Centro y al recibir de ChatGPT) | Regla de Universe: nunca emojis |
-| Racha de estudio | Palomear pendientes o hábitos **no** cuenta como día de estudio | La racha es de estudio bíblico |
-| Hábitos | Sección "Hábitos de hoy" arriba (palomear), y en "Más → Hábitos" se editan: días, hora, cada 2 semanas, texto del aviso, meta, pausa | Centro tenía hábitos + recordatorios de hábitos aparte; aquí es uno solo |
-| Hábitos y "Hoy" de Estudio | Separados por ahora | Algunos se parecen (Texto diario, Lectura de la Biblia) pero juntarlos sería otra función que no pediste |
-| Búsqueda rápida tipo "mañana a las 5..." | No se pasó | Era de una versión vieja de Centro y ya casi no se usaba |
-| PIN de Centro | No se pasó | Universe ya usa tu cuenta (correo y contraseña) |
+## Pruebas en los datos (borrables)
+- "Prueba: pendiente desde ChatGPT (puedes borrarlo)" y "Prueba de avisos de Pendientes" (sábado 12:31 pm, sin confirmar en el iPhone), en Hechos.
+- Fila `prueba_temporal_desactivada` en `universe_intake`, huella inválida (no borrada por la regla).
 
-## Decisiones de avisos
+## Copia de Centro
+- 66 pendientes y 5 hábitos (11 horarios), `centro-<id>` / `centro-habito-<id>`, verificados con MD5 en ambos lados. Centro intacto.
+- Sin los recordatorios automáticos de hábitos: aquí el hábito avisa solo.
+- Lo nuevo de Centro no pasa solo: "pasa lo nuevo de Centro" lo vuelve a correr (no duplica).
 
-- **Vienen apagados.** Se prenden en Pendientes → Más → Avisos. Mientras uses Centro, déjalos apagados
-  para que no te lleguen dobles.
-- Un aviso que se atrasó más de 60 minutos (por ejemplo si Supabase no corrió) ya no se manda,
-  para que al prender los avisos no te lleguen de golpe todos los viejos.
-- Cada aviso se anota en `universe_push_log` antes de mandarse: nunca llega dos veces.
-  Si cambias la hora de un pendiente, vuelve a sonar a la hora nueva.
-- Los hábitos suenan a su hora local (zona del iPhone, America/Monterrey).
-- Al tocar el aviso se abre la pestaña Pendientes.
-- El cron corre cada minuto pero **solo llama a la función si tienes los avisos prendidos**
-  (así no gasta invocaciones mientras tanto).
+## Constancia
+- "Apagar avisos" solo borra sus horas, ya no quita el iPhone (apagaba también Pendientes).
 
-## Lo que hice en Supabase (todo se puede deshacer)
-
-Proyecto **Memoria Bíblica** (Universe):
-- Tablas nuevas `universe_push_log` y `universe_intake` (RLS prendido y sin políticas: solo el servidor las ve).
-- Funciones nuevas `pendientes_tick()` y `pendiente_nuevo(...)` (no se pueden llamar desde la app).
-- Cron nuevo `pendientes-push` (cada minuto).
-- Funciones de borde nuevas `pendientes-push` y `pendientes-intake`.
-- Cómo deshacer todo: está al inicio de `supabase/pendientes.sql`.
-
-Proyecto **Centro**:
-- **Arreglé el cron de hábitos** (`habitos-diarios`): fallaba desde el 7 de octubre porque el contador de ids
-  de `tasks` se había quedado atrás (`duplicate key ... Task_pkey`). Lo puse al día con `setval` y lo corrí
-  una vez: creó los recordatorios de hábitos de hoy y mañana. **Ojo:** esa función, cada vez que corre,
-  borra los recordatorios de hábitos de hace más de 2 días (así está hecha desde antes); al correrla se
-  borraron los que se habían acumulado desde el 4 de octubre. Eran solo los avisos automáticos de hábitos,
-  no tareas tuyas. Esto lo hice antes de tu mensaje de no borrar nada.
-
-## Pruebas que dejé en tus datos (las puedes borrar)
-
-- "Prueba: pendiente desde ChatGPT (puedes borrarlo)": prueba de la entrada desde ChatGPT. Está en Hechos.
-- "Prueba de avisos de Pendientes": prueba de los avisos. Si te llegó una notificación así a las 12:31 pm del
-  sábado, fue esta (Supabase la mandó sin error; no pude ver tu iPhone para confirmarlo). Está en Hechos.
-- En `universe_intake` quedó una fila `prueba_temporal_desactivada` con una huella inválida (no sirve para nada).
-  No la borré porque pediste no borrar nada; se puede borrar sin problema.
-
-## La copia de Centro
-
-- Copié **66 pendientes y 5 hábitos** (con sus 11 horarios) a Universe, con ids fijos `centro-<id>` y
-  `centro-habito-<id>`. Revisé que títulos, fechas, notas y palomitas quedaran idénticos (misma huella MD5
-  de los dos lados). Centro **no se tocó**: sigue funcionando igual.
-- No copié los recordatorios automáticos de hábitos de Centro (los que creaba el cron cada día): en Universe
-  el hábito mismo avisa a su hora.
-- Ya están en tu cuenta y le llegan a la versión actual de Universe en tu iPhone, pero **no se ven** ahí
-  (esa versión no tiene la pestaña). No estorban.
-- Si sigues usando Centro antes de pasarte, lo nuevo de Centro no aparece solo en Universe: pídeme
-  "pasa lo nuevo de Centro" y lo vuelvo a correr (no duplica nada).
-
-## Cambio en Constancia
-
-- "Apagar avisos" de Constancia antes quitaba el iPhone por completo; ahora solo borra las horas de
-  Constancia. Si no, al apagar Constancia también se apagaban los avisos de Pendientes.
-
-## Qué falta (no lo hice porque necesita tu OK o no se puede deshacer fácil)
-
-1. ~~Publicarlo.~~ **Ya está publicado** (10 oct, 1:58 pm): `fusion-centro` se pasó a `claude/zen-mendel-l8h9lw`.
-   Si algo sale mal, en Vercel se puede regresar a la versión anterior (`bcc4089`) con un toque.
-2. **Prender los avisos nuevos y apagar los de Centro al mismo tiempo** (para que no lleguen dobles):
-   - Tú: Pendientes → Más → Avisos → "Activar avisos en este iPhone" → "Prendidos" → "Mandar un aviso de prueba".
-   - Yo: pausar los 2 cron de Centro (`centro_due_pushes` y `habitos-diarios`; se pueden volver a prender)
-     y, si quieres, suspender el servidor de Render. Dime "apaga Centro".
-3. **ChatGPT**: en la acción de tu GPT cambia la URL de
-   `https://fvbcptmbexvlyzgglvav.supabase.co/functions/v1/centro-intake` a
-   `https://jikonxuznepdyhcjyysh.supabase.co/functions/v1/pendientes-intake`. La clave y el formato son los mismos.
-   (Si tu GPT usa la de Render `/api/inbox`, avísame y lo vemos.)
-4. **Borrar para siempre** (solo cuando ya estés seguro, no lo hice): el proyecto de Supabase "Centro",
-   el proyecto `centro-pendientes` de Vercel, el servidor de Render y el ícono de Centro en tu iPhone.
-5. Borrar las 2 pruebas que dejé (están en Hechos) y la fila `prueba_temporal_desactivada`.
+## Qué falta (OK del usuario o difícil de deshacer)
+1. ~~Publicar~~: hecho 10 oct 1:58 pm (`fusion-centro` → `claude/zen-mendel-l8h9lw`); regresar en Vercel a `bcc4089` si falla.
+2. Prender avisos y apagar Centro a la vez: usuario en Pendientes → Más → Avisos → "Activar avisos en este iPhone" → "Prendidos" → "Mandar un aviso de prueba"; Claude pausa los cron de Centro (`centro_due_pushes`, `habitos-diarios`) y si quiere suspende Render ("apaga Centro").
+3. ChatGPT: cambiar `https://fvbcptmbexvlyzgglvav.supabase.co/functions/v1/centro-intake` por `https://jikonxuznepdyhcjyysh.supabase.co/functions/v1/pendientes-intake` (misma clave). Si usa Render `/api/inbox`, revisarlo.
+4. Borrar para siempre (cuando esté seguro): Supabase "Centro", Vercel `centro-pendientes`, Render, ícono de Centro.
+5. Borrar las 2 pruebas y `prueba_temporal_desactivada`.
 
 ## Otras notas
-
-- Hay una prueba que ya fallaba antes de mis cambios ("Mapa en blanco y conceptos de la reunión del 8 de
-  octubre", en `seeds.test.js`); no tiene que ver con Pendientes y no la toqué.
-- No pude correr `npm install` aquí (la red bloquea npm), así que probé con lo que había: pruebas con Bun,
-  la pestaña dibujada en un navegador a tamaño iPhone (negro, blanco, estilo Original y JW, con tus datos
-  reales) y la compilación real la hizo Vercel (salió bien).
+- "Mapa en blanco y conceptos de la reunión del 8 de octubre" (`seeds.test.js`) ya fallaba antes; no se tocó.
+- Sin `npm install` (red bloqueada): pruebas con Bun, vista en navegador tamaño iPhone (todos los temas, datos reales); compiló bien en Vercel.
