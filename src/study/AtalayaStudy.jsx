@@ -4,7 +4,7 @@ import AutoText from '../components/AutoText.jsx'
 import { RefChips } from '../components/RefLink.jsx'
 import { findAllRefs, openRef } from '../lib/verses.js'
 import { entryForClaude, formatDate } from './kinds.js'
-import { STEPS, parseArticle, answerOf, withAnswer, reviewAnswer, withReview, words, wordRefs, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
+import { STEPS, parseArticle, articleTitle, atalayaTitle, answerOf, withAnswer, reviewAnswer, withReview, words, wordRefs, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
 import MeetingMode from './MeetingMode.jsx'
 import JwLinks from './JwLinks.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
@@ -22,6 +22,8 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
   // Con La Atalaya importada (EPUB), el artículo de la semana de esa fecha se pone solo.
   const [fields, setFields] = useState(() => {
     const f = structuredClone(entry.fields)
+    // Un título guardado que era solo la fecha de la semana se cambia por el del artículo.
+    if (String(f.titulo ?? '').trim() && atalayaTitle(f) !== f.titulo.trim()) f.titulo = articleTitle(f.articulo)
     const found = !String(f.articulo ?? '').trim() && watchtowerFor(f.fecha)
     return found ? { ...f, articulo: found.texto, titulo: String(f.titulo ?? '').trim() || found.titulo } : f
   })
@@ -123,11 +125,8 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
   // Al pegar el artículo, si no hay título se toma el primer renglón que parezca título.
   function setArticle(v) {
     const patch = { articulo: v }
-    if (!String(fields.titulo ?? '').trim()) {
-      // Se saltan "ARTÍCULO DE ESTUDIO 40" y la canción, que van antes del título.
-      const first = String(v).split('\n').map((l) => l.replace(/^#+\s*/, '').trim()).find((l) => l && !/^(art[ií]culo de estudio|canci[oó]n)\b/i.test(l)) ?? ''
-      if (first.length < 90 && !/^la atalaya\b|[“"«]|\d+:\d+/i.test(first) && !/[.?]$/.test(first)) patch.titulo = first
-    }
+    const t = !String(fields.titulo ?? '').trim() && articleTitle(v)
+    if (t) patch.titulo = t
     set(patch)
   }
 
@@ -255,7 +254,7 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
               <p className="at-cover-kicker">La Atalaya{fields.fecha ? ` · ${formatDate(fields.fecha)}` : ''}</p>
               {articleNumber(fields.articulo) && <p className="at-art-num">Artículo de estudio {articleNumber(fields.articulo)}</p>}
               {article.canciones[0] && <p className="at-song">{songLine(article.canciones[0])}</p>}
-              <p className="at-title">{fields.titulo || 'La Atalaya'}</p>
+              <p className="at-title">{atalayaTitle(fields)}</p>
               {article.tema && <p className="at-theme">{article.tema}</p>}
               {article.resumen && <p className="at-summary">{article.resumen}</p>}
               {article.tema && <RefChips refs={findAllRefs(article.tema)} />}
@@ -344,7 +343,7 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
           <>
             <h2 className="at-h">{answered === bloques.length ? 'Lista para la reunión' : 'Lo que llevas'}</h2>
             <div className="at-card">
-              <p className="at-title">{fields.titulo || 'La Atalaya'}</p>
+              <p className="at-title">{atalayaTitle(fields)}</p>
               <div className="progress"><span style={{ width: `${bloques.length ? (answered / bloques.length) * 100 : 0}%` }} /></div>
               <p className="at-summary">Respondiste {answered} de {bloques.length} {bloques.length === 1 ? 'pregunta' : 'preguntas'}.</p>
             </div>
@@ -380,7 +379,7 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
           id={base.current.id}
           back={startInMeeting ? backLabel : 'Volver'}
           kicker={['La Atalaya', fields.fecha && formatDate(fields.fecha)].filter(Boolean).join(' · ')}
-          title={fields.titulo || 'La Atalaya'}
+          title={atalayaTitle(fields)}
           items={meetingItems(fields)}
           starred={fields.comentar ?? []}
           onClose={startInMeeting ? close : () => setMeeting(false)}

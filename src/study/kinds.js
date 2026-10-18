@@ -3,7 +3,7 @@
 // añadir una entrada a KINDS.
 import { newId } from '../lib/model.js'
 import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
-import { highlightArticle } from './atalaya.js'
+import { highlightArticle, atalayaTitle } from './atalaya.js'
 import { midweekForClaude, midweekNode } from './midweek.js'
 import { CHARACTERS } from '../games/memoria/characters.js'
 import { EXTRA_PEOPLE } from './people.js'
@@ -57,7 +57,8 @@ export const KINDS = {
       { key: 'aplicacion', label: 'Cómo lo aplico', type: 'text' },
       { key: 'notas', label: 'Notas generales', type: 'text' },
     ],
-    title: (e) => e.fields.titulo || (e.fields.tipo === 'entresemana' ? 'Reunión de entre semana' : 'La Atalaya'),
+    // La Atalaya: el título del artículo; entre semana: la lectura de la semana. El tipo va abajo.
+    title: (e) => e.fields.tipo === 'entresemana' ? e.fields.titulo || 'Reunión de entre semana' : atalayaTitle(e.fields),
     subtitle: (e) => [e.fields.tipo === 'entresemana' ? 'Entre semana' : 'La Atalaya', formatDate(e.fields.fecha)].filter(Boolean).join(' · '),
     toNode: (f) => ({
       title: f.titulo || 'Reunión',

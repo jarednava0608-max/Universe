@@ -121,6 +121,30 @@ export function parseArticle(text) {
   return out
 }
 
+// Fecha de la semana que JW Library copia antes del título ("12-18 DE OCTUBRE DE 2026").
+const MONTHS = /\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/i
+const isWeekDate = (l) => l.length < 50 && /\d/.test(l) && MONTHS.test(l)
+
+// Título del artículo: el primer renglón antes de las preguntas que parezca título
+// (se saltan la fecha, "ARTÍCULO DE ESTUDIO 40", la canción y el texto temático).
+export function articleTitle(text) {
+  for (const raw of String(text ?? '').replace(/\r/g, '').split('\n')) {
+    const l = raw.replace(/^#+\s*/, '').replace(/[*_]/g, '').trim()
+    if (!l || isWeekDate(l)) continue
+    if (QUESTION.test(l) || /^\d+\s/.test(l)) break
+    if (/^(art[ií]culo de estudio|canci[oó]n|la atalaya|tema|avance)\b/i.test(l)) continue
+    if (l.length < 90 && !/[“"«]|\d+:\d+/.test(l) && !/[.?]$/.test(l)) return l
+  }
+  return ''
+}
+
+// Lo que se ve como título de una Atalaya: el del artículo; un título guardado que es solo la
+// fecha (los primeros que se tomaron así) cede al del artículo.
+export function atalayaTitle(f) {
+  const t = String(f?.titulo ?? '').trim()
+  return (t && !isWeekDate(t) ? t : articleTitle(f?.articulo)) || 'La Atalaya'
+}
+
 // Respuesta guardada de un bloque (fields.parrafos usa { num, nota }).
 export function answerOf(fields, key) {
   return (fields.parrafos ?? []).find((p) => String(p.num) === String(key))?.nota ?? ''

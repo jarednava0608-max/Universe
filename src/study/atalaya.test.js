@@ -203,3 +203,15 @@ describe('citas dentro de los párrafos', () => {
     expect(w.at(-1)).toEqual({ pre: '', cita: '40:29', post: ').', ref: 'Isa. 40:29' })
   })
 })
+
+import { articleTitle, atalayaTitle } from './atalaya.js'
+describe('título del artículo', () => {
+  it('se salta la fecha de la semana y lo de antes del título', () => {
+    expect(articleTitle('12-18 DE OCTUBRE DE 2026\nARTÍCULO DE ESTUDIO 42\nCANCIÓN 76 Dime qué sientes\nAyudemos a otros a conocer bien a Jehová\n“Den a conocer” (SAL. 105:1).\n1. ¿Qué?\n1 Texto')).toBe('Ayudemos a otros a conocer bien a Jehová')
+  })
+  it('un título guardado que es solo la fecha cede al del artículo', () => {
+    expect(atalayaTitle({ titulo: '12-18 DE OCTUBRE DE 2026', articulo: '12-18 DE OCTUBRE DE 2026\nSigamos a Cristo\n1. ¿Qué?' })).toBe('Sigamos a Cristo')
+    expect(atalayaTitle({ titulo: 'Mi título' })).toBe('Mi título')
+    expect(atalayaTitle({ articulo: '1. ¿Qué?\n1 Texto' })).toBe('La Atalaya')
+  })
+})
