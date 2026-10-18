@@ -1,6 +1,14 @@
 # Universe — todo mi estudio bíblico en un solo lugar
 
-App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari / PWA de inicio), en español. **Vercel** (proyecto `universe`) despliega solo con cada push.
+App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari / PWA de inicio), en español. **Vercel** (proyecto `universe`) publica en producción la rama `claude/zen-mendel-l8h9lw`; las demás ramas solo dan vista previa.
+
+## Cómo trabajar (siempre)
+- **Al iniciar**: leer `ESTADO.md` y comprobar con git que coincide (`git log -1` de producción, ramas sin fusionar); si no, corregirlo. `DECISIONES.md` es historia: solo si hace falta.
+- **Leer poco**: buscar primero (grep) y leer solo el fragmento necesario; de `docs/` solo el área que toca; no releer lo ya leído en la sesión.
+- **Orden**: plan breve (según tamaño) → implementar → `npm test` y `npm run build` → revisar el diff → PR a `claude/zen-mendel-l8h9lw` → al fusionarse, comprobar el despliegue en Vercel → actualizar `ESTADO.md`. Un PR abierto no está publicado.
+- `npm ci` solo si falta `node_modules`; no repetir pruebas sin cambios de por medio. La CI (`.github/workflows/ci.yml`) corre `npm ci`, `npm test` y `npm run build` en cada PR.
+- **Respuestas** breves, sin narrar herramientas ni repetir explicaciones. Cierre de máximo 5 líneas: qué cambió, qué se verificó, qué queda. Si algo bloquea, decirlo claro.
+- **`ESTADO.md`** (máx. 40 líneas): reescribirlo al cerrar, reemplazando lo viejo, no acumular.
 
 **3 pestañas** (más lo abrumaban; ver `DECISIONES.md`):
 - **Hoy** (abre aquí): fecha, versículo y un botón con lo que sigue; sin botones arriba. Solo lo esencial y terminable (texto diario, reunión que sigue, asignación, lectura si tiene meta). Sin juegos, contadores, avisos que pidan cosas ni abrir sola lo siguiente. No agregar pasos.
