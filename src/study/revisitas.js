@@ -1,12 +1,11 @@
-// Revisitas en el mapa: son Notas tituladas "Revisita: Nombre" (formato en CLAUDE.md). De su texto
-// se saca nombre, dirección, última visita y lo que sigue; el lugar se guarda en `fields.lugar`
-// ({ lat, lng }), así viaja a la nube con la nota sin tablas nuevas.
+// Revisitas: son Notas tituladas "Revisita: Nombre" (formato en CLAUDE.md). En la nota, un punto
+// arriba abre Apple Maps donde vive: en `fields.lugar` ({ lat, lng }) si ya tiene, si no, buscando
+// su dirección ("Dirección: …" del texto) cerca de las demás revisitas.
 
 export const isRevisita = (e) => e?.kind === 'reflexion' && !e.deleted && /^\s*revisita\b/i.test(e.fields?.titulo ?? '')
 
-// El texto puede venir en Markdown (dictado, Claude) o plano (ya editado en Notas: sin #, ** ni "- [ ]").
+// El texto puede venir en Markdown (dictado, Claude) o plano (ya editado en Notas: sin #, ** ni "- ").
 const clean = (line) => line.replace(/^\s*#+\s*/, '').replace(/^\s*[-*]\s+/, '').replace(/^\[[ xX]?\]\s*/, '').replace(/\*\*/g, '').trim()
-const VISIT = /^\d{1,2}\s+(?:de\s+)?[a-záéíóú]{3,}\.?(?:\s+(?:de\s+)?\d{4})?\b/i
 const value = (lines, label) => {
   const re = new RegExp(`^${label}:\\s*(.*)$`, 'i')
   for (const l of lines) {
@@ -20,50 +19,34 @@ export function revisitaInfo(entry) {
   const f = entry.fields ?? {}
   const lines = String(f.texto ?? '').split('\n').map(clean).filter(Boolean)
   const titleName = String(f.titulo ?? '').replace(/^\s*revisita\s*:?\s*/i, '').trim()
-  const visitsAt = lines.findIndex((l) => /^visitas$/i.test(l))
-  const nextAt = lines.findIndex((l) => /^próxima visita$/i.test(l))
-  const visitLines = visitsAt < 0 ? [] : lines.slice(visitsAt + 1, nextAt > visitsAt ? nextAt : undefined)
-  const heads = visitLines.map((l, i) => (VISIT.test(l) ? i : -1)).filter((i) => i >= 0)
-  const last = heads.length ? heads[heads.length - 1] : -1
-  const lastLines = last < 0 ? [] : visitLines.slice(last + 1)
   return {
-    name: value(lines, 'Nombre') || titleName || 'Sin nombre',
+    name: value(lines, 'Nombre') || titleName || 'Revisita',
     address: value(lines, 'Dirección'),
-    lastVisit: last < 0 ? '' : visitLines[last],
-    said: value(lastLines, 'Qué dijo'),
-    next: nextAt < 0 ? [] : lines.slice(nextAt + 1).filter((l) => !/:$/.test(l)).slice(0, 3),
     lugar: validPlace(f.lugar),
   }
 }
 
 export const validPlace = (p) => (p && Number.isFinite(p.lat) && Number.isFinite(p.lng) ? { lat: p.lat, lng: p.lng } : null)
 
-// Lo que se busca en el mapa: la dirección sin "a 7 casas de la esquina…" (eso no lo entiende el buscador).
-export function searchText(address) {
-  return String(address ?? '')
-    .split(/,|\s+a\s+\d+\s+casas?\b|\s+frente\s+a\b|\s+junto\s+a\b|\s+cerca\s+de\b/i)[0]
-    .replace(/^\s*(?:número|num\.?|no\.?)\s+/i, '')
-    .trim()
+// Lo que entiende Maps: "calle Marie Curie, a 7 casas de la esquina con Sendero" → "Marie Curie y Sendero".
+export function mapsQuery(address) {
+  const a = String(address ?? '').trim()
+  const street = a.split(',')[0].replace(/^\s*calle\s+/i, '').trim()
+  const corner = /esquina\s+con\s+(?:la\s+calle\s+|calle\s+)?([^,.]+)/i.exec(a)
+  return corner && street ? `${street} y ${corner[1].trim()}` : street
 }
 
-// Buscador gratuito de OpenStreetMap (Nominatim). Cerca de las revisitas ya puestas, si hay.
-export function geocodeUrl(q, near = []) {
-  const p = new URLSearchParams({ format: 'jsonv2', limit: '5', 'accept-language': 'es', q })
+// Apple Maps (la app es solo para iPhone). `others`: las demás revisitas, para buscar cerca de ellas.
+export function mapsUrl(entry, others = []) {
+  const { name, address, lugar } = revisitaInfo(entry)
+  if (lugar) return `maps://?ll=${lugar.lat},${lugar.lng}&q=${encodeURIComponent(name)}`
+  const q = mapsQuery(address)
+  if (!q) return null
+  const near = others.map((e) => validPlace(e.fields?.lugar)).filter(Boolean)
+  const p = new URLSearchParams({ q })
   if (near.length) {
-    const lats = near.map((x) => x.lat)
-    const lngs = near.map((x) => x.lng)
-    const pad = 0.1
-    p.set('viewbox', [Math.min(...lngs) - pad, Math.max(...lats) + pad, Math.max(...lngs) + pad, Math.min(...lats) - pad].join(','))
+    const avg = (k) => (near.reduce((s, x) => s + x[k], 0) / near.length).toFixed(5)
+    p.set('sll', `${avg('lat')},${avg('lng')}`)
   }
-  return 'https://nominatim.openstreetmap.org/search?' + p
+  return 'maps://?' + p
 }
-
-export async function geocode(q, near) {
-  const res = await fetch(geocodeUrl(q, near))
-  if (!res.ok) throw new Error('No se pudo buscar.')
-  const list = await res.json()
-  return list.map((r) => ({ lat: Number(r.lat), lng: Number(r.lon), label: r.display_name }))
-}
-
-// "Cómo llegar": abre Apple Maps (la app es solo para iPhone) con la ruta al punto.
-export const directionsUrl = ({ lat, lng }) => `maps://?daddr=${lat},${lng}`
