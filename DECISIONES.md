@@ -62,3 +62,4 @@
 - Pedido como función de Centro (tabla `tasks`, Render). Centro ya es Pendientes en Universe y las revisitas son Notas, así que va en Universe y no toca Pendientes.
 - El usuario eligió OpenStreetMap (gratis) sobre Google Maps (clave y tarjeta): única excepción a "solo Supabase". Nominatim solo al tocar "Buscar" (su regla: 1 búsqueda por segundo).
 - Lugar en `fields.lugar` de la nota, no columnas nuevas: viaja con la nota a la nube y al respaldo.
+- Mismo día, "no funcionó, quítalo": se quitó el mapa (y Leaflet/OpenStreetMap). Queda solo el punto en la nota que abre Apple Maps; los lugares que ya puso (Irma, Manuel Gallardo, Roberto Koch) se conservan y se usan.

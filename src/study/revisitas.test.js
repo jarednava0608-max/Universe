@@ -1,24 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { geocodeUrl, isRevisita, revisitaInfo, searchText } from './revisitas.js'
+import { isRevisita, mapsQuery, mapsUrl, revisitaInfo } from './revisitas.js'
 
 const md = `## La persona
 - **Nombre:**
 - **Dirección:** calle Marie Curie, a 7 casas de la esquina con Sendero
 - **Cómo es:** señor
-- **Mejor día y hora:**
 
 ## Visitas
-### 10 oct 2026
-- **Qué usé:** folleto
-- **Qué dijo:**
-
 ### 18 oct 2026 · con Juan
-- **Qué usé:** el folleto otra vez
-- **Qué dijo:** estaba ocupado
-
-## Próxima visita
-- [ ] Volver la otra semana
-- [ ] Mostrarle el video`
+- **Qué dijo:** estaba ocupado`
 
 const note = (titulo, texto, extra = {}) => ({ id: 'a', kind: 'reflexion', fields: { titulo, texto, ...extra } })
 
@@ -30,31 +20,29 @@ describe('revisitas', () => {
     expect(isRevisita({ kind: 'diario', fields: { titulo: 'Revisita: x' } })).toBe(false)
   })
 
-  it('saca los datos del Markdown', () => {
-    const i = revisitaInfo(note('Revisita: Marie Curie (7 casas)', md))
-    expect(i.name).toBe('Marie Curie (7 casas)')
-    expect(i.address).toBe('calle Marie Curie, a 7 casas de la esquina con Sendero')
-    expect(i.lastVisit).toBe('18 oct 2026 · con Juan')
-    expect(i.said).toBe('estaba ocupado')
-    expect(i.next).toEqual(['Volver la otra semana', 'Mostrarle el video'])
-    expect(i.lugar).toBe(null)
+  it('saca nombre y dirección del Markdown o del texto plano', () => {
+    expect(revisitaInfo(note('Revisita: Marie Curie (7 casas)', md))).toEqual({ name: 'Marie Curie (7 casas)', address: 'calle Marie Curie, a 7 casas de la esquina con Sendero', lugar: null })
+    const plain = 'La persona\nNombre: Irma\nDirección: Helen Keller 113'
+    expect(revisitaInfo(note('Revisita: Irma', plain))).toMatchObject({ name: 'Irma', address: 'Helen Keller 113' })
   })
 
-  it('también del texto plano que deja Notas al editar', () => {
-    const plain = 'La persona\nNombre: Irma\nDirección: Helen Keller 113\nVisitas\n10 oct 2026\nQué dijo: \nPróxima visita\nVolver pronto'
-    const i = revisitaInfo(note('Revisita: Irma', plain, { lugar: { lat: 20.1, lng: -100.2 } }))
-    expect(i).toMatchObject({ name: 'Irma', address: 'Helen Keller 113', lastVisit: '10 oct 2026', said: '', next: ['Volver pronto'], lugar: { lat: 20.1, lng: -100.2 } })
+  it('arma la búsqueda para Maps', () => {
+    expect(mapsQuery('calle Marie Curie, a 7 casas de la esquina con Sendero')).toBe('Marie Curie y Sendero')
+    expect(mapsQuery('Helen Keller 113')).toBe('Helen Keller 113')
+    expect(mapsQuery('calle Armando 124')).toBe('Armando 124')
+    expect(mapsQuery('')).toBe('')
   })
 
-  it('limpia la dirección para buscarla', () => {
-    expect(searchText('calle Marie Curie, a 7 casas de la esquina con Sendero')).toBe('calle Marie Curie')
-    expect(searchText('número 108, entre Marie Curie y Edison')).toBe('108')
-    expect(searchText('Helen Keller 113')).toBe('Helen Keller 113')
+  it('con lugar guardado abre ese punto exacto', () => {
+    const e = note('Revisita: Irma', 'Dirección: Helen Keller 113', { lugar: { lat: 25.767, lng: -100.2597 } })
+    expect(mapsUrl(e)).toBe('maps://?ll=25.767,-100.2597&q=Irma')
   })
 
-  it('busca cerca de las revisitas ya puestas', () => {
-    const u = new URL(geocodeUrl('Helen Keller 113', [{ lat: 20, lng: -100 }]))
-    expect(u.searchParams.get('q')).toBe('Helen Keller 113')
-    expect(u.searchParams.get('viewbox')).toBe('-100.1,20.1,-99.9,19.9')
+  it('sin lugar busca la dirección cerca de las demás revisitas', () => {
+    const others = [note('Revisita: A', '', { lugar: { lat: 25.77, lng: -100.26 } }), note('Revisita: B', '', { lugar: { lat: 25.78, lng: -100.25 } }), note('Revisita: C', '')]
+    const u = new URL(mapsUrl(note('Revisita: Marie Curie', md), others).replace('maps://', 'https://x/'))
+    expect(u.searchParams.get('q')).toBe('Marie Curie y Sendero')
+    expect(u.searchParams.get('sll')).toBe('25.77500,-100.25500')
+    expect(mapsUrl(note('Revisita: X', 'Nombre: X'))).toBe(null)
   })
 })
