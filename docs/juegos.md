@@ -11,7 +11,7 @@
 
 ### Memoria Bíblica
 - Hecha aquí (la versión vieja de Vercel no se usa). `memoria/characters.js`: 128 personajes en orden histórico en `LIST` (`n`, `t` quién fue, `c` cita, `p` 2 pistas en 1.ª persona, `d` lo que hizo sin el nombre), 8 mundos (`WORLDS`). Si dos hicieron lo mismo (Adán/Eva) → `CONFUSABLE` en `logic.js`. Pruebas: citas reconocidas, ninguna pista dice el nombre.
-- Modos: ¿Quién soy? (3 pistas, 3/2/1 pts; con las 3 = `'help'`), ¿Qué hizo?, ¿Dónde está? (→ cita), ¿Cierto o falso? (`trueFalseRound`), Línea del tiempo (`best['mb-linea']`), Memorama (`pairsRound`, `best['mb-w<n>-parejas-tiempo']`), Reto 60 s (`sprintQuestion`, `best['mb-reto']`).
+- Modos: ¿Quién soy? (3 pistas, 3/2/1 pts; con las 3 = `'help'`), ¿Qué hizo?, ¿Dónde está? (→ cita; "No sé, ver la respuesta" la muestra y cuenta como fallada, `Quiz giveUp`), ¿Cierto o falso? (`trueFalseRound`), Línea del tiempo (`best['mb-linea']`), Memorama (`pairsRound`, `best['mb-w<n>-parejas-tiempo']`), Reto 60 s (`sprintQuestion`, `best['mb-reto']`).
 - Época: `eras.jsx`, `GameScreen era`, `data-era` → `--era-rgb`; paisaje tenue por mundo.
 - Siguiente mundo con 70 % en cualquier modo (`best['mb-w<n>']`, `best['mb-w<n>-<modo>']`); `stars` 70/85/100 %.
 - Personajes: buscador, filtro Todos / Conocidos / Por aprender (`isKnown`/`KNOWN_BOX`: acertado en 2 días), fichas con cita tocable. Repaso con clave `mb:<id>`.

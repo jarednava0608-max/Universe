@@ -321,6 +321,7 @@ function ChoiceMode({ kind, world, srs, best, onAnswer, onFinish, onBack }) {
         key={nonce}
         questions={round}
         best={best}
+        giveUp={kind === 'where'}
         onDone={onBack}
         onAgain={() => { setRound(build()); setNonce((n) => n + 1) }}
         onAnswer={(q, ok) => onAnswer(byKey.get(q.key), ok)}

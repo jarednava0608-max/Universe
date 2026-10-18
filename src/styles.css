@@ -650,6 +650,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .option.wrong { border-color: rgba(248, 113, 113, 0.6); background: rgba(248, 113, 113, 0.1); animation: shake 0.35s; }
 @keyframes pop { 40% { transform: scale(1.03); } }
 .option.dim { opacity: 0.45; }
+.quiz-giveup { align-self: center; min-height: var(--tap); margin-top: 12px; padding: 0 16px; color: var(--link); font-size: 15px; }
 .feedback { margin-top: 20px; animation: fade 0.2s; }
 .feedback .ok, .feedback .bad { font-weight: 600; margin: 0 0 8px; }
 .feedback .ok { color: var(--ok); }

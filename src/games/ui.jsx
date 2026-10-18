@@ -64,10 +64,10 @@ export function GameScreen({ title, onExit, right, back = 'Juegos', era, childre
 // Preguntas de opción múltiple: { prompt, options, answer, explain?, ref?, key? }
 // onAnswer(q, acerto) se llama en cada respuesta; onFinish(aciertos, total, puntos) al terminar.
 // Con `seconds` es contra reloj: cada pregunta tiene tiempo y la rapidez da puntos extra.
-export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, best: bestNow }) {
+export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, best: bestNow, giveUp }) {
   const [best] = useState(bestNow) // el récord de antes de esta ronda (al terminar ya se guardó el nuevo)
   const [i, setI] = useState(0)
-  const [picked, setPicked] = useState(null) // índice elegido, o -1 si se acabó el tiempo
+  const [picked, setPicked] = useState(null) // índice elegido, -1 si se acabó el tiempo, -2 si tocó "No sé"
   const [score, setScore] = useState(0)
   const [points, setPoints] = useState(0)
   const [run, setRun] = useState(0)
@@ -171,9 +171,10 @@ export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, 
           )
         })}
       </div>
+      {giveUp && !answered && <button className="quiz-giveup" onClick={() => choose(-2)}>No sé, ver la respuesta</button>}
       {answered && (
         <div className="feedback">
-          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : picked === -1 ? 'Se acabó el tiempo' : q.options.length === 2 ? `Era ${q.options[q.answer].toLowerCase()}` : 'No era esa'}</p>
+          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : picked === -1 ? 'Se acabó el tiempo' : picked === -2 ? `Es ${q.options[q.answer]}` : q.options.length === 2 ? `Era ${q.options[q.answer].toLowerCase()}` : 'No era esa'}</p>
           {q.explain && <p className="explain">{q.explain}</p>}
           {q.ref && <p className="ref">{findRefs(q.ref).length ? <RefLink refText={findRefs(q.ref)[0]} /> : q.ref}</p>}
           <button className="primary" onClick={() => {
