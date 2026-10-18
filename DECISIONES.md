@@ -57,3 +57,8 @@
 ## Otras notas
 - "Mapa en blanco y conceptos de la reunión del 8 de octubre" (`seeds.test.js`) ya fallaba antes; no se tocó.
 - Sin `npm install` (red bloqueada): pruebas con Bun, vista en navegador tamaño iPhone (todos los temas, datos reales); compiló bien en Vercel.
+
+## Revisitas en el mapa (18 oct 2026)
+- Pedido como función de Centro (tabla `tasks`, Render). Centro ya es Pendientes en Universe y las revisitas son Notas, así que va en Universe y no toca Pendientes.
+- El usuario eligió OpenStreetMap (gratis) sobre Google Maps (clave y tarjeta): única excepción a "solo Supabase". Nominatim solo al tocar "Buscar" (su regla: 1 búsqueda por segundo).
+- Lugar en `fields.lugar` de la nota, no columnas nuevas: viaja con la nota a la nube y al respaldo.
