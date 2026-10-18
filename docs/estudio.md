@@ -13,7 +13,7 @@ Apartados en `src/study/kinds.js` (`KINDS`; `notes: true` = editor tipo Notas): 
 
 ### Biblioteca (`view='biblioteca'`, id `estudio`)
 - `continue-card` "Seguir donde te quedaste": lo último editado (entrada o nodo, `recent`) en 7 días si no sale ya en Hoy.
-- `lib-grid` con 4 `LibTile` sin números: Leer la Biblia, Texto diario, Reuniones, Juegos. "Más" (`lib-more`, `universe-lib-more`) abre `lib-list`: `LIB_MORE` (asignaciones, Notas, Ideas, Preparar estudios y apartados nuevos), Mapa, Tus nodos y `MeetingDaysRow`. Mapa/Juegos abren `tab = 'mapa' | 'juegos'` (`TabBar` marca Biblioteca). No hay "Recientes".
+- `lib-grid` con 4 `LibTile` sin números: Leer la Biblia, Texto diario, Reuniones, Juegos. "Más" (`lib-more`, `universe-lib-more`) abre `lib-list`: `LIB_MORE` (asignaciones, Notas, Ideas, Preparar estudios y apartados nuevos), Mapa, Revisitas en el mapa (ver CLAUDE.md), Tus nodos y `MeetingDaysRow`. Mapa/Juegos abren `tab = 'mapa' | 'juegos'` (`TabBar` marca Biblioteca). No hay "Recientes".
 - **Tus nodos** (`section = 'nodos'`): Jehová primero, luego alfabético, con primera oración de la definición. Se abre como nota (`NodeNote`, editor de Notas); guarda solo si cambió, en Markdown (`docToNodeMarkdown`: subtítulos, listas, `[[enlaces]]`; sin colores ni subrayado). Título de Jehová fijo. "Ver en el mapa".
 - "‹ Atrás" dice a dónde vuelve (`backLabel`). Listas vacías: `EMPTY_ACTIONS`. Deslizar a la izquierda elimina con Deshacer. Fechas: "Hoy, 9:05", "Ayer, 18:30", "lunes 28 sept", "3 jun" (año si es otro).
 

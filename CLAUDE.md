@@ -8,7 +8,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 - **Pendientes**: la app Centro (tareas con avisos, hábitos).
 
 ## Regla de oro
-**Nada de servicios de paga ni IA en la app.** El usuario analiza en su chat con Claude y pega JSON; lo "inteligente" es código local. Único servicio externo: Supabase gratis.
+**Nada de servicios de paga ni IA en la app.** El usuario analiza en su chat con Claude y pega JSON; lo "inteligente" es código local. Único servicio externo: Supabase gratis (excepción pedida: OpenStreetMap gratis solo en Revisitas en el mapa).
 
 ## Principios (no romper)
 - **Estilo**: todo en `docs/estilo.md` (Negro/Blanco, "Como JW" por defecto). Colores solo como variables de `src/styles.css`; Jehová, único nodo dorado.
@@ -63,6 +63,7 @@ Cuando el usuario dicta una revisita, se guarda como Nota (`kind: 'reflexion'`) 
 ## Próxima visita
 - [ ] Volver pronto · - [ ] Contestar la pregunta pendiente con un texto · - [ ] Ofrecerle el curso de la Biblia
 ```
+**Revisitas en el mapa** (Biblioteca → Más; `src/study/RevisitasMap.jsx`, `revisitas.js` con pruebas): un punto por nota "Revisita: …" con `fields.lugar` `{ lat, lng }` (sin tablas nuevas). Nombre, dirección, última visita y lo que sigue se leen del texto (Markdown o plano). Ubicar: buscar la dirección (Nominatim), "Estoy aquí" o tocar el mapa. Leaflet + teselas de OpenStreetMap, gratis y sin cuenta.
 
 ## Pegar conocimiento (mapa)
 `{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`; si el nodo existe se le añade. Respaldo (`app: "universe"`) puede reemplazar todo. Siempre vista previa y confirmación.

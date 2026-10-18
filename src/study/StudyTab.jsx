@@ -30,6 +30,8 @@ import PasteFields from './PasteFields.jsx'
 import { addDays, constanciaDays } from '../games/progress.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
+// El mapa de revisitas (Leaflet) también aparte: solo se baja al abrirlo.
+const RevisitasMap = lazy(() => import('./RevisitasMap.jsx'))
 
 // Pestañas Hoy y Biblioteca (`view`): Hoy es solo lo de hoy; Biblioteca, los apartados con sus listas,
 // Leer la Biblia, el Mapa y los Juegos. Los editores se abren encima desde las dos.
@@ -41,6 +43,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
   const [bibleOpen, setBibleOpen] = useState(false)
+  const [revisitasOpen, setRevisitasOpen] = useState(false)
   const [more, setMore] = useState(() => { try { return localStorage.getItem('universe-lib-more') === '1' } catch { return false } })
   useEffect(() => { try { localStorage.setItem('universe-lib-more', more ? '1' : '0') } catch {} }, [more])
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
@@ -130,6 +133,13 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
                   <button className="entry-row" onClick={onOpenMap}>
                     <span className="kind-icon k-mapa"><Icon d={ICONS.mapa} size={18} /></span>
                     <span className="entry-main"><span className="entry-title">Mapa</span></span>
+                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                  </button>
+                </li>
+                <li>
+                  <button className="entry-row" onClick={() => setRevisitasOpen(true)}>
+                    <span className="kind-icon k-mapa"><Icon d={ICONS.lugar} size={18} /></span>
+                    <span className="entry-main"><span className="entry-title">Revisitas en el mapa</span></span>
                     <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
                   </button>
                 </li>
@@ -238,6 +248,13 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           onClose={() => setPeekNode(null)}
           onOpenMap={(id) => { setPeekNode(null); onOpenNode(id) }}
         />
+      )}
+
+      {/* Antes que los editores: "Abrir nota" la abre encima del mapa. */}
+      {revisitasOpen && (
+        <Suspense fallback={null}>
+          <RevisitasMap backLabel={backLabel} entries={entries} onSaveEntry={onSaveEntry} onOpenEntry={(e) => setEditing({ entry: e, isNew: false })} onClose={() => setRevisitasOpen(false)} toast={toast} />
+        </Suspense>
       )}
 
       {editing && KINDS[editing.entry.kind].notes && (
