@@ -115,6 +115,8 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
   const own = list.reduce((t, x) => t.replace(x, ''), mine).trim()
   const starters = own.length >= 40 ? [] : list.filter((x) => !mine.includes(x))
   const missing = DAILY_MIN.filter((k) => !filled(fields[k])).map((k) => DAILY_STEPS.find((s) => s.key === k))
+  const [fy, fm, fd] = String(fields.fecha ?? '').split('-').map(Number)
+  const dateLabel = fy ? new Date(fy, fm - 1, fd).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '') : ''
   const wol = <a className="dt-link" data-direct="1" href={dailyTextUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">Ver el texto en wol.jw.org</a>
 
   return (
@@ -153,6 +155,7 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
               </>
             ) : (
               <>
+                {dateLabel && <p className="dt-date">{dateLabel}</p>}
                 <p className="dt-verse"><Refs text={verse} /></p>
                 {comment && <p className="dt-comment"><Refs text={comment} /></p>}
                 {wol}
@@ -179,6 +182,7 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
 
         {cur.q && (
           <>
+            {dateLabel && <p className="dt-date">{dateLabel}</p>}
             {verse && <p className="dt-verse"><Refs text={verse} /></p>}
             {comment && step !== 'resumen' && (
               <details className="dt-more">
