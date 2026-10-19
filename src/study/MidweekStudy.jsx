@@ -9,6 +9,8 @@ import { entryForClaude } from './kinds.js'
 import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar, DEFAULT_HOUR, weekSchedule, outline, whoLabel, withExtras } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
 import JwLinks from './JwLinks.jsx'
+import GuiaImport from '../components/GuiaImport.jsx'
+import { guiaFor, hasGuia, useGuia } from '../lib/guia.js'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { useMeetings } from './meetings.js'
@@ -18,17 +20,18 @@ import { DAYS } from './today.js'
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
 // final cómo lo aplico y, si quieres, tus respuestas pasan al mapa. Se guarda sola y al volver sigue en la parte donde te quedaste.
 export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting = false, entry, entries = [], leidos, onToggleRead, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToAtalaya }) {
-  const [fields, setFields] = useState(() => structuredClone(entry.fields))
+  // Con la Guía de actividades importada (EPUB), el programa de la semana de esa fecha se pone solo.
+  const [fields, setFields] = useState(() => withGuia(structuredClone(entry.fields)))
   const prog = useMemo(() => parseProgram(fields.programa), [fields.programa])
   const schedule = weekSchedule(entries, fields.fecha)
   // Las partes de la Guía y, en su lugar, las que agrega la congregación (un informe).
   const partes = useMemo(() => withExtras(prog.partes, schedule), [prog, schedule])
   const [step, setStep] = useState(() => {
-    if (!parseProgram(entry.fields.programa).partes.length) return 'programa'
+    if (!parseProgram(fields.programa).partes.length) return 'programa'
     return STEPS.some((s) => s.key === entry.fields.paso) ? entry.fields.paso : 'partes'
   })
   const [idx, setIdx] = useState(() => {
-    const ps = withExtras(parseProgram(entry.fields.programa).partes, weekSchedule(entries, entry.fields.fecha))
+    const ps = withExtras(parseProgram(fields.programa).partes, weekSchedule(entries, fields.fecha))
     const i = Number(entry.fields.parte)
     if (Number.isInteger(i) && i >= 0 && i < ps.length) return i
     return Math.max(0, ps.findIndex((pt) => !partDone(entry.fields, pt)))
@@ -112,6 +115,13 @@ export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting =
     if (t && !String(fields.titulo ?? '').trim()) patch.titulo = t
     set(patch)
   }
+
+  // Si cambias la fecha sin programa, se pone el de esa semana (si la Guía está en el teléfono).
+  useGuia()
+  const weekGuia = guiaFor(fields.fecha)
+  useEffect(() => {
+    if (!String(fields.programa ?? '').trim() && weekGuia) setProgram(weekGuia.texto)
+  }, [fields.fecha, weekGuia?.lunes]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // La fecha de la reunión sale sola: la semana del programa + el día de tu reunión entre semana.
   // Si la cambias a mano (por ejemplo, la semana de la visita del superintendente), se respeta.
@@ -273,6 +283,13 @@ export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting =
                 setEditingProgram(false)
               }}>Pegar la semana copiada</button>
             )}
+            {/* La Guía en EPUB: el programa de cada semana sin copiarlo; si ya está, para agregar otro número. */}
+            {!String(fields.programa ?? '').trim() && (hasGuia() ? (
+              <div className="sfield">
+                <span className="sfield-label">La Guía que tienes no trae la semana de esta fecha</span>
+                <GuiaImport toast={toast} compact />
+              </div>
+            ) : <GuiaImport toast={toast} />)}
             {!partes.length && (
               <div className="sfield">
                 <div className="seg2">
@@ -613,4 +630,10 @@ function kindOf(p) {
 function savedLabel({ saved, expected }) {
   if (expected && saved >= expected) return 'En Mi Biblia'
   return saved ? `${saved} de ${expected} vers.` : 'Sin pegar'
+}
+
+function withGuia(f) {
+  if (String(f.programa ?? '').trim()) return f
+  const g = guiaFor(f.fecha)
+  return g ? { ...f, programa: g.texto, titulo: String(f.titulo ?? '').trim() || g.titulo } : f
 }

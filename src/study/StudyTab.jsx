@@ -14,6 +14,8 @@ import DailyTextsImport from '../components/DailyTextsImport.jsx'
 import { hasDailyTexts, dailyTextYears, useDailyTexts } from '../lib/dailytexts.js'
 import WatchtowerImport from '../components/WatchtowerImport.jsx'
 import { hasWatchtower, watchtowerIssues, useWatchtower } from '../lib/watchtower.js'
+import { hasGuia, guiaRange, useGuia } from '../lib/guia.js'
+import GuiaImport from '../components/GuiaImport.jsx'
 import SearchAll from './SearchAll.jsx'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -39,6 +41,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const [section, setSection] = useState(null) // kind abierto (o 'nodos')
   useDailyTexts()
   useWatchtower()
+  useGuia()
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
@@ -215,6 +218,10 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           {section === 'reunion' && (hasWatchtower()
             ? <p className="hint dt-imported">La Atalaya de {watchtowerIssues().join(' y ')} está en este teléfono: el artículo de cada semana sale solo.</p>
             : <WatchtowerImport toast={toast} />)}
+          {/* Y la Guía de actividades en EPUB, para no pegar el programa de entre semana. */}
+          {section === 'reunion' && (hasGuia()
+            ? <p className="hint dt-imported">La Guía de actividades de {guiaRange()} está en este teléfono: el programa de cada semana sale solo.</p>
+            : <GuiaImport toast={toast} />)}
           {KINDS[section].notes && byKind[section].length > 0 && (
             <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
           )}

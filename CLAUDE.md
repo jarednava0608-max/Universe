@@ -33,7 +33,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 - Local primero: IndexedDB (`db.js`: `nodes`, `edges`, `entries`, `meta`), `storage.persist()`, sin conexión.
 - Supabase ("Memoria Bíblica", `jikonxuznepdyhcjyysh`): `universe_nodes`, `universe_edges`, `universe_entries` (`fields` jsonb), RLS por `user_id`. Correo + contraseña en "Cuenta y nube"; sin sesión todo queda local; al entrar se sube lo local.
 - Avisos: `universe_push` (llaves), `universe_push_log` (evita repetidos); funciones `constancia-push` y `pendientes-push` (pg_cron); entrada de ChatGPT con `pendientes-intake` (clave en `universe_intake`); SQL en `supabase/pendientes.sql`. Detalle en `docs/juegos.md` y `docs/pendientes.md`.
-- **Nunca a la nube ni al repo** (son de jw.org): Biblia del EPUB (`meta.bible`, `nwt.js`), textos diarios (`meta.dailytexts`, `dailytexts.js`) y La Atalaya de estudio (`meta.revistas`, `watchtower.js`).
+- **Nunca a la nube ni al repo** (son de jw.org): Biblia del EPUB (`meta.bible`, `nwt.js`), textos diarios (`meta.dailytexts`, `dailytexts.js`), La Atalaya de estudio (`meta.revistas`, `watchtower.js`) y la Guía de actividades (`meta.guias`, `guia.js`; el programa de cada reunión sí va en su entrada, como si se hubiera pegado).
 - Respaldo JSON (`buildExport`: nodos, conexiones, entradas).
 
 ## Estructura
