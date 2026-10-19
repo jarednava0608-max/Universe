@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { refUrl, parseRef } from '../lib/bible.js'
 import { findSavedVerse, jwLibraryUrl, makeBibleEntry, cleanVerseText, isPub, splitChapter, chapterCheck, chapterSaved, savedChapterVerses, refKey } from '../lib/verses.js'
 import { pubTitle, pubUrl } from '../lib/pubs.js'
+import { isLearning } from '../lib/verseSave.js'
 import Sheet from './Sheet.jsx'
 import BibleText from './BibleText.jsx'
 
@@ -9,7 +10,7 @@ const SOURCE = { memoria: 'De Memorizar textos', diario: 'De tu Texto diario', c
 
 // Hoja que se abre al tocar una cita: el texto guardado (o para pegarlo una vez)
 // y botones para abrir la cita en JW Library o en wol.jw.org.
-export default function RefSheet({ refText, entries, onSave, onSaveMany, onRead, onClose, toast }) {
+export default function RefSheet({ refText, entries, onSave, onSaveMany, onRead, onLearn, onClose, toast }) {
   const pub = isPub(refText)
   // Capítulo entero ("Daniel 2"): lo pegado se guarda versículo por versículo.
   const parsed = pub ? null : parseRef(refText)
@@ -61,6 +62,11 @@ export default function RefSheet({ refText, entries, onSave, onSaveMany, onRead,
     }
   }
 
+  // "Aprenderlo": el usuario elige qué textos repasar en Juegos (un versículo o un tramo, no capítulos).
+  const learnable = !pub && parsed && !chapter && saved && !editing && onLearn
+  const learning = learnable && isLearning(entries, refText)
+  const learnText = learnable ? sheetVerses(saved, parsed, entries).map((x) => x.texto).join(' ') : ''
+
   const links = pub ? (
     <div className="ref-sheet-links">
       <a className="primary as-btn" data-direct="1" href={pubUrl(refText)} target="_blank" rel="noopener noreferrer">Buscar «{pubTitle(refText)}» en wol.jw.org</a>
@@ -80,6 +86,9 @@ export default function RefSheet({ refText, entries, onSave, onSaveMany, onRead,
       onClose={onClose}
       actions={saved && !editing && (saved.source === 'biblia' || saved.source === 'capitulo') && <button className="bar-btn" onClick={() => setEditing(true)}>Editar</button>}
       footer={<>
+        {learnable && (
+          <button className="secondary" disabled={learning} onClick={() => onLearn({ cita: refText, texto: learnText })}>{learning ? 'Ya lo estás aprendiendo' : 'Aprenderlo'}</button>
+        )}
         {!pub && parsed && onRead && savedChapterVerses(entries, parsed.book, parsed.chapter).length > 0 && (
           <button className="secondary reader-open" onClick={() => onRead({ book: parsed.book, chapter: parsed.chapter, verse: parsed.verse })}>Leer el capítulo completo</button>
         )}

@@ -33,7 +33,7 @@ import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
 import { isStandalone, safariUrl } from './lib/external.js'
 import { entrySource, conceptNote } from './study/concepts.js'
-import { planVerseSave, cleanSavedVerses, wrongThirdJohn } from './lib/verseSave.js'
+import { planLearn, cleanSavedVerses, wrongThirdJohn } from './lib/verseSave.js'
 
 let seedsRunning = false
 
@@ -55,11 +55,11 @@ export default function App() {
   const store = useStore()
   const sync = useSync(store)
 
-  // Guardar un texto en Mi Biblia también lo manda a Memorizar (una sola vez por cita).
-  async function saveVerse(entry) {
-    await store.saveEntry(entry)
-    const { memoria } = planVerseSave(entry, store.entries)
-    if (memoria) await store.saveEntry(memoria)
+  // "Aprenderlo" (hoja de una cita o Texto diario): el texto entra a Repasar en Juegos. Nada entra solo.
+  async function learnVerse(verse) {
+    const entry = planLearn(store.entries, verse)
+    if (entry) await store.saveEntry(entry)
+    toast('Listo. Lo repasarás en Juegos.')
   }
   const { mode, theme, setMode, style, setStyle } = useTheme()
   const { nodes, edges } = store
@@ -454,6 +454,7 @@ export default function App() {
           entries={store.entries}
           nodes={nodes}
           onSaveEntry={store.saveEntry}
+          onLearn={learnVerse}
           onDeleteEntry={store.deleteEntry}
           onProposeToMap={proposeToMap}
           onConceptsToMap={conceptsToMap}
@@ -579,7 +580,8 @@ export default function App() {
           key={refOpen}
           refText={refOpen}
           entries={store.entries}
-          onSave={saveVerse}
+          onSave={store.saveEntry}
+          onLearn={learnVerse}
           onSaveMany={async (list) => {
             await store.saveEntries(list)
             if (readerRef.current) setRefOpen(null) // se pegó desde el lector: vuelve a él con el capítulo

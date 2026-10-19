@@ -123,16 +123,16 @@ describe('La Atalaya del 3 de octubre de 2026', () => {
 })
 
 describe('Textos pegados', () => {
-  it('un texto nuevo va a Memorizar (sin nodo); no se repite; las publicaciones no', async () => {
-    const { planVerseSave, cleanSavedVerses } = await import('./verseSave.js')
-    const { makeBibleEntry } = await import('./verses.js')
-    const e = makeBibleEntry('Juan 17:3', 'Esto significa vida eterna+')
-    const first = planVerseSave(e, [])
-    expect(first.memoria.kind).toBe('memoria')
-    expect(first.memoria.fields.texto).toBe('Esto significa vida eterna')
-    expect(first.node).toBeUndefined()
-    expect(planVerseSave(e, [first.memoria])).toEqual({ memoria: null })
-    expect(planVerseSave(makeBibleEntry('Seamos valientes, cap. 3', 'Un párrafo'), [])).toEqual({ memoria: null })
+  it('Aprenderlo: solo lo que el usuario elige, sin repetir; las publicaciones no', async () => {
+    const { planLearn, isLearning, cleanSavedVerses } = await import('./verseSave.js')
+    const first = planLearn([], { cita: 'Juan 17:3', texto: 'Esto significa vida eterna+' })
+    expect(first.kind).toBe('memoria')
+    expect(first.fields).toMatchObject({ texto: 'Esto significa vida eterna', aprender: true })
+    expect(planLearn([first], { cita: 'Juan 17:3', texto: 'x' })).toBe(null)
+    expect(isLearning([first], 'Juan 17:3')).toBe(true)
+    const old = { id: 'o', kind: 'memoria', fields: { cita: 'Juan 3:16', texto: 'Porque Dios amó' } }
+    expect(planLearn([old], { cita: 'Juan 3:16' }).fields).toMatchObject({ aprender: true, texto: 'Porque Dios amó' })
+    expect(planLearn([], { cita: 'Seamos valientes, cap. 3', texto: 'Un párrafo' })).toBe(null)
     const sucio = { id: 'x', kind: 'biblia', fields: { cita: 'Salmo 83:18', texto: 'Para que sepan+ que tú*' } }
     const limpio = { id: 'y', kind: 'memoria', fields: { cita: 'Juan 3:16', texto: 'Ya limpio' } }
     expect(cleanSavedVerses([sucio, limpio]).map((x) => x.fields.texto)).toEqual(['Para que sepan que tú'])

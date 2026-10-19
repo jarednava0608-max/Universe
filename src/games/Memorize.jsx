@@ -1,93 +1,57 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { chunkText, citeSteps, clozeWords, foldLetter, initials, makeVerse, parseVerses, typeWords, memorizeSources, VERSES_FORMAT } from './logic.js'
-import { GameScreen, PasteJson, Empty, OrderPuzzle, PairsGame } from './ui.jsx'
-import { versePairs } from './verse-pairs.js'
+import { useMemo, useState } from 'react'
+import { makeVerse, parseVerses, VERSES_FORMAT } from './logic.js'
+import { learnSources } from './repaso.js'
+import { GameScreen, PasteJson, Empty } from './ui.jsx'
+import { openRef } from '../lib/verses.js'
 import { findRefs } from '../lib/bible.js'
-import { cleanVerseText } from '../lib/verses.js'
-import RefLink from '../components/RefLink.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import UndoBar, { useUndoDelete } from '../components/UndoBar.jsx'
-import { byPriority, isDue, review, withBestTime } from './progress.js'
 
-const LEVELS = ['Fácil', 'Medio', 'Difícil', 'De memoria']
-// En el orden en que conviene practicar un texto nuevo: de lo más fácil a lo más difícil.
-const MODES = [['hide', 'Ocultar'], ['initials', 'Iniciales'], ['order', 'Ordenar'], ['type', 'Escribir'], ['cite', 'Cita']]
-
-// Guarda el resultado de practicar un texto: sube o baja de nivel y agenda el próximo repaso.
-// Los textos del diario se copian a "mis textos" la primera vez que se practican.
-export async function saveVerseResult(store, verse, knewIt, nivel = verse.fields.nivel ?? 0) {
-  const lvl = knewIt ? Math.min(nivel + 1, 3) : Math.max(nivel - 1, 0)
-  const saved = verse.fromDaily ? { ...makeVerse(verse.fields), fields: { ...verse.fields, nivel: lvl } } : { ...verse, fields: { ...verse.fields, nivel: lvl } }
-  const stored = await store.saveEntry(saved)
-  const key = 'v:' + stored.id
-  await store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [key]: review(f.srs?.[key], knewIt) } }))
-  return { stored, lvl }
+const learnVerse = (v) => {
+  const e = makeVerse(v)
+  return { ...e, fields: { ...e.fields, aprender: true } }
 }
+// Cómo lo llevas, según la caja del repaso (ver verseMode en repaso.js).
+const stage = (item) => (!item ? 'Nuevo' : item.box < 2 ? 'Ubicándolo' : item.box < 4 ? 'Reconociéndolo' : 'De memoria')
 
-// Memorizar textos: cada nivel oculta más palabras. Toca una palabra oculta para verla.
-// `start`: abre directo la práctica de ese texto (desde la portada de Juegos); al volver, sale.
-export default function Memorize({ store, toast, onExit, start = null }) {
+// Mis textos: solo la lista de lo que elegiste aprender ("Aprenderlo"); se practica en Repasar.
+// Deslizar lo quita de Repasar (el texto sigue guardado para Mi Biblia).
+export default function Memorize({ store, toast, onExit }) {
   const srs = store.progress.srs ?? {}
-  // Repaso inteligente: arriba los textos que toca repasar hoy.
-  const verses = useMemo(() => {
-    const list = memorizeSources(store.entries)
-    const byKey = new Map(list.map((v) => ['v:' + v.id, v]))
-    return byPriority([...byKey.keys()], srs, undefined, () => 0.5).map((k) => byKey.get(k))
-  }, [store.entries, srs])
-  const [current, setCurrent] = useState(start)
+  const verses = useMemo(() => learnSources(store.entries), [store.entries])
   const [adding, setAdding] = useState(false)
   const [paste, setPaste] = useState(false)
-  const [pairs, setPairs] = useState(false)
-  // Solo tus textos se borran aquí (los del Texto diario se quitan desde Estudio).
-  const undoDel = useUndoDelete((v) => store.deleteEntry(v.id), (v) => store.saveEntry(v))
-
-  if (pairs) {
-    return (
-      <PairsGame
-        title="Memorama"
-        back="Textos"
-        build={() => versePairs(verses)}
-        best={store.progress.best?.['textos-parejas-tiempo']}
-        onBest={(secs) => store.updateProgress((f) => withBestTime(f, 'textos-parejas-tiempo', secs))}
-        onExit={() => setPairs(false)}
-        hint="Voltea dos cartas: una cita y su texto."
-        empty="Agrega al menos 3 textos para jugar Memorama."
-      />
-    )
-  }
-  if (current) return <Practice key={current.id} verse={current} store={store} back={start ? 'Juegos' : 'Textos'} onSaved={setCurrent} onBack={() => (start ? onExit() : setCurrent(null))} />
+  const undoDel = useUndoDelete(
+    (v) => store.saveEntry({ ...v, fields: { ...v.fields, aprender: false } }),
+    (v) => store.saveEntry(v),
+  )
 
   return (
     <GameScreen title="Mis textos" onExit={onExit} right={<button className="bar-btn strong" onClick={() => setAdding(true)}>Agregar</button>}>
       {verses.length ? (
         <>
-          <MemoHero verses={verses} srs={srs} />
           <ul className="entry-list">
-            {verses.map((v) => {
-              const row = (
-                <button className="entry-row" onClick={() => setCurrent(v)}>
+            {verses.map((v) => (
+              <SwipeRow key={v.id} onDelete={() => undoDel.remove(v)}>
+                <button className="entry-row" onClick={() => findRefs(v.fields.cita ?? '').length && openRef(findRefs(v.fields.cita)[0])}>
                   <span className="entry-main">
                     <span className="entry-title">{v.fields.cita || v.fields.texto.slice(0, 40)}</span>
-                    <span className="entry-sub">{v.fromDaily ? 'Del texto diario' : LEVELS[v.fields.nivel ?? 0]}</span>
+                    <span className="entry-sub">{stage(srs['v:' + v.id])}</span>
                   </span>
-                  {isDue(srs['v:' + v.id]) && <span className="due-tag">Hoy</span>}
-                  <Dots n={v.fields.nivel ?? 0} />
                 </button>
-              )
-              return v.fromDaily ? <li key={v.id}>{row}</li> : <SwipeRow key={v.id} onDelete={() => undoDel.remove(v)}>{row}</SwipeRow>
-            })}
+              </SwipeRow>
+            ))}
           </ul>
-          <button className="secondary" style={{ marginTop: 14 }} onClick={() => setPaste(true)}>Agregar textos de Claude</button>
-          {verses.length >= 3 && <button className="secondary" style={{ marginTop: 8 }} onClick={() => setPairs(true)}>Memorama: une cada cita con su texto</button>}
+          <button className="secondary" style={{ marginTop: 16 }} onClick={() => setPaste(true)}>Agregar textos de Claude</button>
         </>
       ) : (
-        <Empty action={<><button className="primary" onClick={() => setAdding(true)}>Agregar un texto</button><button className="secondary" onClick={() => setPaste(true)}>Agregar textos de Claude</button></>}>
-          Aquí entra el versículo de cada texto diario que estudies. También puedes agregar los que quieras.
+        <Empty action={<button className="primary" onClick={() => setAdding(true)}>Agregar un texto</button>}>
+          Toca un texto (en el texto diario, La Atalaya o la reunión) y elige "Aprenderlo". Aquí verás los que estás aprendiendo.
         </Empty>
       )}
 
-      {undoDel.pending && <UndoBar inGame text="Texto eliminado" onUndo={undoDel.undo} />}
-      {adding && <AddVerse onCancel={() => setAdding(false)} onSave={async (v) => { await store.saveEntry(makeVerse(v)); setAdding(false); toast('Texto agregado.') }} />}
+      {undoDel.pending && <UndoBar inGame text="Quitado de Repasar" onUndo={undoDel.undo} />}
+      {adding && <AddVerse onCancel={() => setAdding(false)} onSave={async (v) => { await store.saveEntry(learnVerse(v)); setAdding(false); toast('Texto agregado.') }} />}
       {paste && (
         <PasteJson
           title="Textos"
@@ -97,7 +61,7 @@ export default function Memorize({ store, toast, onExit, start = null }) {
           onCancel={() => setPaste(false)}
           onApply={async (data) => {
             const list = parseVerses(data)
-            await store.saveEntries(list.map(makeVerse))
+            await store.saveEntries(list.map(learnVerse))
             setPaste(false)
             toast(`${list.length} textos agregados.`)
           }}
@@ -107,317 +71,20 @@ export default function Memorize({ store, toast, onExit, start = null }) {
   )
 }
 
-function Dots({ n }) {
-  return (
-    <span className="level-dots" aria-label={`Nivel ${n + 1} de 4`}>
-      {[0, 1, 2, 3].map((i) => <i key={i} className={i <= n ? 'on' : ''} />)}
-    </span>
-  )
-}
-
-function Practice({ verse, store, back, onSaved, onBack }) {
-  const [mode, setMode] = useState('hide')
-  const [nivel, setNivel] = useState(Math.min(verse.fields.nivel ?? 0, 3))
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6))
-  const [shown, setShown] = useState(() => new Set())
-  const [peek, setPeek] = useState(false)
-  const [ordered, setOrdered] = useState(null) // errores al terminar de ordenar
-  const [note, setNote] = useState(null) // aviso de nivel después de "Lo sé" / "Repasar"
-  const [editing, setEditing] = useState(false)
-  const words = useMemo(() => clozeWords(verse.fields.texto, nivel, seed), [verse.fields.texto, nivel, seed])
-  const pieces = useMemo(() => chunkText(verse.fields.texto), [verse.fields.texto])
-  const hiddenLeft = words.filter((w, i) => w.hidden && !shown.has(i)).length
-  // "Cita" solo si la cita tiene libro, capítulo y versículo.
-  const canCite = useMemo(() => !!citeSteps(verse.fields.cita), [verse.fields.cita])
-  const [citeShown, setCiteShown] = useState(false)
-  // En "De memoria" y en "Cita" la cita también se oculta (ni en el título).
-  const hideCite = (mode === 'hide' && nivel === 3 && !citeShown) || mode === 'cite'
-
-  function reset() {
-    setSeed(Math.floor(Math.random() * 1e6))
-    setShown(new Set())
-    setPeek(false)
-    setOrdered(null)
-    setCiteShown(false)
-  }
-
-  // Corregir la cita o el texto sin perder el nivel ni el repaso.
-  async function saveEdit({ cita, texto }) {
-    const stored = await store.saveEntry({ ...verse, fields: { ...verse.fields, cita: cita.trim(), texto: cleanVerseText(texto) } })
-    onSaved(stored)
-    setEditing(false)
-    setMode('hide')
-    setNote(null)
-    reset()
-  }
-
-  // Después de "Lo sé" se sugiere el modo que sigue (en Ocultar, hasta llegar a De memoria).
-  const modes = MODES.filter(([m]) => m !== 'cite' || canCite)
-  function nextMode(lvl) {
-    if (mode === 'hide' && lvl < 3) return null
-    const i = modes.findIndex(([m]) => m === mode)
-    return modes[(i + 1) % modes.length]
-  }
-
-  async function next(knewIt) {
-    const { stored, lvl } = await saveVerseResult(store, verse, knewIt, nivel)
-    if (verse.fromDaily) onSaved(stored)
-    setNote({ k: Date.now(), up: lvl > nivel, next: knewIt ? nextMode(lvl) : null, text: lvl > nivel ? `Subiste a ${LEVELS[lvl]}` : lvl < nivel ? `Bajó a ${LEVELS[lvl]}` : knewIt ? '¡Ya lo sabes de memoria!' : 'Otra vez, con calma' })
-    setNivel(lvl)
-    reset()
-  }
-
-  const fullRef = verse.fields.cita && <p className="verse-ref">{findRefs(verse.fields.cita).length ? <RefLink refText={findRefs(verse.fields.cita)[0]} /> : verse.fields.cita}</p>
-  const ref = mode === 'hide' && nivel === 3 && !citeShown && verse.fields.cita
-    ? <button className="cite-blank" onClick={() => setCiteShown(true)}>¿Cuál es la cita? Toca para verla</button>
-    : fullRef
-  // Cuando hay resultado (Escribir, Ordenar, Cita), el botón principal es el que toca: tú decides igual.
-  const answer = (ok = true) => (
-    <div className="two-btn">
-      <button className={ok ? 'secondary' : 'primary'} onClick={() => next(false)}>Repasar</button>
-      <button className={ok ? 'primary' : 'secondary'} onClick={() => next(true)}>Lo sé</button>
-    </div>
-  )
-
-  return (
-    <GameScreen title={(!hideCite && verse.fields.cita) || 'Texto'} back={back} onExit={onBack} right={!verse.fromDaily && <button className="bar-btn" onClick={() => setEditing(true)}>Editar</button>}>
-      <div className="seg-modes">
-        {modes.map(([m, l]) => (
-          <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); setNote(null); reset() }}>{l}</button>
-        ))}
-      </div>
-
-      {note && <p key={note.k} className={'level-note' + (note.up ? ' up' : '')}>{note.text}</p>}
-      {note?.next && note.next[0] !== mode && (
-        <button className="secondary next-mode" onClick={() => { setMode(note.next[0]); setNote(null); reset() }}>Seguir con {note.next[1]}</button>
-      )}
-
-      {mode === 'hide' && (
-        <>
-          <div className="level-tabs">
-            {LEVELS.map((l, i) => (
-              <button key={l} className={i === nivel ? 'on' : ''} onClick={() => { setNivel(i); setShown(new Set()); setCiteShown(false) }}>{l}</button>
-            ))}
-          </div>
-          <p className="verse">
-            {words.map((w, i) => (
-              <span key={i}>
-                {w.pre}
-                {w.hidden && !shown.has(i) ? (
-                  <button className="blank" style={{ width: `${Math.max(2, w.word.length) * 0.62}em` }} onClick={() => setShown((s) => new Set(s).add(i))} aria-label="Ver palabra" />
-                ) : (
-                  <span className={w.hidden ? 'revealed' : ''}>{w.word}</span>
-                )}
-                {w.post}{' '}
-              </span>
-            ))}
-          </p>
-          {ref}
-          <p className="hint center">{hiddenLeft ? 'Dilo de memoria. Toca un espacio para ver la palabra.' : '¿Lo dijiste completo?'}</p>
-          {answer()}
-        </>
-      )}
-
-      {mode === 'initials' && (
-        <>
-          <button className="verse initials" onClick={() => setPeek((p) => !p)}>
-            {peek ? verse.fields.texto : initials(verse.fields.texto)}
-          </button>
-          {ref}
-          <p className="hint center">{peek ? 'Toca el texto para volver a las iniciales.' : 'Solo ves la primera letra de cada palabra. Dilo completo; toca el texto si te atoras.'}</p>
-          {answer()}
-        </>
-      )}
-
-      {mode === 'type' && (
-        <TypeLetters key={seed} texto={verse.fields.texto} footer={(pct) => (
-          <>
-            <p className={'order-result ' + (pct >= 90 ? 'ok' : 'bad')}>{pct === 100 ? '¡Perfecto, sin errores!' : `${pct} % a la primera.`}</p>
-            {ref}
-            {answer(pct >= 90)}
-          </>
-        )} />
-      )}
-
-      {mode === 'order' && (
-        <>
-          <OrderPuzzle key={seed} pieces={pieces} onDone={setOrdered} hint="Toca los trozos del texto en orden." />
-          {ordered != null && (
-            <>
-              <p className={'order-result ' + (ordered ? 'bad' : 'ok')}>{ordered ? `Listo, con ${ordered} ${ordered === 1 ? 'error' : 'errores'}.` : '¡Perfecto, sin errores!'}</p>
-              {ref}
-              {answer(ordered <= 1)}
-            </>
-          )}
-        </>
-      )}
-      {editing && <AddVerse initial={verse.fields} onCancel={() => setEditing(false)} onSave={saveEdit} />}
-
-      {mode === 'cite' && (
-        <CiteQuiz key={seed} verse={verse} footer={(errors) => (
-          <>
-            <p className={'order-result ' + (errors ? 'bad' : 'ok')}>{errors ? `Listo, con ${errors} ${errors === 1 ? 'error' : 'errores'}.` : '¡Perfecto, sin errores!'}</p>
-            {fullRef}
-            {answer(errors === 0)}
-          </>
-        )} />
-      )}
-    </GameScreen>
-  )
-}
-
-// Cita: con el texto a la vista, arma su cita en 3 pasos (libro, capítulo y versículo).
-// Si fallas, la opción se marca y vuelves a intentar.
-export function CiteQuiz({ verse, footer }) {
-  const steps = useMemo(() => citeSteps(verse.fields.cita), [verse.fields.cita])
-  const [at, setAt] = useState(0)
-  const [wrong, setWrong] = useState(() => new Set())
-  const [errors, setErrors] = useState(0)
-  const done = at >= steps.length
-  const picked = steps.slice(0, at).map((s) => s.options[s.answer])
-
-  function choose(k) {
-    if (k === steps[at].answer) {
-      setAt(at + 1)
-      setWrong(new Set())
-    } else {
-      setWrong((w) => new Set(w).add(k))
-      setErrors((n) => n + 1)
-    }
-  }
-
-  return (
-    <>
-      <p className="verse">{verse.fields.texto}</p>
-      {!done ? (
-        <>
-          <p className="cite-built">
-            <span className={picked[0] ? '' : 'cite-gap'}>{picked[0] ?? 'Libro'}</span>{' '}
-            <span className={picked[1] ? '' : 'cite-gap'}>{picked[1] ?? 'cap.'}</span>:
-            <span className={picked[2] ? '' : 'cite-gap'}>{picked[2] ?? 'vers.'}</span>
-          </p>
-          <p className="hint center">¿{steps[at].label === 'Libro' ? 'En qué libro' : steps[at].label === 'Capítulo' ? 'Qué capítulo' : 'Qué versículo'} está?</p>
-          <div className="options">
-            {steps[at].options.map((o, k) => (
-              <button key={at + ':' + k} className={'option' + (wrong.has(k) ? ' wrong' : '')} disabled={wrong.has(k)} onClick={() => choose(k)}>{o}</button>
-            ))}
-          </div>
-        </>
-      ) : (
-        footer(errors)
-      )}
-    </>
-  )
-}
-
-function AddVerse({ initial, onCancel, onSave }) {
-  const [cita, setCita] = useState(initial?.cita ?? '')
-  const [texto, setTexto] = useState(initial?.texto ?? '')
+function AddVerse({ onCancel, onSave }) {
+  const [cita, setCita] = useState('')
+  const [texto, setTexto] = useState('')
   return (
     <div className="overlay picker">
       <header className="bar">
         <button className="bar-btn" onClick={onCancel}>Cancelar</button>
-        <span className="bar-title">{initial ? 'Editar texto' : 'Nuevo texto'}</span>
+        <span className="bar-title">Nuevo texto</span>
         <button className="bar-btn strong" disabled={!texto.trim()} onClick={() => onSave({ cita, texto })}>Guardar</button>
       </header>
       <div className="editor-body">
         <label className="sfield"><span className="sfield-label">Cita</span><input className="input" placeholder="Juan 17:3" value={cita} onChange={(e) => setCita(e.target.value)} /></label>
         <label className="sfield"><span className="sfield-label">Texto</span><textarea className="input" rows={6} placeholder="Escribe el texto tal como quieres memorizarlo" value={texto} onChange={(e) => setTexto(e.target.value)} /></label>
       </div>
-    </div>
-  )
-}
-
-// Escribir: teclea la primera letra de cada palabra. Si aciertas, aparece la palabra;
-// a los 3 intentos fallidos se muestra sola (cuenta como error).
-function TypeLetters({ texto, footer }) {
-  const words = useMemo(() => typeWords(texto), [texto])
-  const skip = (from) => {
-    let k = from
-    while (k < words.length && !words[k].letter) k++
-    return k
-  }
-  const [pos, setPos] = useState(() => skip(0))
-  const [wrong, setWrong] = useState(() => new Set()) // palabras que se mostraron solas o con error
-  const [tries, setTries] = useState(0)
-  const [shake, setShake] = useState(0)
-  const [focused, setFocused] = useState(false)
-  const input = useRef(null)
-  const done = pos >= words.length
-  const total = words.filter((w) => w.letter).length
-  const pct = total ? Math.round(((total - wrong.size) / total) * 100) : 100
-
-  useEffect(() => {
-    if (done) input.current?.blur()
-  }, [done])
-
-  function type(ch) {
-    if (done || !ch) return
-    const w = words[pos]
-    if (foldLetter(ch) === w.letter) {
-      setTries(0)
-      setPos(skip(pos + 1))
-    } else {
-      setShake((n) => n + 1)
-      setWrong((s) => new Set(s).add(pos))
-      if (tries + 1 >= 3) {
-        setTries(0)
-        setPos(skip(pos + 1))
-      } else setTries(tries + 1)
-    }
-  }
-
-  return (
-    <>
-      <p className="verse type-verse" onClick={() => input.current?.focus()}>
-        {words.map((w, i) => (
-          <span key={i}>
-            {i < pos || !w.letter ? (
-              <span className={wrong.has(i) ? 'type-bad' : i === pos - 1 ? 'type-new' : ''}>{w.pre}{w.word}{w.post}</span>
-            ) : (
-              <>
-                {w.pre}
-                <span key={i === pos ? 'c' + shake : 'w'} className={'type-blank' + (i === pos ? ' now' : '') + (i === pos && shake ? ' miss' : '')} style={{ width: `${Math.max(2, w.word.length) * 0.55}em` }} />
-                {w.post}
-              </>
-            )}{' '}
-          </span>
-        ))}
-      </p>
-      {!done ? (
-        <>
-          <input
-            ref={input}
-            className="type-input"
-            value=""
-            inputMode="text"
-            autoCapitalize="off"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck={false}
-            aria-label="Primera letra de la palabra"
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onChange={(e) => type(e.target.value.slice(-1))}
-          />
-          {!focused && <button className="primary" onClick={() => input.current?.focus()}>Empezar a escribir</button>}
-          <p className="hint center">Escribe la primera letra de cada palabra. {words.length - pos > 0 && `${total - words.slice(0, pos).filter((w) => w.letter).length} por escribir.`}</p>
-        </>
-      ) : (
-        footer(pct)
-      )}
-    </>
-  )
-}
-
-// Resumen arriba de la lista: cuántos textos ya sabes de memoria y cuántos tocan hoy.
-function MemoHero({ verses, srs }) {
-  const memorized = verses.filter((v) => (v.fields.nivel ?? 0) >= 3).length
-  const today = verses.filter((v) => isDue(srs['v:' + v.id])).length
-  return (
-    <div className="mb-hero">
-      <p className="mb-count"><b>{memorized}</b> de {verses.length} {verses.length === 1 ? 'texto' : 'textos'} de memoria{today ? ` · ${today} para hoy` : ''}</p>
-      <div className="mb-bar memo"><span style={{ width: `${(memorized / verses.length) * 100}%` }} /></div>
     </div>
   )
 }

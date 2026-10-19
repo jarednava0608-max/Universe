@@ -5,7 +5,7 @@
 
 ## Mi Biblia (`verses.js`, `RefSheet.jsx`)
 - Tocar cita → hoja en la app (clics en enlaces wol y evento `openRef`); solo capítulo → `ChapterReader` (`openAny`, `App.jsx`).
-- Texto de `kind: 'biblia'` `{ cita, texto }`, Memorizar o Texto diario, por `refKey`; si no hay, se pega y guarda. `cleanVerseText` quita `+`/`*`. `planVerseSave` (`verseSave.js`) lo mete también a Memorizar una vez por cita (publicaciones no); **no crea nodo** (el mapa es solo para conceptos).
+- Texto de `kind: 'biblia'` `{ cita, texto }`, Memorizar o Texto diario, por `refKey`; si no hay, se pega y guarda. `cleanVerseText` quita `+`/`*`. Guardar ya no lo manda a Memorizar: el usuario elige con "Aprenderlo" (`planLearn`, ver `docs/juegos.md`); **no crea nodo** (el mapa es solo para conceptos).
 - Rango ("Jeremías 38:7-9") o capítulo se arma de versículos guardados con su número; rango solo si están todos. Botones `jwLibraryUrl` y wol con `data-direct`.
 - Limpiezas únicas por teléfono: `clean:verses-1` (quita `+`/`*` de lo guardado), `clean:3juan-1` (`wrongThirdJohn`: borró 1 Corintios 3 guardado como "3 Juan 3" y su nodo).
 

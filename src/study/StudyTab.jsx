@@ -35,7 +35,7 @@ const RevisitasMap = lazy(() => import('./RevisitasMap.jsx'))
 
 // Pestañas Hoy y Biblioteca (`view`): Hoy es solo lo de hoy; Biblioteca, los apartados con sus listas,
 // Leer la Biblia, el Mapa y los Juegos. Los editores se abren encima desde las dos.
-export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, entries, nodes, onSaveEntry, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
+export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, entries, nodes, onSaveEntry, onLearn, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
   const [section, setSection] = useState(null) // kind abierto (o 'nodos')
   useDailyTexts()
   useWatchtower()
@@ -337,6 +337,8 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           isNew={editing.isNew}
           toast={toast}
           onSave={onSaveEntry}
+          entries={entries}
+          onLearn={onLearn}
           onClose={() => setEditing(null)}
           onDelete={async () => {
             await onDeleteEntry(editing.entry.id)

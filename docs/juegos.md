@@ -1,31 +1,30 @@
 ## 3) Pestaña Juegos
 
 ### Portada
-- **El único objetivo de Juegos es recordar textos de la Biblia** (pedido del usuario). Se quitaron Memoria Bíblica, Trivia, Con lo que estudio, Libros de la Biblia, Reto del día, Juego de hoy (Memorama de personajes) y Logros: no regresarlos ni agregar juegos sueltos.
-- Arriba, "Para memorizar": el primer texto de `memorizeSources` que es nuevo o toca hoy (`isDue`), con cita, versículo (letra de libro, `today-game-verse`) y "Practicar" (abre `Memorize` con `start`; al volver, sale a Juegos). Sin textos: explica que entra el del Texto diario. Todo practicado: "Listo por hoy".
-- Abajo (`game-list`): Repasar hoy, Mis textos y Constancia (`registry.js`). Sin racha, récords ni cifras arriba. Sin puntito en la pestaña.
+- **Una sola cosa: Repasar** (pedido del usuario: "tengo mil juegos, quiero uno"; su objetivo es aprenderse textos de la Biblia). Se quitaron Memoria Bíblica, Trivia, Con lo que estudio, Libros, Reto del día, Juego de hoy, Logros, los modos de Memorizar (Ocultar, Iniciales, Ordenar…), el Memorama y el Repasar hoy de sus respuestas: no regresarlos ni agregar juegos sueltos.
+- Arriba: "Repasar · N preguntas" y el botón; sin nada pendiente, "Listo por hoy"; sin textos, cómo agregar (Aprenderlo). Abajo (`registry.js`): Mis textos y Constancia. Sin racha, récords ni cifras arriba.
 - `memoria/characters.js` sigue solo para reconocer personajes en el Texto diario (`dailyPeople`).
 
-### Arquitectura
-- `registry.js`: Mis textos y Constancia (recibe `{ store, toast, onExit }`; `stat(store)` opcional). Lógica en `logic.js` (con pruebas).
-- `ui.jsx`: `GameScreen` (cierra deslizando; `back` = a dónde vuelve), `Result`, `SwipeCard`, `OrderPuzzle`, `Confetti`, `PasteJson`, `Empty`, `PairsGame` (Memorama de cita ↔ texto en Mis textos; récord `-tiempo`).
+### Aprenderlo (el usuario elige; nada entra solo)
+- Botón "Aprenderlo" en la hoja de cualquier cita (`RefSheet`, versículo o tramo con texto; no capítulos ni publicaciones) y "Aprender este texto" en el Texto diario. `planLearn` (`verseSave.js`): marca `fields.aprender` en la entrada `kind: 'memoria'` de esa cita o crea una. Guardar un texto en Mi Biblia ya no lo manda a Memorizar.
+- Meta sugerida al usuario: unos 2 textos nuevos por semana (se puede subir).
 
-### Mis textos (Memorizar, `Memorize.jsx`)
-- Entran solos los que va estudiando: el versículo (`dailyVerse`, cita aparte) de cada Texto diario con "Ya lo estudié" (`fields.estudiado`), del más reciente al más viejo (`fromDaily`; al practicarlo la primera vez se copia a `kind: 'memoria'` sin repetirse), y los que agrega el usuario (pegables; borrar deslizando). Las copias viejas del texto diario completo no entran (`memorizeSources`; `verseSources` es solo para Mi Biblia).
-- Orden: Ocultar (Fácil → De memoria, 25/50/75/100 %; tocar muestra la palabra; en De memoria se oculta la cita) → Iniciales → Ordenar → Escribir (primera letra, sin acentos; a los 3 intentos se muestra; `typeWords`) → Cita (libro/capítulo/versículo, 4 opciones; `citeSteps`; solo con versículo). En Cita y De memoria el título dice "Texto". Tras "Lo sé", "Seguir con <siguiente>".
-- Sugerencia "Lo sé" (Escribir ≥ 90 %, Ordenar ≤ 1 error, Cita sin errores), decide el usuario; `saveVerseResult` sube nivel con aviso. "Editar" (arriba a la derecha) corrige cita/texto sin perder nivel. Arriba de la lista, cuántos sabes. Memorama con ≥ 3 (`verse-pairs.js`, `best['textos-parejas-tiempo']`).
+### Repasar (`repaso.js` con pruebas, `Repaso.jsx`)
+- Rondas de 5 (`SIZE`), una pregunta a la vez; "Otras 5" si queda algo (sin repetir en la sesión, `skip`).
+- `repasoRound`: primero los textos que tocan (`isDue`), luego hasta 2 nuevos (`NEW_PER_ROUND`); y una de La Atalaya si toca o de vez en cuando.
+- Textos (`learnSources`): la pregunta sube con la caja (`verseMode`): ¿Dónde está? (armar la cita, `citeSteps`) → ¿Qué dice? (la cita y 4 textos cortos, `sayOptions`) → Escríbelo (primera letra de cada palabra, `typeWords`; sabido con ≥ 90 %).
+- La Atalaya (solo las que estudió, todo de jw.org, nunca sus respuestas): ¿Qué texto lo prueba? (`proofCards`: la idea antes de cada "(Lea …)", solo textos que se leen; opciones = otros "Lea" o sus textos) y, a veces, ¿De qué Atalaya es? (`atalayaSourceCards`, con 3 artículos o más).
+- **Nunca preguntar algo que no leyó** (citas entre paréntesis sin "Lea", por ejemplo). Si falla: la opción se marca, pista si hay ("Empieza: …") y vuelve a intentar; cuenta como no sabida.
+- Entre semana: por ahora solo sus textos vía Aprenderlo (sin preguntas de contenido).
+
+### Mis textos (`Memorize.jsx`)
+- Solo la lista de lo que eligió aprender, con cómo va (Nuevo, Ubicándolo, Reconociéndolo, De memoria); tocar abre la hoja de la cita; deslizar lo quita de Repasar (`aprender: false`, con Deshacer). "Agregar" y "Agregar textos de Claude" (`VERSES_FORMAT`) entran ya para aprender.
 
 ### Constancia (`Constancia.jsx`)
 - También hasta arriba de Estudio. Racha de una meta personal: **nunca dice cuál**. Días, mejor racha, frase diaria con cita, "Volver a empezar" (confirma; la mejor queda). En 0 días: "Hoy empieza".
 - `progreso.fields.constancia = { start, best, at }` (`constanciaDays`, `restartConstancia`, `mergeConstancia`; gana `at` más reciente, `best` el mayor).
 - Push nocturno (por defecto 22:00, 22:30, 23:00): `src/lib/push.js` → `universe_push` (RLS; sesión y PWA, iOS 16.4+); `public/sw.js`; `supabase/functions/constancia-push` (`pg_cron` cada 5 min, `push_cron_secret` y VAPID en vault), una vez por hora y día. "Apagar avisos" solo borra horas de Constancia (`clearPushTimes`); el iPhone sigue registrado para Pendientes.
 
-### Repasar hoy (`Review.jsx`)
-- **Pendiente de cambiar** (pedido del usuario): no le gusta repasar sus respuestas; quiere repasar el contenido de La Atalaya tal cual y en qué Atalaya se dijo (`atalayaSourceCards` se guardó para eso). Hoy: solo lo estudiado (pedido del usuario): reuniones (Atalaya y entre semana), textos diarios analizados, conceptos del mapa; Personajes/Trivia/Memorizar no (salvo los ya vistos; con 3 pistas = `'help'`). Rondas de 8 (`SESSION`, ≤ 4 nuevas `NEW_PER_SESSION`; cifras de `roundSize`); "Terminar" grande, "Otra ronda (N)" chico. Guarda `progreso.fields.repaso` (día) y Hoy lo palomea.
-- `dailyMix`: primero lo que toca (más atrasado, alternando tipos), luego nuevas turnadas por tipo, máx. 10/día (`NEW_PER_DAY`, `newToday`, "· Nueva"). El texto diario entra desde mañana.
-- Tarjetas: texto diario (`dailyCards`, `c:<entrada>`, `dailyCheck`: elegir tu principio entre 4 o armar la cita); Atalaya (`atalayaCards`, `a:<entrada>:<pregunta>`, solo respondidas, `atalayaCheck`: tu respuesta entre 4, primero del mismo artículo; "¿De qué Atalaya es?" ya no entra, `atalayaSourceCards` sin usar).
-- **Sin trampa** (`cardCheck`): título con versículo → armar la cita; si no, elegir título desde la definición (`guessPrompt` sin frases que repitan el título o se repitan en muchos nodos). `SwipeCard` solo sin otras tarjetas y tras "Ver la respuesta". Cita sabida solo sin errores.
-
 ### Repaso inteligente (`progress.js`)
 - Leitner 0/1/2/4/7/15/30/60 días, `review(item, knew)`. Sube solo si ya tocaba; fallo = hoy y −2 cajas; `'help'` = misma caja, mañana. `first` cuenta nuevas; `dueCount` solo lo visto.
-- Una entrada `id: 'progreso'` (`fields: { days, srs, triviaBest, best, ... }`); `mergeProgress` combina: `best` el mayor, `-tiempo` el menor.
+- Una entrada `id: 'progreso'` (`fields: { days, srs, repaso, ... }`); `mergeProgress` combina (`best` y `-tiempo` quedan de antes). Claves: `v:<texto>`, `p:<artículo>:<párrafo>:<cita>`, `s:<trozo>`.

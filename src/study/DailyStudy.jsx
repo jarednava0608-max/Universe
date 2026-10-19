@@ -3,6 +3,8 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
 import { dailyVerse, dailyBody, dailyTextUrl, dailyTextAppUrl, dailyStudyPrompt, otherDayText } from './kinds.js'
 import { findAllRefs } from '../lib/verses.js'
+import { findRefs } from '../lib/bible.js'
+import { isLearning } from '../lib/verseSave.js'
 import { splitRefs } from './midweek.js'
 import RefLink from '../components/RefLink.jsx'
 import DailyTextsImport from '../components/DailyTextsImport.jsx'
@@ -13,7 +15,7 @@ const filled = (v) => !!String(v ?? '').trim()
 // El Texto diario: leerlo y estudiarlo en el chat con Claude ("Estudiarlo con Claude" copia el texto con
 // el método del usuario, ver dailyStudyPrompt). El usuario cambió las preguntas de la app (Jehová, Lección,
 // Hoy, Recordar) por ese estudio guiado; "Listo" lo marca hecho (fields.estudiado). Se guarda sola.
-export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onSave, onDelete, onClose }) {
+export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = [], toast, onSave, onLearn, onDelete, onClose }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const base = useRef(entry)
   const saved = useRef(JSON.stringify(entry.fields))
@@ -81,6 +83,9 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
   const verse = dailyVerse(fields.texto)
   // El comentario: lo pegado sin la fecha ni el versículo de arriba.
   const comment = dailyBody(fields.texto).replace(verse, '').trim()
+  // "Aprender este texto": el versículo entra a Repasar en Juegos (el usuario elige; nada entra solo).
+  const cita = findRefs(verse).at(-1) ?? ''
+  const learning = !!cita && isLearning(entries, cita)
   const [fy, fm, fd] = String(fields.fecha ?? '').split('-').map(Number)
   const dateLabel = fy ? new Date(fy, fm - 1, fd).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '').replace(/^./, (c) => c.toUpperCase()) : ''
 
@@ -114,6 +119,11 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
             <p className="dt-verse"><Refs text={verse} /></p>
             {comment && <p className="dt-comment"><Refs text={comment} /></p>}
             <a className="dt-link" data-direct="1" href={dailyTextUrl(fields.fecha)} target="_blank" rel="noopener noreferrer">Ver el texto en wol.jw.org</a>
+            {cita && onLearn && (
+              <button className="dt-link" disabled={learning} onClick={() => onLearn({ cita, texto: verse.replace(/\s*\([^()]*\d[^()]*\)[.»”"]?\s*$/, '') })}>
+                {learning ? 'Ya estás aprendiendo este texto' : 'Aprender este texto'}
+              </button>
+            )}
             <div className="action-stack">
               <button className="primary icon-left" onClick={copyForClaude}><Icon d={ICONS.pegar} size={18} /> Estudiarlo con Claude</button>
               <button className="secondary" onClick={finish}>{fields.estudiado ? 'Listo' : 'Ya lo estudié'}</button>

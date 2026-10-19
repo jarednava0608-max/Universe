@@ -1,26 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
-import { memorizeSources } from './logic.js'
-import { isDue, roundSize } from './progress.js'
-import Review, { reviewSummary } from './Review.jsx'
-import Memorize from './Memorize.jsx'
+import { repasoRound, learnSources } from './repaso.js'
+import Repaso from './Repaso.jsx'
 import PageScroll from '../components/PageScroll.jsx'
 
-// Juegos (se abre desde Biblioteca). Su único objetivo es que el usuario recuerde textos de la Biblia:
-// arriba, el texto que toca practicar (el versículo del último texto diario que estudió, o el que toca
-// repasar); abajo, Repasar hoy, Mis textos y Constancia. Nada de juegos sueltos, racha ni logros.
+// Juegos (se abre desde Biblioteca). Una sola cosa: Repasar, 5 preguntas de los textos que el usuario
+// eligió aprender y, de vez en cuando, de La Atalaya (ver repaso.js). Abajo, Mis textos y Constancia.
+// Nada de juegos sueltos, racha ni logros (pedido del usuario).
 export default function GamesTab({ store, toast, onBack }) {
   const [open, setOpen] = useState(null)
-  const [practice, setPractice] = useState(null)
-  const [reviewing, setReviewing] = useState(false)
+  const [repasando, setRepasando] = useState(false)
   const game = GAMES.find((g) => g.id === open)
-  const srs = store.progress.srs ?? {}
-  const verses = memorizeSources(store.entries)
-  // El primero que es nuevo o toca hoy: los del texto diario van primero, del más reciente.
-  const next = verses.find((v) => isDue(srs['v:' + v.id])) ?? null
-  const { due, fresh } = useMemo(() => reviewSummary(store), [store.nodes, store.entries, store.progress]) // eslint-disable-line react-hooks/exhaustive-deps
-  const toReview = roundSize({ due, fresh })
+  const pending = repasoRound(store.entries, store.progress.srs ?? {}, { rnd: () => 0.9 }).length
+  const learning = learnSources(store.entries).length > 0
 
   return (
     <div className="page">
@@ -32,29 +25,20 @@ export default function GamesTab({ store, toast, onBack }) {
         )}
         <h1 className="page-title">Juegos</h1>
         <div className="today-game">
-          <p className="today-game-label">{next || !verses.length ? 'Para memorizar' : 'Listo por hoy'}</p>
-          {next ? (
+          <p className="today-game-label">{pending || !learning ? 'Repasar' : 'Listo por hoy'}</p>
+          {pending ? (
             <>
-              <h2 className="today-game-title">{next.fields.cita || 'Texto'}</h2>
-              <p className="today-game-verse">{next.fields.texto}</p>
-              <button className="primary" onClick={() => setPractice(next)}>Practicar</button>
+              <h2 className="today-game-title">{pending === 1 ? '1 pregunta' : `${pending} preguntas`}</h2>
+              <p className="today-game-sub">Tus textos de la Biblia · {pending > 2 ? 'unos 2 minutos' : '1 minuto'}</p>
+              <button className="primary" onClick={() => setRepasando(true)}>Repasar</button>
             </>
-          ) : verses.length ? (
-            <p className="today-game-sub">Ya practicaste lo que tocaba. Mañana te toca repasar otra vez.</p>
+          ) : learning ? (
+            <p className="today-game-sub">Lo que toca repasar vuelve en los próximos días.</p>
           ) : (
-            <p className="today-game-sub">Cuando estudies el texto diario y toques "Ya lo estudié", su versículo aparece aquí.</p>
+            <p className="today-game-sub">Toca un texto de la Biblia (en el texto diario, La Atalaya o la reunión) y elige "Aprenderlo". Aquí lo repasarás.</p>
           )}
         </div>
         <div className="game-list">
-          <button className="game-card" onClick={() => setReviewing(true)}>
-            <span className="game-icon"><Icon d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" size={22} /></span>
-            <span className="entry-main">
-              <span className="game-title">Repasar hoy</span>
-              <span className="entry-sub">Lo que estudias para las reuniones</span>
-              {toReview > 0 && <span className="game-pill">{toReview}</span>}
-            </span>
-            <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-          </button>
           {GAMES.map((g) => {
             const st = g.stat?.(store)
             return (
@@ -72,8 +56,7 @@ export default function GamesTab({ store, toast, onBack }) {
         </div>
       </PageScroll>
       {game && <game.Component store={store} toast={toast} onExit={() => setOpen(null)} />}
-      {practice && <Memorize store={store} toast={toast} start={practice} onExit={() => setPractice(null)} />}
-      {reviewing && <Review store={store} onExit={() => setReviewing(false)} />}
+      {repasando && <Repaso store={store} onExit={() => setRepasando(false)} />}
     </div>
   )
 }

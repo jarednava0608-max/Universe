@@ -1,19 +1,24 @@
-// Al guardar un texto bíblico (Mi Biblia) también entra a Memorizar textos, una sola vez por cita.
-// Ya no se crea un nodo con el texto: el mapa es solo para conceptos con definiciones propias.
-// Las publicaciones (pub:…) no: no son texto bíblico.
+// "Aprenderlo": el usuario elige qué textos aprender (nada entra solo a Repasar). Marca el de Memorizar
+// con esa cita (fields.aprender) o crea uno. null si ya lo está aprendiendo, no es texto bíblico o no hay texto.
 import { makeVerse } from '../games/logic.js'
 import { cleanVerseText, refKey } from './verses.js'
 import { isPubRef } from './pubs.js'
 import { parseRef } from './bible.js'
 
-export function planVerseSave(entry, entries = []) {
-  const none = { memoria: null }
-  if (entry?.kind !== 'biblia' || isPubRef(entry.fields.cita)) return none
-  const key = refKey(entry.fields.cita)
-  const texto = entry.fields.texto?.trim()
-  if (!key || !texto) return none
-  const hasMemoria = entries.some((e) => e.kind === 'memoria' && e.fields.cita && refKey(e.fields.cita) === key)
-  return { memoria: hasMemoria ? null : makeVerse({ cita: entry.fields.cita, texto }) }
+export function planLearn(entries = [], { cita = '', texto = '' } = {}) {
+  const key = cita && !isPubRef(cita) ? refKey(cita) : ''
+  const t = cleanVerseText(texto ?? '').trim()
+  if (!key) return null
+  const old = entries.find((e) => e.kind === 'memoria' && e.fields.cita && refKey(e.fields.cita) === key)
+  if (old) return old.fields.aprender ? null : { ...old, fields: { ...old.fields, aprender: true, ...(!String(old.fields.texto ?? '').trim() && t ? { texto: t } : {}) } }
+  if (!t) return null
+  const v = makeVerse({ cita, texto: t })
+  return { ...v, fields: { ...v.fields, aprender: true } }
+}
+
+export const isLearning = (entries = [], cita = '') => {
+  const key = cita ? refKey(cita) : ''
+  return !!key && entries.some((e) => e.kind === 'memoria' && e.fields.aprender && e.fields.cita && refKey(e.fields.cita) === key)
 }
 
 // Limpia las marcas + y * de los textos ya guardados (Mi Biblia y Memorizar). Devuelve solo los que cambian.

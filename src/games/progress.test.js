@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { streak, withDay, review, isDue, byPriority, dueCount, lastWeek, addDays, newToday, isKnown, roundSize, mergeProgress } from './progress.js'
+import { streak, withDay, review, isDue, dueCount, addDays, mergeProgress } from './progress.js'
 
 const T = '2026-10-10'
 
@@ -14,7 +14,6 @@ describe('racha', () => {
   it('agrega el día una sola vez y arma la semana', () => {
     const f = withDay(withDay({ days: [] }, T), T)
     expect(f.days).toEqual([T])
-    expect(lastWeek([T], T).map((d) => d.done)).toEqual([false, false, false, false, false, false, true])
     expect(addDays('2026-12-31', 1)).toBe('2027-01-01')
   })
 })
@@ -48,18 +47,8 @@ describe('repaso inteligente', () => {
     expect(review(undefined, 'help', T)).toEqual({ box: 0, due: '2026-10-11', first: T })
   })
 
-  it('conocido = acertado en dos días distintos; cuenta las nuevas de hoy', () => {
-    const day1 = review(undefined, true, T)
-    expect(isKnown(day1)).toBe(false)
-    expect(isKnown(review(day1, true, '2026-10-11'))).toBe(true)
-    const srs = { 'q:1': day1, 'c:2': review(undefined, false, T), 'mb:3': day1, 'v:4': { box: 1, due: T }, 'q:5': { box: 0, due: T, first: '2026-10-09' } }
-    expect(newToday(srs, T)).toBe(2) // los personajes y lo de otros días no cuentan
-  })
-
-  it('primero lo vencido, luego lo demás', () => {
+  it('lo nunca visto no cuenta para repasar', () => {
     const srs = { a: { due: '2026-10-20' }, b: { due: '2026-10-01' }, c: undefined }
-    const order = byPriority(['a', 'b', 'c'], srs, T, () => 0.5)
-    expect(order.at(-1)).toBe('a')
     expect(dueCount(['a', 'b', 'c'], srs, T)).toBe(1) // lo nunca visto es nuevo, no "para repasar"
   })
 })
@@ -83,14 +72,8 @@ describe('constancia', () => {
   })
 })
 
-describe('una ronda de Repasar hoy', () => {
-  it('trae hasta 8: primero lo que toca y luego hasta 4 nuevas', () => {
-    expect(roundSize({ due: 0, fresh: 10 })).toBe(4)
-    expect(roundSize({ due: 3, fresh: 10 })).toBe(7)
-    expect(roundSize({ due: 6, fresh: 10 })).toBe(8)
-    expect(roundSize({ due: 12, fresh: 2 })).toBe(8)
-    expect(roundSize({ due: 0, fresh: 0 })).toBe(0)
-  })
+describe('Repasar al juntar teléfonos', () => {
+
   it('al juntar dos teléfonos queda el último día en que terminaste una ronda', () => {
     expect(mergeProgress({ repaso: '2026-10-13' }, { repaso: '2026-10-14' }).repaso).toBe('2026-10-14')
     expect(mergeProgress({ repaso: '2026-10-14' }, {}).repaso).toBe('2026-10-14')

@@ -643,11 +643,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 @keyframes pop { 40% { transform: scale(1.03); } }
 .option.dim { opacity: 0.45; }
 
-.feedback { margin-top: 20px; animation: fade 0.2s; }
-.feedback .ok, .feedback .bad { font-weight: 600; margin: 0 0 8px; }
-.feedback .ok { color: var(--ok); }
-.feedback .bad { color: var(--danger); }
-.explain { color: var(--text-2); margin: 0 0 8px; line-height: 1.55; }
 .ref { color: var(--text-3); font-size: 15px; margin: 0 0 12px; }
 
 .result-card { text-align: center; padding: 40px 8px; display: grid; gap: 8px; animation: fade 0.3s; }
@@ -656,58 +651,15 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .result-msg { color: var(--text-2); margin: 0 0 20px; font-size: 17px; }
 .result-card .primary, .result-card .secondary { margin-top: 0; }
 
-.mem-status { margin: 0 0 12px; font-size: 13px; color: var(--text-2); }
-.pairs { display: grid; gap: 8px; }
-.pairs.cols3 { grid-template-columns: repeat(3, 1fr); }
-.pairs.cols2 { grid-template-columns: repeat(2, 1fr); }
-.pair-chip { position: relative; min-height: 88px; padding: 0; perspective: 600px; background: none; border: 0; border-radius: var(--r); }
-.mem-in { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.4s; }
-.pair-chip.up .mem-in { transform: rotateY(180deg); }
-.mem-face {
-  position: absolute; inset: 0; display: grid; place-items: center; padding: 8px; text-align: center; border-radius: var(--r);
-  backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow-wrap: anywhere;
-}
-.mem-back {
-  background-color: var(--surface); border: 1px solid var(--line);
-  background-image: repeating-linear-gradient(45deg, transparent 0 8px, color-mix(in srgb, var(--accent) 18%, transparent) 8px 9px);
-}
-.mem-front { transform: rotateY(180deg); font-size: 13px; line-height: 1.35; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--line-strong); }
-.pair-chip.title .mem-front { font-weight: 600; color: var(--text); font-size: 15px; }
-.pair-chip.done .mem-front { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border-color: var(--accent); }
-@media (prefers-reduced-motion: reduce) {
-  .mem-in { transform: none !important; transition: none; }
-  .mem-face { transition: opacity 0.2s; }
-  .mem-front { transform: none; opacity: 0; }
-  .pair-chip.up .mem-front { opacity: 1; }
-  .pair-chip.up .mem-back { opacity: 0; }
-}
 @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 
-.flashcard {
-  position: relative; display: grid; place-items: center; width: 100%; min-height: 300px; margin: 12px 0 16px; padding: 28px 24px;
-  background: linear-gradient(160deg, var(--surface-2), var(--surface)); border: 1px solid var(--line-strong); border-radius: 20px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); transition: transform 0.2s var(--ease);
-}
-.flashcard:active { transform: scale(0.985); }
-.card-front { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; text-align: center; }
-.card-back { font-size: 17px; line-height: 1.6; color: var(--text-body); white-space: pre-line; text-align: left; }
-.card-hint { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 13px; color: var(--text-3); }
 .two-btn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .two-btn .primary, .two-btn .secondary { margin-top: 0; }
 
-.level-dots { display: flex; gap: 4px; }
-.level-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line-strong); }
-.level-dots i.on { background: var(--ok); border-color: transparent; }
-.level-tabs { display: flex; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 24px; }
-.level-tabs button { flex: 1; min-height: 34px; border-radius: 8px; font-size: 13px; color: var(--text-2); }
-.level-tabs button.on { background: var(--surface-2); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
 .verse { font-family: var(--font-display); font-size: 22px; line-height: 1.75; letter-spacing: -0.01em; margin: 0 0 12px; }
-.blank {
-  display: inline-block; height: 1.1em; vertical-align: -0.15em;
-  border-bottom: 2px solid rgba(var(--fg-rgb), 0.35); background: rgba(var(--fg-rgb), 0.04); border-radius: 3px 3px 0 0;
-}
-.revealed { color: var(--link); }
+
 .verse-ref { color: var(--text-2); font-size: 15px; margin: 0 0 24px; }
+.verse.small { font-family: var(--font-book); font-size: 17px; line-height: 1.5; margin: 16px 0 12px; color: var(--text-body); }
 .hint.center { text-align: center; }
 .primary + .hint, .secondary + .hint { margin-top: 12px; }
 
@@ -735,7 +687,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
   color: var(--link); font-size: 15px; font-weight: 500; text-decoration: none;
 }
 .ref-chip:active { background: rgba(var(--link-rgb), 0.16); }
-.due-tag { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--ok); background: rgba(134, 239, 172, 0.1); border: 1px solid rgba(134, 239, 172, 0.25); padding: 2px 8px; border-radius: 999px; }
 
 /* ---------- Racha y progreso ---------- */
 .progress-card { padding: 16px; margin-bottom: 20px; background: linear-gradient(160deg, var(--surface-2), var(--surface) 75%); border: 1px solid var(--line); border-radius: 18px; }
@@ -764,19 +715,12 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 /* ---------- Juegos: piezas nuevas ---------- */
 .quiz-meta { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; min-height: 22px; }
 
-.review-kind { margin-left: auto; font-size: 13px; color: var(--text-3); }
 .review-source { margin: 16px 0 0; font-size: 13px; color: var(--text-3); }
 .options.long .option { font-size: 15px; line-height: 1.45; }
 .timer { height: 6px; margin-top: 12px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
 .timer span { display: block; height: 100%; background: var(--ok); transition: width 0.1s linear, background 0.3s; }
 .timer.low span { background: var(--danger); }
 .quiz-prompt { animation: fade 0.25s; }
-
-.missed { margin-top: 24px; text-align: left; display: grid; gap: 8px; }
-.missed-title { margin: 0 0 2px; font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
-.missed-item { padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.missed-q { margin: 0 0 4px; font-size: 15px; color: var(--text-2); line-height: 1.4; }
-.missed-a { margin: 0; font-weight: 600; color: var(--ok); }
 
 .result-card { position: relative; }
 .result-card.compact { padding: 20px 0 0; }
@@ -785,20 +729,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 @keyframes confetti-fall { to { top: 105%; transform: translateX(30px) rotate(540deg); opacity: 0.6; } }
 @media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
 
-.seg-modes { display: flex; padding: 4px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
-.seg-modes button { flex: 1; min-height: 38px; border-radius: 8px; font-size: 15px; font-weight: 500; color: var(--text-2); }
-.seg-modes button.on { background: var(--btn); color: var(--btn-ink); }
-.verse.initials { display: block; width: 100%; text-align: left; padding: 0; letter-spacing: 0.02em; word-spacing: 0.12em; }
-
-.order { display: flex; flex-direction: column; }
-.order-built { min-height: 120px; font-family: var(--font-display); font-size: 20px; line-height: 1.6; margin: 4px 0 8px; padding: 16px; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 14px; }
-.order-word { animation: fade 0.2s; }
-.order-caret { display: inline-block; width: 2px; height: 1.1em; vertical-align: -0.2em; background: var(--text-3); animation: pulse 1s infinite; }
-.order-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
-.order-chip { min-height: var(--tap); padding: 8px 16px; font-size: 15px; line-height: 1.3; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 12px; transition: opacity 0.2s, transform 0.15s; }
-.order-chip:active:not(:disabled) { transform: scale(0.96); }
-.order-chip.used { opacity: 0; pointer-events: none; }
-.order-chip.miss { border-color: var(--danger); animation: shake 0.35s; }
 .order-result { text-align: center; font-weight: 600; margin: 16px 0 8px; }
 .order-result.ok { color: var(--ok); }
 .order-result.bad { color: var(--text-2); }
@@ -950,13 +880,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .tb-suggest::-webkit-scrollbar { display: none; }
 .tb-suggest .tb-btn { flex: 1 0 auto; height: 38px; background: rgba(var(--fg-rgb), 0.07); font-weight: 500; white-space: nowrap; }
 
-/* ---------- Mis textos (Memorizar) ---------- */
-.mb-hero { margin: 4px 0 16px; }
-.mb-count { margin: 0 0 8px; color: var(--text-2); font-size: 15px; }
-.mb-count b { color: var(--text); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-right: 4px; }
-.mb-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-.mb-bar span { display: block; height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.4s var(--ease); }
-
 .tb-suggest .tb-btn { display: inline-flex; align-items: center; gap: 8px; }
 .sugg-node { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--graph-node); }
 
@@ -1000,12 +923,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .result-card { padding-top: 28px; }
 .result-card.compact { padding-top: 20px; }
 
-.seg-modes.small button { min-height: 34px; font-size: 13px; }
-
-.order-chip.nudge { border-color: var(--ok); box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.18); animation: pop 0.6s var(--ease) 2; }
-
-/* ---------- Memorizar: Escribir ---------- */
-.seg-modes button { font-size: 15px; }
 .type-verse { cursor: text; }
 .type-blank { display: inline-block; height: 1.05em; vertical-align: -0.12em; border-bottom: 2px solid rgba(var(--fg-rgb), 0.25); border-radius: 2px; }
 .type-blank.now { border-bottom-color: var(--link); background: rgba(var(--link-rgb), 0.1); animation: pulse-line 1.2s infinite; }
@@ -1014,15 +931,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .type-new { animation: fade 0.25s; }
 .type-bad { color: var(--danger); }
 .type-input { position: absolute; opacity: 0; width: 1px; height: 1px; font-size: 17px; pointer-events: none; }
-.mb-bar.memo span { background: var(--ok); }
-
-/* ---------- Tarjetas que se deslizan ---------- */
-.swipe-wrap { overflow: hidden; overflow-x: clip; overflow-y: visible; margin: 0 -16px; padding: 0 16px; }
-:root[data-theme='light'] .flashcard { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.1); }
-.flashcard.swipe { padding-top: 56px; padding-bottom: 40px; touch-action: pan-y; user-select: none; -webkit-user-select: none; transition: transform 0.25s var(--ease); }
-.swipe-tag { position: absolute; top: 16px; padding: 4px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; pointer-events: none; }
-.swipe-tag.yes { left: 16px; color: var(--ok); border: 2px solid var(--ok); transform: rotate(-8deg); }
-.swipe-tag.no { right: 16px; color: #fb923c; border: 2px solid #fb923c; transform: rotate(8deg); }
 
 /* ---------- Avance en la lista de juegos ---------- */
 .game-list > * { min-width: 0; }
@@ -1045,11 +953,8 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .empty-state .empty-icon { display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; margin-bottom: 16px; }
 .empty-state .empty-title { margin: 0 0 4px; font-size: 20px; font-weight: 600; color: var(--text); }
 
-.level-note { justify-self: center; align-self: center; margin: -4px 0 12px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); animation: pop 0.4s var(--ease); }
-.level-note.up { color: var(--ok); background: rgba(134, 239, 172, 0.1); border-color: rgba(134, 239, 172, 0.25); }
 /* En los juegos los avisos van arriba, debajo de la barra, para no tapar los botones. */
 body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
-.mb-count { display: flex; align-items: baseline; gap: 4px; }
 
 .tab-icon { position: relative; display: grid; }
 .tab-dot { position: absolute; top: -1px; right: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); border: 2px solid var(--bg); box-sizing: content-box; }
@@ -1301,8 +1206,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* ---------- Memorizar: Cita ---------- */
 .cite-built { text-align: center; font-size: 20px; font-weight: 600; margin: 4px 0 8px; }
 .cite-gap { color: var(--text-3); font-weight: 500; border-bottom: 2px solid var(--line-strong); padding: 0 4px; }
-.cite-blank { display: block; min-height: var(--tap); margin: 0 0 24px; padding: 0 16px; font-size: 15px; color: var(--text-2); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 12px; }
-.next-mode { margin: -4px 0 16px; }
 
 /* ---------- Estilo "Como JW": barras y pestañas como en JW Library ---------- */
 :root[data-style='jw'] .bar,
@@ -1360,7 +1263,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .at-step.on { background: none; color: var(--accent); font-weight: 800; border-bottom-color: var(--accent); }
 
 /* Esquinas casi rectas, como los cuadros de JW Library. */
-:root[data-style='jw'] :is(.today-card, .continue-card, .kind-card, .entry-list, .entry-row, .progress-card, .menu-group, .propose-card, .at-card, .at-answer, .related-row, .result-stats, .undo-bar, .missed-item, .note-search, .seg2, .input, .primary, .secondary) { border-radius: 6px; }
+:root[data-style='jw'] :is(.today-card, .continue-card, .kind-card, .entry-list, .entry-row, .progress-card, .menu-group, .propose-card, .at-card, .at-answer, .related-row, .result-stats, .undo-bar, .note-search, .seg2, .input, .primary, .secondary) { border-radius: 6px; }
 :root[data-style='jw'] :is(.today-card, .kind-card, .continue-card) { background: var(--surface); }
 
 /* "Hoy" como el inicio de JW Library: la fecha en lavanda. */
@@ -1473,7 +1376,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .back-link + .page-head { margin-top: -44px; margin-bottom: 12px; min-height: 44px; }
 :root[data-style='jw'] .back-link + .page-head .round-btn { width: 36px; height: 36px; margin-bottom: 0; }
 /* Todas las tarjetas con las mismas esquinas casi rectas, fondo liso y un toque que se nota. */
-:root[data-style='jw'] :is(.game-card, .progress-card, .result-stats, .order-built, .missed-item) { border-radius: 6px; background: var(--surface); box-shadow: none; }
+:root[data-style='jw'] :is(.game-card, .progress-card, .result-stats) { border-radius: 6px; background: var(--surface); box-shadow: none; }
 :root[data-style='jw'] :is(.game-icon, .kind-icon, .flame) { border-radius: 6px; }
 :root[data-style='jw'] :is(.game-icon, .kind-icon) { color: var(--accent); background: var(--accent-soft); }
 :root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .entry-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
@@ -1594,20 +1497,20 @@ input[type='time'].input { min-height: var(--tap); }
    solo lo que es círculo (números, palomitas, puntos) sigue redondo. Las tarjetas se distinguen por
    su fondo, sin borde, y no se mete una caja dentro de otra. */
 :root[data-style='jw'] :is(.search-results, .note, .menu-group, .toast, .link-pill, .kind-card, .kind-icon, .entry-list, .meeting-date,
-  .propose-card, .game-card, .game-icon, .option, .pair-chip, .flashcard, .soon-badge, .ref-chip, .due-tag,
-  .progress-card, .flame, .missed-item, .order-built, .order-chip, .note-search, .tb-btn,
+  .propose-card, .game-card, .game-icon, .option, .soon-badge, .ref-chip,
+  .progress-card, .flame, .note-search, .tb-btn,
   .tidy-banner, .tidy-banner button, .related-row, .record-tag, .result-stats, .game-pill,
-  .empty-state .empty-icon, .level-note, .undo-bar, .today-card, .continue-card, .at-card, .at-cover,
-  .at-answer, .at-missing button, .cite-blank, .constancia-text, .new-task, .chips button span, .fold-row.alone, .plan-next) { border-radius: var(--r); }
+  .empty-state .empty-icon, .undo-bar, .today-card, .continue-card, .at-card, .at-cover,
+  .at-answer, .at-missing button, .constancia-text, .new-task, .chips button span, .fold-row.alone, .plan-next) { border-radius: var(--r); }
 :root[data-style='jw'] :is(.kind-card, .entry-list, .propose-card, .game-card, .progress-card, .related-row,
-  .result-stats, .continue-card, .at-card, .at-answer, .constancia-text, .new-task, .menu-group, .note-search, .missed-item) { border-color: transparent; }
+  .result-stats, .continue-card, .at-card, .at-answer, .constancia-text, .new-task, .menu-group, .note-search) { border-color: transparent; }
 /* "Hoy" va directo sobre el fondo: el botón "Empieza" es la única caja. */
 :root[data-style='jw'] .today-card.plan { background: none; border: 0; padding: 0; margin: 0 0 24px; }
 /* Juegos con la misma paleta: el lavanda en lugar del naranja, el dorado y el verde. */
 :root[data-style='jw'] .flame.on { color: var(--accent); background: var(--accent-soft); }
 :root[data-style='jw'] .week-day.done i { background: var(--accent); box-shadow: none; }
 
-:root[data-style='jw'] :is(.due-tag, .game-pill.due) { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+:root[data-style='jw'] :is(.game-pill.due) { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
 
 /* Listas de Estudio: "‹ Estudio" y el + van en la barra de arriba, como en las demás pantallas. */
 .page-bar-back, .page-bar-action { display: none; }
@@ -1646,25 +1549,21 @@ input[type='time'].input { min-height: var(--tap); }
 /* Renglones mejor cortados (Safari; donde no existe no cambia nada): los párrafos no terminan con una palabra
    sola, los títulos se parten parejo y las comillas de un versículo cuelgan fuera del margen. Solo el estilo
    del corte (text-wrap-style), para no deshacer los títulos de un renglón con "…". */
-:is(.at-text p, .mw-text, .mw-para p, .bible-text, .dt-verse, .dt-comment, .dt-more p, .md p, .card-back, .explain, .mm-a) { text-wrap-style: pretty; }
+:is(.at-text p, .mw-text, .mw-para p, .bible-text, .dt-verse, .dt-comment, .dt-more p, .md p, .mm-a) { text-wrap-style: pretty; }
 :is(.at-title, .at-sub, .at-question, .at-h, .mw-title, .mw-cover-title, .mw-q, .note-title, .sheet-h, .peek-title, .quiz-prompt, .mm-title, .empty-title) { text-wrap-style: balance; }
 :is(.dt-verse, .at-theme) { hanging-punctuation: first; }
 
 /* Área para el dedo de 44 px en chips y botones segmentados, sin cambiar cómo se ven (se extiende hacia
    el espacio de alrededor). */
-:is(.ref-chip, .at-missing button, .seg2 button, .seg-modes button, .level-tabs button, .galaxies button) { position: relative; }
-:is(.ref-chip, .at-missing button, .level-tabs button, .seg-modes.small button)::after { content: ''; position: absolute; inset: -5px 0; }
-:is(.seg2, .seg-modes:not(.small), .galaxies) button::after { content: ''; position: absolute; inset: -3px 0; }
+:is(.ref-chip, .at-missing button, .seg2 button, .galaxies button) { position: relative; }
+:is(.ref-chip, .at-missing button)::after { content: ''; position: absolute; inset: -5px 0; }
+:is(.seg2, .galaxies) button::after { content: ''; position: absolute; inset: -3px 0; }
 
 .at-card + .at-missing { margin-top: -4px; margin-bottom: 20px; }
 
 /* Juegos: después de contestar, "Siguiente" siempre en el mismo lugar, abajo y a la mano del pulgar (aunque la
    explicación sea larga o corta). La explicación se lee arriba de él. */
 .game-body > .quiz { flex-grow: 1; }
-.quiz > .feedback { display: contents; }
-.quiz > .feedback > :first-child { margin-top: 20px; }
-.quiz > .feedback > * { animation: fade 0.2s; }
-.quiz > .feedback > .primary:last-child { margin-top: auto; position: sticky; bottom: calc(var(--sab) + 12px); z-index: 1; }
 
 /* Juego de hoy */
 .today-game { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 24px 0; margin: 0 0 16px; }
@@ -1672,7 +1571,7 @@ input[type='time'].input { min-height: var(--tap); }
 .today-game-title { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 28px; font-weight: 700; color: var(--title); }
 .today-game-title svg { color: var(--ok); }
 .today-game-sub { margin: 0 0 16px; font-size: 15px; color: var(--text-2); }
-.today-game-verse { margin: 0 0 16px; font-family: var(--font-book); font-size: 17px; line-height: 1.5; color: var(--text-body); }
+
 .today-game .primary, .today-game .secondary { width: 100%; margin-top: 0; }
 
 /* Biblioteca: 4 cuadros grandes y "Más" (sin números) */

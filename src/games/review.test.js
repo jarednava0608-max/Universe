@@ -1,61 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { atalayaCards, atalayaCheck, atalayaSourceCards, atalayaSourceCheck, withSources, dailyMix, mulberry } from './logic.js'
-import { isDue } from './progress.js'
-
-const ARTICULO = `1. ¿Cómo nos sentimos al ver el progreso de un estudiante?
-
-¿CÓMO nos sentimos? Muy felices (1 Cor. 3:5-9).
-
-2. ¿Cuál es la voluntad de Jehová?
-
-2 La voluntad de Jehová es que todos lleguen a conocerlo.
-
-3, 4. ¿Qué preguntas responderemos?
-
-3 Primera parte.
-
-4 Segunda parte.
-
-## ¿Qué responderías?
-- ¿Por qué necesitan conocer bien a Jehová?
-- ¿Cómo podemos enseñarles?`
-
-const reunion = (id, fecha, parrafos, repaso = []) => ({ id, kind: 'reunion', fields: { tipo: 'atalaya', fecha, titulo: 'Conocer a Jehová ' + id, articulo: ARTICULO, parrafos, repaso }, updatedAt: 1 })
-
-describe('Tu Atalaya en el repaso', () => {
-  const entries = [
-    reunion('a', '2026-09-26', [{ num: '1', nota: 'Muy felices, pero el mérito es de Jehová.' }]),
-    reunion('b', '2026-10-03', [
-      { num: '1', nota: 'Felices, porque Jehová lo hace crecer.' },
-      { num: '2', nota: 'Que todos se salven y lo conozcan bien.' },
-      { num: '3, 4', nota: 'Sí' }, // muy corta: no es tarjeta
-    ], [{ pregunta: '¿Cómo podemos enseñarles?', nota: 'Con el ejemplo y con la Biblia.' }]),
-  ]
-
-  it('cada pregunta con tu respuesta; lo más reciente primero y en orden', () => {
-    const cards = atalayaCards(entries)
-    expect(cards.map((c) => c.id)).toEqual(['b:1', 'b:2', 'b:r1', 'a:1'])
-    expect(cards[0]).toMatchObject({ front: '¿Cómo nos sentimos al ver el progreso de un estudiante?', back: 'Felices, porque Jehová lo hace crecer.', label: 'Párr. 1', title: 'Conocer a Jehová b' })
-    expect(cards[2]).toMatchObject({ front: '¿Cómo podemos enseñarles?', label: '¿Qué responderías?' })
-  })
-
-  it('también tus respuestas de la reunión de entre semana', () => {
-    const programa = 'TESOROS DE LA BIBLIA\n1. Busquemos perlas escondidas\n(10 mins.)\n¿Qué perlas encontró?\nRespuesta\n¿Otra pregunta?\nRespuesta'
-    const mw = { id: 'm', kind: 'reunion', fields: { tipo: 'entresemana', fecha: '2026-10-08', titulo: 'Jeremías 40, 41', programa, respuestas: { '1-0': 'Que Jehová cumple lo que promete.', '1-1': 'No' } }, updatedAt: 1 }
-    const cards = atalayaCards([mw])
-    expect(cards).toEqual([{ id: 'm:1-0', group: 'm', title: 'Jeremías 40, 41', label: 'Parte 1', midweek: true, front: '¿Qué perlas encontró?', back: 'Que Jehová cumple lo que promete.' }])
-  })
-
-  it('se repasa eligiendo tu respuesta entre 4 (primero del mismo artículo)', () => {
-    const cards = atalayaCards(entries)
-    const q = atalayaCheck(cards[0], cards, mulberry(3))
-    expect(q.options).toHaveLength(4)
-    expect(q.options[q.answer]).toBe(cards[0].back)
-    expect(new Set(q.options).size).toBe(4)
-    // Sin suficientes respuestas no hay pregunta (queda la tarjeta).
-    expect(atalayaCheck(cards[0], cards.slice(0, 2))).toBe(null)
-  })
-})
+import { atalayaSourceCards, atalayaSourceCheck, mulberry } from './logic.js'
 
 describe('¿De qué Atalaya es?', () => {
   const art = (n) => Array.from({ length: n }, (_, i) => `${i + 1}. ¿Pregunta ${i + 1}?\n\n${i + 1} Corto. Esta es la oración más larga del párrafo número ${i + 1} del artículo.`).join('\n\n')
@@ -76,53 +20,5 @@ describe('¿De qué Atalaya es?', () => {
     expect(q.options[q.answer]).toBe('Artículo b · 3 de octubre')
     expect(atalayaSourceCards([ent('a', '2026-09-26', 4), ent('b', '2026-10-03', 4)])).toEqual([])
     expect(atalayaSourceCheck(cards[0], cards.filter((c) => c.group === 'b'), mulberry(2))).toBe(null)
-  })
-
-  it('se intercalan con tus respuestas, uno cada tantas y no más', () => {
-    expect(withSources([1, 2, 3, 4], ['x', 'y'], 2)).toEqual([1, 2, 'x', 3, 4, 'y'])
-    expect(withSources([1, 2], ['x', 'y', 'z'], 2)).toEqual([1, 2, 'x'])
-  })
-})
-
-describe('Repasar hoy: lo que toca y unas pocas nuevas', () => {
-  const T = '2026-10-10'
-  const due = (s) => isDue(s, T)
-  const ids = (n, p) => Array.from({ length: n }, (_, i) => ({ id: p + i }))
-
-  it('primero lo que ya viste; las nuevas solo hasta el límite del día', () => {
-    const srs = { 'c:c0': { box: 1, due: '2026-10-09' }, 'q:q0': { box: 2, due: T }, 'c:c1': { box: 3, due: '2026-12-01' } }
-    const mix = dailyMix({ cards: ids(5, 'c'), trivia: ids(30, 'q') }, srs, due, 20, mulberry(1), 4)
-    expect(mix.slice(0, 2).map((x) => x.key).sort()).toEqual(['c:c0', 'q:q0'])
-    expect(mix.slice(0, 2).every((x) => !x.fresh)).toBe(true)
-    expect(mix.slice(2)).toHaveLength(4)
-    expect(mix.slice(2).every((x) => x.fresh)).toBe(true)
-    expect(mix.some((x) => x.key === 'c:c1')).toBe(false) // aún no toca
-    // Sin lugar para nuevas: nada nuevo.
-    expect(dailyMix({ cards: ids(5, 'c') }, srs, due, 20, mulberry(1), 0).map((x) => x.key)).toEqual(['c:c0'])
-  })
-
-  it('lo nuevo se turna por tipo: tu Atalaya en orden y los textos diarios también entran', () => {
-    const mix = dailyMix({ atalaya: ids(30, 'a'), daily: ids(5, 'd'), trivia: ids(5, 'q') }, {}, due, 20, mulberry(2), 4)
-    expect(mix.filter((x) => x.type === 'atalaya').map((x) => x.key)).toEqual(['a:a0', 'a:a1'])
-    expect(mix.some((x) => x.type === 'daily')).toBe(true)
-    expect(mix[0].key).toBe('a:a0')
-  })
-})
-
-describe('Repasar hoy: tus textos diarios', async () => {
-  const { dailyCards, dailyCheck } = await import('./logic.js')
-  const day = (id, fecha, principio) => ({ id, kind: 'diario', fields: { fecha, texto: `Siempre tengo a Jehová delante de mí (Sal. 16:8).\n\nComentario`, principio } })
-  it('solo los analizados, con el versículo y tu principio', () => {
-    const cards = dailyCards([day('a', '2026-10-04', 'Jehová me sostiene'), { id: 'b', kind: 'diario', fields: { texto: 'x (Juan 3:16)' } }])
-    expect(cards).toHaveLength(1)
-    expect(cards[0]).toMatchObject({ id: 'a', front: 'Siempre tengo a Jehová delante de mí (Sal. 16:8).', cita: 'Sal. 16:8', back: 'Jehová me sostiene' })
-  })
-  it('elige tu principio entre 4; con pocos días, arma la cita', () => {
-    const cards = dailyCards([day('a', '1', 'Uno'), day('b', '2', 'Dos'), day('c', '3', 'Tres'), day('d', '4', 'Cuatro')])
-    const q = dailyCheck(cards[0], cards.slice(1), mulberry(3))
-    expect(q.type).toBe('choice')
-    expect(q.options[q.answer]).toBe(cards[0].back)
-    const cite = dailyCheck(cards[0], [], mulberry(3))
-    expect(cite).toMatchObject({ type: 'cite', verse: { fields: { cita: 'Sal. 16:8', texto: 'Siempre tengo a Jehová delante de mí' } } })
   })
 })

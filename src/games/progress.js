@@ -47,31 +47,6 @@ export function streak(days, today = todayISO()) {
   return { current, best: Math.max(best, current) }
 }
 
-// Los últimos 7 días (para dibujar la semana).
-export function lastWeek(days, today = todayISO()) {
-  const set = new Set(days)
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = addDays(today, i - 6)
-    return { day: d, done: set.has(d) }
-  })
-}
-
-// ---------- Repaso inteligente ----------
-
-// Cosas nuevas por día en el repaso (lo demás es repasar lo que ya viste).
-export const NEW_PER_DAY = 10
-// Una ronda de Repasar hoy: corta (unos 3 minutos) y con pocas nuevas.
-export const SESSION = 8
-export const NEW_PER_SESSION = 4
-// Cuántas cosas trae la próxima ronda (lo mismo que arma Review.jsx), para que Hoy y Juegos digan lo real.
-export function roundSize({ due = 0, fresh = 0 } = {}) {
-  const d = Math.min(due, SESSION)
-  return d + Math.min(fresh, NEW_PER_SESSION, SESSION - d)
-}
-// Desde esta caja algo cuenta como "conocido": lo acertaste en dos días distintos.
-export const KNOWN_BOX = 2
-export const isKnown = (item) => (item?.box ?? 0) >= KNOWN_BOX
-
 // `knew`: true (lo sabías), false (fallaste) o 'help' (acertaste, pero con todas las pistas).
 // - Lo que sabes sube de caja y se repasa cada vez más espaciado. Si aún no tocaba, se queda
 //   igual: así no sube dos veces el mismo día ni por atinarle de suerte a algo ya repasado.
@@ -95,43 +70,12 @@ export function isDue(item, today = todayISO()) {
 // Para repasar: lo que ya viste y hoy toca (lo nunca visto es "nuevo", no cuenta aquí).
 export const isReview = (item, today = todayISO()) => !!item && item.due <= today
 
-// Cosas nuevas que ya empezaste hoy (los personajes no cuentan: al repaso solo entran los ya vistos).
-export function newToday(srs = {}, today = todayISO()) {
-  return Object.entries(srs).filter(([k, s]) => s?.first === today && !k.startsWith('mb:')).length
-}
-
-// Ordena para repasar: primero lo vencido (lo más atrasado y lo nuevo), luego el resto.
-export function byPriority(keys, srs, today = todayISO(), rnd = Math.random) {
-  const withKey = keys.map((k) => ({ k, s: srs[k], r: rnd() }))
-  return withKey
-    .sort((a, b) => {
-      const da = isDue(a.s, today)
-      const db = isDue(b.s, today)
-      if (da !== db) return da ? -1 : 1
-      const ua = a.s?.due ?? ''
-      const ub = b.s?.due ?? ''
-      return ua === ub ? a.r - b.r : ua < ub ? -1 : 1
-    })
-    .map((x) => x.k)
-}
-
 // Cuántas toca repasar hoy (solo lo que ya viste).
 export function dueCount(keys, srs, today = todayISO()) {
   return keys.filter((k) => isReview(srs[k], today)).length
 }
 
-export function nextDue(keys, srs) {
-  const dates = keys.map((k) => srs[k]?.due).filter(Boolean).sort()
-  return dates[0] ?? null
-}
-
 const isTime = (k) => k.endsWith('-tiempo')
-
-// Récord de tiempo: se guarda solo si es más rápido que el anterior.
-export function withBestTime(fields, key, secs) {
-  const prev = fields.best?.[key]
-  return prev == null || secs < prev ? { ...fields, best: { ...(fields.best ?? {}), [key]: secs } } : fields
-}
 
 // Une el progreso de dos dispositivos: todos los días de estudio, el repaso más reciente de cada cosa y el mejor récord.
 export function mergeProgress(a = {}, b = {}) {
@@ -178,10 +122,4 @@ export function mergeConstancia(a, b) {
   if (!a || !b) return a ?? b
   const last = (a.at ?? 0) >= (b.at ?? 0) ? a : b
   return { ...last, best: Math.max(a.best ?? 0, b.best ?? 0) }
-}
-
-// Guarda un récord solo si supera el anterior. Devuelve los campos nuevos (o los mismos).
-export function withBest(fields, key, value) {
-  const prev = fields.best?.[key] ?? 0
-  return value > prev ? { ...fields, best: { ...(fields.best ?? {}), [key]: value } } : fields
 }
