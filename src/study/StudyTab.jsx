@@ -495,7 +495,7 @@ function EntryList({ items, onOpen, onDelete }) {
         const progress = isAtalaya(e) && String(e.fields.articulo ?? '').trim() ? answeredCount(e.fields) : null
         const sub = !day ? def.subtitle(e)
           : e.kind === 'asignacion' ? assignmentSub(e.fields)
-          : diario ? (verse ? e.fields.resumen || (pending ? 'Falta analizarlo' : '') : 'Sin texto todavía')
+          : diario ? (verse ? e.fields.resumen || (pending ? 'Falta estudiarlo' : '') : 'Sin texto todavía')
           : e.fields.tipo === 'entresemana' ? midweekSub(e.fields)
           : progress?.total ? `La Atalaya · ${progress.done === progress.total ? 'Lista para la reunión' : `${progress.done} de ${progress.total} respondidas`}` : 'La Atalaya'
         // Reuniones y Texto diario: tarjeta con la fecha como en un calendario.

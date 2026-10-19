@@ -1632,26 +1632,18 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* ---------- Texto diario por pasos (DailyStudy.jsx) ---------- */
 .dt-verse { font-family: var(--font-book); font-size: 20px; line-height: 1.5; color: var(--text-body); margin: 0 0 8px; }
 .dt-verse.flat { margin: 0; }
-.dt-date { font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1.2; text-transform: capitalize; color: var(--title); margin: 0 0 16px; text-wrap-style: balance; }
+.dt-date { font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1.2; color: var(--title); margin: 8px 0 16px; text-wrap-style: balance; }
 .dt-more { margin: 0 0 16px; color: var(--text-2); font-size: 15px; line-height: 1.5; }
 .dt-more summary { min-height: 44px; display: flex; align-items: center; color: var(--link); cursor: pointer; }
 .dt-more p { margin: 0; white-space: pre-wrap; }
 .dt-guide { margin: 0 0 12px; padding-left: 20px; color: var(--text-body); font-size: 17px; line-height: 1.5; }
 .dt-guide li { margin: 0 0 8px; }
-.dt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
-.dt-chip { min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text-body); font-size: 15px; }
-.dt-chip.on { border-color: var(--accent, var(--text-2)); color: var(--accent, var(--title)); }
 .dt-missing { margin-bottom: 20px; }
 .dt-missing .at-label { width: 100%; margin: 0 0 2px; }
 .dt-links a { text-decoration: none; }
 .dt-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 8px; }
-.dt-q { font-size: 20px; margin-top: 20px; }
 .dt-more + .dt-link { margin-top: -12px; }
 .dt-comment { margin: 0 0 4px; color: var(--text-body); font-size: 17px; line-height: 1.55; white-space: pre-wrap; }
-.dt-recap { display: flex; flex-direction: column; gap: 12px; }
-.dt-recap p { margin: 0; color: var(--text-body); font-size: 15px; line-height: 1.45; }
-.dt-recap span { display: block; color: var(--text-2); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-.dt-phrase { font-size: 20px; margin: 0 0 16px; }
 .dt-link { display: flex; align-items: center; min-height: 44px; color: var(--link); text-decoration: none; font-size: 15px; }
 
 /* Campo con botón para borrarlo de un toque (×) */
@@ -1736,7 +1728,7 @@ input[type='time'].input { min-height: var(--tap); }
   .progress-card, .flame, .quiz-run, .missed-item, .order-built, .order-chip, .book-list, .medal, .medal-icon, .note-search, .tb-btn,
   .tidy-banner, .tidy-banner button, .related-row, .mb-world, .mb-goal, .mb-more, .record-tag, .result-stats, .mb-world-hero, .game-pill,
   .empty-state .empty-icon, .daily-card, .daily-icon, .level-note, .undo-bar, .today-card, .continue-card, .at-card, .at-cover,
-  .at-answer, .at-missing button, .cite-blank, .dt-chip, .constancia-text, .new-task, .chips button span, .fold-row.alone, .plan-next) { border-radius: var(--r); }
+  .at-answer, .at-missing button, .cite-blank, .constancia-text, .new-task, .chips button span, .fold-row.alone, .plan-next) { border-radius: var(--r); }
 :root[data-style='jw'] :is(.kind-card, .entry-list, .propose-card, .game-card, .mode-card, .progress-card, .book-list, .related-row, .mb-world,
   .result-stats, .daily-card, .continue-card, .at-card, .at-answer, .constancia-text, .new-task, .menu-group, .note-search, .missed-item) { border-color: transparent; }
 /* "Hoy" va directo sobre el fondo: el botón "Empieza" es la única caja. */

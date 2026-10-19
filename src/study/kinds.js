@@ -409,65 +409,10 @@ export function dailyStudyPrompt(fields) {
   ].join('\n')
 }
 
-// El Texto diario (DailyStudy.jsx): leer y tres preguntas cortas, una a la vez, que van del corazón
-// a la acción, y una frase para llevártelo en la mente todo el día (sale en la lista del Texto diario). El usuario
-// sentía el método de antes muy largo (Contexto, Relato, Concepto…) y uno de dos cajas, muy corto.
-// "La lección" (principio) es la que luego te pregunta Repasar hoy.
-export const DAILY_STEPS = [
-  { key: 'leer', label: 'Leer' },
-  {
-    key: 'jehova', label: 'Jehová', q: '¿Qué me dice de Jehová?',
-    guide: '¿Cómo es, qué siente o qué quiere para mí?',
-    starters: ['Jehová es', 'A Jehová le importa', 'Jehová quiere'],
-    hint: 'Una o dos oraciones',
-  },
-  {
-    key: 'principio', label: 'Lección', short: 'la lección', q: '¿Qué lección me deja?',
-    guide: 'Dila en una oración, como si se la explicaras a un amigo.',
-    starters: ['Aprendo que', 'Jehová me pide', 'Puedo confiar en que'],
-    hint: 'Una sola oración',
-  },
-  {
-    key: 'aplicacion', label: 'Hoy', short: 'qué hago hoy', q: '¿Dónde lo necesito hoy?',
-    // Un plan "Cuando…, voy a…" (con el momento y lo que harás) se cumple mucho más que "hoy voy a…".
-    guide: 'Elige un momento real de hoy (¿cuándo, con quién o dónde?) y qué vas a hacer o decir.',
-    starters: ['Cuando', 'voy a', 'En casa', 'En la escuela', 'En la predicación'],
-    hint: 'Cuando…, voy a…',
-  },
-  {
-    key: 'resumen', label: 'Recordar', q: 'Tu frase del día',
-    guide: 'De 3 a 5 palabras, para llevarte el texto en la mente.',
-    hint: 'Jehová no me suelta',
-  },
-]
+// Lo de hoy, hecho: tocaste Listo después de estudiarlo con Claude (fields.estudiado), o una entrada de
+// antes con la lección y qué hago hoy (el método de preguntas en la app, que el usuario cambió por su chat).
+export const dailyMinimum = (f = {}) => !!f.estudiado || ['principio', 'aplicacion'].every((k) => String(f[k] ?? '').trim())
 
-// Los textos diarios no son todos iguales (piden algo, prometen, cuentan un relato o muestran cómo es
-// Jehová), así que "¿Qué enseña?" se vuelve una pregunta más fácil según el tipo que elijas.
-export const DAILY_TYPES = [
-  { key: 'pide', label: 'Me pide algo', q: '¿Qué me pide y por qué?', starters: ['Jehová me pide', 'porque'] },
-  { key: 'promete', label: 'Me promete algo', q: '¿Qué me promete y por qué puedo confiar?', starters: ['Jehová promete', 'Puedo confiar porque'] },
-  { key: 'relato', label: 'Cuenta algo que pasó', q: '¿Qué pasó y qué aprendo?', starters: ['Pasó que', 'Aprendo que'] },
-  { key: 'jehova', label: 'Cómo es Jehová o Jesús', q: '¿Cómo es Jehová o Jesús aquí?', starters: ['Jehová es', 'Lo veo cuando'] },
-]
-// Adivina el tipo del texto de hoy, sin IA, por cómo empieza el versículo: si pide algo ("Acuérdense…",
-// "No…"), si promete ("nada me sacudirá"), si cuenta algo que pasó ("María Magdalena fue…") o si dice
-// cómo es Jehová ("Es Jehová quien examina…"). Si no está claro, no adivina. Tú siempre lo puedes cambiar.
-export function guessDailyType(texto) {
-  const v = dailyVerse(texto).replace(/\([^)]*\)[.»”"]?$/, '').trim()
-  if (!v) return null
-  const first = v.split(/\s+/)[0].replace(/[«“"¡¿]/g, '')
-  if (/^(No|Nunca|Sigan|Sigamos|Sean|Seamos|Mantengan|Mantengamos|Busquen|Busquemos|Hagan|Hagamos|Confíen|Confía|Ama|Amen|Amemos|Escuchen|Escucha|Oren|Oremos|Perdonen|Animen|Animémonos|Tengan|Ten|Sé|Den|Pongan|Vístanse|Huyan|Eviten|Esfuércense|Esperen|Espera|Alaben|Alabemos|Den|Sírvanle|Sirvan|Honren|Imiten|Imitemos)$/.test(first) || /[a-záéíóú]+(nse|monos)$/.test(first)) return 'pide'
-  if (/\p{L}+(rá|rán|ré|remos)(?!\p{L})|jamás/u.test(v) && !/\b(fue|dijo|dio|hizo)\b/.test(v)) return 'promete'
-  if (dailyPeople(v).length && /\b(fue|fueron|dijo|dio|hizo|llegó|estaba|vio|oyó|respondió|contestó)\b/.test(v)) return 'relato'
-  if (/^(Es Jehová|Jehová es|Dios es|Jehová \p{Ll}+(a|e)(?!\p{L}))/u.test(v)) return 'jehova'
-  return null
-}
-// El tipo que elegiste o, si no has elegido, el que adivina la app.
-export const dailyType = (f = {}) => f.tipo || guessDailyType(f.texto)
-
-// Con la lección y qué hago hoy ya está lo de hoy (las entradas de antes también cuentan).
-export const DAILY_MIN = ['principio', 'aplicacion']
-export const dailyMinimum = (f = {}) => DAILY_MIN.every((k) => String(f[k] ?? '').trim())
 
 
 
@@ -492,8 +437,6 @@ export function dailyPeople(texto) {
   const out = found.sort((a, b) => plain.indexOf(a) - plain.indexOf(b))
   return out.filter((n) => !(n === 'Abraham' && out.includes('Abrahán')))
 }
-export const DAILY_QUESTIONS = DAILY_STEPS.filter((s) => s.q)
-
 // El capítulo del texto del día ("No calumnia… (Sal. 15:3)" → "Salmos 15"), para leer alrededor.
 export function dailyChapter(texto) {
   const r = parseRef(refsIn(dailyVerse(texto))[0] ?? refsIn(texto)[0] ?? '')
@@ -501,7 +444,7 @@ export function dailyChapter(texto) {
 }
 
 // ¿Ya analizaste este texto diario? (algo más que pegar el texto).
-export const dailyAnalyzed = (f = {}) => ['contexto', 'jehova', 'principio', 'relato', 'aplicacion', 'resumen', 'notas'].some((k) => String(f[k] ?? '').trim())
+export const dailyAnalyzed = (f = {}) => !!f.estudiado || ['contexto', 'jehova', 'principio', 'relato', 'aplicacion', 'resumen', 'notas'].some((k) => String(f[k] ?? '').trim())
 
 // El texto diario de esa fecha en wol.jw.org ("2026-10-04" → .../dt/r4/lp-s/2026/10/4).
 export function dailyTextUrl(fecha) {

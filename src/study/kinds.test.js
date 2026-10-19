@@ -137,6 +137,7 @@ describe('Texto diario: ¿ya lo analizaste?', () => {
     expect(dailyAnalyzed({ fecha: '2026-10-04', texto: 'Siempre tengo a Jehová delante de mí (Sal. 16:8).' })).toBe(false)
     expect(dailyAnalyzed({ texto: 'x', principio: 'Confiar en Jehová.' })).toBe(true)
     expect(dailyAnalyzed({ texto: 'x', resumen: '  ' })).toBe(false)
+    expect(dailyAnalyzed({ texto: 'x', estudiado: true })).toBe(true)
   })
 })
 
@@ -187,15 +188,14 @@ describe('Conceptos para el mapa', async () => {
   })
 })
 
-import { dailyMinimum, dailyPeople, DAILY_STEPS } from './kinds.js'
+import { dailyMinimum, dailyPeople } from './kinds.js'
 
 describe('Texto diario más fácil', () => {
-  it('lo mínimo es Principio y Aplicación', () => {
+  it('está hecho con Listo, o con la lección y qué hago hoy en las de antes', () => {
+    expect(dailyMinimum({ texto: 'x' })).toBe(false)
+    expect(dailyMinimum({ texto: 'x', estudiado: true })).toBe(true)
     expect(dailyMinimum({ principio: 'Jehová me pide…' })).toBe(false)
     expect(dailyMinimum({ principio: 'x', aplicacion: 'Hoy voy a…' })).toBe(true)
-  })
-  it('es leer, tres preguntas (Jehová, la lección, dónde lo necesito hoy) y una frase para recordar', () => {
-    expect(DAILY_STEPS.map((s) => s.key)).toEqual(['leer', 'jehova', 'principio', 'aplicacion', 'resumen'])
   })
   it('sugiere los personajes del texto y el comentario, sin contar las citas', () => {
     expect(dailyPeople('María Magdalena fue a ver a los discípulos: "¡He visto al Señor!" (Juan 20:18).\n\nEl 16 de nisán…')).toEqual(['María Magdalena'])
@@ -204,17 +204,7 @@ describe('Texto diario más fácil', () => {
   })
 })
 
-import { guessDailyType } from './kinds.js'
-
-describe('Tipo del texto diario', () => {
-  it('lo adivina con los textos de octubre', () => {
-    expect(guessDailyType('Acuérdense de los que los dirigen, quienes les han hablado acerca de la palabra de Dios (Heb. 13:7).')).toBe('pide')
-    expect(guessDailyType('No calumnia con su lengua (Sal. 15:3).')).toBe('pide')
-    expect(guessDailyType('Siempre tengo a Jehová delante de mí. Como él está a mi derecha, nada me sacudirá jamás (Sal. 16:8).')).toBe('promete')
-    expect(guessDailyType('María Magdalena fue a ver a los discípulos y les dio la noticia: “¡He visto al Señor!” (Juan 20:18).')).toBe('relato')
-    expect(guessDailyType('Es Jehová quien examina los corazones (Prov. 17:3).')).toBe('jehova')
-    expect(guessDailyType('La Ley tiene una sombra de las cosas buenas por venir (Heb. 10:1).')).toBe(null)
-  })
+describe('Personajes del texto diario', () => {
   it('reconoce nombres que no están en Memoria Bíblica', () => {
     expect(dailyPeople('Gómer, la esposa de Oseas, dejó al profeta por otros hombres.')).toEqual(['Gómer', 'Oseas'])
   })

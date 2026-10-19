@@ -20,14 +20,15 @@ describe('Hoy: lo que toca según tu rutina', () => {
   it('sin reuniones elegidas: solo el texto diario', () => {
     const items = todayPlan({ now: MON })
     expect(keys(items)).toEqual(['diario'])
-    expect(items[0]).toMatchObject({ sub: 'Léelo y 3 preguntas cortas · unos 5 min', done: false, create: { kind: 'diario', fields: { fecha: '2026-10-05' } } })
+    expect(items[0]).toMatchObject({ sub: 'Léelo y estúdialo con Claude · unos 15 min', done: false, create: { kind: 'diario', fields: { fecha: '2026-10-05' } } })
   })
 
   it('el texto diario se marca hecho cuando ya lo analizaste', () => {
     const diario = { id: 'd', kind: 'diario', fields: { fecha: '2026-10-05', texto: 'Texto (Sal. 16:8).' } }
-    expect(todayPlan({ now: MON, entries: [diario] })[0]).toMatchObject({ sub: '3 preguntas cortas · unos 5 min', done: false, verse: 'Texto (Sal. 16:8).' })
+    expect(todayPlan({ now: MON, entries: [diario] })[0]).toMatchObject({ sub: 'Léelo y estúdialo con Claude · unos 15 min', done: false, verse: 'Texto (Sal. 16:8).' })
+    expect(todayPlan({ now: MON, entries: [{ ...diario, fields: { ...diario.fields, estudiado: true } }] })[0]).toMatchObject({ sub: 'Lo de hoy, cumplido', done: true })
     const medio = { ...diario, fields: { ...diario.fields, principio: 'Jehová me cuida.' } }
-    expect(todayPlan({ now: MON, entries: [medio] })[0]).toMatchObject({ sub: 'Te falta: qué hago hoy', done: false })
+    expect(todayPlan({ now: MON, entries: [medio] })[0]).toMatchObject({ done: false })
     const hecho = { ...diario, fields: { ...medio.fields, aplicacion: 'Hoy voy a orar antes de decidir.', resumen: 'Jehová delante' } }
     expect(todayPlan({ now: MON, entries: [hecho] })[0]).toMatchObject({ sub: 'Jehová delante', done: true })
   })
