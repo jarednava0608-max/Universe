@@ -1632,7 +1632,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* ---------- Texto diario por pasos (DailyStudy.jsx) ---------- */
 .dt-verse { font-family: var(--font-book); font-size: 20px; line-height: 1.5; color: var(--text-body); margin: 0 0 8px; }
 .dt-verse.flat { margin: 0; }
-.dt-date { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: capitalize; color: var(--text-2); margin: 0 0 8px; }
+.dt-date { font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1.2; text-transform: capitalize; color: var(--title); margin: 0 0 16px; text-wrap-style: balance; }
 .dt-more { margin: 0 0 16px; color: var(--text-2); font-size: 15px; line-height: 1.5; }
 .dt-more summary { min-height: 44px; display: flex; align-items: center; color: var(--link); cursor: pointer; }
 .dt-more p { margin: 0; white-space: pre-wrap; }
