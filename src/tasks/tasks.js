@@ -112,6 +112,25 @@ export function matches(e, { category = null, query = '' } = {}) {
   return words.every((w) => text.includes(w))
 }
 
+// Un mismo pendiente a veces llega como varios recordatorios ("Ética — faltan 3 días", "— vence hoy"...).
+// En la lista se ve solo el próximo de cada uno; los demás siguen sonando pero no estorban.
+function hiddenReminders(entries, now) {
+  const first = new Map()
+  const hidden = new Set()
+  const pending = entries
+    .filter((e) => e.kind === TASK && e.fields.type === 'Recordatorio' && e.fields.dueAt && !isFinished(e.fields, now))
+    .sort((a, b) => new Date(a.fields.dueAt) - new Date(b.fields.dueAt))
+  for (const e of pending) {
+    const title = String(e.fields.title ?? '')
+    const i = title.indexOf(' — ')
+    if (i < 1) continue
+    const base = norm(title.slice(0, i))
+    if (first.has(base)) hidden.add(e.id)
+    else first.set(base, e.id)
+  }
+  return hidden
+}
+
 // Agrupa los pendientes para la lista: Atrasados, Hoy, Mañana, Próximos 7 días, Después, Sin fecha y Hechos.
 export function groupTasks(entries, now = new Date(), filter = {}) {
   const today = startOfDay(now)
@@ -119,10 +138,12 @@ export function groupTasks(entries, now = new Date(), filter = {}) {
   const after = addDays(today, 2)
   const week = addDays(today, 8)
   const groups = { atrasados: [], hoy: [], manana: [], semana: [], despues: [], sinFecha: [], hechos: [] }
+  const hidden = hiddenReminders(entries, now)
   for (const e of entries) {
     if (e.kind !== TASK || !matches(e, filter)) continue
     const f = e.fields
     if (isFinished(f, now)) { groups.hechos.push(e); continue }
+    if (hidden.has(e.id)) continue
     if (!f.dueAt) { groups.sinFecha.push(e); continue }
     const t = new Date(f.dueAt)
     if (t < today) groups.atrasados.push(e)

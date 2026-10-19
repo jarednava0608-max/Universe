@@ -41,6 +41,14 @@ describe('pendientes', () => {
     expect(dueCount([pasado, futuro, tarea], now)).toBe(0) // un atrasado no prende el puntito
   })
 
+  it('de varios recordatorios del mismo pendiente solo muestra el próximo', () => {
+    const now = at(2026, 10, 19, 12)
+    const r = (title, d, h) => makeTask({ title, type: 'Recordatorio', dueAt: at(2026, 10, d, h).toISOString() })
+    const g = groupTasks([r('Ética (AF2) — faltan 3 días', 20, 10), r('Ética (AF2) — vence hoy', 23, 18), r('Ética (AF2) — faltan 2 horas', 23, 21), r('Inv. de Operaciones — 4 semanas', 20, 12)], now)
+    expect(g.manana.map((e) => e.fields.title)).toEqual(['Ética (AF2) — faltan 3 días', 'Inv. de Operaciones — 4 semanas'])
+    expect(g.semana).toEqual([])
+  })
+
   it('filtra por categoría y busca sin acentos', () => {
     const a = makeTask({ title: 'Ensayo de Ética', category: 'Universidad' })
     const b = makeTask({ title: 'Pagar tarjeta', category: 'Personal', notes: 'fecha de corte' })
