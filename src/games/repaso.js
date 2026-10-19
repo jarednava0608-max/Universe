@@ -5,7 +5,8 @@
 //   ¿Qué texto lo prueba? (solo textos "Lea", los que de verdad se leen) o, a veces, ¿De qué Atalaya es?
 // Si aciertas, vuelve más adelante (repaso espaciado de progress.js); si fallas, pronto.
 import { parseArticle } from '../study/atalaya.js'
-import { findRefs } from '../lib/bible.js'
+import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
+import { VERSE_COUNTS } from '../lib/verseCounts.js'
 import { refKey } from '../lib/verses.js'
 import { atalayaSourceCards, shuffle, verseSources } from './logic.js'
 import { isDue, todayISO } from './progress.js'
@@ -24,6 +25,49 @@ export function learnSources(entries) {
 export function verseMode(srsItem) {
   const box = srsItem?.box ?? 0
   return box < 2 ? 'donde' : box < 4 ? 'dice' : 'escribir'
+}
+
+// La cita con el nombre completo del libro ("Luc. 14:13, 14" → "Lucas 14:13, 14"), para que las opciones se
+// vean iguales y ninguna se delate. null si no se reconoce o no tiene versículo.
+export function fullCite(cita) {
+  const r = parseRef(cita ?? '')
+  const vs = String(cita ?? '').match(/:\s*(\d{1,3}(?:\s?[-–,]\s?\d{1,3})*)/)
+  if (!r?.verse || !vs) return null
+  return `${BOOKS[r.book - 1]} ${r.chapter}:${vs[1].replace(/\s*,\s*/g, ', ').replace(/\s*[-–]\s*/g, '-')}`
+}
+
+// ¿Dónde está? El texto completo y 4 citas: la suya y 3 de otros libros (primero de tus otros textos,
+// luego al azar pero que existan; si la suya es un tramo, las otras también).
+export function whereOptions(verse, entries, rnd = Math.random) {
+  const right = fullCite(verse.fields.cita)
+  if (!right) return null
+  const book = parseRef(right).book
+  const span = (right.split(':')[1].match(/\d+/g) ?? []).map(Number)
+  const seen = new Set([book])
+  const others = []
+  for (const v of shuffle([...learnSources(entries), ...entries.filter((e) => e.kind === 'biblia')], rnd)) {
+    const c = fullCite(v.fields?.cita)
+    const b = c && parseRef(c).book
+    if (!c || seen.has(b)) continue
+    seen.add(b)
+    others.push(c)
+    if (others.length === 3) break
+  }
+  for (let tries = 0; others.length < 3 && tries < 200; tries++) {
+    const b = 1 + Math.floor(rnd() * BOOKS.length)
+    if (seen.has(b)) continue
+    const chapters = VERSE_COUNTS[b - 1] ?? []
+    const ch = 1 + Math.floor(rnd() * chapters.length)
+    const last = chapters[ch - 1] ?? 0
+    const extra = span.length > 1 ? span.at(-1) - span[0] : 0
+    if (last <= extra) continue
+    const v = 1 + Math.floor(rnd() * (last - extra))
+    const sep = right.includes('-') ? '-' : ', '
+    seen.add(b)
+    others.push(`${BOOKS[b - 1]} ${ch}:${extra ? v + sep + (v + extra) : v}`)
+  }
+  const options = shuffle([right, ...others], rnd)
+  return { options, answer: options.indexOf(right) }
 }
 
 // Las primeras palabras de un texto (las opciones largas cansan de leer en el teléfono).

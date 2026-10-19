@@ -12,7 +12,7 @@
 ### Repasar (`repaso.js` con pruebas, `Repaso.jsx`)
 - Rondas de 5 (`SIZE`), una pregunta a la vez; "Otras 5" si queda algo (sin repetir en la sesión, `skip`).
 - `repasoRound`: primero los textos que tocan (`isDue`), luego hasta 2 nuevos (`NEW_PER_ROUND`); y una de La Atalaya si toca o de vez en cuando.
-- Textos (`learnSources`): la pregunta sube con la caja (`verseMode`): ¿Dónde está? (armar la cita, `citeSteps`) → ¿Qué dice? (la cita y 4 textos cortos, `sayOptions`) → Escríbelo (primera letra de cada palabra, `typeWords`; sabido con ≥ 90 %).
+- Textos (`learnSources`): la pregunta sube con la caja (`verseMode`): ¿Dónde está? (el texto y 4 citas completas de libros distintos, `whereOptions`) → ¿Qué dice? (la cita y 4 textos cortos, `sayOptions`) → Escríbelo (primera letra de cada palabra, `typeWords`; sabido con ≥ 90 %).
 - La Atalaya (solo las que estudió, todo de jw.org, nunca sus respuestas): ¿Qué texto lo prueba? (`proofCards`: la idea antes de cada "(Lea …)", solo textos que se leen; opciones = otros "Lea" o sus textos) y, a veces, ¿De qué Atalaya es? (`atalayaSourceCards`, con 3 artículos o más).
 - **Nunca preguntar algo que no leyó** (citas entre paréntesis sin "Lea", por ejemplo). Si falla: la opción se marca, pista si hay ("Empieza: …") y vuelve a intentar; cuenta como no sabida.
 - Entre semana: por ahora solo sus textos vía Aprenderlo (sin preguntas de contenido).

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { learnSources, verseMode, sayOptions, proofCards, proofOptions, repasoRound, firstWords } from './repaso.js'
+import { learnSources, verseMode, sayOptions, whereOptions, fullCite, proofCards, proofOptions, repasoRound, firstWords } from './repaso.js'
 import { mulberry } from './logic.js'
 
 const learn = (id, cita, texto, createdAt = 1) => ({ id, kind: 'memoria', createdAt, fields: { cita, texto, aprender: true } })
@@ -27,6 +27,16 @@ describe('Repasar', () => {
     expect(verseMode(undefined)).toBe('donde')
     expect(verseMode({ box: 2 })).toBe('dice')
     expect(verseMode({ box: 5 })).toBe('escribir')
+  })
+
+  it('¿Dónde está? da 4 citas completas de libros distintos, que existen', () => {
+    expect(fullCite('Luc. 14:13,14')).toBe('Lucas 14:13, 14')
+    const q = whereOptions(LUCAS, [LUCAS, SALMO], mulberry(3))
+    expect(q.options).toHaveLength(4)
+    expect(q.options[q.answer]).toBe('Lucas 14:13, 14')
+    expect(q.options).toContain('Salmos 127:1')
+    expect(new Set(q.options.map((o) => o.split(' ').slice(0, -1).join(' '))).size).toBe(4)
+    for (const o of q.options) expect(o).toMatch(/^\S.* \d+:\d+, \d+$|^Salmos 127:1$/)
   })
 
   it('¿Qué dice? da 4 textos distintos con el bueno entre ellos', () => {

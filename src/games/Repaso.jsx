@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { citeSteps, foldLetter, typeWords } from './logic.js'
-import { repasoRound, sayOptions, proofCards, proofOptions, verseMode, firstWords } from './repaso.js'
+import { foldLetter, typeWords } from './logic.js'
+import { repasoRound, sayOptions, whereOptions, proofCards, proofOptions, verseMode, firstWords } from './repaso.js'
 import { atalayaSourceCards, atalayaSourceCheck } from './logic.js'
 import { GameScreen, Result } from './ui.jsx'
 import { review, todayISO } from './progress.js'
@@ -69,17 +69,19 @@ export default function Repaso({ store, onExit }) {
 
 const Ref = ({ cita }) => <p className="verse-ref">{findRefs(cita).length ? <RefLink refText={findRefs(cita)[0]} /> : cita}</p>
 
-// Un texto: ¿Dónde está? (armar la cita), ¿Qué dice? (elegir el texto) o Escríbelo (primera letra).
+// Un texto: ¿Dónde está? (elegir su cita entre 4), ¿Qué dice? (elegir el texto) o Escríbelo (primera letra).
 function VerseStep({ verse, mode, entries, onDone }) {
   const [say] = useState(() => (mode === 'dice' ? sayOptions(verse, entries) : null))
-  const canCite = !!citeSteps(verse.fields.cita)
-  const m = mode === 'dice' && !say ? 'escribir' : mode === 'donde' && !canCite ? 'dice' : mode
+  const [where] = useState(() => (mode === 'donde' ? whereOptions(verse, entries) : null))
+  const m = mode === 'dice' && !say ? 'escribir' : mode === 'donde' && !where ? 'escribir' : mode
   if (m === 'donde') {
     return (
-      <>
-        <p className="hint">¿Dónde está?</p>
-        <CiteQuiz verse={verse} footer={(errors) => <Finish ok={!errors} onDone={onDone}><Ref cita={verse.fields.cita} /></Finish>} />
-      </>
+      <Choice
+        ask={<><p className="hint">¿Dónde está?</p><p className="verse">{verse.fields.texto}</p></>}
+        options={where.options}
+        answer={where.answer}
+        onDone={onDone}
+      />
     )
   }
   if (m === 'dice' && say) {
@@ -169,50 +171,6 @@ function Finish({ ok, text, onDone, children }) {
     <>
       <p className={'order-result ' + (ok ? 'ok' : 'bad')}>{text ?? (ok ? '¡Bien, a la primera!' : 'Lo armaste. Vuelve pronto para que se te grabe.')}</p>
       {children}
-    </>
-  )
-}
-
-// Cita: con el texto a la vista, arma su cita en 3 pasos (libro, capítulo y versículo).
-// Si fallas, la opción se marca y vuelves a intentar.
-function CiteQuiz({ verse, footer }) {
-  const steps = useMemo(() => citeSteps(verse.fields.cita), [verse.fields.cita])
-  const [at, setAt] = useState(0)
-  const [wrong, setWrong] = useState(() => new Set())
-  const [errors, setErrors] = useState(0)
-  const done = at >= steps.length
-  const picked = steps.slice(0, at).map((s) => s.options[s.answer])
-
-  function choose(k) {
-    if (k === steps[at].answer) {
-      setAt(at + 1)
-      setWrong(new Set())
-    } else {
-      setWrong((w) => new Set(w).add(k))
-      setErrors((n) => n + 1)
-    }
-  }
-
-  return (
-    <>
-      <p className="verse">{verse.fields.texto}</p>
-      {!done ? (
-        <>
-          <p className="cite-built">
-            <span className={picked[0] ? '' : 'cite-gap'}>{picked[0] ?? 'Libro'}</span>{' '}
-            <span className={picked[1] ? '' : 'cite-gap'}>{picked[1] ?? 'cap.'}</span>:
-            <span className={picked[2] ? '' : 'cite-gap'}>{picked[2] ?? 'vers.'}</span>
-          </p>
-          <p className="hint center">¿{steps[at].label === 'Libro' ? 'En qué libro' : steps[at].label === 'Capítulo' ? 'Qué capítulo' : 'Qué versículo'} está?</p>
-          <div className="options">
-            {steps[at].options.map((o, k) => (
-              <button key={at + ':' + k} className={'option' + (wrong.has(k) ? ' wrong' : '')} disabled={wrong.has(k)} onClick={() => choose(k)}>{o}</button>
-            ))}
-          </div>
-        </>
-      ) : (
-        footer(errors)
-      )}
     </>
   )
 }
