@@ -7,7 +7,7 @@
 - "Nuevo pendiente" arriba (un + chocaba con luna y nube en Original); "Listo" del teclado cierra el título y muestra fecha, aviso, Guardar.
 - Hábitos de hoy: palomear por hora (`fields.log`, 120 días; "N seguidos"). Ocultos al filtrar.
 - Filtros: lupa (sin acentos, título/notas/categoría; con más de 8) y Universidad / Trabajo / Personal (tocar la activa la quita).
-- Grupos: Atrasados (rojo), Hoy, Mañana, Próximos 7 días, Después, Sin fecha, Hechos (cerrado, 30 recientes). En Próximos 7 días y Después, Recordatorios juntos en "N recordatorios programados". Encabezados sin número salvo "Hechos · 12".
+- Grupos: Atrasados (rojo), Hoy, Mañana, Próximos 7 días, Después, Sin fecha. Hechos no se muestran (siguen guardados). En Próximos 7 días y Después, Recordatorios juntos en "N recordatorios programados". Encabezados sin número. De varios recordatorios "Título — …" solo se ve el próximo (`hiddenReminders`).
 - Recordatorio con hora pasada = hecho (`isFinished`, solo vista). Tareas y eventos atrasados siguen en Atrasados.
 - Renglón: palomita, título (2 renglones), fecha ("Hoy 3:00 pm", "vie 17 oct, 7:15 pm"), tipo si no es Tarea, categoría, "se repite", "nota". Alta = "Importante" en gris (rojo solo para atrasado). Deslizar a la izquierda = Eliminar con Deshacer.
 - Editor (hoja): qué, tipo (Tarea / Evento / Recordatorio), fecha y hora o sin fecha, aviso (no, a la hora, 15/30 min, 1/2 h, 1 día, 1 semana; otros valores se respetan), repetir (día / semana / mes: al palomear crea el siguiente con fecha futura), categoría, prioridad, notas, quién lo agregó.

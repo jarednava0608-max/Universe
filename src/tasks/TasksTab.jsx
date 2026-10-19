@@ -23,7 +23,6 @@ const GROUPS = [
   ['despues', 'Después'],
   ['sinFecha', 'Sin fecha'],
 ]
-const DONE_SHOWN = 30
 const SHOW_HABITS = false
 // En estas secciones los recordatorios ("faltan 3 días"...) se juntan en un renglón para que se vean
 // los pendientes de verdad; los de hoy y mañana sí se ven sueltos.
@@ -57,7 +56,6 @@ export default function TasksTab({ store, toast }) {
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [habitEdit, setHabitEdit] = useState(null) // { entry, isNew }
   const [sheet, setSheet] = useState(null) // 'habitos' | 'avisos'
-  const [showDone, setShowDone] = useState(false)
   // Hábitos ocultos por ahora (el usuario no los usa); los datos se quedan guardados.
   const today = useMemo(() => todayItems(SHOW_HABITS ? entries : entries.filter((e) => e.kind !== HABIT), now), [entries, now])
   // "Todo lo demás" (mañana, la semana, filtros, hábitos, avisos) cerrado, como "Más" en Biblioteca.
@@ -167,20 +165,7 @@ export default function TasksTab({ store, toast }) {
           </div>
         )}
 
-        {groups.hechos.length > 0 && (
-          <>
-            <button className={'library-toggle done-toggle' + (showDone ? ' open' : '')} aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>
-              <span>Hechos · {groups.hechos.length}</span>
-              <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-            </button>
-            {showDone && (
-              <>
-                <TaskList items={groups.hechos.slice(0, DONE_SHOWN)} now={now} onToggle={toggleDone} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={undoDel.remove} />
-                {groups.hechos.length > DONE_SHOWN && <p className="hint small center pad-top">Se muestran los {DONE_SHOWN} más recientes.</p>}
-              </>
-            )}
-          </>
-        )}
+        {/* Hechos sin mostrar (el usuario no quiere verlos); siguen guardados. */}
 
         <h2 className="section-label">Más</h2>
         <ul className="entry-list">
