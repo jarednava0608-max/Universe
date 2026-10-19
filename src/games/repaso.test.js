@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { learnSources, verseMode, sayOptions, whereOptions, fullCite, proofCards, proofOptions, repasoRound, firstWords } from './repaso.js'
+import { learnSources, verseMode, compareWords, sameCite, sayOptions, whereOptions, fullCite, proofCards, proofOptions, repasoRound, firstWords } from './repaso.js'
 import { mulberry } from './logic.js'
 
 const learn = (id, cita, texto, createdAt = 1) => ({ id, kind: 'memoria', createdAt, fields: { cita, texto, aprender: true } })
@@ -23,10 +23,24 @@ describe('Repasar', () => {
     expect(learnSources([old, JUAN, LUCAS]).map((v) => v.id)).toEqual(['l', 'j'])
   })
 
-  it('la pregunta sube con lo que sabes: dónde está, qué dice, escríbelo', () => {
-    expect(verseMode(undefined)).toBe('donde')
+  it('la pregunta sube con lo que sabes: aprenderlo, dónde está, qué dice, escríbelo', () => {
+    expect(verseMode(undefined)).toBe('aprender')
+    expect(verseMode({ box: 0 })).toBe('donde')
     expect(verseMode({ box: 2 })).toBe('dice')
     expect(verseMode({ box: 5 })).toBe('escribir')
+  })
+
+  it('escribirlo completo: sin importar acentos ni signos; marca lo que falta', () => {
+    const t = 'Cuando des un banquete, invita a los pobres'
+    expect(compareWords(t, 'cuando des un banquete invita a los pobres').pct).toBe(100)
+    const r = compareWords(t, 'Cuando des banquete invita a los pobres')
+    expect(r.words.filter((x) => !x.ok).map((x) => x.w)).toEqual(['un'])
+    expect(r.pct).toBe(88)
+    expect(sameCite('Lucas 14 13 14', 'Luc. 14:13, 14')).toBe(true)
+    expect(sameCite('lucas 14:13-14', 'Lucas 14:13, 14')).toBe(true)
+    expect(sameCite('Lucas 14:12', 'Lucas 14:13, 14')).toBe(false)
+    expect(sameCite('2 Corintios 9:7', '2 Cor. 9:7')).toBe(true)
+    expect(sameCite('1 Corintios 9:7', '2 Cor. 9:7')).toBe(false)
   })
 
   it('¿Dónde está? da 4 citas completas de libros distintos, que existen', () => {

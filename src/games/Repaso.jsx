@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { foldLetter, typeWords } from './logic.js'
-import { repasoRound, sayOptions, whereOptions, proofCards, proofOptions, verseMode, firstWords } from './repaso.js'
+import { useEffect, useRef, useState } from 'react'
+import { repasoRound, sayOptions, whereOptions, proofCards, proofOptions, verseMode, firstWords, compareWords, sameCite, fullCite } from './repaso.js'
 import { atalayaSourceCards, atalayaSourceCheck } from './logic.js'
 import { GameScreen, Result } from './ui.jsx'
 import { review, todayISO } from './progress.js'
@@ -69,8 +68,11 @@ export default function Repaso({ store, onExit }) {
 
 const Ref = ({ cita }) => <p className="verse-ref">{findRefs(cita).length ? <RefLink refText={findRefs(cita)[0]} /> : cita}</p>
 
-// Un texto: ¿Dónde está? (elegir su cita entre 4), ¿Qué dice? (elegir el texto) o Escríbelo (primera letra).
-function VerseStep({ verse, mode, entries, onDone }) {
+// Un texto: Apréndetelo (leer y escribirlo), ¿Dónde está? (su cita entre 4), ¿Qué dice? (el texto entre 4)
+// o Escríbelo de memoria con todo y cita.
+function VerseStep({ verse, mode: startMode, entries, onDone }) {
+  // El modo se fija al empezar: al contestar, el repaso cambia y no debe cambiar la pregunta a medias.
+  const [mode] = useState(startMode)
   const [say] = useState(() => (mode === 'dice' ? sayOptions(verse, entries) : null))
   const [where] = useState(() => (mode === 'donde' ? whereOptions(verse, entries) : null))
   const m = mode === 'dice' && !say ? 'escribir' : mode === 'donde' && !where ? 'escribir' : mode
@@ -87,7 +89,7 @@ function VerseStep({ verse, mode, entries, onDone }) {
   if (m === 'dice' && say) {
     return (
       <Choice
-        ask={<><p className="quiz-prompt">{verse.fields.cita}</p><p className="hint">¿Qué dice?</p></>}
+        ask={<><p className="quiz-prompt">{fullCite(verse.fields.cita) ?? verse.fields.cita}</p><p className="hint">¿Qué dice?</p></>}
         options={say.options}
         answer={say.answer}
         long
@@ -98,13 +100,7 @@ function VerseStep({ verse, mode, entries, onDone }) {
       </Choice>
     )
   }
-  return (
-    <>
-      <p className="quiz-prompt">{verse.fields.cita}</p>
-      <p className="hint">Escríbelo de memoria: la primera letra de cada palabra.</p>
-      <TypeLetters texto={verse.fields.texto} footer={(pct) => <Finish ok={pct >= 90} onDone={onDone} text={pct === 100 ? '¡Perfecto, sin errores!' : `${pct} % a la primera.`} />} />
-    </>
-  )
+  return <WriteIt key={m} verse={verse} learn={m === 'aprender'} onDone={onDone} />
 }
 
 // La Atalaya: una idea del artículo y el texto que se leyó para probarla.
@@ -165,94 +161,64 @@ function Choice({ ask, options, answer, long, hint, onDone, children }) {
   )
 }
 
-function Finish({ ok, text, onDone, children }) {
-  useEffect(() => onDone(ok), []) // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <>
-      <p className={'order-result ' + (ok ? 'ok' : 'bad')}>{text ?? (ok ? '¡Bien, a la primera!' : 'Lo armaste. Vuelve pronto para que se te grabe.')}</p>
-      {children}
-    </>
-  )
-}
+// Escribirlo completo, con todo y cita. Para aprenderlo (`learn`): primero lo lees con su cita; para
+// repasarlo, solo una pista de cómo empieza. Se revisa sin importar acentos ni signos; lo que faltó se
+// marca y puedes intentarlo otra vez (cuenta lo del primer intento).
+export function WriteIt({ verse, learn, onDone, onAgain }) {
+  const [phase, setPhase] = useState(learn ? 'leer' : 'escribir')
+  const [cita, setCita] = useState('')
+  const [texto, setTexto] = useState('')
+  const [result, setResult] = useState(null)
+  const first = useRef(true)
+  const shown = fullCite(verse.fields.cita) ?? verse.fields.cita
 
-// Escribir: teclea la primera letra de cada palabra. Si aciertas, aparece la palabra;
-// a los 3 intentos fallidos se muestra sola (cuenta como error).
-function TypeLetters({ texto, footer }) {
-  const words = useMemo(() => typeWords(texto), [texto])
-  const skip = (from) => {
-    let k = from
-    while (k < words.length && !words[k].letter) k++
-    return k
-  }
-  const [pos, setPos] = useState(() => skip(0))
-  const [wrong, setWrong] = useState(() => new Set()) // palabras que se mostraron solas o con error
-  const [tries, setTries] = useState(0)
-  const [shake, setShake] = useState(0)
-  const [focused, setFocused] = useState(false)
-  const input = useRef(null)
-  const done = pos >= words.length
-  const total = words.filter((w) => w.letter).length
-  const pct = total ? Math.round(((total - wrong.size) / total) * 100) : 100
-
-  useEffect(() => {
-    if (done) input.current?.blur()
-  }, [done])
-
-  function type(ch) {
-    if (done || !ch) return
-    const w = words[pos]
-    if (foldLetter(ch) === w.letter) {
-      setTries(0)
-      setPos(skip(pos + 1))
-    } else {
-      setShake((n) => n + 1)
-      setWrong((s) => new Set(s).add(pos))
-      if (tries + 1 >= 3) {
-        setTries(0)
-        setPos(skip(pos + 1))
-      } else setTries(tries + 1)
+  function check() {
+    const r = { ...compareWords(verse.fields.texto, texto), cita: sameCite(cita, verse.fields.cita) }
+    setResult(r)
+    setPhase('resultado')
+    if (first.current) {
+      first.current = false
+      onDone(r.cita && r.pct >= 90)
     }
   }
+  function again() {
+    setCita('')
+    setTexto('')
+    setResult(null)
+    setPhase('leer')
+    onAgain?.()
+  }
 
+  if (phase === 'leer') {
+    return (
+      <>
+        <p className="hint">{learn ? 'Apréndetelo: léelo con calma, con su cita.' : 'Léelo otra vez con calma.'}</p>
+        <p className="quiz-prompt">{shown}</p>
+        <p className="verse small">{verse.fields.texto}</p>
+        <button className="primary" onClick={() => setPhase('escribir')}>Ya lo leí, ahora lo escribo</button>
+      </>
+    )
+  }
+  if (phase === 'escribir') {
+    return (
+      <>
+        <p className="hint">{learn ? 'Escríbelo completo, con todo y cita.' : `Escríbelo de memoria, con todo y cita. Empieza: «${firstWords(verse.fields.texto, 2)}»`}</p>
+        <label className="sfield"><span className="sfield-label">Cita</span><input className="input" value={cita} autoCapitalize="words" autoCorrect="off" onChange={(e) => setCita(e.target.value)} /></label>
+        <label className="sfield"><span className="sfield-label">Texto</span><textarea className="input" rows={6} value={texto} onChange={(e) => setTexto(e.target.value)} /></label>
+        <button className="primary" disabled={!texto.trim() || !cita.trim()} onClick={check}>Revisar</button>
+      </>
+    )
+  }
+  const ok = result.cita && result.pct >= 90
   return (
     <>
-      <p className="verse type-verse" onClick={() => input.current?.focus()}>
-        {words.map((w, i) => (
-          <span key={i}>
-            {i < pos || !w.letter ? (
-              <span className={wrong.has(i) ? 'type-bad' : i === pos - 1 ? 'type-new' : ''}>{w.pre}{w.word}{w.post}</span>
-            ) : (
-              <>
-                {w.pre}
-                <span key={i === pos ? 'c' + shake : 'w'} className={'type-blank' + (i === pos ? ' now' : '') + (i === pos && shake ? ' miss' : '')} style={{ width: `${Math.max(2, w.word.length) * 0.55}em` }} />
-                {w.post}
-              </>
-            )}{' '}
-          </span>
-        ))}
+      <p className={'order-result ' + (ok ? 'ok' : 'bad')}>{ok ? (result.pct === 100 ? '¡Perfecto!' : `¡Muy bien! ${result.pct} %.`) : `${result.pct} % del texto.${result.cita ? '' : ' La cita no quedó.'}`}</p>
+      <p className={'quiz-prompt' + (result.cita ? '' : ' type-bad')}>{shown}</p>
+      <p className="verse small">
+        {result.words.map((x, i) => <span key={i} className={x.ok ? '' : 'type-bad'}>{x.w} </span>)}
       </p>
-      {!done ? (
-        <>
-          <input
-            ref={input}
-            className="type-input"
-            value=""
-            inputMode="text"
-            autoCapitalize="off"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck={false}
-            aria-label="Primera letra de la palabra"
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onChange={(e) => type(e.target.value.slice(-1))}
-          />
-          {!focused && <button className="primary" onClick={() => input.current?.focus()}>Empezar a escribir</button>}
-          <p className="hint center">Escribe la primera letra de cada palabra. {words.length - pos > 0 && `${total - words.slice(0, pos).filter((w) => w.letter).length} por escribir.`}</p>
-        </>
-      ) : (
-        footer(pct)
-      )}
+      {!ok && <p className="hint">En rojo, lo que faltó o cambió.</p>}
+      {!ok && <button className="secondary" onClick={again}>Otra vez</button>}
     </>
   )
 }

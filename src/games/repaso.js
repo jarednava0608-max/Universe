@@ -21,10 +21,46 @@ export function learnSources(entries) {
     .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
 }
 
-// Primero ubicarlo, luego reconocerlo y al final escribirlo de memoria.
+// Nuevo: aprenderlo (leer la cita y el texto, y escribirlos completos). Luego ubicarlo, reconocerlo y al
+// final escribirlo de memoria, con todo y cita (pedido del usuario: así se aprendió Salmo 127:1, 2).
 export function verseMode(srsItem) {
-  const box = srsItem?.box ?? 0
+  if (!srsItem) return 'aprender'
+  const box = srsItem.box ?? 0
   return box < 2 ? 'donde' : box < 4 ? 'dice' : 'escribir'
+}
+
+// Escribirlo completo: qué palabras del texto escribiste (en orden, sin importar acentos, mayúsculas ni
+// signos) y el porcentaje. Las que faltan o están mal se marcan.
+const plainWord = (w) => w.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\d]/gu, '')
+export function compareWords(target, typed) {
+  const t = String(target ?? '').split(/\s+/).filter(Boolean)
+  const a = t.map(plainWord)
+  const b = String(typed ?? '').split(/\s+/).map(plainWord).filter(Boolean)
+  // Lo más largo en común, en orden (LCS): así una palabra de más o de menos no tumba el resto.
+  const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0))
+  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) dp[i][j] = a[i] && a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+  const ok = new Array(a.length).fill(false)
+  for (let i = 0, j = 0; i < a.length && j < b.length; ) {
+    if (a[i] && a[i] === b[j]) { ok[i] = true; i++; j++ } else if (dp[i + 1][j] >= dp[i][j + 1]) i++
+    else j++
+  }
+  const counted = a.filter(Boolean).length
+  const pct = counted ? Math.round((ok.filter((x, i) => x && a[i]).length / counted) * 100) : 0
+  return { words: t.map((w, i) => ({ w, ok: ok[i] || !a[i] })), pct }
+}
+
+// ¿Escribió bien la cita? Acepta "Lucas 14 13 14", "Luc. 14:13, 14" o "lucas 14:13-14".
+export function sameCite(typed, cita) {
+  const nums = (x) => (String(x ?? '').match(/\d+/g) ?? []).map(Number)
+  const book = (x) => {
+    const m = String(x ?? '').trim().match(/^((?:[1-3]\s*)?[^\d]+?)\s*\d/)
+    return m ? parseRef(`${m[1].trim()} 1:1`)?.book : null
+  }
+  const r = parseRef(cita ?? '')
+  if (!r) return false
+  const want = nums(String(cita).replace(/^\s*[1-3]\s*(?=\D)/, '')).join(' ')
+  const got = nums(String(typed).replace(/^\s*[1-3]\s*(?=\D)/, '')).join(' ')
+  return book(typed) === r.book && got === want
 }
 
 // La cita con el nombre completo del libro ("Luc. 14:13, 14" → "Lucas 14:13, 14"), para que las opciones se
