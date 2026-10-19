@@ -163,7 +163,7 @@ function Choice({ ask, options, answer, long, hint, onDone, children }) {
 
 // Escribirlo completo, con todo y cita. Para aprenderlo (`learn`): primero lo lees con su cita; para
 // repasarlo, solo una pista de cómo empieza. Se revisa sin importar acentos ni signos; lo que faltó se
-// marca y puedes intentarlo otra vez (cuenta lo del primer intento).
+// marca y sigues escribiendo donde te quedaste, o borras y empiezas (cuenta lo del primer intento).
 export function WriteIt({ verse, learn, onDone, onAgain }) {
   const [phase, setPhase] = useState(learn ? 'leer' : 'escribir')
   const [cita, setCita] = useState('')
@@ -181,11 +181,14 @@ export function WriteIt({ verse, learn, onDone, onAgain }) {
       onDone(r.cita && r.pct >= 90)
     }
   }
-  function again() {
-    setCita('')
-    setTexto('')
+  // "Seguir escribiendo" deja lo que llevabas; "Borrar y empezar" lo limpia y vuelve a leerlo.
+  function again(clear) {
+    if (clear) {
+      setCita('')
+      setTexto('')
+    }
     setResult(null)
-    setPhase('leer')
+    setPhase(clear ? 'leer' : 'escribir')
     onAgain?.()
   }
 
@@ -218,7 +221,12 @@ export function WriteIt({ verse, learn, onDone, onAgain }) {
         {result.words.map((x, i) => <span key={i} className={x.ok ? '' : 'type-bad'}>{x.w} </span>)}
       </p>
       {!ok && <p className="hint">En rojo, lo que faltó o cambió.</p>}
-      {!ok && <button className="secondary" onClick={again}>Otra vez</button>}
+      {!ok && (
+        <div className="two-btn">
+          <button className="secondary" onClick={() => again(true)}>Borrar y empezar</button>
+          <button className="primary" onClick={() => again(false)}>Seguir escribiendo</button>
+        </div>
+      )}
     </>
   )
 }
