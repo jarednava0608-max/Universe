@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseTrivia, triviaToQuestion, buildGuessQuestions, buildPairs, clozeWords, verseSources, parseVerses, mulberry, maskTitle, guessPrompt } from './logic.js'
+import { clozeWords, verseSources, parseVerses, mulberry, maskTitle, guessPrompt } from './logic.js'
 import { makeNode } from '../lib/model.js'
 
 const nodes = ['Amor', 'Fe', 'Esperanza', 'Paciencia', 'Humildad'].map((t) =>
@@ -7,35 +7,6 @@ const nodes = ['Amor', 'Fe', 'Esperanza', 'Paciencia', 'Humildad'].map((t) =>
 )
 
 describe('Juegos', () => {
-  it('lee trivia con respuesta por texto o letra y avisa de las malas', () => {
-    const { questions, warnings } = parseTrivia({
-      preguntas: [
-        { pregunta: '¿Quién?', opciones: ['A', 'B', 'C'], respuesta: 'B' },
-        { pregunta: '¿Cuál?', opciones: ['X', 'Y'], respuesta: 'a' },
-        { pregunta: 'Sin opciones', respuesta: 0 },
-      ],
-    })
-    expect(questions.map((q) => q.respuesta)).toEqual([1, 0])
-    expect(warnings).toHaveLength(1)
-    const q = triviaToQuestion(questions[0])
-    expect(q.options[q.answer]).toBe('B')
-  })
-
-  it('"¿Qué es?" necesita al menos 4 nodos y oculta el título', () => {
-    expect(buildGuessQuestions(nodes.slice(0, 3))).toEqual([])
-    const qs = buildGuessQuestions(nodes, 3, mulberry(7))
-    expect(qs).toHaveLength(3)
-    for (const q of qs) {
-      expect(q.options).toHaveLength(4)
-      expect(q.prompt.toLowerCase()).not.toContain(q.options[q.answer].toLowerCase())
-    }
-    expect(maskTitle('El amor de Dios', 'Amor')).toBe('El ＿＿＿ de Dios')
-  })
-
-  it('parejas usa los mismos nodos en ambos lados', () => {
-    const p = buildPairs(nodes, 4, mulberry(3))
-    expect(p.left.map((x) => x.id).sort()).toEqual(p.right.map((x) => x.id).sort())
-  })
 
   it('oculta más palabras en cada nivel', () => {
     const t = 'Esto significa vida eterna: que lleguen a conocerte a ti, el único Dios verdadero.'

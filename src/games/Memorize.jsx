@@ -25,7 +25,8 @@ export async function saveVerseResult(store, verse, knewIt, nivel = verse.fields
 }
 
 // Memorizar textos: cada nivel oculta más palabras. Toca una palabra oculta para verla.
-export default function Memorize({ store, toast, onExit }) {
+// `start`: abre directo la práctica de ese texto (desde la portada de Juegos); al volver, sale.
+export default function Memorize({ store, toast, onExit, start = null }) {
   const srs = store.progress.srs ?? {}
   // Repaso inteligente: arriba los textos que toca repasar hoy.
   const verses = useMemo(() => {
@@ -33,7 +34,7 @@ export default function Memorize({ store, toast, onExit }) {
     const byKey = new Map(list.map((v) => ['v:' + v.id, v]))
     return byPriority([...byKey.keys()], srs, undefined, () => 0.5).map((k) => byKey.get(k))
   }, [store.entries, srs])
-  const [current, setCurrent] = useState(null)
+  const [current, setCurrent] = useState(start)
   const [adding, setAdding] = useState(false)
   const [paste, setPaste] = useState(false)
   const [pairs, setPairs] = useState(false)
@@ -54,10 +55,10 @@ export default function Memorize({ store, toast, onExit }) {
       />
     )
   }
-  if (current) return <Practice key={current.id} verse={current} store={store} onSaved={setCurrent} onBack={() => setCurrent(null)} />
+  if (current) return <Practice key={current.id} verse={current} store={store} back={start ? 'Juegos' : 'Textos'} onSaved={setCurrent} onBack={() => (start ? onExit() : setCurrent(null))} />
 
   return (
-    <GameScreen title="Memorizar textos" onExit={onExit} right={<button className="bar-btn strong" onClick={() => setAdding(true)}>Agregar</button>}>
+    <GameScreen title="Mis textos" onExit={onExit} right={<button className="bar-btn strong" onClick={() => setAdding(true)}>Agregar</button>}>
       {verses.length ? (
         <>
           <MemoHero verses={verses} srs={srs} />
@@ -81,7 +82,7 @@ export default function Memorize({ store, toast, onExit }) {
         </>
       ) : (
         <Empty action={<><button className="primary" onClick={() => setAdding(true)}>Agregar un texto</button><button className="secondary" onClick={() => setPaste(true)}>Agregar textos de Claude</button></>}>
-          Agrega los textos de la Biblia que quieras memorizar.
+          Aquí entra el versículo de cada texto diario que estudies. También puedes agregar los que quieras.
         </Empty>
       )}
 
@@ -114,7 +115,7 @@ function Dots({ n }) {
   )
 }
 
-function Practice({ verse, store, onSaved, onBack }) {
+function Practice({ verse, store, back, onSaved, onBack }) {
   const [mode, setMode] = useState('hide')
   const [nivel, setNivel] = useState(Math.min(verse.fields.nivel ?? 0, 3))
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6))
@@ -179,7 +180,7 @@ function Practice({ verse, store, onSaved, onBack }) {
   )
 
   return (
-    <GameScreen title={(!hideCite && verse.fields.cita) || 'Texto'} back="Textos" onExit={onBack} right={!verse.fromDaily && <button className="bar-btn" onClick={() => setEditing(true)}>Editar</button>}>
+    <GameScreen title={(!hideCite && verse.fields.cita) || 'Texto'} back={back} onExit={onBack} right={!verse.fromDaily && <button className="bar-btn" onClick={() => setEditing(true)}>Editar</button>}>
       <div className="seg-modes">
         {modes.map(([m, l]) => (
           <button key={m} className={mode === m ? 'on' : ''} onClick={() => { setMode(m); setNote(null); reset() }}>{l}</button>

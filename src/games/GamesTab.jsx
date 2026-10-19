@@ -1,226 +1,79 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { GAMES } from './registry.js'
 import { memorizeSources } from './logic.js'
-import { achievements, roundSize, todayISO, review, withBestTime } from './progress.js'
+import { isDue, roundSize } from './progress.js'
 import Review, { reviewSummary } from './Review.jsx'
-import { dailyDone, dailyQuestions, DAILY_SIZE } from './daily.js'
-import { GameScreen, Quiz, PairsGame } from './ui.jsx'
-import { CHARACTERS, WORLDS } from './memoria/characters.js'
-import { KEY, inWorld, unlockedWorlds, pairsRound } from './memoria/logic.js'
-import Sheet from '../components/Sheet.jsx'
+import Memorize from './Memorize.jsx'
 import PageScroll from '../components/PageScroll.jsx'
 
-// Juegos (se abre desde Biblioteca): menú armado desde registry.js.
+// Juegos (se abre desde Biblioteca). Su único objetivo es que el usuario recuerde textos de la Biblia:
+// arriba, el texto que toca practicar (el versículo del último texto diario que estudió, o el que toca
+// repasar); abajo, Repasar hoy, Mis textos y Constancia. Nada de juegos sueltos, racha ni logros.
 export default function GamesTab({ store, toast, onBack }) {
   const [open, setOpen] = useState(null)
+  const [practice, setPractice] = useState(null)
   const [reviewing, setReviewing] = useState(false)
-  const [medals, setMedals] = useState(false)
-  const [daily, setDaily] = useState(false)
-  const [all, setAll] = useState(false)
-  const [playing, setPlaying] = useState(null)
   const game = GAMES.find((g) => g.id === open)
-  useNewMedals(store, toast)
-  const best = store.progress.best ?? {}
-  const world = todayWorld(best)
-  const done = store.progress.juegoHoy?.day === todayISO()
+  const srs = store.progress.srs ?? {}
+  const verses = memorizeSources(store.entries)
+  // El primero que es nuevo o toca hoy: los del texto diario van primero, del más reciente.
+  const next = verses.find((v) => isDue(srs['v:' + v.id])) ?? null
+  const { due, fresh } = useMemo(() => reviewSummary(store), [store.nodes, store.entries, store.progress]) // eslint-disable-line react-hooks/exhaustive-deps
+  const toReview = roundSize({ due, fresh })
 
-  const playBack = () => setPlaying(null)
   return (
     <div className="page">
-      <PageScroll title={all ? 'Todos los juegos' : 'Juegos'} back={all ? { label: 'Juegos', onClick: () => setAll(false) } : onBack && { label: 'Biblioteca', onClick: onBack }}>
-        {all ? (
-          <button className="back-link" onClick={() => setAll(false)}>
-            <Icon d={ICONS.back} size={18} stroke={2} /> Juegos
-          </button>
-        ) : onBack && (
+      <PageScroll title="Juegos" back={onBack && { label: 'Biblioteca', onClick: onBack }}>
+        {onBack && (
           <button className="back-link" onClick={onBack}>
             <Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca
           </button>
         )}
-        <h1 className="page-title">{all ? 'Todos los juegos' : 'Juegos'}</h1>
-        {all ? (
-          <>
-            <ProgressCard store={store} onReview={() => setReviewing(true)} onMedals={() => setMedals(true)} />
-            <DailyCard store={store} onOpen={() => setDaily(true)} />
-            <div className="game-list">
-              {GAMES.map((g) => {
-                const st = g.stat?.(store)
-                return (
-                  <button key={g.id} className="game-card" onClick={() => setOpen(g.id)}>
-                    <span className={'game-icon g-' + g.id}><Icon d={g.icon} size={22} /></span>
-                    <span className="entry-main">
-                      <span className="game-title">{g.title}{g.soon && <em className="soon-tag">Pronto</em>}</span>
-                      <span className="entry-sub">{g.desc}</span>
-                      {st && <span className={'game-pill' + (st.due ? ' due' : '')}>{st.text}</span>}
-                    </span>
-                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
-                  </button>
-                )
-              })}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="today-game">
-              <p className="today-game-label">{done ? 'Listo por hoy' : 'Juego de hoy'}</p>
-              <h2 className="today-game-title">
-                {done && (
-                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                )}
-                Memorama
-              </h2>
-              <p className="today-game-sub">Personajes de {world.name}</p>
-              <button className={done ? 'secondary' : 'primary'} onClick={() => setPlaying(world.id)}>{done ? 'Jugar otra vez' : 'Jugar'}</button>
-            </div>
-            <button className="today-more" onClick={() => setAll(true)}>Todos los juegos</button>
-          </>
-        )}
-      </PageScroll>
-      {playing != null && (
-        <PairsGame
-          title="Memorama"
-          back="Juegos"
-          era={playing}
-          build={() => pairsRound(inWorld(playing), Math.random, 6)}
-          best={best['memorama-tiempo']}
-          onBest={(t) => store.updateProgress((f) => withBestTime({ ...f, juegoHoy: { day: todayISO() } }, 'memorama-tiempo', t))}
-          onPair={(id, ok) => {
-            const ch = CHARACTERS.find((c) => KEY(c) === id)
-            if (ch) store.updateProgress((f) => ({ ...f, srs: { ...(f.srs ?? {}), [KEY(ch)]: review(f.srs?.[KEY(ch)], ok) } }))
-          }}
-          onExit={playBack}
-        />
-      )}
-      {game && <game.Component store={store} toast={toast} onExit={() => setOpen(null)} />}
-      {reviewing && <Review store={store} onExit={() => setReviewing(false)} />}
-      {medals && <Medals store={store} onClose={() => setMedals(false)} />}
-      {daily && <Daily store={store} onExit={() => setDaily(false)} />}
-    </div>
-  )
-}
-
-// El mundo del día rota entre los mundos abiertos (días desde la época).
-function todayWorld(best) {
-  const open = unlockedWorlds(best)
-  const d = new Date()
-  const days = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000)
-  const id = open[days % open.length]
-  return WORLDS.find((w) => w.id === id) ?? WORLDS[0]
-}
-
-// Reto del día: 5 preguntas iguales todo el día. Muestra si ya lo hiciste y cómo te fue.
-function DailyCard({ store, onOpen }) {
-  const done = dailyDone(store.progress)
-  return (
-    <button className={'daily-card' + (done ? ' done' : '')} onClick={onOpen}>
-      <span className="daily-icon">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          {done
-            ? <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            : <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />}
-        </svg>
-      </span>
-      <span className="entry-main">
-        <span className="game-title">Reto del día</span>
-        <span className="entry-sub">{done ? `Hecho: ${done.score} de ${DAILY_SIZE}. Mañana hay otro` : `${DAILY_SIZE} preguntas nuevas cada día`}</span>
-      </span>
-      {done ? <span className="daily-dots">{Array.from({ length: DAILY_SIZE }, (_, i) => <i key={i} className={i < done.score ? 'on' : ''} />)}</span> : <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>}
-    </button>
-  )
-}
-
-export function Daily({ store, onExit, back }) {
-  const [questions] = useState(() => dailyQuestions({ nodes: store.nodes, entries: store.entries, best: store.progress.best }))
-  const [nonce, setNonce] = useState(0)
-  return (
-    <GameScreen title="Reto del día" back={back} onExit={onExit}>
-      <Quiz
-        key={nonce}
-        questions={questions}
-        onDone={onExit}
-        onAgain={() => setNonce((n) => n + 1)}
-        onFinish={(score) => {
-          store.updateProgress((f) => {
-            const prev = dailyDone(f)
-            return prev && prev.score >= score ? f : { ...f, daily: { day: todayISO(), score } }
-          })
-        }}
-      />
-    </GameScreen>
-  )
-}
-
-// Avisa cuando ganas un logro mientras juegas (los que ya tenías al abrir Juegos no cuentan).
-function useNewMedals(store, toast) {
-  const { memorized } = useStats(store)
-  const done = achievements(store.progress, { nodes: store.nodes.length, memorized }).filter((m) => m.done)
-  const seen = useRef(null)
-  const key = done.map((m) => m.id).join()
-  useEffect(() => {
-    if (!store.ready) return
-    if (seen.current == null) {
-      seen.current = new Set(done.map((m) => m.id))
-      return
-    }
-    const fresh = done.filter((m) => !seen.current.has(m.id))
-    for (const m of fresh) seen.current.add(m.id)
-    if (fresh.length) setTimeout(() => toast(`Logro nuevo: ${fresh.map((m) => m.title).join(', ')}`), 900)
-  }, [key, store.ready]) // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-function useStats(store) {
-  const verses = memorizeSources(store.entries)
-  return { verses, memorized: verses.filter((v) => (v.fields.nivel ?? 0) >= 3).length }
-}
-
-// Arriba en Juegos: solo Repasar hoy y los logros. Sin racha, semana ni cifras de lo que falta: al usuario
-// lo abrumaba que la app le contara lo que debía (el progreso se sigue guardando y los logros lo usan).
-function ProgressCard({ store, onReview, onMedals }) {
-  const p = store.progress
-  const { memorized } = useStats(store)
-  const medals = achievements(p, { nodes: store.nodes.length, memorized })
-  const got = medals.filter((m) => m.done).length
-  const { due, fresh } = useMemo(() => reviewSummary(store), [store.nodes, store.entries, p]) // eslint-disable-line react-hooks/exhaustive-deps
-  const today = roundSize({ due, fresh })
-
-  return (
-    <div className="progress-actions top">
-      <button className="primary" onClick={onReview}>{today ? `Repasar hoy · ${today}` : 'Repasar hoy'}</button>
-      <button className="secondary medals-btn" onClick={onMedals}>
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 14.5 6 22l6-3 6 3-2-7.5M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        {got}/{medals.length}
-      </button>
-    </div>
-  )
-}
-
-// Logros: se calculan con tu progreso (no hay que hacer nada extra).
-function Medals({ store, onClose }) {
-  const { memorized } = useStats(store)
-  // Primero los que ya tienes; luego los que te faltan, del más cercano al más lejano.
-  const list = achievements(store.progress, { nodes: store.nodes.length, memorized }).sort((a, b) => b.done - a.done || b.have / b.need - a.have / a.need)
-  return (
-    <Sheet title={`Logros · ${list.filter((m) => m.done).length} de ${list.length}`} onClose={onClose}>
-        <div className="medal-grid">
-          {list.map((m) => (
-            <div key={m.id} className={'medal' + (m.done ? ' done' : '')}>
-              <span className="medal-icon">
-                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                  {m.done ? <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /> : <path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />}
-                </svg>
-              </span>
-              <span className="medal-title">{m.title}</span>
-              <span className="medal-desc">{m.desc}</span>
-              {!m.done && (
-                <span className="medal-progress">
-                  <span className="medal-bar"><i style={{ width: `${(m.have / m.need) * 100}%` }} /></span>
-                  <small>{m.need === 100 ? `${m.have} %` : `${m.have}/${m.need}`}</small>
-                </span>
-              )}
-            </div>
-          ))}
+        <h1 className="page-title">Juegos</h1>
+        <div className="today-game">
+          <p className="today-game-label">{next || !verses.length ? 'Para memorizar' : 'Listo por hoy'}</p>
+          {next ? (
+            <>
+              <h2 className="today-game-title">{next.fields.cita || 'Texto'}</h2>
+              <p className="today-game-verse">{next.fields.texto}</p>
+              <button className="primary" onClick={() => setPractice(next)}>Practicar</button>
+            </>
+          ) : verses.length ? (
+            <p className="today-game-sub">Ya practicaste lo que tocaba. Mañana te toca repasar otra vez.</p>
+          ) : (
+            <p className="today-game-sub">Cuando estudies el texto diario y toques "Ya lo estudié", su versículo aparece aquí.</p>
+          )}
         </div>
-    </Sheet>
+        <div className="game-list">
+          <button className="game-card" onClick={() => setReviewing(true)}>
+            <span className="game-icon"><Icon d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" size={22} /></span>
+            <span className="entry-main">
+              <span className="game-title">Repasar hoy</span>
+              <span className="entry-sub">Lo que estudias para las reuniones</span>
+              {toReview > 0 && <span className="game-pill">{toReview}</span>}
+            </span>
+            <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+          </button>
+          {GAMES.map((g) => {
+            const st = g.stat?.(store)
+            return (
+              <button key={g.id} className="game-card" onClick={() => setOpen(g.id)}>
+                <span className={'game-icon g-' + g.id}><Icon d={g.icon} size={22} /></span>
+                <span className="entry-main">
+                  <span className="game-title">{g.title}</span>
+                  <span className="entry-sub">{g.desc}</span>
+                  {st && <span className="game-pill">{st.text}</span>}
+                </span>
+                <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+              </button>
+            )
+          })}
+        </div>
+      </PageScroll>
+      {game && <game.Component store={store} toast={toast} onExit={() => setOpen(null)} />}
+      {practice && <Memorize store={store} toast={toast} start={practice} onExit={() => setPractice(null)} />}
+      {reviewing && <Review store={store} onExit={() => setReviewing(false)} />}
+    </div>
   )
 }

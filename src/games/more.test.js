@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { initials, chunkText, buildCiteQuestions, buildBookQuestions, bookRun, sectionOf, timedPoints, dailyMix, mulberry, cardCheck } from './logic.js'
-import { achievements, mergeProgress, withBest, withBestTime, isDue } from './progress.js'
-import { BOOKS } from '../lib/bible.js'
-
-const verse = (id, cita, texto = 'Texto de prueba suficientemente largo') => ({ id, kind: 'memoria', fields: { cita, texto } })
+import { initials, chunkText, dailyMix, mulberry, cardCheck } from './logic.js'
+import { mergeProgress, withBest, withBestTime, isDue } from './progress.js'
 
 describe('Más juegos', () => {
   it('iniciales y trozos para ordenar', () => {
@@ -13,42 +10,6 @@ describe('Más juegos', () => {
     expect(parts.length).toBeLessThanOrEqual(4)
   })
 
-  it('¿Dónde está? usa solo citas reconocidas y distintas', () => {
-    const vs = [verse('1', 'Juan 17:3'), verse('2', 'Sal. 83:18'), verse('3', '1 Juan 4:8'), verse('4', 'Mateo 6:9'), verse('5', 'Juan 17:3'), verse('6', 'Libro raro 1:1')]
-    const qs = buildCiteQuestions(vs, 10, mulberry(3))
-    expect(qs).toHaveLength(4)
-    for (const q of qs) {
-      expect(new Set(q.options).size).toBe(4)
-      expect(q.answer).toBeGreaterThanOrEqual(0)
-    }
-    expect(buildCiteQuestions(vs.slice(0, 3))).toEqual([])
-  })
-
-  it('libros de la Biblia: preguntas correctas y tramos seguidos', () => {
-    expect(BOOKS).toHaveLength(66)
-    expect(sectionOf(1)).toBe('Pentateuco')
-    expect(sectionOf(19)).toBe('Poéticos')
-    expect(sectionOf(44)).toBe('Evangelios y Hechos')
-    expect(sectionOf(66)).toBe('Apocalipsis')
-    const qs = buildBookQuestions(30, mulberry(7))
-    expect(qs).toHaveLength(30)
-    for (const q of qs) {
-      expect(new Set(q.options).size).toBe(q.options.length)
-      const m = q.prompt.match(/después de (.+)\?$/)
-      if (m) expect(q.options[q.answer]).toBe(BOOKS[BOOKS.indexOf(m[1]) + 1])
-      const a = q.prompt.match(/antes de (.+)\?$/)
-      if (a) expect(q.options[q.answer]).toBe(BOOKS[BOOKS.indexOf(a[1]) - 1])
-    }
-    const run = bookRun(6, mulberry(1))
-    const i = BOOKS.indexOf(run[0])
-    expect(run).toEqual(BOOKS.slice(i, i + 6))
-  })
-
-  it('puntos contra reloj', () => {
-    expect(timedPoints(15000, 15000)).toBe(200)
-    expect(timedPoints(0, 15000)).toBe(100)
-  })
-
   it('repasar hoy alterna tipos y solo toma lo que toca', () => {
     const srs = { 'c:a': { box: 3, due: '2999-01-01' } }
     const mix = dailyMix({ cards: [{ id: 'a' }, { id: 'b' }], verses: [{ id: 'v' }], trivia: [{ id: 'q1' }, { id: 'q2' }] }, srs, (s) => isDue(s, '2026-10-01'))
@@ -56,14 +17,11 @@ describe('Más juegos', () => {
     expect(mix.slice(2).map((x) => x.key).sort()).toEqual(['q:q1', 'q:q2'])
   })
 
-  it('récords y logros', () => {
+  it('récords', () => {
     let f = withBest({}, 'libros', 80)
     f = withBest(f, 'libros', 60)
     expect(f.best.libros).toBe(80)
     expect(mergeProgress({ best: { libros: 80 } }, { best: { libros: 90, 'trivia-reloj': 500 } }).best).toEqual({ libros: 90, 'trivia-reloj': 500 })
-    const list = achievements({ days: ['2026-10-01', '2026-10-02', '2026-10-03'], best: { libros: 100 } }, { nodes: 12, memorized: 1 })
-    const done = list.filter((a) => a.done).map((a) => a.id)
-    expect(done).toEqual(['racha-3', 'texto-1', 'nodos-10', 'libros-100'])
   })
 })
 
@@ -94,62 +52,6 @@ describe('récords de tiempo', () => {
     expect(mergeProgress({ best: { 'parejas-tiempo': 31, libros: 50 } }, { best: { 'parejas-tiempo': 25, libros: 80 } }).best).toEqual({ 'parejas-tiempo': 25, libros: 80 })
     expect(mergeProgress({ best: { 'parejas-tiempo': 31 } }, { best: {} }).best).toEqual({ 'parejas-tiempo': 31 })
   })
-  it('logros nuevos de Memoria Bíblica y retos', () => {
-    // "Conocido" = acertado en dos días distintos (caja 2); con un solo acierto aún no cuenta.
-    const once = Object.fromEntries(Array.from({ length: 64 }, (_, i) => ['mb:' + i, { box: 1, due: '2099-01-01' }]))
-    expect(achievements({ srs: once }).find((a) => a.id === 'mb-personajes').done).toBe(false)
-    const srs = Object.fromEntries(Array.from({ length: 64 }, (_, i) => ['mb:' + i, { box: 2, due: '2099-01-01' }]))
-    const done = achievements({ srs, best: { 'mb-w2': 100, 'mb-reto': 15, 'trivia-racha': 10, 'mb-linea': 5 } }).filter((a) => a.done).map((a) => a.id)
-    expect(done).toEqual(['mb-estrellas', 'mb-personajes', 'reto-15', 'sin-fallar-10', 'linea-5'])
-  })
-})
-
-import { buildFillQuestions } from './logic.js'
-describe('Completa el texto', () => {
-  const verses = [
-    { id: 'a', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna: que lleguen a conocerte a ti, el único Dios verdadero.' } },
-    { id: 'b', fields: { cita: 'Salmo 83:18', texto: 'Que la gente sepa que tú, cuyo nombre es Jehová, solo tú eres el Altísimo sobre toda la tierra.' } },
-    { id: 'c', fields: { cita: '', texto: 'Muy corto aquí' } },
-  ]
-  it('quita una palabra que está entre las 4 opciones distintas', () => {
-    const qs = buildFillQuestions(verses, 10, mulberry(3))
-    expect(qs).toHaveLength(2)
-    for (const q of qs) {
-      expect(q.options).toHaveLength(4)
-      expect(new Set(q.options.map((o) => o.toLowerCase())).size).toBe(4)
-      expect(q.prompt).toContain('_____')
-      const v = verses.find((x) => 'llenar:' + x.id === q.key)
-      expect(q.prompt.replace('_____', q.options[q.answer])).toBe(v.fields.texto)
-    }
-  })
-})
-
-import { bibleSources } from './logic.js'
-describe('bibleSources', () => {
-  it('suma los versículos de Mi Biblia sin publicaciones ni repetidos', () => {
-    const entries = [
-      { id: '1', kind: 'memoria', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna' } },
-      { id: '2', kind: 'biblia', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna' } },
-      { id: '3', kind: 'biblia', fields: { cita: 'Jeremías 38:6', texto: 'Así que agarraron a Jeremías' } },
-      { id: '4', kind: 'biblia', fields: { cita: 'Seamos valientes, cap. 3', texto: 'Un párrafo' } },
-    ]
-    expect(bibleSources(entries).map((e) => e.id)).toEqual(['1', '3'])
-  })
-})
-
-import { sectionRun } from './logic.js'
-describe('Ordenar una sección', () => {
-  it('da los libros de una sección completa, en orden', () => {
-    const rnd = mulberry(5)
-    for (let i = 0; i < 20; i++) {
-      const r = sectionRun(rnd)
-      expect(r.books.length).toBeGreaterThanOrEqual(5)
-      expect(r.name).not.toBe('Apocalipsis')
-      const idx = r.books.map((b) => BOOKS.indexOf(b))
-      expect(idx).toEqual([...idx].sort((a, b) => a - b))
-      expect(sectionOf(idx[0] + 1)).toBe(r.name)
-    }
-  })
 })
 
 describe('Repasar hoy con personajes', () => {
@@ -161,7 +63,7 @@ describe('Repasar hoy con personajes', () => {
   })
 })
 
-import { defText, buildPairs } from './logic.js'
+import { defText } from './logic.js'
 describe('definiciones sin subtítulos', () => {
   it('quita los ## y deja el texto', () => {
     expect(defText('## Lo que pasa\nEn el noveno año.\n\n## Lo que estudiamos\nValor.')).toBe('En el noveno año. Valor.')
@@ -189,15 +91,21 @@ describe('Texto diario con cita de Éxodo', () => {
   })
 })
 
-describe('Memorizar sin Texto diario', () => {
-  it('solo deja los textos propios y oculta las copias del Texto diario', async () => {
+describe('Memorizar: lo que vas estudiando', () => {
+  it('entra el versículo del texto diario estudiado; no las copias viejas del texto completo', async () => {
     const { memorizeSources } = await import('./logic.js')
     const entries = [
-      { id: 'd', kind: 'diario', fields: { texto: 'Viernes 2 de octubre Dios revela los secretos (Daniel 2:28).' } },
+      { id: 'd', kind: 'diario', fields: { fecha: '2026-10-02', texto: 'Viernes 2 de octubre Dios revela los secretos (Daniel 2:28).' } },
       { id: 'c', kind: 'memoria', fields: { cita: 'Daniel 2:28', texto: 'Viernes 2 de octubre Dios revela los secretos' } },
       { id: 'm', kind: 'memoria', fields: { cita: 'Juan 17:3', texto: 'Esto significa vida eterna.' } },
+      { id: 'l', kind: 'diario', fields: { fecha: '2026-10-19', estudiado: true, texto: 'Lunes 19 de octubre\nCuando des un banquete, invita a los pobres (Luc. 14:13, 14).\n\nEl hombre hospitalario (1 Ped. 4:9).' } },
     ]
-    expect(memorizeSources(entries).map((e) => e.id)).toEqual(['m'])
+    const list = memorizeSources(entries)
+    expect(list.map((e) => e.id)).toEqual(['l', 'm'])
+    expect(list[0].fields).toMatchObject({ cita: 'Luc. 14:13, 14', texto: 'Cuando des un banquete, invita a los pobres' })
+    // Ya practicado (copiado a "mis textos"), no se repite.
+    const copy = { id: 'x', kind: 'memoria', fields: { ...list[0].fields, nivel: 1 } }
+    expect(memorizeSources([...entries, copy]).map((e) => e.id)).toEqual(['m', 'x'])
   })
 })
 

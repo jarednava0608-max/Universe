@@ -345,8 +345,6 @@ a { color: inherit; }
 .ns-row.missing .ns-md { font-style: italic; color: var(--text-3); }
 .md blockquote { margin: 0 0 1.05em; padding: 2px 0 2px 16px; border-left: 2px solid var(--line-strong); color: var(--text-2); }
 
-
-
 /* ---------- Pantallas (editor, pegar, cuenta, selector) ---------- */
 .overlay {
   position: fixed; inset: 0; z-index: 20; background: var(--bg);
@@ -399,8 +397,6 @@ a { color: inherit; }
 .input:focus { border-color: var(--line-strong); box-shadow: 0 0 0 3px rgba(var(--fg-rgb), 0.04); }
 .paste-input { min-height: 42vh; resize: vertical; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.5; }
 .search-input { margin-bottom: 8px; }
-
-
 
 .delete-btn { width: 100%; min-height: 48px; margin-top: 36px; border-radius: var(--r); color: var(--danger); background: rgba(248, 113, 113, 0.07); border: 1px solid rgba(248, 113, 113, 0.18); font-size: 15px; font-weight: 500; }
 
@@ -619,17 +615,13 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .game-card .chev { color: var(--text-3); display: grid; }
 .game-icon { width: 44px; height: 44px; flex: none; border-radius: 12px; display: grid; place-items: center; background: rgba(var(--fg-rgb), 0.06); color: var(--text); }
 .game-title { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
-.soon-tag { font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-text); background: rgba(245, 210, 122, 0.1); border: 1px solid rgba(245, 210, 122, 0.25); padding: 2px 8px; border-radius: 999px; }
 
 .overlay.game { z-index: 20; }
 .bar-btn.back { display: inline-flex; align-items: center; gap: 2px; padding-left: 2px; white-space: nowrap; flex: none; }
 .game-body { display: flex; flex-direction: column; }
 /* Que nada se aplaste al alto de la pantalla: lo largo (como Mis preguntas) se baja con scroll. */
 .game-body > * { flex-shrink: 0; }
-.game-home { display: grid; gap: 8px; padding-top: 12px; }
-.game-home .primary, .game-home .secondary { margin-top: 0; }
-.game-stat { text-align: center; color: var(--text-2); margin: 8px 0 16px; font-size: 15px; }
-.game-stat b { display: block; font-size: 44px; color: var(--text); font-weight: 700; letter-spacing: -0.03em; }
+
 .link-danger { min-height: var(--tap); color: var(--danger); font-size: 15px; margin-top: 12px; }
 
 .quiz { display: flex; flex-direction: column; }
@@ -650,7 +642,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .option.wrong { border-color: rgba(248, 113, 113, 0.6); background: rgba(248, 113, 113, 0.1); animation: shake 0.35s; }
 @keyframes pop { 40% { transform: scale(1.03); } }
 .option.dim { opacity: 0.45; }
-.quiz-giveup { align-self: center; min-height: var(--tap); margin-top: 12px; padding: 0 16px; color: var(--link); font-size: 15px; }
+
 .feedback { margin-top: 20px; animation: fade 0.2s; }
 .feedback .ok, .feedback .bad { font-weight: 600; margin: 0 0 8px; }
 .feedback .ok { color: var(--ok); }
@@ -663,12 +655,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .result-big span { font-size: 22px; color: var(--text-3); letter-spacing: -0.01em; margin-left: 4px; }
 .result-msg { color: var(--text-2); margin: 0 0 20px; font-size: 17px; }
 .result-card .primary, .result-card .secondary { margin-top: 0; }
-
-.mode-list { display: grid; gap: 12px; }
-.mode-card { display: grid; gap: 4px; padding: 16px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
-.mode-card:active { background: var(--surface-2); }
-.mode-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 17px; font-weight: 600; }
-.mode-desc { font-size: 15px; color: var(--text-2); }
 
 .mem-status { margin: 0 0 12px; font-size: 13px; color: var(--text-2); }
 .pairs { display: grid; gap: 8px; }
@@ -750,7 +736,6 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 }
 .ref-chip:active { background: rgba(var(--link-rgb), 0.16); }
 .due-tag { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--ok); background: rgba(134, 239, 172, 0.1); border: 1px solid rgba(134, 239, 172, 0.25); padding: 2px 8px; border-radius: 999px; }
-.game-sub { text-align: center; color: var(--text-3); font-size: 15px; margin: -8px 0 16px; }
 
 /* ---------- Racha y progreso ---------- */
 .progress-card { padding: 16px; margin-bottom: 20px; background: linear-gradient(160deg, var(--surface-2), var(--surface) 75%); border: 1px solid var(--line); border-radius: 18px; }
@@ -778,8 +763,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 
 /* ---------- Juegos: piezas nuevas ---------- */
 .quiz-meta { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; min-height: 22px; }
-.quiz-run { font-size: 13px; font-weight: 600; color: #fb923c; background: rgba(251, 146, 60, 0.12); padding: 2px 8px; border-radius: 999px; animation: pop 0.35s var(--ease); }
-.quiz-points { margin-left: auto; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
 .review-kind { margin-left: auto; font-size: 13px; color: var(--text-3); }
 .review-source { margin: 16px 0 0; font-size: 13px; color: var(--text-3); }
 .options.long .option { font-size: 15px; line-height: 1.45; }
@@ -819,28 +803,7 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .order-result.ok { color: var(--ok); }
 .order-result.bad { color: var(--text-2); }
 
-.q-text { font-size: 15px; line-height: 1.4; }
-
-.book-section { margin-bottom: 20px; }
-.book-section-title { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
-.book-list { margin: 0; padding: 12px 16px 12px 40px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; columns: 2; column-gap: 24px; }
-.book-list li { padding: 4px 0; font-size: 15px; break-inside: avoid; }
-.book-list li::marker { color: var(--text-3); font-size: 13px; font-variant-numeric: tabular-nums; }
-
-.progress-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 16px; }
-.progress-actions .primary, .progress-actions .secondary { margin-top: 0; }
-.progress-actions.top { margin: 0 0 20px; }
-.progress-actions .primary { white-space: nowrap; padding-inline: 12px; }
-@media (max-width: 359px) { .progress-actions .primary { font-size: 15px; padding-inline: 8px; } .medals-btn { padding: 0 12px; } }
-.medals-btn { display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; font-variant-numeric: tabular-nums; }
 .sheet-title { margin: 4px 4px 16px; font-size: 17px; font-weight: 600; }
-.medal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.medal { display: grid; gap: 4px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; opacity: 0.55; }
-.medal.done { opacity: 1; border-color: rgba(245, 210, 122, 0.35); }
-.medal-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(var(--fg-rgb), 0.06); color: var(--text-3); margin-bottom: 4px; }
-.medal.done .medal-icon { background: rgba(245, 210, 122, 0.14); color: var(--gold-text); }
-.medal-title { font-size: 15px; font-weight: 600; }
-.medal-desc { font-size: 13px; color: var(--text-2); line-height: 1.35; }
 
 /* ---------- Notas (como la app Notas del iPhone) ---------- */
 .note-search { margin: -8px 0 16px; border-radius: 12px; }
@@ -987,31 +950,13 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .tb-suggest::-webkit-scrollbar { display: none; }
 .tb-suggest .tb-btn { flex: 1 0 auto; height: 38px; background: rgba(var(--fg-rgb), 0.07); font-weight: 500; white-space: nowrap; }
 
-/* ---------- Memoria Bíblica ---------- */
+/* ---------- Mis textos (Memorizar) ---------- */
 .mb-hero { margin: 4px 0 16px; }
 .mb-count { margin: 0 0 8px; color: var(--text-2); font-size: 15px; }
 .mb-count b { color: var(--text); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-right: 4px; }
 .mb-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
 .mb-bar span { display: block; height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.4s var(--ease); }
-.mb-section { margin-top: 24px; }
-.mb-path { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; position: relative; }
-.mb-path::before { content: ''; position: absolute; left: 33px; top: 20px; bottom: 20px; width: 2px; background: var(--line-strong); }
-.mb-world { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 16px 12px 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
-.mb-world:active:not(:disabled) { background: var(--surface-2); }
-.mb-world.locked { opacity: 0.5; }
-.mb-num { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 17px; background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text); }
-.mb-world.passed .mb-num { background: rgba(245, 210, 122, 0.16); border-color: rgba(245, 210, 122, 0.5); color: var(--gold-text); }
-.mb-wname { font-size: 17px; font-weight: 600; }
-.mb-best { flex: none; font-size: 13px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.mb-goal { margin: -4px 0 16px; padding: 12px 12px; border-radius: 12px; background: rgba(245, 210, 122, 0.08); border: 1px solid rgba(245, 210, 122, 0.25); color: var(--text-2); font-size: 15px; }
-.mb-clues { display: grid; gap: 8px; margin: 16px 0 20px; }
-.mb-clue { margin: 0; font-family: var(--font-display); font-size: 20px; line-height: 1.45; animation: fade 0.25s; }
-.mb-clue.last { font-size: 17px; color: var(--text-2); }
-.mb-more { justify-self: start; min-height: 36px; padding: 0 16px; border-radius: 999px; font-size: 15px; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); }
-.mb-order { text-align: left; margin: 0 0 12px; padding-left: 24px; display: grid; gap: 4px; }
-.mb-order span { color: var(--text-3); font-size: 15px; }
-.mb-card .sheet-scroll { display: grid; gap: 12px; align-content: start; }
-.mb-card-t { margin: -4px 0 4px; color: var(--text-2); }
+
 .tb-suggest .tb-btn { display: inline-flex; align-items: center; gap: 8px; }
 .sugg-node { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--graph-node); }
 
@@ -1051,38 +996,12 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .result-stats div { display: flex; flex-direction: column; gap: 2px; }
 .result-stats b { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .result-stats span { font-size: 13px; color: var(--text-2); }
-.missed-ref { margin: 4px 0 0; font-size: 13px; }
+
 .result-card { padding-top: 28px; }
 .result-card.compact { padding-top: 20px; }
 
-/* ---------- Reto contra reloj ---------- */
-.sprint-ready { text-align: center; padding: 36px 8px; display: grid; gap: 8px; animation: fade 0.3s; }
-.sprint-ready .primary { margin-top: 8px; }
-.sprint-clock { justify-self: center; width: 132px; height: 132px; border-radius: 50%; display: flex; align-items: baseline; justify-content: center; padding-top: 40px; margin-bottom: 12px; border: 8px solid var(--surface-2); font-family: var(--font-display); font-size: 44px; font-weight: 700; letter-spacing: -0.03em; }
-.sprint-clock small { font-size: 20px; color: var(--text-3); }
-.sprint-top { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-.sprint-time { min-width: 44px; font-family: var(--font-display); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; animation: pop 0.35s var(--ease); }
-.sprint-time.low { color: var(--danger); }
-
-/* ---------- Memoria Bíblica: estrellas, mundo y personajes ---------- */
-.stars { display: inline-flex; gap: 1px; }
-.stars svg { fill: var(--surface-2); stroke: var(--line-strong); stroke-width: 1.5; }
-.stars svg.on { fill: var(--gold); stroke: transparent; }
-.mb-best { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.mb-world-hero { display: flex; align-items: center; gap: 16px; padding: 16px; margin: 4px 0 16px; background: linear-gradient(160deg, var(--surface-2), var(--surface) 75%); border: 1px solid var(--line); border-radius: 16px; }
-.mb-world-hero .entry-main { gap: 4px; }
-.mb-world-hero .entry-sub { white-space: normal; overflow: visible; }
-.mb-world-hero .stars svg { width: 16px; height: 16px; }
-.mb-num.big { width: 50px; height: 50px; font-size: 20px; }
-.mb-world-stats { font-size: 15px; font-weight: 600; }
-.mb-search { margin-bottom: 12px; }
 .seg-modes.small button { min-height: 34px; font-size: 13px; }
-.mb-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line-strong); }
-.mb-dot.on { background: var(--ok); border-color: transparent; }
-.mb-status { margin: -4px 0 2px; font-size: 13px; font-weight: 600; color: var(--text-3); }
-.mb-status.on { color: var(--ok); }
-.mb-order li { line-height: 1.5; }
-.tl-meta { margin: 4px 0 12px; }
+
 .order-chip.nudge { border-color: var(--ok); box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.18); animation: pop 0.6s var(--ease) 2; }
 
 /* ---------- Memorizar: Escribir ---------- */
@@ -1126,28 +1045,12 @@ input[type='date'].input { min-height: var(--tap); color-scheme: dark; }
 .empty-state .empty-icon { display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; margin-bottom: 16px; }
 .empty-state .empty-title { margin: 0 0 4px; font-size: 20px; font-weight: 600; color: var(--text); }
 
-/* ---------- Reto del día ---------- */
-.daily-card { display: flex; align-items: center; gap: 16px; width: 100%; min-height: 70px; padding: 16px; margin: -8px 0 20px; text-align: left; background: rgba(245, 210, 122, 0.06); border: 1px solid rgba(245, 210, 122, 0.28); border-radius: 16px; transition: transform 0.15s var(--ease); }
-.daily-card:active { transform: scale(0.985); }
-.daily-card .entry-main { min-width: 0; }
-.daily-card.done { background: var(--surface); border-color: var(--line); }
-.daily-icon { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(245, 210, 122, 0.14); color: var(--gold-text); }
-.daily-card.done .daily-icon { background: rgba(134, 239, 172, 0.12); color: var(--ok); }
-.daily-dots { flex: none; display: flex; gap: 4px; }
-.daily-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line-strong); }
-.daily-dots i.on { background: var(--ok); border-color: transparent; }
-.daily-card .entry-sub { white-space: normal; }
 .level-note { justify-self: center; align-self: center; margin: -4px 0 12px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); animation: pop 0.4s var(--ease); }
 .level-note.up { color: var(--ok); background: rgba(134, 239, 172, 0.1); border-color: rgba(134, 239, 172, 0.25); }
 /* En los juegos los avisos van arriba, debajo de la barra, para no tapar los botones. */
 body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .mb-count { display: flex; align-items: baseline; gap: 4px; }
-.mb-stars-total { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.mb-stars-total .stars svg { width: 14px; height: 14px; }
-.medal-progress { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-.medal-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
-.medal-bar i { display: block; height: 100%; background: var(--text-3); border-radius: 2px; }
-.medal-progress small { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
 .tab-icon { position: relative; display: grid; }
 .tab-dot { position: absolute; top: -1px; right: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); border: 2px solid var(--bg); box-sizing: content-box; }
 
@@ -1162,7 +1065,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .options.two .option { min-height: 72px; text-align: center; font-size: 20px; font-weight: 600; }
 .undo-bar.in-game { bottom: calc(var(--sab) + 16px); }
 .empty-state .secondary { max-width: 300px; }
-.q-row .entry-sub { white-space: normal; }
+
 .results-label { margin: 12px 16px 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); }
 .pass-wrap { position: relative; display: block; }
 .pass-wrap .input { padding-right: 84px; }
@@ -1171,7 +1074,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 /* Pantallas chicas: que nada empuje fuera de la pantalla (los hijos de grid/flex se pueden encoger) */
 .search { min-width: 0; }
 .search input { min-width: 0; }
-.mb-path > li, .mode-list > *, .options > *, .result-stats > * { min-width: 0; }
+.options > *, .result-stats > * { min-width: 0; }
 .bar-title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
 
 /* ---------- Estudio: Texto de hoy y Seguir donde te quedaste ---------- */
@@ -1218,38 +1121,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .node-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--graph-node); }
 .node-dot.root { background: #f5d27a; box-shadow: 0 0 8px rgba(245, 210, 122, 0.5); }
 
-/* ---------- Ambiente de cada época (mundos de Memoria Bíblica, src/games/eras.jsx) ---------- */
-[data-era='1'] { --era-rgb: 110, 196, 140; }  /* los comienzos: verde del jardín */
-[data-era='2'] { --era-rgb: 214, 162, 102; }  /* patriarcas: arena */
-[data-era='3'] { --era-rgb: 222, 116, 88; }   /* éxodo: desierto rojizo */
-[data-era='4'] { --era-rgb: 156, 176, 92; }   /* conquista y jueces: olivo */
-[data-era='5'] { --era-rgb: 156, 126, 220; }  /* reino unido: púrpura real */
-[data-era='6'] { --era-rgb: 212, 122, 146; }  /* reino dividido: atardecer */
-[data-era='7'] { --era-rgb: 86, 140, 226; }   /* exilio: azul de Babilonia */
-[data-era='8'] { --era-rgb: 72, 184, 198; }   /* Galilea: azul del mar */
-.overlay.game[data-era] {
-  background:
-    radial-gradient(130% 55% at 50% 0%, rgba(var(--era-rgb), 0.17), transparent 70%),
-    linear-gradient(to top, rgba(var(--era-rgb), 0.07), transparent 40%),
-    var(--bg);
-}
-.overlay.game[data-era] > :not(.era-scene) { position: relative; z-index: 1; }
-.overlay.game[data-era] .bar { background: rgba(var(--bg-rgb), 0.6); }
-.era-scene {
-  position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: calc(150px + var(--sab));
-  padding-bottom: var(--sab); color: rgb(var(--era-rgb)); opacity: 0.13; pointer-events: none;
-  animation: era-in 0.9s var(--ease) both;
-}
-:root[data-theme='light'] .era-scene { opacity: 0.18; }
-@keyframes era-in { from { opacity: 0; transform: translateY(10px); } }
-.overlay.game[data-era] .progress span { background: rgb(var(--era-rgb)); }
-.overlay.game[data-era] .mb-num, .mb-world[data-era]:not(.locked) .mb-num {
-  background: rgba(var(--era-rgb), 0.16); border-color: rgba(var(--era-rgb), 0.5); color: var(--text);
-}
-.overlay.game[data-era] .mb-world-hero {
-  background: linear-gradient(160deg, rgba(var(--era-rgb), 0.14), var(--surface) 75%);
-  border-color: rgba(var(--era-rgb), 0.28);
-}
 .title-wrap { resize: none; overflow: hidden; display: block; line-height: 1.2; }
 
 /* En blanco, las sombras pensadas para el negro se ven como manchas grises: más suaves. */
@@ -1258,7 +1129,6 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-theme='light'] .note { box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.1); }
 :root[data-theme='light'] .sheet { box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.1); }
 :root[data-theme='light'] .toast { box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1); }
-
 
 /* La Atalaya por pasos */
 /* Pasos y números: van pegados arriba del texto y se deslizan hacia arriba al bajar leyendo
@@ -1490,7 +1360,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .at-step.on { background: none; color: var(--accent); font-weight: 800; border-bottom-color: var(--accent); }
 
 /* Esquinas casi rectas, como los cuadros de JW Library. */
-:root[data-style='jw'] :is(.today-card, .continue-card, .kind-card, .entry-list, .entry-row, .mode-card, .progress-card, .daily-card, .menu-group, .propose-card, .at-card, .at-answer, .related-row, .book-list, .mb-world, .result-stats, .undo-bar, .missed-item, .note-search, .seg2, .input, .primary, .secondary) { border-radius: 6px; }
+:root[data-style='jw'] :is(.today-card, .continue-card, .kind-card, .entry-list, .entry-row, .progress-card, .menu-group, .propose-card, .at-card, .at-answer, .related-row, .result-stats, .undo-bar, .missed-item, .note-search, .seg2, .input, .primary, .secondary) { border-radius: 6px; }
 :root[data-style='jw'] :is(.today-card, .kind-card, .continue-card) { background: var(--surface); }
 
 /* "Hoy" como el inicio de JW Library: la fecha en lavanda. */
@@ -1603,11 +1473,11 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root[data-style='jw'] .back-link + .page-head { margin-top: -44px; margin-bottom: 12px; min-height: 44px; }
 :root[data-style='jw'] .back-link + .page-head .round-btn { width: 36px; height: 36px; margin-bottom: 0; }
 /* Todas las tarjetas con las mismas esquinas casi rectas, fondo liso y un toque que se nota. */
-:root[data-style='jw'] :is(.game-card, .progress-card, .mode-card, .medal, .mb-world, .mb-goal, .result-stats, .order-built, .missed-item) { border-radius: 6px; background: var(--surface); box-shadow: none; }
-:root[data-style='jw'] :is(.game-icon, .kind-icon, .daily-icon, .flame) { border-radius: 6px; }
+:root[data-style='jw'] :is(.game-card, .progress-card, .result-stats, .order-built, .missed-item) { border-radius: 6px; background: var(--surface); box-shadow: none; }
+:root[data-style='jw'] :is(.game-icon, .kind-icon, .flame) { border-radius: 6px; }
 :root[data-style='jw'] :is(.game-icon, .kind-icon) { color: var(--accent); background: var(--accent-soft); }
-:root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
-:root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .mode-card, .entry-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
+:root[data-style='jw'] :is(.continue-card, .kind-card, .game-card, .entry-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(1.18); transform: none; }
+:root[data-style='jw'][data-theme='light'] :is(.continue-card, .kind-card, .game-card, .entry-row, .mw-row, .bh-book, .bh-ch):active { filter: brightness(0.94); }
 :root[data-style='jw'] .continue-label { color: var(--text-3); }
 /* Las etiquetas de las respuestas ("Mi respuesta", "Para meditar", "Mis notas") en letra normal, sin MAYÚSCULAS. */
 :root[data-style='jw'] .at-answer-label { font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-2); }
@@ -1724,22 +1594,20 @@ input[type='time'].input { min-height: var(--tap); }
    solo lo que es círculo (números, palomitas, puntos) sigue redondo. Las tarjetas se distinguen por
    su fondo, sin borde, y no se mete una caja dentro de otra. */
 :root[data-style='jw'] :is(.search-results, .note, .menu-group, .toast, .link-pill, .kind-card, .kind-icon, .entry-list, .meeting-date,
-  .propose-card, .game-card, .game-icon, .soon-tag, .option, .mode-card, .pair-chip, .flashcard, .soon-badge, .ref-chip, .due-tag,
-  .progress-card, .flame, .quiz-run, .missed-item, .order-built, .order-chip, .book-list, .medal, .medal-icon, .note-search, .tb-btn,
-  .tidy-banner, .tidy-banner button, .related-row, .mb-world, .mb-goal, .mb-more, .record-tag, .result-stats, .mb-world-hero, .game-pill,
-  .empty-state .empty-icon, .daily-card, .daily-icon, .level-note, .undo-bar, .today-card, .continue-card, .at-card, .at-cover,
+  .propose-card, .game-card, .game-icon, .option, .pair-chip, .flashcard, .soon-badge, .ref-chip, .due-tag,
+  .progress-card, .flame, .missed-item, .order-built, .order-chip, .note-search, .tb-btn,
+  .tidy-banner, .tidy-banner button, .related-row, .record-tag, .result-stats, .game-pill,
+  .empty-state .empty-icon, .level-note, .undo-bar, .today-card, .continue-card, .at-card, .at-cover,
   .at-answer, .at-missing button, .cite-blank, .constancia-text, .new-task, .chips button span, .fold-row.alone, .plan-next) { border-radius: var(--r); }
-:root[data-style='jw'] :is(.kind-card, .entry-list, .propose-card, .game-card, .mode-card, .progress-card, .book-list, .related-row, .mb-world,
-  .result-stats, .daily-card, .continue-card, .at-card, .at-answer, .constancia-text, .new-task, .menu-group, .note-search, .missed-item) { border-color: transparent; }
+:root[data-style='jw'] :is(.kind-card, .entry-list, .propose-card, .game-card, .progress-card, .related-row,
+  .result-stats, .continue-card, .at-card, .at-answer, .constancia-text, .new-task, .menu-group, .note-search, .missed-item) { border-color: transparent; }
 /* "Hoy" va directo sobre el fondo: el botón "Empieza" es la única caja. */
 :root[data-style='jw'] .today-card.plan { background: none; border: 0; padding: 0; margin: 0 0 24px; }
 /* Juegos con la misma paleta: el lavanda en lugar del naranja, el dorado y el verde. */
 :root[data-style='jw'] .flame.on { color: var(--accent); background: var(--accent-soft); }
 :root[data-style='jw'] .week-day.done i { background: var(--accent); box-shadow: none; }
-:root[data-style='jw'] .daily-card { background: var(--surface); }
-:root[data-style='jw'] .daily-icon { background: var(--accent-soft); color: var(--accent); }
+
 :root[data-style='jw'] :is(.due-tag, .game-pill.due) { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
-:root[data-style='jw'] .daily-dots i.on { background: var(--accent); border-color: transparent; }
 
 /* Listas de Estudio: "‹ Estudio" y el + van en la barra de arriba, como en las demás pantallas. */
 .page-bar-back, .page-bar-action { display: none; }
@@ -1804,8 +1672,8 @@ input[type='time'].input { min-height: var(--tap); }
 .today-game-title { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 28px; font-weight: 700; color: var(--title); }
 .today-game-title svg { color: var(--ok); }
 .today-game-sub { margin: 0 0 16px; font-size: 15px; color: var(--text-2); }
+.today-game-verse { margin: 0 0 16px; font-family: var(--font-book); font-size: 17px; line-height: 1.5; color: var(--text-body); }
 .today-game .primary, .today-game .secondary { width: 100%; margin-top: 0; }
-.today-more { display: block; width: 100%; min-height: 44px; font-size: 15px; color: var(--accent, var(--text-2)); text-align: center; }
 
 /* Biblioteca: 4 cuadros grandes y "Más" (sin números) */
 .lib-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

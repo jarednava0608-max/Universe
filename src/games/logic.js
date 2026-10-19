@@ -1,11 +1,11 @@
 // Lógica de los juegos (sin interfaz), para poder probarla.
-import { newId, normKey, ROOT_ID } from '../lib/model.js'
+import { newId, normKey } from '../lib/model.js'
 import { definitionText } from '../lib/markdown.js'
 
 // Texto de una definición para los juegos (sin subtítulos).
 export const defText = definitionText
 import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
-import { cleanVerseText, refKey } from '../lib/verses.js'
+import { cleanVerseText } from '../lib/verses.js'
 import { answerOf, parseArticle, reviewAnswer } from '../study/atalaya.js'
 import { midweekAnswers } from '../study/midweek.js'
 import { dailyVerse } from '../study/kinds.js'
@@ -52,33 +52,6 @@ export function parseTrivia(data) {
   if (!out.length) throw new Error(warnings[0] ?? 'No se encontraron preguntas válidas.')
   return { questions: out, warnings }
 }
-
-export function triviaToQuestion(f, rnd = Math.random) {
-  const order = shuffle(f.opciones.map((_, i) => i), rnd)
-  return {
-    prompt: f.pregunta,
-    options: order.map((i) => f.opciones[i]),
-    answer: order.indexOf(f.respuesta),
-    explain: f.explicacion,
-    ref: f.cita,
-  }
-}
-
-export const TRIVIA_FORMAT = `Hazme preguntas de trivia bíblica sobre lo que acabamos de estudiar. Responde SOLO con un JSON así:
-
-{
-  "preguntas": [
-    {
-      "pregunta": "¿…?",
-      "opciones": ["A", "B", "C", "D"],
-      "respuesta": "B",
-      "explicacion": "Por qué es la correcta (breve).",
-      "cita": "Juan 17:3"
-    }
-  ]
-}
-
-Usa solo información de la Biblia y de jw.org / wol.jw.org. Entre 10 y 20 preguntas.`
 
 // ---------- Juegos con mis nodos ----------
 
@@ -135,33 +108,6 @@ export function trimQuotes(s) {
 
 function clipText(s, n = 220) {
   return s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s
-}
-
-// "¿Qué es?": se muestra la definición y se elige el título correcto.
-export function buildGuessQuestions(nodes, count = 10, rnd = Math.random) {
-  const pool = playableNodes(nodes)
-  if (pool.length < 4) return []
-  return shuffle(pool, rnd).slice(0, count).map((n) => {
-    const others = shuffle(pool.filter((o) => o.id !== n.id), rnd).slice(0, 3)
-    const opts = shuffle([n, ...others], rnd)
-    return {
-      prompt: guessPrompt(defText(n.note), n.title, { others: others.map((o) => o.title), texts: pool.map((o) => defText(o.note)) }),
-      options: opts.map((o) => o.title),
-      answer: opts.indexOf(n),
-      nodeId: n.id,
-    }
-  })
-}
-
-// "Parejas": unir títulos con su definición corta.
-export function buildPairs(nodes, count = 4, rnd = Math.random) {
-  const pool = playableNodes(nodes).filter((n) => n.id !== ROOT_ID || defText(n.note))
-  if (pool.length < 3) return null
-  const chosen = shuffle(pool, rnd).slice(0, count)
-  return {
-    left: shuffle(chosen.map((n) => ({ id: n.id, text: n.title })), rnd),
-    right: shuffle(chosen.map((n) => ({ id: n.id, text: clipText(maskTitle(defText(n.note), n.title), 90) })), rnd),
-  }
 }
 
 // Tarjetas de Repasar hoy con los nodos de tu mapa (tus conceptos): frente y reverso.
@@ -332,38 +278,6 @@ export function withSources(answers, sources, every = 3) {
   return out
 }
 
-// ---------- "¿Con qué texto lo pruebas?" ----------
-
-// Una idea de tu mapa y elegir el texto bíblico que la apoya: los que enlaza ([[Juan 17:3]]) o
-// menciona en su definición. Las opciones falsas son textos de tus otras ideas. Los nodos que ya son
-// un texto ("Salmo 15:3") no son preguntas, ni los que citan tantos textos que cualquiera serviría.
-export function buildProofQuestions(nodes, count = 10, rnd = Math.random) {
-  const ideas = []
-  const all = new Map() // clave de la cita → la cita como la escribiste
-  for (const n of nodes) {
-    if (!n.title.trim() || parseRef(n.title)) continue
-    const refs = new Map()
-    for (const r of findRefs(defText(n.note))) {
-      const k = refKey(r)
-      if (k && parseRef(r)?.verse && !refs.has(k)) refs.set(k, r)
-    }
-    if (!refs.size || refs.size > 4) continue
-    ideas.push({ n, refs })
-    for (const [k, r] of refs) if (!all.has(k)) all.set(k, r)
-  }
-  const out = []
-  for (const { n, refs } of shuffle(ideas, rnd)) {
-    if (out.length >= count) break
-    const others = shuffle([...all].filter(([k]) => !refs.has(k)), rnd).slice(0, 3).map(([, r]) => r)
-    if (others.length < 3) continue
-    const mine = [...refs.values()]
-    const right = mine[Math.floor(rnd() * mine.length)]
-    const options = shuffle([right, ...others], rnd)
-    out.push({ prompt: n.title, options, answer: options.indexOf(right), ref: right, also: mine.filter((r) => r !== right), nodeId: n.id })
-  }
-  return out
-}
-
 // ---------- Memorizar textos ----------
 
 export function makeVerse({ cita = '', texto = '' } = {}) {
@@ -371,11 +285,24 @@ export function makeVerse({ cita = '', texto = '' } = {}) {
   return { id: newId(), kind: 'memoria', fields: { cita: cita.trim(), texto: cleanVerseText(texto), nivel: 0 }, createdAt: now, updatedAt: now }
 }
 
-// Memorizar textos: solo los textos de la Biblia que el usuario agregó. El Texto diario no entra
-// (tampoco las copias que se hicieron de él cuando sí entraba).
+// Memorizar textos: el versículo de cada Texto diario que ya estudiaste ("Ya lo estudié", fields.estudiado),
+// del más reciente al más viejo, y los que el usuario agregó. Así no hay que elegir qué memorizar: entra
+// lo que vas estudiando. Al practicarlo la primera vez se guarda como tuyo (saveVerseResult), sin repetirse.
+// Las copias viejas del texto diario completo (con fecha y comentario) no entran.
 export function memorizeSources(entries) {
-  const daily = new Set(entries.filter((e) => e.kind === 'diario' && e.fields.texto?.trim()).flatMap((e) => [normKey(e.fields.texto), normKey(stripRef(e.fields.texto))]))
-  return entries.filter((e) => e.kind === 'memoria' && !daily.has(normKey(e.fields.texto ?? '')))
+  const daily = entries.filter((e) => e.kind === 'diario' && e.fields.texto?.trim())
+  const whole = new Set(daily.flatMap((e) => [normKey(e.fields.texto), normKey(stripRef(e.fields.texto))]))
+  const own = entries.filter((e) => e.kind === 'memoria' && !whole.has(normKey(e.fields.texto ?? '')))
+  const ownKeys = new Set(own.map((e) => normKey(e.fields.texto ?? '')))
+  const studied = daily
+    .filter((e) => e.fields.estudiado)
+    .sort((a, b) => String(b.fields.fecha ?? '').localeCompare(String(a.fields.fecha ?? '')))
+    .map((e) => {
+      const verse = dailyVerse(e.fields.texto)
+      return { id: e.id, kind: 'diario', fields: { cita: refOf(verse), texto: stripRef(verse), nivel: 0 }, fromDaily: true }
+    })
+    .filter((v) => v.fields.texto && !ownKeys.has(normKey(v.fields.texto)))
+  return [...studied, ...own]
 }
 
 // Textos con su cita (para Mi Biblia): los de Memorizar + los del Texto diario.
@@ -386,15 +313,6 @@ export function verseSources(entries) {
     .filter((e) => e.kind === 'diario' && e.fields.texto?.trim() && !ownKeys.has(normKey(e.fields.texto)))
     .map((e) => ({ id: e.id, kind: 'diario', fields: { cita: refOf(e.fields.texto), texto: stripRef(e.fields.texto), nivel: 0 }, fromDaily: true }))
   return [...own, ...daily]
-}
-
-// Todos tus textos bíblicos: los de Memorizar, el Texto diario y los versículos guardados en Mi Biblia
-// (sin publicaciones). Para "Completa el texto" y "¿Dónde está?".
-export function bibleSources(entries) {
-  const base = verseSources(entries)
-  const keys = new Set(base.map((v) => normKey(v.fields.texto)))
-  const saved = entries.filter((e) => e.kind === 'biblia' && e.fields.texto?.trim() && parseRef(e.fields.cita ?? '') && !keys.has(normKey(e.fields.texto)))
-  return [...base, ...saved]
 }
 
 // Palabras del texto; en cada nivel se oculta una parte mayor (25%, 50%, 75%, 100%).
@@ -472,23 +390,6 @@ export function chunkText(texto, maxPieces = 8) {
   return out
 }
 
-// ---------- "¿Dónde está?" (adivinar la cita) ----------
-
-export function buildCiteQuestions(verses, count = 10, rnd = Math.random) {
-  const seen = new Set()
-  const pool = verses.filter((v) => {
-    const k = normKey(v.fields.cita ?? '')
-    if (!k || !parseRef(v.fields.cita) || seen.has(k)) return false
-    seen.add(k)
-    return true
-  })
-  if (pool.length < 4) return []
-  return shuffle(pool, rnd).slice(0, count).map((v) => {
-    const opts = shuffle([v, ...shuffle(pool.filter((o) => o !== v), rnd).slice(0, 3)], rnd)
-    return { prompt: clipText(trimQuotes(v.fields.texto), 260), options: opts.map((o) => o.fields.cita), answer: opts.indexOf(v), key: 'cita:' + v.id }
-  })
-}
-
 // ---------- Libros de la Biblia ----------
 
 export const SECTIONS = [
@@ -500,52 +401,6 @@ export const SECTIONS = [
   { name: 'Cartas', from: 45, to: 65 },
   { name: 'Apocalipsis', from: 66, to: 66 },
 ]
-export const sectionOf = (n) => SECTIONS.find((s) => n >= s.from && n <= s.to).name
-
-// Preguntas variadas: qué libro va después, cuál va antes y en qué sección está.
-export function buildBookQuestions(count = 10, rnd = Math.random) {
-  const out = []
-  const used = new Set()
-  while (out.length < count) {
-    const type = Math.floor(rnd() * 3)
-    const n = 2 + Math.floor(rnd() * 64) // 2..65: siempre tiene anterior y siguiente
-    const key = type + ':' + n
-    if (used.has(key)) continue
-    used.add(key)
-    const book = BOOKS[n - 1]
-    if (type === 2) {
-      const right = sectionOf(n)
-      const opts = shuffle([right, ...shuffle(SECTIONS.map((s) => s.name).filter((s) => s !== right), rnd).slice(0, 3)], rnd)
-      out.push({ prompt: `¿En qué sección está ${book}?`, options: opts, answer: opts.indexOf(right), explain: `${book} es el libro ${n} de 66.` })
-    } else {
-      const target = type === 0 ? n + 1 : n - 1
-      // Distractores cercanos (lo difícil es lo que está alrededor).
-      const near = [n - 3, n - 2, n + 2, n + 3, type === 0 ? n - 1 : n + 1].filter((x) => x >= 1 && x <= 66 && x !== target && x !== n)
-      const opts = shuffle([target, ...shuffle(near, rnd).slice(0, 3)], rnd)
-      out.push({
-        prompt: type === 0 ? `¿Qué libro va después de ${book}?` : `¿Qué libro va antes de ${book}?`,
-        options: opts.map((x) => BOOKS[x - 1]),
-        answer: opts.indexOf(target),
-        explain: type === 0 ? `${book} (${n}) → ${BOOKS[target - 1]} (${target})` : `${BOOKS[target - 1]} (${target}) → ${book} (${n})`,
-      })
-    }
-  }
-  return out
-}
-
-// Ordenar: unos libros seguidos (desordenados en pantalla).
-export function bookRun(size = 6, rnd = Math.random) {
-  const start = 1 + Math.floor(rnd() * (66 - size + 1))
-  return BOOKS.slice(start - 1, start - 1 + size)
-}
-
-// ---------- Contra reloj ----------
-
-// Puntos por respuesta correcta: 100 base + hasta 100 por rapidez.
-export function timedPoints(msLeft, msTotal) {
-  return 100 + Math.round(100 * Math.max(0, Math.min(1, msLeft / msTotal)))
-}
-
 // ---------- Repasar hoy ----------
 
 // Una sesión de repaso: primero lo que ya viste y hoy toca (lo más atrasado primero, alternando tipos);
@@ -573,9 +428,6 @@ function alternate(lists, limit) {
   return out
 }
 
-// Una sola pregunta de libros (para el reto contra reloj).
-export const bookSprintQuestion = (rnd = Math.random) => buildBookQuestions(1, rnd)[0]
-
 // "Escribir": el texto palabra por palabra; para cada palabra hay que teclear su primera letra
 // (sin acentos ni mayúsculas). Lo que no tiene letras (—, números sueltos) se muestra solo.
 export const foldLetter = (ch = '') => ch.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -598,44 +450,6 @@ const COMMON = new Set(['para', 'como', 'pero', 'porque', 'cuando', 'donde', 'es
 const fillWord = (w) => w.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '')
 const fold = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 const goodWord = (w) => w.length >= 4 && !COMMON.has(fold(w))
-
-export function buildFillQuestions(verses, count = 10, rnd = Math.random) {
-  const seen = new Set()
-  const pool = verses.filter((v) => {
-    const t = (v.fields.texto ?? '').trim()
-    const k = fold(t).slice(0, 60)
-    if (t.split(/\s+/).length < 6 || seen.has(k)) return false
-    seen.add(k)
-    return true
-  })
-  const allWords = [...new Set(pool.flatMap((v) => v.fields.texto.split(/\s+/).map(fillWord).filter(goodWord)))]
-  const out = []
-  for (const v of shuffle(pool, rnd)) {
-    if (out.length >= count) break
-    const raw = v.fields.texto.split(/\s+/)
-    const idx = shuffle(raw.map((_, i) => i).filter((i) => i > 0 && goodWord(fillWord(raw[i]))), rnd)[0]
-    if (idx == null) continue
-    const word = fillWord(raw[idx])
-    const others = shuffle(allWords.filter((w) => fold(w) !== fold(word)), rnd)
-    const opts = []
-    for (const w of others) {
-      if (opts.length >= 3) break
-      if (!opts.some((o) => fold(o) === fold(w))) opts.push(w)
-    }
-    if (opts.length < 3) continue
-    const options = shuffle([word, ...opts], rnd)
-    const prompt = raw.map((w, i) => (i === idx ? w.replace(word, '_____') : w)).join(' ')
-    out.push({ prompt: clipText(trimQuotes(prompt), 320), options, answer: options.indexOf(word), ref: v.fields.cita || undefined, key: 'llenar:' + v.id })
-  }
-  return out
-}
-
-// Ordenar una sección completa (Pentateuco, Históricos…; menos Apocalipsis, que es uno solo).
-export function sectionRun(rnd = Math.random) {
-  const list = SECTIONS.filter((s) => s.to > s.from)
-  const s = list[Math.floor(rnd() * list.length)]
-  return { name: s.name, books: BOOKS.slice(s.from - 1, s.to) }
-}
 
 // ---------- Memorizar: "Cita" (armar la cita de un texto) ----------
 

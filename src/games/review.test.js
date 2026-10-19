@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { atalayaCards, atalayaCheck, atalayaSourceCards, atalayaSourceCheck, withSources, buildProofQuestions, dailyMix, mulberry } from './logic.js'
+import { atalayaCards, atalayaCheck, atalayaSourceCards, atalayaSourceCheck, withSources, dailyMix, mulberry } from './logic.js'
 import { isDue } from './progress.js'
 
 const ARTICULO = `1. ¿Cómo nos sentimos al ver el progreso de un estudiante?
@@ -106,36 +106,6 @@ describe('Repasar hoy: lo que toca y unas pocas nuevas', () => {
     expect(mix.filter((x) => x.type === 'atalaya').map((x) => x.key)).toEqual(['a:a0', 'a:a1'])
     expect(mix.some((x) => x.type === 'daily')).toBe(true)
     expect(mix[0].key).toBe('a:a0')
-  })
-})
-
-describe('¿Con qué texto lo pruebas?', () => {
-  const node = (id, title, note) => ({ id, title, note })
-  const nodes = [
-    node('1', 'Conocer a Jehová da vida eterna', 'Conocer a [[Jehová]] da vida eterna.\n\n[[Juan 17:3]]'),
-    node('2', 'Jehová quiere que todos se salven', 'Quiere que se salven. [[1 Timoteo 2:3, 4]]'),
-    node('3', 'El amor impulsa a obedecer', 'El amor y la obediencia. [[1 Juan 5:3]]; [[Juan 14:31]]'),
-    node('4', 'Jehová es el Gran Instructor', 'Quien enseña es Jehová. [[Is. 30:20, 21]]'),
-    node('5', 'Juan 17:3', 'Esto significa vida eterna…'), // ya es un texto: no es pregunta
-    node('6', 'Sin textos', 'Una idea sin citas bíblicas.'),
-  ]
-
-  it('la idea y el texto que enlaza; las otras opciones son textos de otras ideas', () => {
-    const qs = buildProofQuestions(nodes, 10, mulberry(5))
-    expect(qs.map((q) => q.nodeId).sort()).toEqual(['1', '2', '3', '4'])
-    for (const q of qs) {
-      expect(q.options).toHaveLength(4)
-      expect(q.options[q.answer]).toBe(q.ref)
-    }
-    const amor = qs.find((q) => q.nodeId === '3')
-    expect(['1 Juan 5:3', 'Juan 14:31']).toContain(amor.ref)
-    expect(amor.also).toHaveLength(1)
-    // La otra cita de la misma idea nunca sale como opción falsa.
-    expect(amor.options.filter((o) => o === '1 Juan 5:3' || o === 'Juan 14:31')).toHaveLength(1)
-  })
-
-  it('sin 4 textos distintos no hay juego', () => {
-    expect(buildProofQuestions(nodes.slice(0, 2))).toEqual([])
   })
 })
 

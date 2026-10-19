@@ -2,18 +2,11 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { parseJsonLoose } from '../lib/importer.js'
-import { findRefs } from '../lib/bible.js'
-import RefLink from '../components/RefLink.jsx'
-import { shuffle, timedPoints } from './logic.js'
-import { EraScene } from './eras.jsx'
-
-// Las preguntas largas (definiciones, versículos) van en letra más chica para leerse bien.
-const promptClass = (p) => 'quiz-prompt' + (typeof p === 'string' && p.length > 150 ? ' long' : '')
+import { shuffle } from './logic.js'
 
 // Pantalla de un juego: barra con "volver" y título.
 // Como en iOS, deslizar desde el borde izquierdo hacia la derecha regresa.
-// `era` (1-8) le pone el color y el paisaje de esa época.
-export function GameScreen({ title, onExit, right, back = 'Juegos', era, children }) {
+export function GameScreen({ title, onExit, right, back = 'Juegos', children }) {
   const [dx, setDx] = useState(0)
   const drag = useRef(null)
   const onTouchStart = (e) => {
@@ -43,14 +36,12 @@ export function GameScreen({ title, onExit, right, back = 'Juegos', era, childre
   return (
     <div
       className="overlay game"
-      data-era={era}
       style={dx ? { transform: `translateX(${dx}px)`, transition: 'none', boxShadow: '-12px 0 30px rgba(0,0,0,0.35)' } : undefined}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
     >
-      {era && <EraScene era={era} />}
       <header className="bar">
         <button className="bar-btn back" onClick={onExit}><Icon d={ICONS.back} size={18} stroke={2} /> {back}</button>
         <span className="bar-title">{title}</span>
@@ -61,144 +52,10 @@ export function GameScreen({ title, onExit, right, back = 'Juegos', era, childre
   )
 }
 
-// Preguntas de opción múltiple: { prompt, options, answer, explain?, ref?, key? }
-// onAnswer(q, acerto) se llama en cada respuesta; onFinish(aciertos, total, puntos) al terminar.
-// Con `seconds` es contra reloj: cada pregunta tiene tiempo y la rapidez da puntos extra.
-export function Quiz({ questions, onDone, onAgain, onAnswer, onFinish, seconds, best: bestNow, giveUp }) {
-  const [best] = useState(bestNow) // el récord de antes de esta ronda (al terminar ya se guardó el nuevo)
-  const [i, setI] = useState(0)
-  const [picked, setPicked] = useState(null) // índice elegido, -1 si se acabó el tiempo, -2 si tocó "No sé"
-  const [score, setScore] = useState(0)
-  const [points, setPoints] = useState(0)
-  const [run, setRun] = useState(0)
-  const [maxRun, setMaxRun] = useState(0)
-  const roundStart = useRef(Date.now())
-  const roundEnd = useRef(0) // se fija al terminar (así el tiempo no sigue corriendo si la pantalla se redibuja)
-  const [missed, setMissed] = useState([])
-  const [left, setLeft] = useState(seconds ? seconds * 1000 : 0)
-  const startRef = useRef(0)
-  const q = questions[i]
-  const answered = picked != null
-
-  function choose(k) {
-    if (answered) return
-    const ok = k === q.answer
-    setPicked(k)
-    if (ok) {
-      setScore((s) => s + 1)
-      setRun((r) => r + 1)
-      setMaxRun((m) => Math.max(m, run + 1))
-      if (seconds) setPoints((p) => p + timedPoints(seconds * 1000 - (Date.now() - startRef.current), seconds * 1000))
-    } else {
-      setRun(0)
-      setMissed((m) => [...m, q])
-    }
-    onAnswer?.(q, ok)
-  }
-
-  const quizBox = useRef(null)
-  useEffect(() => toTop(quizBox.current), [i])
-
-  // Cuenta regresiva de cada pregunta.
-  useEffect(() => {
-    if (!seconds || !q || answered) return
-    startRef.current = Date.now()
-    setLeft(seconds * 1000)
-    const t = setInterval(() => {
-      const rest = seconds * 1000 - (Date.now() - startRef.current)
-      setLeft(Math.max(0, rest))
-      if (rest <= 0) {
-        clearInterval(t)
-        choose(-1)
-      }
-    }, 100)
-    return () => clearInterval(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i, seconds, answered])
-
-  if (!q) {
-    const pct = Math.round((score / questions.length) * 100)
-    // Récord = superar uno anterior (la primera vez no cuenta).
-    const record = seconds ? best > 0 && points > best : best > 0 && pct > best
-    return (
-      <Result
-        pct={pct}
-        value={seconds ? points : score}
-        unit={seconds ? ' pts' : `/${questions.length}`}
-        msg={(seconds ? `${score} de ${questions.length} correctas. ` : '') + cheer(pct)}
-        record={record}
-        stats={[
-          ['Tiempo', fmtTime(Math.round(((roundEnd.current || Date.now()) - roundStart.current) / 1000))],
-          ['Mejor racha', maxRun],
-          ...(best != null ? [[seconds ? 'Récord' : 'Tu mejor', seconds ? Math.max(best, points) + ' pts' : Math.max(best, pct) + ' %']] : []),
-        ]}
-        onAgain={onAgain}
-        onDone={onDone}
-      >
-        {missed.length > 0 && (
-          <div className="missed">
-            <p className="missed-title">Para repasar</p>
-            {missed.map((m, k) => (
-              <div key={k} className="missed-item">
-                <p className="missed-q">{m.prompt}</p>
-                <p className="missed-a">{m.options[m.answer]}</p>
-                {m.ref && findRefs(m.ref).length > 0 && <p className="missed-ref"><RefLink refText={findRefs(m.ref)[0]} /></p>}
-              </div>
-            ))}
-          </div>
-        )}
-      </Result>
-    )
-  }
-
-  return (
-    <div className="quiz" ref={quizBox}>
-      <div className="progress"><span style={{ width: `${(i / questions.length) * 100}%` }} /></div>
-      <div className="quiz-meta">
-        <span className="quiz-count">{i + 1} de {questions.length}</span>
-        {run >= 2 && <span className="quiz-run" key={run}>{run} seguidas</span>}
-        {seconds ? <span className="quiz-points">{points} pts</span> : null}
-      </div>
-      {seconds ? <div className={'timer' + (left < 4000 ? ' low' : '')}><span style={{ width: `${(left / (seconds * 1000)) * 100}%` }} /></div> : null}
-      <p className={promptClass(q.prompt)} key={'p' + i}>{q.prompt}</p>
-      <div className={'options' + (q.options.length === 2 ? ' two' : '')}>
-        {q.options.map((o, k) => {
-          const state = !answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim'
-          return (
-            <button key={i + ':' + k} className={'option' + state} disabled={answered} onClick={() => choose(k)}>
-              {o}
-            </button>
-          )
-        })}
-      </div>
-      {giveUp && !answered && <button className="quiz-giveup" onClick={() => choose(-2)}>No sé, ver la respuesta</button>}
-      {answered && (
-        <div className="feedback">
-          <p className={picked === q.answer ? 'ok' : 'bad'}>{picked === q.answer ? 'Correcto' : picked === -1 ? 'Se acabó el tiempo' : picked === -2 ? `Es ${q.options[q.answer]}` : q.options.length === 2 ? `Era ${q.options[q.answer].toLowerCase()}` : 'No era esa'}</p>
-          {q.explain && <p className="explain">{q.explain}</p>}
-          {q.ref && <p className="ref">{findRefs(q.ref).length ? <RefLink refText={findRefs(q.ref)[0]} /> : q.ref}</p>}
-          <button className="primary" onClick={() => {
-            if (i + 1 >= questions.length) {
-              roundEnd.current = Date.now()
-              onFinish?.(score, questions.length, points)
-            }
-            setPicked(null)
-            setI(i + 1)
-          }}>
-            {i + 1 < questions.length ? 'Siguiente' : 'Ver resultado'}
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // Sube al inicio la pantalla del juego (cada pregunta y el resultado empiezan arriba).
-export function toTop(el) {
+function toTop(el) {
   el?.closest('.game-body')?.scrollTo({ top: 0 })
 }
-
-export const cheer = (pct) => (pct === 100 ? '¡Perfecto!' : pct >= 85 ? '¡Excelente!' : pct >= 70 ? '¡Muy bien!' : pct >= 40 ? 'Vas bien, sigue repasando.' : 'Buen comienzo. ¡Otra vez!')
 
 // 75 -> "1:15"; menos de un minuto -> "45 s".
 export const fmtTime = (s) => (s < 60 ? `${s} s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`)
@@ -242,228 +99,6 @@ export function Result({ pct, value, unit, msg, record, stats = [], onAgain, onD
       {onAgain && <button className="primary" onClick={onAgain}>{againLabel}</button>}
       {onDone && <button className="secondary" onClick={onDone}>{doneLabel}</button>}
       {children}
-    </div>
-  )
-}
-
-// Reto contra reloj: responde todas las que puedas en `seconds` segundos.
-// `make()` da una pregunta nueva { prompt, options, answer }. Cada acierto suma 1; un error resta 2 segundos.
-// onFinish(aciertos, respondidas) al acabarse el tiempo.
-export function Sprint({ make, seconds = 60, best: bestNow = 0, onFinish, onExit, intro }) {
-  const [phase, setPhase] = useState('ready') // ready -> play -> done
-  const [best, setBest] = useState(bestNow) // el récord de antes de esta ronda
-  const [q, setQ] = useState(null)
-  const [picked, setPicked] = useState(null)
-  const [right, setRight] = useState(0)
-  const [total, setTotal] = useState(0)
-  const [run, setRun] = useState(0)
-  const [maxRun, setMaxRun] = useState(0)
-  const [left, setLeft] = useState(seconds * 1000)
-  const [penalty, setPenalty] = useState(0)
-  const [missed, setMissed] = useState([])
-  const end = useRef(0)
-  const lock = useRef(false)
-  // Una pregunta nueva que no repita la anterior.
-  const fresh = (prev) => {
-    let n = make()
-    for (let k = 0; k < 6 && prev && n.prompt === prev.prompt; k++) n = make()
-    return n
-  }
-
-  function start() {
-    setBest(bestNow)
-    end.current = Date.now() + seconds * 1000
-    setQ(fresh(null))
-    setPicked(null)
-    setRight(0)
-    setTotal(0)
-    setRun(0)
-    setMaxRun(0)
-    setMissed([])
-    setLeft(seconds * 1000)
-    setPhase('play')
-  }
-
-  useEffect(() => {
-    if (phase !== 'play') return
-    const t = setInterval(() => {
-      const rest = end.current - Date.now()
-      setLeft(Math.max(0, rest))
-      if (rest <= 0) {
-        clearInterval(t)
-        setPhase('done')
-      }
-    }, 100)
-    return () => clearInterval(t)
-  }, [phase])
-
-  const finished = useRef(false)
-  useEffect(() => {
-    if (phase === 'done' && !finished.current) {
-      finished.current = true
-      onFinish?.(right, total)
-    }
-    if (phase === 'play') finished.current = false
-  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  function choose(k) {
-    if (lock.current || phase !== 'play') return
-    lock.current = true
-    const ok = k === q.answer
-    setPicked(k)
-    setTotal((n) => n + 1)
-    if (ok) {
-      setRight((n) => n + 1)
-      setRun((r) => r + 1)
-      setMaxRun((m) => Math.max(m, run + 1))
-    } else {
-      setRun(0)
-      setMissed((m) => [...m, q])
-      end.current -= 2000
-      setPenalty((p) => p + 1)
-    }
-    setTimeout(() => {
-      lock.current = false
-      setPicked(null)
-      setQ((prev) => fresh(prev))
-    }, ok ? 280 : 650)
-  }
-
-  if (phase === 'ready') {
-    return (
-      <div className="sprint-ready">
-        <div className="sprint-clock">{seconds}<small>s</small></div>
-        <p className="result-msg">{intro ?? 'Responde todas las que puedas.'} Cada error te quita 2 segundos.</p>
-        {best > 0 && <p className="hint center">Tu récord: {best} {best === 1 ? 'acierto' : 'aciertos'}</p>}
-        <button className="primary" onClick={start}>Empezar</button>
-      </div>
-    )
-  }
-
-  if (phase === 'done') {
-    const record = best > 0 && right > best
-    return (
-      <Result
-        value={right}
-        unit={right === 1 ? ' acierto' : ' aciertos'}
-        msg={total ? `${right} de ${total} bien en ${seconds} segundos.` : 'Se acabó el tiempo.'}
-        record={record && right > 0}
-        stats={[['Precisión', total ? Math.round((right / total) * 100) + ' %' : '—'], ['Mejor racha', maxRun], ['Récord', Math.max(best, right)]]}
-        onAgain={start}
-        onDone={onExit}
-      >
-        {record && right > 0 && <Confetti />}
-        {missed.length > 0 && (
-          <div className="missed">
-            <p className="missed-title">Para repasar</p>
-            {missed.map((m, k) => (
-              <div key={k} className="missed-item">
-                <p className="missed-q">{m.prompt}</p>
-                <p className="missed-a">{m.options[m.answer]}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </Result>
-    )
-  }
-
-  const answered = picked != null
-  return (
-    <div className="quiz">
-      <div className="sprint-top">
-        <span className={'sprint-time' + (left < 10000 ? ' low' : '')} key={penalty}>{Math.ceil(left / 1000)}</span>
-        {run >= 3 && <span className="quiz-run" key={run}>{run} seguidas</span>}
-        <span className="quiz-points">{right} {right === 1 ? 'acierto' : 'aciertos'}</span>
-      </div>
-      <div className={'timer' + (left < 10000 ? ' low' : '')}><span style={{ width: `${(left / (seconds * 1000)) * 100}%` }} /></div>
-      <p className={promptClass(q.prompt)} key={'p' + total}>{q.prompt}</p>
-      <div className="options">
-        {q.options.map((o, k) => (
-          <button key={total + ':' + k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => choose(k)}>{o}</button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// Sin fallar: preguntas seguidas hasta el primer error. onFinish(aciertos) al terminar.
-export function Survival({ questions, best: bestNow = 0, onFinish, onAgain, onDone, onAnswer }) {
-  const [best] = useState(bestNow)
-  const [i, setI] = useState(0)
-  const [picked, setPicked] = useState(null)
-  const [over, setOver] = useState(false)
-  const q = questions[i]
-  const answered = picked != null
-  const ok = answered && picked === q?.answer
-  const box = useRef(null)
-  useEffect(() => toTop(box.current), [i])
-
-  function choose(k) {
-    if (answered) return
-    setPicked(k)
-    onAnswer?.(q, k === q.answer)
-  }
-  function next() {
-    if (!ok || i + 1 >= questions.length) {
-      const n = ok ? i + 1 : i
-      setOver(true)
-      onFinish?.(n)
-      return
-    }
-    setPicked(null)
-    setI(i + 1)
-  }
-
-  if (over) {
-    const n = ok ? i + 1 : i
-    const all = ok && i + 1 >= questions.length
-    return (
-      <Result
-        value={n}
-        unit={n === 1 ? ' seguida' : ' seguidas'}
-        msg={all ? '¡Todas sin fallar!' : n === 0 ? 'A la primera. ¡Otra vez!' : `Llegaste a ${n} sin fallar.`}
-        record={best > 0 && n > best}
-        stats={[['Récord', Math.max(best, n)], ['Preguntas', questions.length]]}
-        onAgain={onAgain}
-        onDone={onDone}
-      >
-        {(all || n > best) && n > 0 && <Confetti />}
-        {!ok && (
-          <div className="missed">
-            <p className="missed-title">La que fallaste</p>
-            <div className="missed-item">
-              <p className="missed-q">{q.prompt}</p>
-              <p className="missed-a">{q.options[q.answer]}</p>
-              {q.explain && <p className="missed-q">{q.explain}</p>}
-            </div>
-          </div>
-        )}
-      </Result>
-    )
-  }
-
-  return (
-    <div className="quiz" ref={box}>
-      <div className="quiz-meta">
-        <span className="quiz-count">Pregunta {i + 1}</span>
-        {i > 0 && <span className="quiz-run" key={i}>{i} {i === 1 ? 'seguida' : 'seguidas'}</span>}
-        <span className="quiz-points">Récord {Math.max(best, i)}</span>
-      </div>
-      <p className={promptClass(q.prompt)} key={'p' + i}>{q.prompt}</p>
-      <div className={'options' + (q.options.length === 2 ? ' two' : '')}>
-        {q.options.map((o, k) => (
-          <button key={i + ':' + k} className={'option' + (!answered ? '' : k === q.answer ? ' right' : k === picked ? ' wrong' : ' dim')} disabled={answered} onClick={() => choose(k)}>{o}</button>
-        ))}
-      </div>
-      {answered && (
-        <div className="feedback">
-          <p className={ok ? 'ok' : 'bad'}>{ok ? 'Correcto' : 'Fallaste'}</p>
-          {q.explain && <p className="explain">{q.explain}</p>}
-          {q.ref && <p className="ref">{findRefs(q.ref).length ? <RefLink refText={findRefs(q.ref)[0]} /> : q.ref}</p>}
-          <button className="primary" onClick={next}>{ok && i + 1 < questions.length ? 'Siguiente' : 'Ver resultado'}</button>
-        </div>
-      )}
     </div>
   )
 }
@@ -601,16 +236,6 @@ export function Confetti() {
   )
 }
 
-// Botones para elegir el modo de un juego.
-export function ModeCard({ title, desc, onClick, badge }) {
-  return (
-    <button className="mode-card" onClick={onClick}>
-      <span className="mode-title">{title}{badge && <span className="due-tag">{badge}</span>}</span>
-      <span className="mode-desc">{desc}</span>
-    </button>
-  )
-}
-
 // Hoja para pegar un JSON de Claude con su formato.
 export function PasteJson({ title, hint, format, toast, onCancel, onApply }) {
   const [text, setText] = useState('')
@@ -667,7 +292,7 @@ function buildDeck(build) {
   return { cards: shuffle(cards), pairs: b.left.length, wide: cards.every((c) => String(c.text).length <= 28) }
 }
 
-export function PairsGame({ title = 'Memorama', back, era, build, best, onBest, onExit, onPair, hint = 'Toca una carta y busca su pareja.', empty = 'Todavía no hay suficientes para este juego.' }) {
+export function PairsGame({ title = 'Memorama', back, build, best, onBest, onExit, onPair, hint = 'Toca una carta y busca su pareja.', empty = 'Todavía no hay suficientes para este juego.' }) {
   const [prevBest, setPrevBest] = useState(best)
   const [deck, setDeck] = useState(() => buildDeck(build))
   const [up, setUp] = useState([]) // claves de las cartas volteadas ahora (máx. 2)
@@ -679,7 +304,7 @@ export function PairsGame({ title = 'Memorama', back, era, build, best, onBest, 
   const timer = useRef(null)
   useEffect(() => () => clearTimeout(timer.current), [])
 
-  if (!deck) return <GameScreen title={title} back={back} era={era} onExit={onExit}><Empty>{empty}</Empty></GameScreen>
+  if (!deck) return <GameScreen title={title} back={back} onExit={onExit}><Empty>{empty}</Empty></GameScreen>
 
   const finished = done.size === deck.pairs
   function flip(c) {
@@ -721,7 +346,7 @@ export function PairsGame({ title = 'Memorama', back, era, build, best, onBest, 
   }
 
   return (
-    <GameScreen title={title} back={back} era={era} onExit={onExit}>
+    <GameScreen title={title} back={back} onExit={onExit}>
       {finished ? (
         <Result
           pct={Math.round((deck.pairs / Math.max(tries, 1)) * 100)}
