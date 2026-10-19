@@ -62,7 +62,7 @@ export default function RefSheet({ refText, entries, onSave, onSaveMany, onRead,
     }
   }
 
-  // "Aprenderlo": el usuario elige qué textos repasar en Juegos (un versículo o un tramo, no capítulos).
+  // "Aprenderlo": el usuario elige qué textos repasar en Repasar (un versículo o un tramo, no capítulos).
   const learnable = !pub && parsed && !chapter && saved && !editing && onLearn
   const learning = learnable && isLearning(entries, refText)
   const learnText = learnable ? sheetVerses(saved, parsed, entries).map((x) => x.texto).join(' ') : ''

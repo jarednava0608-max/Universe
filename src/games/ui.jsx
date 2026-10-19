@@ -5,7 +5,7 @@ import { parseJsonLoose } from '../lib/importer.js'
 
 // Pantalla de un juego: barra con "volver" y título.
 // Como en iOS, deslizar desde el borde izquierdo hacia la derecha regresa.
-export function GameScreen({ title, onExit, right, back = 'Juegos', children }) {
+export function GameScreen({ title, onExit, right, back = 'Repasar', children }) {
   const [dx, setDx] = useState(0)
   const drag = useRef(null)
   const onTouchStart = (e) => {

@@ -1,8 +1,8 @@
-## 3) Pestaña Juegos
+## 3) Repasar (antes Juegos)
 
 ### Portada
 - **Una sola cosa: Repasar** (pedido del usuario: "tengo mil juegos, quiero uno"; su objetivo es aprenderse textos de la Biblia). Se quitaron Memoria Bíblica, Trivia, Con lo que estudio, Libros, Reto del día, Juego de hoy, Logros, los modos de Memorizar (Ocultar, Iniciales, Ordenar…), el Memorama y el Repasar hoy de sus respuestas: no regresarlos ni agregar juegos sueltos.
-- Arriba: "Repasar · N preguntas" y el botón; sin nada pendiente, "Listo por hoy"; sin textos, cómo agregar (Aprenderlo). Abajo (`registry.js`): Mis textos y Constancia. Sin racha, récords ni cifras arriba.
+- Cuadro "Repasar" en Biblioteca (antes "Juegos"; id `juegos`, `GamesTab`). Arriba: "Para hoy · N preguntas" y el botón; sin nada pendiente, "Listo por hoy"; sin textos, cómo agregar (Aprenderlo). Abajo (`registry.js`): Mis textos. Constancia está en Biblioteca → Más (y en Hoy). Sin racha, récords ni cifras arriba.
 - `memoria/characters.js` sigue solo para reconocer personajes en el Texto diario (`dailyPeople`).
 
 ### Aprenderlo (el usuario elige; nada entra solo)
@@ -21,7 +21,7 @@
 - Solo la lista de lo que eligió aprender, con cómo va (Nuevo, Ubicándolo, Reconociéndolo, De memoria); tocar abre Apréndetelo (cuenta para el repaso); deslizar lo quita de Repasar (`aprender: false`, con Deshacer). "Agregar" y "Agregar textos de Claude" (`VERSES_FORMAT`) entran ya para aprender.
 
 ### Constancia (`Constancia.jsx`)
-- También hasta arriba de Estudio. Racha de una meta personal: **nunca dice cuál**. Días, mejor racha, frase diaria con cita, "Volver a empezar" (confirma; la mejor queda). En 0 días: "Hoy empieza".
+- En Biblioteca → Más y hasta arriba de Hoy (`onConstancia(back)`). Racha de una meta personal: **nunca dice cuál**. Días, mejor racha, frase diaria con cita, "Volver a empezar" (confirma; la mejor queda). En 0 días: "Hoy empieza".
 - `progreso.fields.constancia = { start, best, at }` (`constanciaDays`, `restartConstancia`, `mergeConstancia`; gana `at` más reciente, `best` el mayor).
 - Push nocturno (por defecto 22:00, 22:30, 23:00): `src/lib/push.js` → `universe_push` (RLS; sesión y PWA, iOS 16.4+); `public/sw.js`; `supabase/functions/constancia-push` (`pg_cron` cada 5 min, `push_cron_secret` y VAPID en vault), una vez por hora y día. "Apagar avisos" solo borra horas de Constancia (`clearPushTimes`); el iPhone sigue registrado para Pendientes.
 

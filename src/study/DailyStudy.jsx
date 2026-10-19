@@ -83,7 +83,7 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
   const verse = dailyVerse(fields.texto)
   // El comentario: lo pegado sin la fecha ni el versículo de arriba.
   const comment = dailyBody(fields.texto).replace(verse, '').trim()
-  // "Aprender este texto": el versículo entra a Repasar en Juegos (el usuario elige; nada entra solo).
+  // "Aprender este texto": el versículo entra a Repasar (el usuario elige; nada entra solo).
   const cita = findRefs(verse).at(-1) ?? ''
   const learning = !!cita && isLearning(entries, cita)
   const [fy, fm, fd] = String(fields.fecha ?? '').split('-').map(Number)

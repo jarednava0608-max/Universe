@@ -5,7 +5,7 @@
 //      o la reunión de entre semana, desde 2 días antes.
 //   3. Tu asignación, desde 7 días antes (se marca hecha si ya la practicaste hoy).
 //   4. Lectura de la Biblia, si te pusiste una meta (los capítulos que tocan hoy).
-// Repasar hoy ya no va aquí (al usuario lo abrumaba): sigue en Juegos, para cuando quiera.
+// Repasar hoy ya no va aquí (al usuario lo abrumaba): sigue en Repasar, para cuando quiera.
 import { clock, dailyMinimum, dailyVerse, partLabel, practicedOn } from './kinds.js'
 import { answeredCount } from './atalaya.js'
 import { addDays } from '../games/progress.js'

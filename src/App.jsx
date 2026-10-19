@@ -55,11 +55,11 @@ export default function App() {
   const store = useStore()
   const sync = useSync(store)
 
-  // "Aprenderlo" (hoja de una cita o Texto diario): el texto entra a Repasar en Juegos. Nada entra solo.
+  // "Aprenderlo" (hoja de una cita o Texto diario): el texto entra a Repasar. Nada entra solo.
   async function learnVerse(verse) {
     const entry = planLearn(store.entries, verse)
     if (entry) await store.saveEntry(entry)
-    toast('Listo. Lo repasarás en Juegos.')
+    toast('Listo. Lo verás en Repasar.')
   }
   const { mode, theme, setMode, style, setStyle } = useTheme()
   const { nodes, edges } = store
@@ -70,7 +70,7 @@ export default function App() {
   const [tab, setTab] = useState(initialTab) // 'hoy' | 'estudio' | 'pendientes' | 'mapa' | 'juegos'
   const [searchOpen, setSearchOpen] = useState(false) // Buscar en todo (lupa en Estudio)
   const [studyHome, setStudyHome] = useState(true) // la lupa solo sale en el inicio de Estudio (en las listas el título es largo)
-  const [play, setPlay] = useState(null) // 'constancia': abierta desde "Hoy"
+  const [play, setPlay] = useState(null) // { id: 'constancia', back }: abierta desde Hoy o desde Más en Biblioteca
   const [stack, setStack] = useState([]) // notas abiertas (para volver atrás)
   const [focusId, setFocusId] = useState(null)
   // Último nodo que viste: el mapa abre ahí (preferencia de este teléfono).
@@ -462,7 +462,7 @@ export default function App() {
           onSaveNode={store.saveNode}
           toast={toast}
           constancia={store.progress.constancia}
-          onConstancia={() => setPlay('constancia')}
+          onConstancia={(back = 'Hoy') => setPlay({ id: 'constancia', back })}
           leidos={store.progress.leidos}
           readingPlan={store.progress.plan}
           onSetPlan={(plan) => store.updateProgress((f) => ({ ...f, plan }))}
@@ -472,7 +472,7 @@ export default function App() {
           onHome={setStudyHome}
         />
       )}
-      {play === 'constancia' && <Constancia store={store} toast={toast} back="Hoy" onExit={() => setPlay(null)} />}
+      {play?.id === 'constancia' && <Constancia store={store} toast={toast} back={play.back} onExit={() => setPlay(null)} />}
       {tab === 'juegos' && <GamesTab store={store} toast={toast} onBack={() => setTab('estudio')} />}
       {tab === 'pendientes' && <TasksTab store={store} toast={toast} />}
 

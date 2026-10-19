@@ -5,8 +5,8 @@ import { repasoRound, learnSources } from './repaso.js'
 import Repaso from './Repaso.jsx'
 import PageScroll from '../components/PageScroll.jsx'
 
-// Juegos (se abre desde Biblioteca). Una sola cosa: Repasar, 5 preguntas de los textos que el usuario
-// eligió aprender y, de vez en cuando, de La Atalaya (ver repaso.js). Abajo, Mis textos y Constancia.
+// Repasar (cuadro de Biblioteca; antes "Juegos", el id sigue siendo 'juegos'): 5 preguntas de los textos que el
+// usuario eligió aprender y, de vez en cuando, de La Atalaya (ver repaso.js). Abajo, Mis textos (Constancia está en Más).
 // Nada de juegos sueltos, racha ni logros (pedido del usuario).
 export default function GamesTab({ store, toast, onBack }) {
   const [open, setOpen] = useState(null)
@@ -17,15 +17,15 @@ export default function GamesTab({ store, toast, onBack }) {
 
   return (
     <div className="page">
-      <PageScroll title="Juegos" back={onBack && { label: 'Biblioteca', onClick: onBack }}>
+      <PageScroll title="Repasar" back={onBack && { label: 'Biblioteca', onClick: onBack }}>
         {onBack && (
           <button className="back-link" onClick={onBack}>
             <Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca
           </button>
         )}
-        <h1 className="page-title">Juegos</h1>
+        <h1 className="page-title">Repasar</h1>
         <div className="today-game">
-          <p className="today-game-label">{pending || !learning ? 'Repasar' : 'Listo por hoy'}</p>
+          <p className="today-game-label">{pending || !learning ? 'Para hoy' : 'Listo por hoy'}</p>
           {pending ? (
             <>
               <h2 className="today-game-title">{pending === 1 ? '1 pregunta' : `${pending} preguntas`}</h2>

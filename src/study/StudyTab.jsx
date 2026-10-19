@@ -82,7 +82,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
         <PageScroll title="Hoy">
           <TodayPlan
             // En 0 (recién volviste a empezar) dice "Hoy empieza" en vez de un cero.
-            streak={{ label: !constancia?.start ? 'Empezar' : constanciaDays(constancia) === 0 ? 'Hoy empieza' : `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}`, onClick: onConstancia }}
+            streak={{ label: !constancia?.start ? 'Empezar' : constanciaDays(constancia) === 0 ? 'Hoy empieza' : `${constanciaDays(constancia)} ${constanciaDays(constancia) === 1 ? 'día' : 'días'}`, onClick: () => onConstancia() }}
             entries={entries}
             leidos={leidos}
             plan={readingPlan}
@@ -119,7 +119,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
             <LibTile icon={ICONS.estudio} label="Leer la Biblia" onClick={() => setBibleOpen(true)} />
             <LibTile icon={KINDS.diario.icon} label={KINDS.diario.label} onClick={() => setSection('diario')} />
             <LibTile icon={KINDS.reunion.icon} label={KINDS.reunion.label} onClick={() => setSection('reunion')} />
-            <LibTile icon={ICONS.juegos} label="Juegos" onClick={onOpenGames} />
+            <LibTile icon={ICONS.repasar} label="Repasar" onClick={onOpenGames} />
           </div>
           <button className="lib-more" aria-expanded={more} onClick={() => setMore((m) => !m)}>
             {more ? 'Menos' : 'Más'}
@@ -140,6 +140,13 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
                   <button className="entry-row" onClick={() => setRevisitasOpen(true)}>
                     <span className="kind-icon k-mapa"><Icon d={ICONS.lugar} size={18} /></span>
                     <span className="entry-main"><span className="entry-title">Revisitas en el mapa</span></span>
+                    <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
+                  </button>
+                </li>
+                <li>
+                  <button className="entry-row" onClick={() => onConstancia('Biblioteca')}>
+                    <span className="kind-icon k-mapa"><Icon d={CONSTANCIA_ICON} size={18} /></span>
+                    <span className="entry-main"><span className="entry-title">Constancia</span></span>
                     <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
                   </button>
                 </li>
@@ -565,6 +572,7 @@ function midweekSub(f) {
 }
 
 // Biblioteca: Texto diario y Reuniones van en los cuadros grandes; los demás apartados, en "Más".
+const CONSTANCIA_ICON = 'M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83'
 const LIB_MORE = ['asignacion', 'reflexion', 'idea', 'estudio'].concat(KIND_ORDER.filter((k) => !['diario', 'reunion', 'asignacion', 'reflexion', 'idea', 'estudio'].includes(k)))
 
 function LibTile({ icon, label, onClick }) {
