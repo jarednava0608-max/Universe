@@ -383,6 +383,32 @@ export function dailyVerse(texto) {
   return m ? m[0] : line
 }
 
+// "Estudiarlo con Claude": el texto con las reglas del método que el usuario afinó en su chat (como un
+// superintendente de circuito: huecos de una palabra, escena antes del significado, "vuelve a leer").
+// Van en cada copia para que cualquier chat nuevo lo haga igual; si el método cambia, se cambia aquí.
+export function dailyStudyPrompt(fields) {
+  const texto = String(fields?.texto ?? '').trim()
+  const fecha = formatDate(fields?.fecha)
+  return [
+    `Quiero estudiar el texto diario${fecha ? ` del ${fecha}` : ''} contigo, como lo haría un superintendente de circuito. Ya lo leí. Hazlo así:`,
+    '',
+    '1. Una sola pregunta a la vez y espera mi respuesta. Nada de varias preguntas juntas.',
+    '2. Ve frase por frase del comentario, en orden, y al final el versículo.',
+    '3. De cada frase, primero preguntas muy cortas para que no se me pasen las palabras: como llenar un hueco ("¿Tengo la ___ de recibir bien a los visitantes?"), una palabra o pedacito por pregunta. Nada de preguntas abiertas como "¿qué tienes que preguntarte?".',
+    '4. Si me equivoco, dame una pista y déjame intentarlo otra vez.',
+    '5. Después, una escena de la vida diaria: "Imagínate, Jared, que…" (la congregación, mis amigos, mi casa, la predicación). Muchas veces funciona comparar dos formas, A y B. Primero la escena y luego la pregunta sobre el significado, nunca al revés. A la mitad, preguntas cortas sobre la escena.',
+    '6. Luego: "Ahora vuelve a leer" con la frase, y tú me dices la conexión en una o dos líneas. No me pidas que la explique con mis palabras.',
+    '7. No te desvíes a aplicármelo antes de terminar la frase.',
+    '8. Con el versículo: dime el contexto (quién habla, dónde, a quién) y mándame a abrir en mi Biblia el versículo de antes o de después cuando ayude (por ejemplo, Lucas 14:12 para Lucas 14:13, 14). Fíjate en el orden de sus palabras ("serás feliz" antes de la recompensa).',
+    '9. Apóyate en jw.org y wol.jw.org (notas de estudio, Perspicacia, La Atalaya) y dime de dónde sacas lo que no está en el texto.',
+    '10. Unos 15 minutos. Al terminar, una sola idea para recordar en el día.',
+    '',
+    'El texto:',
+    '',
+    texto,
+  ].join('\n')
+}
+
 // El Texto diario (DailyStudy.jsx): leer y tres preguntas cortas, una a la vez, que van del corazón
 // a la acción, y una frase para llevártelo en la mente todo el día (sale en la lista del Texto diario). El usuario
 // sentía el método de antes muy largo (Contexto, Relato, Concepto…) y uno de dos cajas, muy corto.

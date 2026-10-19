@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyBody,dailyTextUrl, dailyTextAppUrl, partMinutes, clock } from './kinds.js'
+import { entryForClaude, makeEntry, fieldsFromJson, proposeNode, refsIn, claudeFormat, KIND_ORDER, dailyVerse, dailyBody, dailyStudyPrompt, dailyTextUrl, dailyTextAppUrl, partMinutes, clock } from './kinds.js'
 
 describe('Estudio', () => {
   it('detecta citas bíblicas sin repetir', () => {
@@ -104,6 +104,13 @@ describe('Notas', async () => {
 })
 
 describe('Texto diario', () => {
+  it('Estudiarlo con Claude copia el método y el texto', () => {
+    const p = dailyStudyPrompt({ fecha: '2026-10-19', texto: 'Lunes 19 de octubre\nCuando des un banquete (Luc. 14:13, 14).' })
+    expect(p).toContain('superintendente de circuito')
+    expect(p).toContain('Una sola pregunta a la vez')
+    expect(p).toContain('vuelve a leer')
+    expect(p.endsWith('Cuando des un banquete (Luc. 14:13, 14).')).toBe(true)
+  })
   it('toma solo el versículo con su cita', () => {
     expect(dailyVerse('\nNo calumnia con su lengua (Sal. 15:3).\n\nEl salmista (Sal. 15:1).')).toBe('No calumnia con su lengua (Sal. 15:3).')
   })

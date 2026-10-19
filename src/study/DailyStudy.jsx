@@ -1,7 +1,7 @@
 import { createRef, useEffect, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
-import { DAILY_QUESTIONS, DAILY_STEPS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyType, dailyVerse, dailyBody, dailyTextUrl, dailyTextAppUrl, entryForClaude, otherDayText } from './kinds.js'
+import { DAILY_QUESTIONS, DAILY_STEPS, DAILY_TYPES, DAILY_MIN, dailyMinimum, dailyType, dailyVerse, dailyBody, dailyTextUrl, dailyTextAppUrl, dailyStudyPrompt, entryForClaude, otherDayText } from './kinds.js'
 import { findAllRefs } from '../lib/verses.js'
 import { splitRefs } from './midweek.js'
 import RefLink from '../components/RefLink.jsx'
@@ -161,6 +161,11 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, toast, onS
                 {wol}
                 <div className="action-stack">
                   <button className="primary" onClick={() => go('jehova')}>Ya lo leí</button>
+                  <button className="secondary icon-left" onClick={async () => {
+                    try { await navigator.clipboard.writeText(dailyStudyPrompt(fields)); toast('Copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
+                  }}>
+                    <Icon d={ICONS.pegar} size={18} /> Estudiarlo con Claude
+                  </button>
                 </div>
               </>
             )}
