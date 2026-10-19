@@ -1,6 +1,6 @@
 // Service worker simple: la app funciona sin conexión.
 // HTML: red primero (para recibir versiones nuevas). Archivos con hash: caché primero.
-const CACHE = 'universe-v9'
+const CACHE = 'universe-v10'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icon.svg'])))

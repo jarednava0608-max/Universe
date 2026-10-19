@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import Splash from './components/Splash.jsx'
 import './styles.css'
 import { installNavGestures } from './lib/navGesture.js'
 
@@ -13,6 +14,7 @@ installNavGestures()
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
+    <Splash />
   </StrictMode>,
 )
 
