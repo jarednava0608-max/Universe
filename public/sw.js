@@ -1,6 +1,6 @@
 // Service worker simple: la app funciona sin conexión.
 // HTML: red primero (para recibir versiones nuevas). Archivos con hash: caché primero.
-const CACHE = 'universe-v8'
+const CACHE = 'universe-v9'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icon.svg'])))
@@ -18,6 +18,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (url.origin !== location.origin) return
+  // El método para los chats (metodo-aha.md) se lee siempre de la red y no pisa la app guardada.
+  if (url.pathname.endsWith('.md')) return
 
   if (req.mode === 'navigate') {
     e.respondWith(

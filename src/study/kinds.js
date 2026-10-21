@@ -383,25 +383,27 @@ export function dailyVerse(texto) {
   return m ? m[0] : line
 }
 
-// "Estudiarlo con Claude": el texto con las reglas del método que el usuario afinó en su chat (como un
-// superintendente de circuito: huecos de una palabra, escena antes del significado, "vuelve a leer").
+// "Estudiarlo con Claude": el texto con las reglas del Método Aha que el usuario afinó en su chat (plan para
+// enseñárselo al señor Eduardo, como los ejemplos de Gemini; todo en public/metodo-aha.md, publicado en METODO_URL).
 // Van en cada copia para que cualquier chat nuevo lo haga igual; si el método cambia, se cambia aquí.
+export const METODO_URL = 'https://universe-tau-flax.vercel.app/metodo-aha.md'
+
 export function dailyStudyPrompt(fields) {
   const texto = String(fields?.texto ?? '').trim()
   const fecha = formatDate(fields?.fecha)
   return [
-    `Quiero estudiar el texto diario${fecha ? ` del ${fecha}` : ''} contigo, como lo haría un superintendente de circuito. Ya lo leí. Hazlo así:`,
+    `Quiero estudiar el texto diario${fecha ? ` del ${fecha}` : ''} contigo. Ya lo leí. Prepáralo como un plan para enseñárselo al señor Eduardo, con "Aha! moments". Si puedes, lee primero el método completo con los ejemplos que me gustan: ${METODO_URL}. Hazlo así:`,
     '',
-    '1. Una sola pregunta a la vez y espera mi respuesta. Nada de varias preguntas juntas.',
-    '2. Ve frase por frase del comentario, en orden, y al final el versículo.',
-    '3. De cada frase, primero preguntas muy cortas para que no se me pasen las palabras: como llenar un hueco ("¿Tengo la ___ de recibir bien a los visitantes?"), una palabra o pedacito por pregunta. Nada de preguntas abiertas como "¿qué tienes que preguntarte?".',
-    '4. Si me equivoco, dame una pista y déjame intentarlo otra vez.',
-    '5. Después, una escena de la vida diaria: "Imagínate, Jared, que…" (la congregación, mis amigos, mi casa, la predicación). Muchas veces funciona comparar dos formas, A y B. Primero la escena y luego la pregunta sobre el significado, nunca al revés. A la mitad, preguntas cortas sobre la escena.',
-    '6. Luego: "Ahora vuelve a leer" con la frase, y tú me dices la conexión en una o dos líneas. No me pidas que la explique con mis palabras.',
-    '7. No te desvíes a aplicármelo antes de terminar la frase.',
-    '8. Con el versículo: dime el contexto (quién habla, dónde, a quién) y mándame a abrir en mi Biblia el versículo de antes o de después cuando ayude (por ejemplo, Lucas 14:12 para Lucas 14:13, 14). Fíjate en el orden de sus palabras ("serás feliz" antes de la recompensa).',
-    '9. Apóyate en jw.org y wol.jw.org (notas de estudio, Perspicacia, La Atalaya) y dime de dónde sacas lo que no está en el texto.',
-    '10. Unos 15 minutos. Al terminar, una sola idea para recordar en el día.',
+    '1. Elige tú el enfoque, sin preguntarme: lo que contesta la pregunta del párrafo de La Atalaya que se cita al final.',
+    '2. Empieza con "¡Perfecto! Vamos con el texto diario…" y "Para tenerlo fresco, el texto dice: …". Luego, en 2 oraciones, la idea falsa que alguien sincero cree sin decirlo, y "Vamos a usar la lógica humana para destruir esa mentira".',
+    '3. El plan: 1. El Gancho, 2. La Extracción, 3. El Golpe Lógico. Escribe lo que digo yo como Tú: "…" y lo que él contesta como (Él probablemente dirá: "…"). Cierra con Tú concluyes: "¡Exacto! … ¿verdad que…?" y Resumen para ti. Unas 300 palabras por aha.',
+    '4. Un aha a la vez. Si el texto tiene dos ideas con focos distintos, haz Parte A y Parte B, cada una completa y separada, sin mezclar imágenes.',
+    '5. El Gancho es una escena cálida de la vida diaria de él, con alguien que quiere (un amigo, su papá, su familia), que se pueda imaginar. La respuesta es tan obvia que da risa, y al lado va una opción absurda. Por ejemplo: "Seguro conoce a alguien que es igualito a su papá: se ríe igual, camina igual. ¿El papá se sentó a decirle: te tienes que reír así?" (Él: "¡No! Se le pegó de tanto estar con él"). Nada de trámites, oficinas ni objetos, y no copies la imagen del texto con otras cosas.',
+    '6. La Extracción: "Por favor, lea…" y preguntas cuya respuesta se copia tal cual del texto, diciendo qué tipo de palabra buscar sin darla ("Fíjese en la cantidad: ¿cuántas?"). Sin huecos "___". La última, "la prueba de fuego".',
+    '7. El Golpe Lógico pone su respuesta del gancho frente a la palabra del texto y deja que él saque la conclusión. Termina en lo que Jehová o Jesús hace o siente por él: un regalo, no una tarea.',
+    '8. Si una palabra puede asustar (temor, obedecer), acláralo con otra pregunta lógica. Si la conclusión queda en el aire, aterrízala con un "Aha!" extra.',
+    '9. Con el versículo: quién habla, dónde y a quién, y el versículo de antes o de después cuando ayude.',
+    '10. Apóyate en wol.jw.org (notas de estudio, Perspicacia, La Atalaya) y dime de dónde sacas lo que no está en el texto. No inventes citas ni des significado simbólico que las publicaciones no dan; si no pudiste abrir algo, dime qué confirmar en mi Biblia.',
     '',
     'El texto:',
     '',
