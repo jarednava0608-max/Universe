@@ -110,6 +110,7 @@ describe('Texto diario', () => {
     expect(p).toContain('El Gancho, 2. La Extracción, 3. El Golpe Lógico')
     expect(p).toContain('Un aha a la vez')
     expect(p).not.toContain('superintendente')
+    expect(p).toContain('https://universe-tau-flax.vercel.app/metodo-aha.md')
     expect(p.endsWith('Cuando des un banquete (Luc. 14:13, 14).')).toBe(true)
   })
   it('toma solo el versículo con su cita', () => {

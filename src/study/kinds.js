@@ -384,13 +384,15 @@ export function dailyVerse(texto) {
 }
 
 // "Estudiarlo con Claude": el texto con las reglas del Método Aha que el usuario afinó en su chat (plan para
-// enseñárselo al señor Eduardo, como los ejemplos de Gemini; todo en docs/metodo-aha.md).
+// enseñárselo al señor Eduardo, como los ejemplos de Gemini; todo en public/metodo-aha.md, publicado en METODO_URL).
 // Van en cada copia para que cualquier chat nuevo lo haga igual; si el método cambia, se cambia aquí.
+export const METODO_URL = 'https://universe-tau-flax.vercel.app/metodo-aha.md'
+
 export function dailyStudyPrompt(fields) {
   const texto = String(fields?.texto ?? '').trim()
   const fecha = formatDate(fields?.fecha)
   return [
-    `Quiero estudiar el texto diario${fecha ? ` del ${fecha}` : ''} contigo. Ya lo leí. Prepáralo como un plan para enseñárselo al señor Eduardo, con "Aha! moments". Hazlo así:`,
+    `Quiero estudiar el texto diario${fecha ? ` del ${fecha}` : ''} contigo. Ya lo leí. Prepáralo como un plan para enseñárselo al señor Eduardo, con "Aha! moments". Si puedes, lee primero el método completo con los ejemplos que me gustan: ${METODO_URL}. Hazlo así:`,
     '',
     '1. Elige tú el enfoque, sin preguntarme: lo que contesta la pregunta del párrafo de La Atalaya que se cita al final.',
     '2. Empieza con "¡Perfecto! Vamos con el texto diario…" y "Para tenerlo fresco, el texto dice: …". Luego, en 2 oraciones, la idea falsa que alguien sincero cree sin decirlo, y "Vamos a usar la lógica humana para destruir esa mentira".',
