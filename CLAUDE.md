@@ -24,6 +24,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 - `docs/estilo.md`: leer antes de tocar estilos, CSS o interfaz.
 - `docs/mapa.md`: Mapa, menú, Por escarbar.
 - `docs/estudio.md`: Hoy y apartados de Estudio, Buscar en todo.
+- `docs/metodo-aha.md`: Método Aha (lo que copia "Estudiarlo con Claude") y los ejemplos modelo.
 - `docs/juegos.md`: Juegos, repaso, avisos de Constancia.
 - `docs/biblia.md`: citas tocables, Mi Biblia, lector, Publicaciones.
 - `docs/paquetes.md`: paquetes `SEEDS`, regla del mapa.
