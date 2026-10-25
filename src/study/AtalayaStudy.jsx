@@ -12,7 +12,6 @@ import StarButton from '../components/StarButton.jsx'
 import { isStarred, withStar } from './midweek.js'
 import { canSpeak, useSpeech } from '../lib/speech.js'
 import { hasWatchtower, useWatchtower, watchtowerArticles, watchtowerFor } from '../lib/watchtower.js'
-import WatchtowerImport from '../components/WatchtowerImport.jsx'
 
 // La Atalaya por pasos, como recomienda jw.org para prepararse: primero una idea general
 // (título, subtítulos y preguntas de repaso), luego cada párrafo buscando la respuesta y
@@ -196,9 +195,8 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
                     </li>
                   ))}
                 </ul>
-                <WatchtowerImport toast={toast} compact />
               </div>
-            ) : <WatchtowerImport toast={toast} />)}
+            ) : null)}
             <div className="sfield">
               <div className="seg2">
                 <button type="button" className="on">La Atalaya</button>

@@ -9,7 +9,6 @@ import { entryForClaude } from './kinds.js'
 import { STEPS, parseProgram, programTitle, answerOf, withAnswer, partDone, midweekCount, meetingsUrl, programDate, programMonday, splitAsides, splitRefs, readingChapters, isStudyPart, studyBlocks, studyChapter, meetingItems, isStarred, withStar, DEFAULT_HOUR, weekSchedule, outline, whoLabel, withExtras } from './midweek.js'
 import MeetingMode from './MeetingMode.jsx'
 import JwLinks from './JwLinks.jsx'
-import GuiaImport from '../components/GuiaImport.jsx'
 import { guiaFor, hasGuia, useGuia } from '../lib/guia.js'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
@@ -283,13 +282,6 @@ export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting =
                 setEditingProgram(false)
               }}>Pegar la semana copiada</button>
             )}
-            {/* La Guía en EPUB: el programa de cada semana sin copiarlo; si ya está, para agregar otro número. */}
-            {!String(fields.programa ?? '').trim() && (hasGuia() ? (
-              <div className="sfield">
-                <span className="sfield-label">La Guía que tienes no trae la semana de esta fecha</span>
-                <GuiaImport toast={toast} compact />
-              </div>
-            ) : <GuiaImport toast={toast} />)}
             {!partes.length && (
               <div className="sfield">
                 <div className="seg2">

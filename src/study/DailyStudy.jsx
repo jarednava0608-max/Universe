@@ -7,7 +7,6 @@ import { findRefs } from '../lib/bible.js'
 import { isLearning } from '../lib/verseSave.js'
 import { splitRefs } from './midweek.js'
 import RefLink from '../components/RefLink.jsx'
-import DailyTextsImport from '../components/DailyTextsImport.jsx'
 import { dailyTextFor, hasDailyTexts, useDailyTexts } from '../lib/dailytexts.js'
 
 const filled = (v) => !!String(v ?? '').trim()
@@ -111,7 +110,6 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
               <span className="at-answer-label">O pégalo aquí</span>
               <AutoText value={fields.texto ?? ''} placeholder="El texto y el comentario" onChange={(v) => set({ texto: v })} minRows={3} />
             </label>
-            {!hasDailyTexts() && <DailyTextsImport toast={toast} />}
           </>
         ) : (
           <>

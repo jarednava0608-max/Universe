@@ -18,6 +18,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 - **`PageScroll`** en Estudio, Pendientes y Juegos (barra con título chico al bajar). Listas de Estudio: "‹ Estudio" y + en la barra (`back`, `action`).
 - **`navGesture.js`**: toda pantalla con `.bar-btn.back` entra/sale por la derecha y se cierra deslizando desde la orilla (no tocar cada pantalla). "Atrás" que no cierra: `data-inner`. Hojas (pegar, cuenta, elegir) suben desde abajo.
 - **Enlace visible a wol.jw.org** donde se lee algo de jw.org. Enlaces externos salen a Safari (`x-safari-https://`, `src/lib/external.js`); citas bíblicas abren hoja dentro.
+- **Sin botones de subir archivos** (EPUB de la Biblia, textos diarios, Atalaya, Guía): el usuario los quitó; no volver a ponerlos. Lo ya importado sigue leyéndose (`nwt.js`, `dailytexts.js`, `watchtower.js`, `guia.js`); los componentes `*Import` se borraron. Lo único que sube un archivo es restaurar el respaldo JSON en el menú.
 - **Simple**; nada que no se pidió. **Nunca emojis** (app ni contenido propuesto).
 
 ## Detalle por área (leer solo lo necesario)

@@ -10,12 +10,9 @@ import { readMeetings } from './meetings.js'
 import { ASSIGNMENT_FROM, nextDay } from './today.js'
 import BibleHome from '../components/BibleHome.jsx'
 import TodayPlan, { MeetingDaysRow } from './TodayPlan.jsx'
-import DailyTextsImport from '../components/DailyTextsImport.jsx'
 import { hasDailyTexts, dailyTextYears, useDailyTexts } from '../lib/dailytexts.js'
-import WatchtowerImport from '../components/WatchtowerImport.jsx'
 import { hasWatchtower, watchtowerIssues, useWatchtower } from '../lib/watchtower.js'
 import { hasGuia, guiaRange, useGuia } from '../lib/guia.js'
-import GuiaImport from '../components/GuiaImport.jsx'
 import SearchAll from './SearchAll.jsx'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -210,18 +207,6 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
               <Icon d={ICONS.plus} size={20} stroke={2} />
             </button>
           </div>
-          {/* Texto diario: el folleto del año, una vez, para no pegar el texto cada mañana. */}
-          {section === 'diario' && (hasDailyTexts()
-            ? <p className="hint dt-imported">Los textos de {dailyTextYears().join(' y ')} están en este teléfono: el de cada día sale solo.</p>
-            : <DailyTextsImport toast={toast} />)}
-          {/* Reuniones: La Atalaya de estudio en EPUB, para no pegar el artículo cada semana. */}
-          {section === 'reunion' && (hasWatchtower()
-            ? <p className="hint dt-imported">La Atalaya de {watchtowerIssues().join(' y ')} está en este teléfono: el artículo de cada semana sale solo.</p>
-            : <WatchtowerImport toast={toast} />)}
-          {/* Y la Guía de actividades en EPUB, para no pegar el programa de entre semana. */}
-          {section === 'reunion' && (hasGuia()
-            ? <p className="hint dt-imported">La Guía de actividades de {guiaRange()} está en este teléfono: el programa de cada semana sale solo.</p>
-            : <GuiaImport toast={toast} />)}
           {KINDS[section].notes && byKind[section].length > 0 && (
             <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
           )}

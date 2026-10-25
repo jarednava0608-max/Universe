@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Icon, { ICONS } from './Icon.jsx'
 import { BOOKS } from '../lib/bible.js'
 import { chapterSaved, openRef } from '../lib/verses.js'
-import { hasBible, importBible, useBible } from '../lib/nwt.js'
+import { hasBible, useBible } from '../lib/nwt.js'
 import { BOOK_ABBR, TOTAL_CHAPTERS, PLAN_LENGTHS, bookRead, chaptersOf, hasPlan, isRead, lastRead, makePlan, readCount, readingToday } from '../lib/reading.js'
 
 // Leer toda la Biblia, como la pestaña "Libros" de JW Library: los 66 libros en cuadros (más
@@ -50,7 +50,6 @@ export default function BibleHome({ backLabel = 'Biblioteca', leidos, plan, onSe
             </div>
             {last && <LeftOff last={last} />}
             {onSetPlan && <ReadingGoal leidos={leidos} plan={plan} onSetPlan={onSetPlan} />}
-            {!full && <BibleImport toast={toast} />}
             <h2 className="bh-h">Escrituras Hebreoarameas</h2>
             {grid(0, 39)}
             <h2 className="bh-h">Escrituras Griegas Cristianas</h2>
@@ -75,38 +74,6 @@ export default function BibleHome({ backLabel = 'Biblioteca', leidos, plan, onSe
           </>
         )}
       </div>
-    </div>
-  )
-}
-
-// Toda la TNM de una vez: el usuario baja el EPUB de jw.org y lo elige aquí. Se lee y se guarda solo
-// en este teléfono (no se sube a la nube); en otro teléfono se vuelve a elegir el archivo.
-function BibleImport({ toast }) {
-  const [busy, setBusy] = useState(false)
-  async function pick(e) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    setBusy(true)
-    try {
-      const done = await importBible(await file.arrayBuffer())
-      toast?.(done ? `Listo: la Biblia completa está en este teléfono (${done.verses.toLocaleString('es')} versículos).` : 'Ese archivo no parece la Traducción del Nuevo Mundo en EPUB.')
-    } catch (err) {
-      toast?.('No se pudo importar: ' + err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-  return (
-    <div className="bh-goal">
-      <p className="bh-goal-title">Toda la Biblia sin pegar capítulos</p>
-      <p className="hint">Baja la Traducción del Nuevo Mundo en EPUB desde jw.org (la Biblia, botón de descargar, EPUB) y elige aquí el archivo. Se guarda solo en este teléfono.</p>
-      <label className={'primary as-btn' + (busy ? ' disabled' : '')}>
-        {busy ? 'Leyendo la Biblia…' : 'Elegir el archivo EPUB'}
-        {/* Sin `accept`: el iPhone deja gris el .epub si se filtra por tipo; el archivo se revisa al leerlo. */}
-        <input type="file" hidden disabled={busy} onChange={pick} />
-      </label>
-      <a className="secondary as-btn" data-direct="1" href="https://www.jw.org/es/biblioteca/biblia/" target="_blank" rel="noopener noreferrer">Ir a la Biblia en jw.org</a>
     </div>
   )
 }
