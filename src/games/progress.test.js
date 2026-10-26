@@ -53,7 +53,7 @@ describe('repaso inteligente', () => {
   })
 })
 
-import { constanciaDays, restartConstancia, mergeConstancia } from './progress.js'
+import { constanciaDays, constanciaElapsed, restartConstancia, mergeConstancia } from './progress.js'
 
 describe('constancia', () => {
   it('cuenta los días desde que empezó', () => {
@@ -80,5 +80,12 @@ describe('Repasar al juntar teléfonos', () => {
     expect(mergeProgress({}, {}).repaso).toBeUndefined()
     expect(mergeProgress({ juegoHoy: { day: '2026-10-15' } }, { juegoHoy: { day: '2026-10-16' } }).juegoHoy).toEqual({ day: '2026-10-16' })
     expect(mergeProgress({}, {}).juegoHoy).toBeUndefined()
+  })
+})
+
+describe('constancia en horas', () => {
+  it('cuenta horas, minutos y segundos desde el reinicio', () => {
+    const c = restartConstancia({ start: '2026-10-01' }, '2026-10-26', 1000000)
+    expect(constanciaElapsed(c, 1000000 + (2 * 3600 + 5 * 60 + 7) * 1000)).toEqual({ h: 2, m: 5, s: 7 })
   })
 })

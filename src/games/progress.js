@@ -111,10 +111,19 @@ export function constanciaDays(c, today = todayISO()) {
   return Math.max(0, Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000))
 }
 
-// Volver a empezar hoy: la racha que llevaba cuenta para la mejor.
+// Volver a empezar ahora: la racha que llevaba cuenta para la mejor. `startAt` es el instante exacto.
 export function restartConstancia(c, today = todayISO(), now = Date.now()) {
   const best = Math.max(c?.best ?? 0, constanciaDays(c, today))
-  return { start: today, best, at: now }
+  return { start: today, startAt: now, best, at: now }
+}
+
+// Tiempo corrido desde el inicio, en horas, minutos y segundos. Sin `startAt`, desde la medianoche de `start`.
+export function constanciaElapsed(c, now = Date.now()) {
+  if (!c?.start) return { h: 0, m: 0, s: 0 }
+  const [y, mo, d] = c.start.split('-').map(Number)
+  const from = c.startAt ?? new Date(y, mo - 1, d).getTime()
+  const total = Math.max(0, Math.floor((now - from) / 1000))
+  return { h: Math.floor(total / 3600), m: Math.floor((total % 3600) / 60), s: total % 60 }
 }
 
 // Al sincronizar gana el cambio más reciente, y la mejor se queda con la mayor.

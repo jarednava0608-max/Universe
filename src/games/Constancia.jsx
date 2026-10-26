@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { GameScreen } from './ui.jsx'
 import RefLink from '../components/RefLink.jsx'
-import { constanciaDays, restartConstancia, todayISO } from './progress.js'
+import { constanciaDays, constanciaElapsed, restartConstancia, todayISO } from './progress.js'
+
+const pad = (n) => String(n).padStart(2, '0')
 import { DEFAULT_TIMES, clearPushTimes, loadPushTimes, pushState, savePushTimes } from '../lib/push.js'
 
 // Constancia: días seguidos de una meta personal. A propósito no dice cuál es.
@@ -22,6 +24,12 @@ export default function Constancia({ store, toast, onExit, back }) {
   const c = store.progress.constancia
   const today = todayISO()
   const [start, setStart] = useState(today)
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const elapsed = constanciaElapsed(c, now)
   const days = constanciaDays(c, today)
   const best = Math.max(c?.best ?? 0, days)
   const dayNum = Number(today.replaceAll('-', ''))
@@ -37,7 +45,7 @@ export default function Constancia({ store, toast, onExit, back }) {
           <span>¿Desde cuándo?</span>
           <input className="input" type="date" value={start} max={today} onChange={(e) => setStart(e.target.value || today)} />
         </label>
-        <button className="primary" onClick={() => save({ start, best: 0, at: Date.now() })}>Empezar</button>
+        <button className="primary" onClick={() => save({ start, ...(start === today ? { startAt: Date.now() } : {}), best: 0, at: Date.now() })}>Empezar</button>
       </GameScreen>
     )
   }
@@ -45,8 +53,9 @@ export default function Constancia({ store, toast, onExit, back }) {
   return (
     <GameScreen title="Constancia" back={back} onExit={onExit}>
       <div className="constancia">
-        <p className="constancia-num">{days}</p>
-        <p className="constancia-label">{days === 1 ? 'día' : 'días'}</p>
+        <p className="constancia-num">{elapsed.h}</p>
+        <p className="constancia-label">{elapsed.h === 1 ? 'hora' : 'horas'}</p>
+        <p className="constancia-label">{pad(elapsed.m)} min · {pad(elapsed.s)} s</p>
         <p className="hint center">{days === 0 ? 'Hoy empieza' : best > days ? `Tu mejor: ${best} días` : 'Es tu mejor racha'}</p>
       </div>
       <div className="constancia-text">
