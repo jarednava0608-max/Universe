@@ -11,6 +11,7 @@ import PageScroll from '../components/PageScroll.jsx'
 export default function GamesTab({ store, toast, onBack }) {
   const [open, setOpen] = useState(null)
   const [repasando, setRepasando] = useState(false)
+  const [practicando, setPracticando] = useState(false)
   const game = GAMES.find((g) => g.id === open)
   const pending = repasoRound(store.entries, store.progress.srs ?? {}, { rnd: () => 0.9 }).length
   const learning = learnSources(store.entries).length > 0
@@ -33,7 +34,10 @@ export default function GamesTab({ store, toast, onBack }) {
               <button className="primary" onClick={() => setRepasando(true)}>Repasar</button>
             </>
           ) : learning ? (
-            <p className="today-game-sub">Lo que toca repasar vuelve en los próximos días.</p>
+            <>
+              <p className="today-game-sub">Lo que toca repasar vuelve en los próximos días.</p>
+              <button className="secondary" onClick={() => setPracticando(true)}>Practicar de todos modos</button>
+            </>
           ) : (
             <p className="today-game-sub">Toca un texto de la Biblia (en el texto diario, La Atalaya o la reunión) y elige "Aprenderlo". Aquí lo repasarás.</p>
           )}
@@ -56,6 +60,7 @@ export default function GamesTab({ store, toast, onBack }) {
         </div>
       </PageScroll>
       {game && <game.Component store={store} toast={toast} onExit={() => setOpen(null)} />}
+      {practicando && <Repaso store={store} practice onExit={() => setPracticando(false)} />}
       {repasando && <Repaso store={store} onExit={() => setRepasando(false)} />}
     </div>
   )

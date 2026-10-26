@@ -83,3 +83,11 @@ describe('Repasar', () => {
     expect(round.map((x) => x.type).sort()).toEqual(['proof', 'verse'])
   })
 })
+
+describe('repasoRound practicar', () => {
+  it('ofrece todos los textos aunque no toquen, primero los que menos sabe', () => {
+    const srs = { 'v:j': { box: 5, due: '2099-01-01' }, 'v:s': { box: 1, due: '2099-01-01' } }
+    const r = repasoRound([JUAN, SALMO], srs, { practice: true })
+    expect(r.map((x) => x.key)).toEqual(['v:s', 'v:j'])
+  })
+})
