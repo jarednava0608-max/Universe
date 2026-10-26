@@ -78,7 +78,11 @@ function VerseStep({ verse, mode: startMode, entries, onDone }) {
   const m = mode === 'dice' && !say ? 'escribir' : mode === 'donde' && !where ? 'escribir' : mode
   // Al acertar la opción, hay que escribirla (la cita o el texto), no solo reconocerla.
   const [picked, setPicked] = useState(null) // null = aún eligiendo; true/false = si acertó a la primera
+  // "Ya me lo sé": sin opciones, escribirlo completo con cita; si sale, pasa a pedirse siempre así.
+  const [sabe, setSabe] = useState(false)
+  if (sabe) return <WriteIt verse={verse} onDone={(ok) => onDone(ok ? 'sabe' : false)} />
   if (picked != null) return <TypeIt verse={verse} mode={m} firstTry={picked} onDone={onDone} />
+  const skip = <button className="secondary" onClick={() => setSabe(true)}>Ya me lo sé, escribirlo</button>
   if (m === 'donde') {
     return (
       <Choice
@@ -86,6 +90,7 @@ function VerseStep({ verse, mode: startMode, entries, onDone }) {
         options={where.options}
         answer={where.answer}
         onDone={setPicked}
+        after={skip}
       />
     )
   }
@@ -98,9 +103,8 @@ function VerseStep({ verse, mode: startMode, entries, onDone }) {
         long
         hint={`Empieza: «${firstWords(verse.fields.texto, 2)}»`}
         onDone={setPicked}
-      >
-        <p className="verse small">{verse.fields.texto}</p>
-      </Choice>
+        after={skip}
+      />
     )
   }
   return <WriteIt key={m} verse={verse} learn={m === 'aprender'} onDone={onDone} />
@@ -186,7 +190,7 @@ function SourceStep({ card, entries, onDone }) {
 }
 
 // Opción múltiple: si fallas, esa se marca, sale la pista (si hay) y vuelves a intentar.
-function Choice({ ask, options, answer, long, hint, onDone, children }) {
+function Choice({ ask, options, answer, long, hint, onDone, after, children }) {
   const [wrong, setWrong] = useState(() => new Set())
   const [right, setRight] = useState(false)
   function pick(k) {
@@ -206,6 +210,7 @@ function Choice({ ask, options, answer, long, hint, onDone, children }) {
       </div>
       {!right && wrong.size > 0 && hint && <p className="hint center">{hint}</p>}
       {right && children}
+      {!right && wrong.size === 0 && after}
     </div>
   )
 }

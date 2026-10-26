@@ -9,7 +9,7 @@ import { BOOKS, findRefs, parseRef } from '../lib/bible.js'
 import { VERSE_COUNTS } from '../lib/verseCounts.js'
 import { refKey } from '../lib/verses.js'
 import { atalayaSourceCards, shuffle, verseSources } from './logic.js'
-import { isDue, todayISO } from './progress.js'
+import { isDue, todayISO, WRITE_BOX } from './progress.js'
 
 export const SIZE = 5
 export const NEW_PER_ROUND = 2
@@ -26,7 +26,7 @@ export function learnSources(entries) {
 export function verseMode(srsItem) {
   if (!srsItem) return 'aprender'
   const box = srsItem.box ?? 0
-  return box < 2 ? 'donde' : box < 4 ? 'dice' : 'escribir'
+  return box < 2 ? 'donde' : box < WRITE_BOX ? 'dice' : 'escribir'
 }
 
 // Escribirlo completo: qué palabras del texto escribiste (en orden, sin importar acentos, mayúsculas ni

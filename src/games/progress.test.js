@@ -82,3 +82,10 @@ describe('Repasar al juntar teléfonos', () => {
     expect(mergeProgress({}, {}).juegoHoy).toBeUndefined()
   })
 })
+
+describe('review sabe', () => {
+  it('salta a escribirlo de memoria aunque no tocara', () => {
+    expect(review({ box: 1, due: '2099-01-01', first: '2026-10-20' }, 'sabe', '2026-10-26')).toEqual({ box: 4, due: '2026-11-02', first: '2026-10-20' })
+    expect(review({ box: 5, due: '2026-10-26' }, 'sabe', '2026-10-26').box).toBe(6)
+  })
+})
