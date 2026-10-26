@@ -70,6 +70,11 @@ describe('Repasar', () => {
     expect(proofOptions(card, [card], [SALMO])).toBe(null)
   })
 
+  it('"(Lee …)" de las Atalayas de 2026; si va al empezar el párrafo, la idea es la que sigue', () => {
+    const a = { ...atalaya, id: 'b', fields: { ...atalaya.fields, articulo: ['Título', '', '1. ¿Pregunta?', '', '1 (Lee Juan 17:3). Conocer a Dios da vida eterna a quienes lo hacen. Otra cosa.', '', '2. ¿Otra?', '', '2 Jesús habló de la casa (lee Salmo 127:1). Sigue.'].join('\n') } }
+    expect(proofCards([a]).map((c) => [c.cita, c.front])).toEqual([['Juan 17:3', 'Conocer a Dios da vida eterna a quienes lo hacen.'], ['Salmo 127:1', 'Jesús habló de la casa']])
+  })
+
   it('una ronda: lo que toca, hasta 2 nuevos y nada repetido en la sesión', () => {
     const entries = [LUCAS, SALMO, JUAN, MATEO]
     const srs = { 'v:j': { box: 3, due: '2026-10-19' }, 'v:m': { box: 3, due: '2026-12-01' } }
@@ -85,6 +90,12 @@ describe('Repasar', () => {
 })
 
 describe('repasoRound practicar', () => {
+  it('también La Atalaya, alternada con los textos', () => {
+    const r = repasoRound([JUAN, SALMO, atalaya], { 'v:j': { box: 5, due: '2099-01-01' } }, { practice: true })
+    expect(r.map((x) => x.type)).toEqual(['verse', 'proof', 'verse'])
+    expect(r[0].key).toBe('v:s')
+  })
+
   it('ofrece todos los textos aunque no toquen, primero los que menos sabe', () => {
     const srs = { 'v:j': { box: 5, due: '2099-01-01' }, 'v:s': { box: 1, due: '2099-01-01' } }
     const r = repasoRound([JUAN, SALMO], srs, { practice: true })

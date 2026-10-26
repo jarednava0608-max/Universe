@@ -139,7 +139,8 @@ function studiedArticles(entries) {
     .sort((a, b) => String(b.fields.fecha ?? '').localeCompare(String(a.fields.fecha ?? '')))
 }
 
-const LEA = /\(\s*Lea\s+([^)]+?)\.?\s*\)/g
+// "(Lea Juan 17:3.)" en las de antes; "(Lee Filemón 8, 9)" o "(lee …)" en las de 2026.
+const LEA = /\(\s*Le[ae]\s+([^)]+?)\.?\s*\)/gi
 const sentencesOf = (t) => t.split(/(?<=[.!?…])\s+/).map((x) => x.trim()).filter(Boolean)
 const noRefs = (t) => t.replace(/\s*\([^)]*\d[^)]*\)/g, '').replace(/\s+([.,;:])/g, '$1').trim()
 
@@ -153,7 +154,9 @@ export function proofCards(entries) {
       for (const m of text.matchAll(LEA)) {
         const cita = findRefs(m[1])[0]
         if (!cita) continue
-        const idea = sentencesOf(noRefs(text.slice(0, m.index))).filter((s) => s.split(/\s+/).length >= 6).at(-1)
+        // La idea de antes; si el párrafo empieza con el "Lee", la que sigue.
+        const long = (x) => x.split(/\s+/).length >= 5
+        const idea = sentencesOf(noRefs(text.slice(0, m.index))).filter(long).at(-1) ?? sentencesOf(noRefs(text.slice(m.index + m[0].length)).replace(/^[\s.,;:]+/, '')).filter(long)[0]
         if (!idea) continue
         out.push({ id: `p:${e.id}:${b.key}:${refKey(cita)}`, group: e.id, title, cita, front: idea.length > 220 ? idea.slice(0, 220).replace(/\s+\S*$/, '') + '…' : idea })
       }
@@ -187,10 +190,19 @@ export function repasoRound(entries, srs = {}, { rnd = Math.random, today = toda
   const proofs = proofCards(entries).map((c) => ({ key: c.id, type: 'proof', card: c }))
   const sources = atalayaSourceCards(entries).map((c) => ({ key: 's:' + c.id, type: 'source', card: c }))
 
-  // Practicar de todos modos: todos sus textos, primero los que menos sabe (caja más baja); sin La Atalaya.
+  // Practicar de todos modos: todos sus textos y lo de La Atalaya, primero lo que menos sabe (caja más
+  // baja), un texto y una de La Atalaya alternados.
   if (practice) {
     const box = (x) => srs[x.key]?.box ?? -1
-    return verses.filter((x) => !skip.has(x.key)).sort((a, b) => box(a) - box(b) || (srs[a.key]?.due ?? '').localeCompare(srs[b.key]?.due ?? '')).slice(0, size)
+    const order = (list) => list.filter((x) => !skip.has(x.key)).sort((a, b) => box(a) - box(b) || (srs[a.key]?.due ?? '').localeCompare(srs[b.key]?.due ?? ''))
+    const v = order(verses)
+    const a = order([...proofs, ...sources])
+    const out = []
+    while (out.length < size && (v.length || a.length)) {
+      if (v.length) out.push(v.shift())
+      if (out.length < size && a.length) out.push(a.shift())
+    }
+    return out
   }
   const out = due(verses).slice(0, size)
   for (const v of verses.filter(fresh).slice(0, NEW_PER_ROUND)) if (out.length < size) out.push(v)
