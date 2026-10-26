@@ -24,9 +24,56 @@
         if (t === 'light') document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').setAttribute('content', 'default')
       } catch (e) {}
     </script>
-    <style>html,body{background:#09090b}html[data-theme='light'],html[data-theme='light'] body{background:#fafafa}</style>
+    <style>html,body{background:#09090b}html[data-theme='light'],html[data-theme='light'] body{background:#fafafa}
+      /* Amanecer al abrir (solo la primera vez del día; ver el script de abajo). */
+      #intro{position:fixed;inset:0;z-index:9999;background:#120d2e;animation:intro-out .5s ease 1.4s forwards}
+      #intro svg{width:100%;height:100%;display:block}
+      #intro .sun{animation:intro-rise 1.3s cubic-bezier(.2,.7,.2,1) both}
+      #intro .halo{transform-origin:195px 560px;animation:intro-glow 1.5s ease both}
+      #intro .stars{animation:intro-fade 1s ease .3s both}
+      @keyframes intro-rise{from{transform:translateY(170px)}to{transform:none}}
+      @keyframes intro-glow{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+      @keyframes intro-fade{from{opacity:0}to{opacity:1}}
+      @keyframes intro-out{to{opacity:0;visibility:hidden}}
+    </style>
   </head>
   <body>
+    <div id="intro" aria-hidden="true">
+      <svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMax slice">
+        <defs>
+          <linearGradient id="i-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#120d2e"/><stop offset=".4" stop-color="#2c1f66"/><stop offset=".62" stop-color="#4a2f8f"/><stop offset=".78" stop-color="#c26a8a"/><stop offset="1" stop-color="#ffb35c"/>
+          </linearGradient>
+          <radialGradient id="i-sun" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff7da"/><stop offset=".55" stop-color="#ffd56a"/><stop offset="1" stop-color="#ffb84a"/></radialGradient>
+          <radialGradient id="i-halo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffd56a" stop-opacity=".65"/><stop offset="1" stop-color="#ffd56a" stop-opacity="0"/></radialGradient>
+          <linearGradient id="i-hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1240"/><stop offset="1" stop-color="#0b0820"/></linearGradient>
+        </defs>
+        <rect width="390" height="844" fill="url(#i-sky)"/>
+        <g class="stars" fill="#fff">
+          <circle cx="50" cy="120" r="1.8" opacity=".9"/><circle cx="130" cy="70" r="1.3" opacity=".7"/><circle cx="340" cy="100" r="1.8" opacity=".85"/><circle cx="280" cy="190" r="1.2" opacity=".6"/>
+          <circle cx="70" cy="260" r="1.2" opacity=".5"/><circle cx="360" cy="280" r="1.2" opacity=".5"/><circle cx="200" cy="40" r="1.2" opacity=".6"/>
+          <g stroke="#fff" stroke-opacity=".5" stroke-width="2.4" stroke-linecap="round"><line x1="80" y1="200" x2="150" y2="170"/><line x1="150" y1="170" x2="220" y2="195"/><line x1="220" y1="195" x2="310" y2="172"/></g>
+          <circle cx="80" cy="200" r="5.5"/><circle cx="150" cy="170" r="7"/><circle cx="220" cy="195" r="5.5"/><circle cx="310" cy="172" r="7"/>
+        </g>
+        <circle class="halo" cx="195" cy="560" r="230" fill="url(#i-halo)"/>
+        <circle class="sun" cx="195" cy="575" r="92" fill="url(#i-sun)"/>
+        <path d="M0 590 C 90 556, 150 584, 195 590 C 255 598, 320 552, 390 572 L 390 844 L 0 844 Z" fill="url(#i-hill)"/>
+        <path d="M0 640 C 110 614, 230 656, 390 626 L 390 844 L 0 844 Z" fill="#07051a" opacity=".85"/>
+      </svg>
+    </div>
+    <script>
+      // Solo la primera vez del día y sin "Reducir movimiento"; se quita sola (o al tocarla).
+      ;(function () {
+        var el = document.getElementById('intro')
+        var day = new Date().toLocaleDateString('sv')
+        var seen = null
+        try { seen = localStorage.getItem('universe-intro') } catch (e) {}
+        if (seen === day || matchMedia('(prefers-reduced-motion: reduce)').matches) return el.remove()
+        try { localStorage.setItem('universe-intro', day) } catch (e) {}
+        el.addEventListener('click', function () { el.remove() })
+        setTimeout(function () { el.remove() }, 2000)
+      })()
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

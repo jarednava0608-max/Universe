@@ -35,5 +35,6 @@ El usuario lo pidió para que todo se parezca a JW Library.
 - Párrafos y títulos con `text-wrap-style` (pretty / balance) para no dejar una palabra sola en el último renglón.
 
 ## Movimiento
+- Ícono (`public/icon.svg` y sus PNG): Amanecer, sol dorado sobre el horizonte con una constelación. Al abrir, la primera vez del día, el mismo amanecer animado (~1.5 s, en `index.html`, `universe-intro` en este teléfono); se quita al tocarlo y no sale con "Reducir movimiento". Pedido del usuario: una portada que dé ganas de abrir la app.
 - Con "Reducir movimiento" del iPhone nada se sacude ni se desliza solo (las pantallas aparecen con un fundido) y el deslizar desde la orilla sigue funcionando.
 - En los juegos, después de contestar, "Siguiente" queda siempre en el mismo lugar abajo.
