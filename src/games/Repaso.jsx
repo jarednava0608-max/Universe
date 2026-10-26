@@ -76,13 +76,16 @@ function VerseStep({ verse, mode: startMode, entries, onDone }) {
   const [say] = useState(() => (mode === 'dice' ? sayOptions(verse, entries) : null))
   const [where] = useState(() => (mode === 'donde' ? whereOptions(verse, entries) : null))
   const m = mode === 'dice' && !say ? 'escribir' : mode === 'donde' && !where ? 'escribir' : mode
+  // Al acertar la opción, hay que escribirla (la cita o el texto), no solo reconocerla.
+  const [picked, setPicked] = useState(null) // null = aún eligiendo; true/false = si acertó a la primera
+  if (picked != null) return <TypeIt verse={verse} mode={m} firstTry={picked} onDone={onDone} />
   if (m === 'donde') {
     return (
       <Choice
         ask={<><p className="hint">¿Dónde está?</p><p className="verse">{verse.fields.texto}</p></>}
         options={where.options}
         answer={where.answer}
-        onDone={onDone}
+        onDone={setPicked}
       />
     )
   }
@@ -94,13 +97,59 @@ function VerseStep({ verse, mode: startMode, entries, onDone }) {
         answer={say.answer}
         long
         hint={`Empieza: «${firstWords(verse.fields.texto, 2)}»`}
-        onDone={onDone}
+        onDone={setPicked}
       >
         <p className="verse small">{verse.fields.texto}</p>
       </Choice>
     )
   }
   return <WriteIt key={m} verse={verse} learn={m === 'aprender'} onDone={onDone} />
+}
+
+// Después de elegir bien: escribir la cita (¿Dónde está?) o el texto (¿Qué dice?). Cuenta a la primera
+// solo si la opción y lo escrito salieron bien al primer intento.
+function TypeIt({ verse, mode, firstTry, onDone }) {
+  const [typed, setTyped] = useState('')
+  const [result, setResult] = useState(null)
+  const first = useRef(true)
+  const donde = mode === 'donde'
+  const shown = fullCite(verse.fields.cita) ?? verse.fields.cita
+
+  function check() {
+    const r = donde ? { ok: sameCite(typed, verse.fields.cita) } : (({ words, pct }) => ({ ok: pct >= 90, words, pct }))(compareWords(verse.fields.texto, typed))
+    setResult(r)
+    if (first.current) {
+      first.current = false
+      onDone(firstTry && r.ok)
+    }
+  }
+  if (result?.ok) {
+    return (
+      <>
+        <p className="order-result ok">{donde || result.pct === 100 ? '¡Perfecto!' : `¡Muy bien! ${result.pct} %.`}</p>
+        <p className="quiz-prompt">{shown}</p>
+        <p className="verse small">{verse.fields.texto}</p>
+      </>
+    )
+  }
+  return (
+    <>
+      {donde ? <p className="verse small">{verse.fields.texto}</p> : <p className="quiz-prompt">{shown}</p>}
+      <p className="hint">{donde ? 'Ahora escribe la cita.' : `Ahora escríbelo. Empieza: «${firstWords(verse.fields.texto, 2)}»`}</p>
+      {donde
+        ? <input className="input" value={typed} autoCapitalize="words" autoCorrect="off" onChange={(e) => { setTyped(e.target.value); setResult(null) }} />
+        : <textarea className="input" rows={6} value={typed} onChange={(e) => { setTyped(e.target.value); setResult(null) }} />}
+      {result && !donde && (
+        <>
+          <p className="order-result bad">{result.pct} % del texto.</p>
+          <p className="verse small">{result.words.map((x, i) => <span key={i} className={x.ok ? '' : 'type-bad'}>{x.w} </span>)}</p>
+          <p className="hint">En rojo, lo que faltó o cambió. Sigue escribiendo.</p>
+        </>
+      )}
+      {result && donde && <p className="order-result bad">Esa no es la cita. Inténtalo otra vez.</p>}
+      <button className="primary" disabled={!typed.trim()} onClick={check}>Revisar</button>
+    </>
+  )
 }
 
 // La Atalaya: una idea del artículo y el texto que se leyó para probarla.
