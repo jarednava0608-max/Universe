@@ -54,7 +54,7 @@ export function streak(days, today = todayISO()) {
 //   igual: así no sube dos veces el mismo día ni por atinarle de suerte a algo ya repasado.
 // - Lo que fallas vuelve hoy y baja 2 cajas (un error no borra todo lo que ya sabías).
 // - Con todas las pistas no sube: vuelve mañana.
-// - 'sabe': lo escribió completo de memoria sin opciones; salta a escribirlo (caja 4 o más) aunque no tocara.
+// - 'sabe': eligió bien y escribió el texto completo a la primera; salta a escribirlo de memoria (caja 4 o más).
 // `first` es el día en que se vio por primera vez (para contar las nuevas de hoy).
 export function review(item, knew, today = todayISO()) {
   if (knew === 'sabe') {
@@ -107,7 +107,9 @@ export function mergeProgress(a = {}, b = {}) {
   // Juego de hoy: el día más reciente.
   const juegoHoy = [a.juegoHoy, b.juegoHoy].filter(Boolean).sort((x, y) => (x.day > y.day ? 1 : -1)).at(-1)
   const repaso = [a.repaso, b.repaso].filter(Boolean).sort().at(-1)
-  return { ...b, ...a, days, srs, best, ...(repaso ? { repaso } : {}), ...(juegoHoy ? { juegoHoy } : {}), triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}), ...(constancia ? { constancia } : {}) }
+  // Lo de Practicar de hoy: el del día más reciente.
+  const practica = [a.practica, b.practica].filter(Boolean).sort((x, y) => (x.day > y.day ? 1 : -1)).at(-1)
+  return { ...b, ...a, days, srs, best, ...(repaso ? { repaso } : {}), ...(practica ? { practica } : {}), ...(juegoHoy ? { juegoHoy } : {}), triviaBest: Math.max(a.triviaBest ?? 0, b.triviaBest ?? 0), ...(daily ? { daily } : {}), ...leidos, ...(plan ? { plan } : {}), ...(constancia ? { constancia } : {}) }
 }
 
 // Constancia: `{ start, best, at }`. Días desde `start` (el día en que empezó o volvió a empezar).
