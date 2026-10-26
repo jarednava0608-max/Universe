@@ -8,9 +8,9 @@ import RefLink from '../components/RefLink.jsx'
 
 // Repasar (ver repaso.js): 5 preguntas, una a la vez. Si fallas, la opción se marca y lo vuelves a
 // intentar (cuenta como no sabida y vuelve pronto). Al final, "Otras 5" si queda algo.
-export default function Repaso({ store, onExit }) {
+export default function Repaso({ store, onExit, practice = false }) {
   const [skip] = useState(() => new Set())
-  const [round, setRound] = useState(() => repasoRound(store.entries, store.progress.srs ?? {}))
+  const [round, setRound] = useState(() => repasoRound(store.entries, store.progress.srs ?? {}, { practice }))
   const [i, setI] = useState(0)
   const [good, setGood] = useState(0)
   const [answered, setAnswered] = useState(null) // true/false de la pregunta actual, ya contestada
@@ -29,11 +29,11 @@ export default function Repaso({ store, onExit }) {
     setI(i + 1)
   }
   function more() {
-    setRound(repasoRound(store.entries, store.progress.srs ?? {}, { skip }))
+    setRound(repasoRound(store.entries, store.progress.srs ?? {}, { skip, practice }))
     setI(0)
     setGood(0)
   }
-  const left = !item && round.length ? repasoRound(store.entries, store.progress.srs ?? {}, { skip, rnd: () => 0.9 }).length : 0
+  const left = !item && round.length ? repasoRound(store.entries, store.progress.srs ?? {}, { skip, practice, rnd: () => 0.9 }).length : 0
 
   return (
     <GameScreen title="Repasar" onExit={onExit}>
