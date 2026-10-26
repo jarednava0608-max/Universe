@@ -6,6 +6,8 @@ export const PROGRESS_ID = 'progreso'
 
 // Días que hay que esperar según la "caja" en la que está cada tarjeta o texto.
 export const INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60]
+// Desde esta caja el repaso pide escribirlo de memoria, sin opciones (ver verseMode en repaso.js).
+export const WRITE_BOX = 4
 
 export function todayISO(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -52,8 +54,13 @@ export function streak(days, today = todayISO()) {
 //   igual: así no sube dos veces el mismo día ni por atinarle de suerte a algo ya repasado.
 // - Lo que fallas vuelve hoy y baja 2 cajas (un error no borra todo lo que ya sabías).
 // - Con todas las pistas no sube: vuelve mañana.
+// - 'sabe': lo escribió completo de memoria sin opciones; salta a escribirlo (caja 4 o más) aunque no tocara.
 // `first` es el día en que se vio por primera vez (para contar las nuevas de hoy).
 export function review(item, knew, today = todayISO()) {
+  if (knew === 'sabe') {
+    const box = Math.min(Math.max((item?.box ?? 0) + 1, WRITE_BOX), INTERVALS.length - 1)
+    return { box, due: addDays(today, INTERVALS[box]), first: item?.first ?? today }
+  }
   if (knew === true && item && !isDue(item, today)) return item
   const box = item?.box ?? 0
   const next =
