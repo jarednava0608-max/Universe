@@ -183,27 +183,13 @@ export function proofOptions(card, cards, entries, rnd = Math.random) {
 
 // Una ronda: primero los textos que toca repasar, luego hasta 2 nuevos; y de vez en cuando (o si toca)
 // una de La Atalaya. `skip`: lo que ya salió en esta sesión ("Otras 5" no repite).
-export function repasoRound(entries, srs = {}, { rnd = Math.random, today = todayISO(), size = SIZE, skip = new Set(), practice = false } = {}) {
+export function repasoRound(entries, srs = {}, { rnd = Math.random, today = todayISO(), size = SIZE, skip = new Set() } = {}) {
   const fresh = (x) => !srs[x.key] && !skip.has(x.key)
   const due = (list) => list.filter((x) => srs[x.key] && !skip.has(x.key) && isDue(srs[x.key], today)).sort((a, b) => srs[a.key].due.localeCompare(srs[b.key].due))
   const verses = learnSources(entries).map((v) => ({ key: 'v:' + v.id, type: 'verse', verse: v }))
   const proofs = proofCards(entries).map((c) => ({ key: c.id, type: 'proof', card: c }))
   const sources = atalayaSourceCards(entries).map((c) => ({ key: 's:' + c.id, type: 'source', card: c }))
 
-  // Practicar de todos modos: todos sus textos y lo de La Atalaya, primero lo que menos sabe (caja más
-  // baja), un texto y una de La Atalaya alternados.
-  if (practice) {
-    const box = (x) => srs[x.key]?.box ?? -1
-    const order = (list) => list.filter((x) => !skip.has(x.key)).sort((a, b) => box(a) - box(b) || (srs[a.key]?.due ?? '').localeCompare(srs[b.key]?.due ?? ''))
-    const v = order(verses)
-    const a = order([...proofs, ...sources])
-    const out = []
-    while (out.length < size && (v.length || a.length)) {
-      if (v.length) out.push(v.shift())
-      if (out.length < size && a.length) out.push(a.shift())
-    }
-    return out
-  }
   const out = due(verses).slice(0, size)
   for (const v of verses.filter(fresh).slice(0, NEW_PER_ROUND)) if (out.length < size) out.push(v)
 
@@ -213,4 +199,22 @@ export function repasoRound(entries, srs = {}, { rnd = Math.random, today = toda
     out.splice(Math.floor(rnd() * (out.length + 1)), 0, atalaya)
   }
   return out
+}
+
+// Practicar de todos modos: las mismas todo el día (`saved` = { day, keys }, en progreso.practica), para no
+// cambiarlas a cada rato. Hasta 4 textos (primero lo que menos sabe) y una de La Atalaya: la que falló o
+// toca; si no, una nueva. Si hoy aprende otro texto, se agrega.
+export const PRACTICE_VERSES = 4
+export function practiceSet(entries, srs = {}, saved, today = todayISO()) {
+  const box = (x) => srs[x.key]?.box ?? -1
+  const verses = learnSources(entries).map((v) => ({ key: 'v:' + v.id, type: 'verse', verse: v }))
+  const atalaya = [...proofCards(entries).map((c) => ({ key: c.id, type: 'proof', card: c })), ...atalayaSourceCards(entries).map((c) => ({ key: 's:' + c.id, type: 'source', card: c }))]
+  const byKey = new Map([...verses, ...atalaya].map((x) => [x.key, x]))
+  const kept = saved?.day === today ? (saved.keys ?? []).map((k) => byKey.get(k)).filter(Boolean) : []
+  const weakest = (list) => [...list].sort((a, b) => box(a) - box(b) || (srs[a.key]?.due ?? '').localeCompare(srs[b.key]?.due ?? ''))
+  const v = [...kept.filter((x) => x.type === 'verse'), ...weakest(verses.filter((x) => !kept.includes(x)))].slice(0, PRACTICE_VERSES)
+  const a = kept.find((x) => x.type !== 'verse') ??
+    weakest(atalaya.filter((x) => srs[x.key] && isDue(srs[x.key], today)))[0] ?? atalaya.find((x) => !srs[x.key]) ?? weakest(atalaya)[0]
+  const items = a ? [...v.slice(0, 1), a, ...v.slice(1)] : v
+  return { day: today, keys: items.map((x) => x.key), items }
 }

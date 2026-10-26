@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { repasoRound, sayOptions, whereOptions, proofCards, proofOptions, verseMode, firstWords, compareWords, sameCite, fullCite } from './repaso.js'
+import { repasoRound, practiceSet, sayOptions, whereOptions, proofCards, proofOptions, verseMode, firstWords, compareWords, sameCite, fullCite } from './repaso.js'
 import { atalayaSourceCards, atalayaSourceCheck } from './logic.js'
 import { GameScreen, Result } from './ui.jsx'
 import { review, todayISO } from './progress.js'
@@ -10,7 +10,13 @@ import RefLink from '../components/RefLink.jsx'
 // intentar (cuenta como no sabida y vuelve pronto). Al final, "Otras 5" si queda algo.
 export default function Repaso({ store, onExit, practice = false }) {
   const [skip] = useState(() => new Set())
-  const [round, setRound] = useState(() => repasoRound(store.entries, store.progress.srs ?? {}, { practice }))
+  // Practicar: las mismas todo el día (ver practiceSet); se guardan para la próxima vez que entre hoy.
+  const [set] = useState(() => (practice ? practiceSet(store.entries, store.progress.srs ?? {}, store.progress.practica) : null))
+  const [round, setRound] = useState(() => set?.items ?? repasoRound(store.entries, store.progress.srs ?? {}))
+  useEffect(() => {
+    const saved = store.progress.practica
+    if (set && (saved?.day !== set.day || saved.keys?.join() !== set.keys.join())) store.updateProgress((f) => ({ ...f, practica: { day: set.day, keys: set.keys } }))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [i, setI] = useState(0)
   const [good, setGood] = useState(0)
   const [answered, setAnswered] = useState(null) // true/false de la pregunta actual, ya contestada
@@ -29,11 +35,11 @@ export default function Repaso({ store, onExit, practice = false }) {
     setI(i + 1)
   }
   function more() {
-    setRound(repasoRound(store.entries, store.progress.srs ?? {}, { skip, practice }))
+    setRound(repasoRound(store.entries, store.progress.srs ?? {}, { skip }))
     setI(0)
     setGood(0)
   }
-  const left = !item && round.length ? repasoRound(store.entries, store.progress.srs ?? {}, { skip, practice, rnd: () => 0.9 }).length : 0
+  const left = !item && round.length && !practice ? repasoRound(store.entries, store.progress.srs ?? {}, { skip, rnd: () => 0.9 }).length : 0
 
   return (
     <GameScreen title="Repasar" onExit={onExit}>
@@ -78,11 +84,8 @@ function VerseStep({ verse, mode: startMode, entries, onDone }) {
   const m = mode === 'dice' && !say ? 'escribir' : mode === 'donde' && !where ? 'escribir' : mode
   // Al acertar la opción, hay que escribirla (la cita o el texto), no solo reconocerla.
   const [picked, setPicked] = useState(null) // null = aún eligiendo; true/false = si acertó a la primera
-  // "Ya me lo sé": sin opciones, escribirlo completo con cita; si sale, pasa a pedirse siempre así.
-  const [sabe, setSabe] = useState(false)
-  if (sabe) return <WriteIt verse={verse} onDone={(ok) => onDone(ok ? 'sabe' : false)} />
-  if (picked != null) return <TypeIt verse={verse} mode={m} firstTry={picked} onDone={onDone} />
-  const skip = <button className="secondary" onClick={() => setSabe(true)}>Ya me lo sé, escribirlo</button>
+  // Si en ¿Qué dice? elige bien y lo escribe completo a la primera, ya se lo sabe: desde ahí se pide de memoria.
+  if (picked != null) return <TypeIt verse={verse} mode={m} firstTry={picked} onDone={(ok) => onDone(ok && m === 'dice' ? 'sabe' : ok)} />
   if (m === 'donde') {
     return (
       <Choice
@@ -90,7 +93,6 @@ function VerseStep({ verse, mode: startMode, entries, onDone }) {
         options={where.options}
         answer={where.answer}
         onDone={setPicked}
-        after={skip}
       />
     )
   }
@@ -103,7 +105,6 @@ function VerseStep({ verse, mode: startMode, entries, onDone }) {
         long
         hint={`Empieza: «${firstWords(verse.fields.texto, 2)}»`}
         onDone={setPicked}
-        after={skip}
       />
     )
   }
@@ -190,7 +191,7 @@ function SourceStep({ card, entries, onDone }) {
 }
 
 // Opción múltiple: si fallas, esa se marca, sale la pista (si hay) y vuelves a intentar.
-function Choice({ ask, options, answer, long, hint, onDone, after, children }) {
+function Choice({ ask, options, answer, long, hint, onDone, children }) {
   const [wrong, setWrong] = useState(() => new Set())
   const [right, setRight] = useState(false)
   function pick(k) {
@@ -210,7 +211,6 @@ function Choice({ ask, options, answer, long, hint, onDone, after, children }) {
       </div>
       {!right && wrong.size > 0 && hint && <p className="hint center">{hint}</p>}
       {right && children}
-      {!right && wrong.size === 0 && after}
     </div>
   )
 }

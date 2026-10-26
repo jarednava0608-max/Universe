@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { learnSources, verseMode, compareWords, sameCite, sayOptions, whereOptions, fullCite, proofCards, proofOptions, repasoRound, firstWords } from './repaso.js'
+import { learnSources, verseMode, compareWords, sameCite, sayOptions, whereOptions, fullCite, proofCards, proofOptions, repasoRound, practiceSet, firstWords } from './repaso.js'
 import { mulberry } from './logic.js'
 
 const learn = (id, cita, texto, createdAt = 1) => ({ id, kind: 'memoria', createdAt, fields: { cita, texto, aprender: true } })
@@ -89,16 +89,19 @@ describe('Repasar', () => {
   })
 })
 
-describe('repasoRound practicar', () => {
-  it('también La Atalaya, alternada con los textos', () => {
-    const r = repasoRound([JUAN, SALMO, atalaya], { 'v:j': { box: 5, due: '2099-01-01' } }, { practice: true })
-    expect(r.map((x) => x.type)).toEqual(['verse', 'proof', 'verse'])
-    expect(r[0].key).toBe('v:s')
+describe('practiceSet', () => {
+  it('textos (primero lo que menos sabe) y una de La Atalaya', () => {
+    const { items } = practiceSet([JUAN, SALMO, atalaya], { 'v:j': { box: 5, due: '2099-01-01' } }, null, '2026-10-26')
+    expect(items.map((x) => x.key.slice(0, 2))).toEqual(['v:', 'p:', 'v:'])
+    expect(items[0].key).toBe('v:s')
   })
 
-  it('ofrece todos los textos aunque no toquen, primero los que menos sabe', () => {
-    const srs = { 'v:j': { box: 5, due: '2099-01-01' }, 'v:s': { box: 1, due: '2099-01-01' } }
-    const r = repasoRound([JUAN, SALMO], srs, { practice: true })
-    expect(r.map((x) => x.key)).toEqual(['v:s', 'v:j'])
+  it('las mismas todo el día aunque cambie el repaso; al otro día se vuelven a elegir', () => {
+    const first = practiceSet([JUAN, SALMO, atalaya], {}, null, '2026-10-26')
+    const srs = { 'v:s': { box: 6, due: '2099-01-01' } }
+    const saved = { day: first.day, keys: first.keys }
+    expect(practiceSet([JUAN, SALMO, atalaya], srs, saved, '2026-10-26').keys).toEqual(first.keys)
+    expect(practiceSet([JUAN, SALMO, LUCAS, atalaya], srs, saved, '2026-10-26').keys).toEqual([...first.keys, 'v:l'])
+    expect(practiceSet([JUAN, SALMO, atalaya], srs, saved, '2026-10-27').keys[0]).toBe('v:j')
   })
 })
