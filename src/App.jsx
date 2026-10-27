@@ -29,6 +29,7 @@ import { loadBible, useBible } from './lib/nwt.js'
 import { loadDailyTexts } from './lib/dailytexts.js'
 import { loadWatchtower } from './lib/watchtower.js'
 import { loadGuia } from './lib/guia.js'
+import { loadLibro } from './lib/libro.js'
 import { SEEDS, planSeed } from './lib/seeds.js'
 import { parseRef } from './lib/bible.js'
 import { isPubRef } from './lib/pubs.js'
@@ -214,6 +215,7 @@ export default function App() {
     loadDailyTexts()
     loadWatchtower()
     loadGuia()
+    loadLibro()
     requestPersistence().then(setPersisted)
     getMeta('lastExport').then((v) => v && setLastExport(v)).catch(() => {})
   }, [])

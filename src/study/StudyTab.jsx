@@ -16,6 +16,8 @@ import WatchtowerImport from '../components/WatchtowerImport.jsx'
 import { hasWatchtower, watchtowerIssues, useWatchtower } from '../lib/watchtower.js'
 import { hasGuia, guiaRange, useGuia } from '../lib/guia.js'
 import GuiaImport from '../components/GuiaImport.jsx'
+import LibroImport from '../components/LibroImport.jsx'
+import { hasLibro, libroTitles, useLibro } from '../lib/libro.js'
 import SearchAll from './SearchAll.jsx'
 import { normKey, ROOT_ID } from '../lib/model.js'
 import { RefChips } from '../components/RefLink.jsx'
@@ -42,6 +44,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   useDailyTexts()
   useWatchtower()
   useGuia()
+  useLibro()
   const [editing, setEditing] = useState(null) // { entry, isNew }
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
@@ -222,6 +225,10 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           {section === 'reunion' && (hasGuia()
             ? <p className="hint dt-imported">La Guía de actividades de {guiaRange()} está en este teléfono: el programa de cada semana sale solo.</p>
             : <GuiaImport toast={toast} />)}
+          {/* Y el libro del estudio de la congregación, para no pegar el capítulo. */}
+          {section === 'reunion' && (hasLibro()
+            ? <p className="hint dt-imported">{libroTitles().join(' y ')} está en este teléfono: el capítulo del estudio sale solo.</p>
+            : <LibroImport toast={toast} />)}
           {KINDS[section].notes && byKind[section].length > 0 && (
             <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
           )}

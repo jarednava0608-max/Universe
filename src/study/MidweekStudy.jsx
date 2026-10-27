@@ -11,6 +11,8 @@ import MeetingMode from './MeetingMode.jsx'
 import JwLinks from './JwLinks.jsx'
 import GuiaImport from '../components/GuiaImport.jsx'
 import { guiaFor, hasGuia, useGuia } from '../lib/guia.js'
+import { hasLibro, libroFor, useLibro } from '../lib/libro.js'
+import LibroImport from '../components/LibroImport.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { useMeetings } from './meetings.js'
@@ -119,6 +121,13 @@ export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting =
   // Si cambias la fecha sin programa, se pone el de esa semana (si la Guía está en el teléfono).
   useGuia()
   const weekGuia = guiaFor(fields.fecha)
+  // Con el libro del estudio importado (EPUB), el capítulo de "wcg cap. 14" se pone solo.
+  useLibro()
+  const studyPt = partes.find(isStudyPart)
+  const libroText = studyPt ? libroFor(studyPt.titulo + ' ' + studyPt.lineas.map((l) => l.text).join(' ')) : null
+  useEffect(() => {
+    if (libroText && !String(fields.estudio ?? '').trim()) set({ estudio: libroText })
+  }, [libroText]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!String(fields.programa ?? '').trim() && weekGuia) setProgram(weekGuia.texto)
   }, [fields.fecha, weekGuia?.lunes]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -476,7 +485,7 @@ function Part({ pt, time, who, fields, fecha, onAnswer, onSet, onStar, onMarks, 
           </p>
         )
       })}
-      {study && <StudyChapter fields={fields} onSet={onSet} onAnswer={onAnswer} onStar={onStar} />}
+      {study && <StudyChapter fromBook={!!libroText && fields.estudio === libroText} toast={toast} fields={fields} onSet={onSet} onAnswer={onAnswer} onStar={onStar} />}
       {!asks && !(study && studyBlocks(fields).length) && (
         <label className="at-answer">
           <span className="at-answer-label">Mis notas</span>
@@ -494,16 +503,20 @@ function Part({ pt, time, who, fields, fecha, onAnswer, onSet, onStar, onMarks, 
 
 // El estudio bíblico de la congregación: pegas el capítulo del libro y lo contestas pregunta por
 // pregunta (el párrafo se abre al tocarlo para no llenar la pantalla).
-function StudyChapter({ fields, onSet, onAnswer, onStar }) {
+function StudyChapter({ fields, fromBook, toast, onSet, onAnswer, onStar }) {
   const chap = studyChapter(fields)
   const blocks = chap.bloques
   const [editing, setEditing] = useState(!blocks.length)
   const done = blocks.filter((b) => answerOf(fields, 'e:' + b.key).trim()).length
+  // El capítulo llegó solo del libro: se muestra ya listo, sin el cuadro de pegar.
+  useEffect(() => { if (fromBook) setEditing(false) }, [fromBook])
+  useLibro()
   return (
     <div className="mw-study">
       {editing ? (
         <div className="sfield">
           <span className="sfield-label">Pega el capítulo para contestarlo pregunta por pregunta</span>
+          {!hasLibro() && <LibroImport toast={toast} compact />}
           <AutoText value={fields.estudio ?? ''} placeholder="En JW Library abre el libro del estudio, copia el capítulo completo con sus preguntas y pégalo aquí" onChange={(v) => onSet({ estudio: v })} minRows={4} />
           {String(fields.estudio ?? '').trim() && !blocks.length && (
             <p className="hint warn">No encontré las preguntas. Copia el capítulo completo, con las preguntas del final.</p>
