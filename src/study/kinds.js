@@ -383,32 +383,14 @@ export function dailyVerse(texto) {
   return m ? m[0] : line
 }
 
-// "Copiar para analizar": el texto con las reglas del Método Aha que el usuario afinó en su chat (plan para
-// enseñárselo al señor Eduardo, como los ejemplos de Gemini; todo en public/metodo-aha.md, publicado en METODO_URL).
-// Van en cada copia para que cualquier chat nuevo lo haga igual; si el método cambia, se cambia aquí.
+// "Copiar para analizar": una línea y el texto. El método Aha vive en la skill estudio-texto-diario
+// (.claude/skills); public/metodo-aha.md (METODO_URL) queda como respaldo para chats sin la skill.
 export const METODO_URL = 'https://universe-tau-flax.vercel.app/metodo-aha.md'
 
 export function dailyStudyPrompt(fields) {
   const texto = String(fields?.texto ?? '').trim()
   const fecha = formatDate(fields?.fecha)
-  return [
-    `Quiero estudiar el texto diario${fecha ? ` del ${fecha}` : ''} contigo. Ya lo leí. Prepáralo como un plan para enseñárselo al señor Eduardo, con "Aha! moments". Si puedes, lee primero el método completo con los ejemplos que me gustan: ${METODO_URL}. Hazlo así:`,
-    '',
-    '1. Elige tú el enfoque, sin preguntarme: lo que contesta la pregunta del párrafo de La Atalaya que se cita al final.',
-    '2. Empieza con "¡Perfecto! Vamos con el texto diario…" y "Para tenerlo fresco, el texto dice: …". Luego, en 2 oraciones, la idea falsa que alguien sincero cree sin decirlo, y "Vamos a usar la lógica humana para destruir esa mentira".',
-    '3. El plan: 1. El Gancho, 2. La Extracción, 3. El Golpe Lógico. Escribe lo que digo yo como Tú: "…" y lo que él contesta como (Él probablemente dirá: "…"). Cierra con Tú concluyes: "¡Exacto! … ¿verdad que…?" y Resumen para ti. Unas 300 palabras por aha.',
-    '4. Un aha a la vez. Si el texto tiene dos ideas con focos distintos, haz Parte A y Parte B, cada una completa y separada, sin mezclar imágenes.',
-    '5. El Gancho es una escena cálida de la vida diaria de él, con alguien que quiere (un amigo, su papá, su familia), que se pueda imaginar. La respuesta es tan obvia que da risa, y al lado va una opción absurda. Por ejemplo: "Seguro conoce a alguien que es igualito a su papá: se ríe igual, camina igual. ¿El papá se sentó a decirle: te tienes que reír así?" (Él: "¡No! Se le pegó de tanto estar con él"). Nada de trámites, oficinas ni objetos, y no copies la imagen del texto con otras cosas.',
-    '6. La Extracción: "Por favor, lea…" y preguntas cuya respuesta se copia tal cual del texto, diciendo qué tipo de palabra buscar sin darla ("Fíjese en la cantidad: ¿cuántas?"). Sin huecos "___". La última, "la prueba de fuego".',
-    '7. El Golpe Lógico pone su respuesta del gancho frente a la palabra del texto y deja que él saque la conclusión. Termina en lo que Jehová o Jesús hace o siente por él: un regalo, no una tarea.',
-    '8. Si una palabra puede asustar (temor, obedecer), acláralo con otra pregunta lógica. Si la conclusión queda en el aire, aterrízala con un "Aha!" extra.',
-    '9. Con el versículo: quién habla, dónde y a quién, y el versículo de antes o de después cuando ayude.',
-    '10. Apóyate en wol.jw.org (notas de estudio, Perspicacia, La Atalaya) y dime de dónde sacas lo que no está en el texto. No inventes citas ni des significado simbólico que las publicaciones no dan; si no pudiste abrir algo, dime qué confirmar en mi Biblia.',
-    '',
-    'El texto:',
-    '',
-    texto,
-  ].join('\n')
+  return [`Estudiemos el texto diario${fecha ? ` del ${fecha}` : ''} (skill estudio-texto-diario). El texto:`, '', texto].join('\n')
 }
 
 // Lo de hoy, hecho: tocaste Listo después de estudiarlo con Claude (fields.estudiado), o una entrada de
