@@ -1,6 +1,6 @@
 # Método Aha (estudiar y enseñar con preguntas)
 
-Lo que el usuario fue afinando en su chat (oct 2026) para que un texto "llegue al corazón". Es lo que copia **"Estudiarlo con Claude"** (`dailyStudyPrompt` en `src/study/kinds.js`); si el método cambia, se cambian los dos. Los ejemplos de Gemini de abajo son el modelo: el tamaño, el tono y la forma deben quedar iguales.
+Lo que el usuario fue afinando en su chat (oct 2026) para que un texto "llegue al corazón". Respaldo del método para chats sin la skill `estudio-texto-diario` (`.claude/skills`); si el método cambia, se cambia en los dos. Los ejemplos de Gemini de abajo son el modelo: el tamaño, el tono y la forma deben quedar iguales.
 
 ## La receta
 Un plan para enseñárselo al **señor Eduardo** (así le funciona mejor que si le hablan a él):

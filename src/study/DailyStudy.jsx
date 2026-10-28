@@ -12,8 +12,7 @@ import { dailyTextFor, hasDailyTexts, useDailyTexts } from '../lib/dailytexts.js
 
 const filled = (v) => !!String(v ?? '').trim()
 
-// El Texto diario: leerlo y estudiarlo en el chat con Claude ("Estudiarlo con Claude" copia el texto con
-// el método del usuario, ver dailyStudyPrompt). El usuario cambió las preguntas de la app (Jehová, Lección,
+// El Texto diario: leerlo y estudiarlo en el chat con Claude ("Copiar para analizar" copia el texto; el método está en la skill estudio-texto-diario). El usuario cambió las preguntas de la app (Jehová, Lección,
 // Hoy, Recordar) por ese estudio guiado; "Listo" lo marca hecho (fields.estudiado). Se guarda sola.
 export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = [], toast, onSave, onLearn, onDelete, onClose }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
@@ -125,7 +124,7 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
               </button>
             )}
             <div className="action-stack">
-              <button className="primary icon-left" onClick={copyForClaude}><Icon d={ICONS.pegar} size={18} /> Estudiarlo con Claude</button>
+              <button className="primary icon-left" onClick={copyForClaude}><Icon d={ICONS.pegar} size={18} /> Copiar para analizar</button>
               <button className="secondary" onClick={finish}>{fields.estudiado ? 'Listo' : 'Ya lo estudié'}</button>
             </div>
           </>

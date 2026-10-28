@@ -104,13 +104,9 @@ describe('Notas', async () => {
 })
 
 describe('Texto diario', () => {
-  it('Estudiarlo con Claude copia el método y el texto', () => {
+  it('Copiar para analizar copia una línea y el texto', () => {
     const p = dailyStudyPrompt({ fecha: '2026-10-19', texto: 'Lunes 19 de octubre\nCuando des un banquete (Luc. 14:13, 14).' })
-    expect(p).toContain('señor Eduardo')
-    expect(p).toContain('El Gancho, 2. La Extracción, 3. El Golpe Lógico')
-    expect(p).toContain('Un aha a la vez')
-    expect(p).not.toContain('superintendente')
-    expect(p).toContain('https://universe-tau-flax.vercel.app/metodo-aha.md')
+    expect(p).toContain('estudio-texto-diario')
     expect(p.endsWith('Cuando des un banquete (Luc. 14:13, 14).')).toBe(true)
   })
   it('toma solo el versículo con su cita', () => {

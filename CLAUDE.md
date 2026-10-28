@@ -24,7 +24,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 - `docs/estilo.md`: leer antes de tocar estilos, CSS o interfaz.
 - `docs/mapa.md`: Mapa, menú, Por escarbar.
 - `docs/estudio.md`: Hoy y apartados de Estudio, Buscar en todo.
-- `public/metodo-aha.md`: Método Aha (lo que copia "Estudiarlo con Claude") y los ejemplos modelo; publicado en https://universe-tau-flax.vercel.app/metodo-aha.md para que lo lean los chats.
+- `public/metodo-aha.md`: Método Aha (respaldo de las skills `estudio-texto-diario` y `reunion-entre-semana` en `.claude/skills`) y los ejemplos modelo; publicado en https://universe-tau-flax.vercel.app/metodo-aha.md para que lo lean los chats.
 - `docs/juegos.md`: Juegos, repaso, avisos de Constancia.
 - `docs/biblia.md`: citas tocables, Mi Biblia, lector, Publicaciones.
 - `docs/paquetes.md`: paquetes `SEEDS`, regla del mapa.

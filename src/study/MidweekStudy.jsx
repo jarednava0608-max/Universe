@@ -404,7 +404,7 @@ export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting =
               <button className="secondary icon-left" onClick={async () => {
                 try { await navigator.clipboard.writeText(entryForClaude({ ...base.current, fields })); toast('Copiado. Pégalo en tu chat con Claude.') } catch { toast('No se pudo copiar.') }
               }}>
-                <Icon d={ICONS.pegar} size={18} /> Copiar para Claude
+                <Icon d={ICONS.pegar} size={18} /> Copiar para analizar
               </button>
               <button className="secondary icon-left" onClick={() => go('conceptos')}>
                 <Icon d={ICONS.nodo} size={18} /> Conceptos para el mapa{fields.conceptos?.length ? ` (${fields.conceptos.length})` : ''}
