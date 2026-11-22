@@ -156,12 +156,19 @@ export default function App() {
   }, [])
 
   // Paquetes de nodos pedidos por el usuario (src/lib/seeds.js): una sola vez por teléfono.
+  // Con sesión espera a bajar la nube: si la cuenta ya tenía datos, los paquetes ya se aplicaron en otro
+  // dispositivo y no se vuelven a crear (se pisarían tus cambios y se duplicarían versículos).
   useEffect(() => {
-    if (!store.ready || seedsRunning) return
+    if (!store.ready || !sync.settled || seedsRunning) return
     seedsRunning = true
     ;(async () => {
+      const fromCloud = await getMeta('cloudHadData').catch(() => null)
       for (const [i, seed] of SEEDS.entries()) {
         if (await getMeta('seed:' + seed.id)) continue
+        if (fromCloud) {
+          await setMeta('seed:' + seed.id, Date.now())
+          continue
+        }
         try {
           // Si más adelante viene un "mapa en blanco" que este teléfono aún no aplica (un teléfono nuevo),
           // los nodos de este paquete no se crean: se borrarían igual.
@@ -206,7 +213,7 @@ export default function App() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.ready])
+  }, [store.ready, sync.settled])
 
   useBible()
   useEffect(() => {

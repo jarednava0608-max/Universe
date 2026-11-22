@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { forgetUser, pendingCount, syncOnce } from './sync.js'
+import { isMemoryOnly } from './db.js'
+import { syncDailyTexts, useDailyTexts } from './dailytexts.js'
 
 const isNetworkError = (e) => /load failed|failed to fetch|networkerror|network request failed|network connection was lost/i.test(e?.message || String(e))
 
@@ -10,12 +12,15 @@ export function useSync(store) {
   const [session, setSession] = useState(null)
   const [checked, setChecked] = useState(false) // ya se sabe si hay sesión o no
   const [status, setStatus] = useState({ state: 'off', lastSync: null, pending: 0, error: '' })
+  // Ya se puede decidir qué crear de ejemplo: sin sesión, o después de bajar lo de la nube la primera vez.
+  const [settled, setSettled] = useState(false)
   const running = useRef(false)
   const again = useRef(false)
   const retry = useRef(null)
   const runRef = useRef(null)
   const userId = session?.user?.id
   const { mergeRemote, ready, rev } = store
+  const dailyVersion = useDailyTexts()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -43,7 +48,10 @@ export function useSync(store) {
         setStatus((s) => ({ ...s, state: 'syncing' }))
         const { change, pulled } = await syncOnce(supabase, userId)
         if (pulled) mergeRemote(change)
+        // Textos diarios del EPUB: aparte, para que un fallo aquí no detenga lo demás.
+        await syncDailyTexts(supabase, userId).catch((e) => console.warn('Textos diarios en la nube:', e))
         setStatus({ state: 'ok', lastSync: Date.now(), pending: await pendingCount(), error: '' })
+        setSettled(true)
       } while (again.current)
     } catch (e) {
       // "Load failed" (Safari) / "Failed to fetch": el teléfono no alcanzó la nube (señal débil, cambio de red).
@@ -70,7 +78,9 @@ export function useSync(store) {
   useEffect(() => {
     if (userId && ready) run()
     else if (!userId) setStatus({ state: 'off', lastSync: null, pending: 0, error: '' })
-  }, [userId, ready, run])
+    // Sin sesión se crean ya, salvo si este navegador no guarda nada: ahí se esperan a que entres.
+    if (checked && !userId) isMemoryOnly().then((mem) => !mem && setSettled(true)).catch(() => setSettled(true))
+  }, [userId, ready, run, checked])
 
   // Poco después de cada cambio local.
   useEffect(() => {
@@ -78,6 +88,13 @@ export function useSync(store) {
     const t = setTimeout(run, 1500)
     return () => clearTimeout(t)
   }, [rev, userId, run])
+
+  // Al importar el EPUB del texto diario: subirlo a la cuenta.
+  useEffect(() => {
+    if (!dailyVersion || !userId) return
+    const t = setTimeout(run, 1500)
+    return () => clearTimeout(t)
+  }, [dailyVersion, userId, run])
 
   // Al volver a la app o recuperar internet.
   useEffect(() => {
@@ -99,5 +116,5 @@ export function useSync(store) {
     await supabase.auth.signOut()
   }
 
-  return { session, checked, status, syncNow: run, signIn, signUp, signOut, changePassword }
+  return { session, checked, settled, status, syncNow: run, signIn, signUp, signOut, changePassword }
 }

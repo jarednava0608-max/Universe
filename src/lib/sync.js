@@ -111,6 +111,7 @@ async function pull(client, userId) {
   const resolved = { nodes: [], edges: [], entries: [] }
   const marks = {}
   let progressToPush = null
+  let seen = 0
 
   for (const kind of KINDS) {
     const key = `lastPull:${userId}:${kind}`
@@ -123,6 +124,7 @@ async function pull(client, userId) {
       if (since) q = q.gt('server_updated_at', since)
       const { data, error } = await q
       if (error) throw error
+      seen += data.filter((r) => !r.deleted).length
       for (const row of data) {
         // El progreso (racha y repasos) se combina en vez de pisarse entre dispositivos.
         if (kind === 'entries' && row.id === PROGRESS_ID && !row.deleted) {
@@ -141,8 +143,8 @@ async function pull(client, userId) {
         }
         const pending = ob[kind][row.id]
         const remoteT = Number(row.updated_at)
-        // Si aquí hay un cambio pendiente más nuevo, se queda el local (y se subirá).
-        if (pending && pending.t > remoteT) continue
+        // Si aquí hay un cambio pendiente más nuevo (o del mismo instante), se queda el local (y se subirá).
+        if (pending && pending.t >= remoteT) continue
         if (pending) resolved[kind].push([row.id, pending])
         const local = await db.get(kind, row.id)
         if (row.deleted) {
@@ -165,14 +167,16 @@ async function pull(client, userId) {
   if (progressToPush) await db.commit({ putEntries: [{ ...progressToPush, updatedAt: Date.now() }] })
   for (const kind of KINDS) await db.dropOutbox(kind, resolved[kind])
   for (const [k, v] of Object.entries(marks)) if (v) await db.setMeta(k, v)
-  return { change, total }
+  return { change, total, seen }
 }
 
 // Un ciclo completo: (primera vez: marcar todo lo local) → bajar → subir.
 export async function syncOnce(client, userId) {
   const linked = await db.getMeta(`linked:${userId}`)
   if (!linked) await db.markAllDirty()
-  const { change, total } = await pull(client, userId)
+  const { change, total, seen } = await pull(client, userId)
+  // La cuenta ya tenía datos: los paquetes de ejemplo ya se aplicaron en otro dispositivo (ver App.jsx).
+  if (!linked && seen) await db.setMeta('cloudHadData', Date.now())
   const pushed = await push(client, userId)
   if (!linked) await db.setMeta(`linked:${userId}`, Date.now())
   return { change, pulled: total, pushed }

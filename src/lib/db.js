@@ -7,21 +7,65 @@ const DB_NAME = 'universe'
 const DB_VERSION = 2
 
 let dbPromise
+let memoryOnly = false
 function db() {
   if (!dbPromise) {
-    dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(d, oldVersion) {
-        if (oldVersion < 1) {
-          d.createObjectStore('nodes', { keyPath: 'id' })
-          d.createObjectStore('edges', { keyPath: 'id' })
-          d.createObjectStore('meta')
-        }
-        // v2: entradas de la pestaña Estudio (texto diario, reuniones, estudios, reflexiones).
-        if (oldVersion < 2) d.createObjectStore('entries', { keyPath: 'id' })
-      },
-    })
+    dbPromise = (async () => {
+      try {
+        return await openDB(DB_NAME, DB_VERSION, {
+          upgrade(d, oldVersion) {
+            if (oldVersion < 1) {
+              d.createObjectStore('nodes', { keyPath: 'id' })
+              d.createObjectStore('edges', { keyPath: 'id' })
+              d.createObjectStore('meta')
+            }
+            // v2: entradas de la pestaña Estudio (texto diario, reuniones, estudios, reflexiones).
+            if (oldVersion < 2) d.createObjectStore('entries', { keyPath: 'id' })
+          },
+        })
+      } catch {
+        // Navegadores dentro de otras apps (Muse…) o ventanas privadas pueden no dejar usar IndexedDB.
+        // Se sigue en memoria: con sesión, todo se baja de la nube y lo que cambies se sube.
+        memoryOnly = true
+        return memoryDB()
+      }
+    })()
   }
   return dbPromise
+}
+
+// true si este navegador no guarda nada (se usa la memoria mientras la app esté abierta).
+export async function isMemoryOnly() {
+  await db()
+  return memoryOnly
+}
+
+// Lo mínimo de la interfaz de `idb` que usa este archivo, en memoria.
+export function memoryDB() {
+  const keyPath = { nodes: 'id', edges: 'id', entries: 'id', meta: null }
+  const data = Object.fromEntries(Object.keys(keyPath).map((k) => [k, new Map()]))
+  const clone = (v) => (v === undefined ? v : structuredClone(v))
+  const store = (name) => {
+    const m = data[name]
+    return {
+      async get(key) { return clone(m.get(key)) },
+      async getAll() { return [...m.values()].map(clone) },
+      async getAllKeys() { return [...m.keys()] },
+      async put(value, key) { m.set(keyPath[name] ? value[keyPath[name]] : key, clone(value)) },
+      async delete(key) { m.delete(key) },
+      async clear() { m.clear() },
+    }
+  }
+  return {
+    get: (name, key) => store(name).get(key),
+    getAll: (name) => store(name).getAll(),
+    put: (name, value, key) => store(name).put(value, key),
+    delete: (name, key) => store(name).delete(key),
+    transaction(names) {
+      const list = [names].flat()
+      return { objectStore: store, store: store(list[0]), done: Promise.resolve() }
+    },
+  }
 }
 
 export async function loadAll() {

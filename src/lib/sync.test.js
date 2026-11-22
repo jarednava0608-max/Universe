@@ -158,6 +158,34 @@ describe('sincronización', () => {
     expect(cloud.tables.universe_nodes.get(U + '|' + n.id).deleted).toBe(true)
   })
 
+  it('un dispositivo nuevo anota que la cuenta ya tenía datos (para no crear ejemplos encima)', async () => {
+    const a = await device()
+    await a.db.commit({ putNodes: [a.model.makeNode({ title: 'Fe' })] })
+    await a.sync.syncOnce(cloud, U)
+    expect(await a.db.getMeta('cloudHadData')).toBeUndefined() // la nube estaba vacía
+
+    const b = await device()
+    await b.sync.syncOnce(cloud, U)
+    expect(await b.db.getMeta('cloudHadData')).toBeTruthy()
+  })
+
+  it('sin IndexedDB sigue en memoria: baja de la nube y sube los cambios', async () => {
+    const a = await device()
+    await a.db.commit({ putEntries: [{ id: 'e1', kind: 'diario', fields: { texto: 'Juan 17:3' }, createdAt: 1, updatedAt: 100 }] })
+    await a.sync.syncOnce(cloud, U)
+
+    vi.resetModules()
+    globalThis.indexedDB = { open() { throw new DOMException('The operation is insecure.', 'SecurityError') } }
+    const db = await import('./db.js')
+    const sync = await import('./sync.js')
+    expect(await db.isMemoryOnly()).toBe(true)
+    await sync.syncOnce(cloud, U)
+    expect((await db.get('entries', 'e1')).fields.texto).toBe('Juan 17:3')
+    await db.commit({ putEntries: [{ id: 'e2', kind: 'reflexion', fields: { titulo: 'Nota' }, createdAt: 1, updatedAt: 200 }] })
+    await sync.syncOnce(cloud, U)
+    expect(cloud.tables.universe_entries.get(U + '|e2').fields.titulo).toBe('Nota')
+  })
+
   it('sube un borrado y un nodo nuevo en el mismo envío', async () => {
     const a = await device()
     const viejo = a.model.makeNode({ title: 'Viejo' })
