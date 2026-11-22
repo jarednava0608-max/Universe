@@ -1,6 +1,6 @@
 // La Guía de actividades (reunión Vida y Ministerio Cristianos) importada del EPUB que el usuario baja
 // de jw.org (mwb_S_202609.epub): cada número trae unas 8 semanas. Se lee en el teléfono y se guarda
-// solo ahí (IndexedDB, `meta.guias`), igual que La Atalaya (watchtower.js); no va al repositorio.
+// ahí (IndexedDB, `meta.guias`) y, con sesión, en su cuenta (jwCloud.js); no va al repositorio.
 // Cada semana se guarda como texto en el mismo formato que se copia de JW Library (la semana, la
 // lectura, las secciones, "1. Parte", "(10 mins.)", "Respuesta" bajo cada pregunta), así
 // `parseProgram` (midweek.js) no cambia: la semana se pone sola como si la hubieras pegado.
@@ -146,5 +146,5 @@ function addDays(iso, n) {
   return d.toISOString().slice(0, 10)
 }
 
-// Solo para pruebas.
+// Para pruebas y para jwCloud.js (al bajar de la nube).
 export const _setGuia = set

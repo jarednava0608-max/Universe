@@ -1,6 +1,6 @@
 // La Biblia completa (TNM) importada del EPUB que el usuario baja de jw.org: se lee en el teléfono y se
-// guarda solo ahí (IndexedDB, `meta.bible`); no se sube a la nube ni va dentro de la app publicada.
-// En otro teléfono se vuelve a importar el archivo.
+// guarda ahí (IndexedDB, `meta.bible`) y, con sesión, en su cuenta (jwCloud.js), así sale en sus otros
+// dispositivos sin volver a importar el archivo. Nunca va dentro de la app publicada ni en el repositorio.
 import { useSyncExternalStore } from 'react'
 import { unzipSync, strFromU8 } from 'fflate'
 import { getMeta, setMeta, delMeta } from './db.js'
@@ -125,5 +125,5 @@ function clean(html) {
     .replace(/\s+/g, ' ')
 }
 
-// Solo para pruebas.
+// Para pruebas y para jwCloud.js (al bajar de la nube).
 export const _setBible = set

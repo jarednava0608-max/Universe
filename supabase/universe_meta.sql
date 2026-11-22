@@ -1,4 +1,5 @@
--- Datos personales que no son nodos ni entradas (por ahora: los textos diarios del EPUB, `key = 'dailytexts'`).
+-- Lo importado de los EPUB de jw.org (src/lib/jwCloud.js): una fila por parte (`bible/1:1`, `dailytexts/2026-11-22`,
+-- `revistas/…`, `guias/…`) y otra con lo demás (`bible`, `dailytexts`…).
 -- Privados: cada usuario solo ve sus filas (RLS).
 create table if not exists public.universe_meta (
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,

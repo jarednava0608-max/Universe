@@ -1,7 +1,7 @@
 // El texto diario de todo el año, importado del EPUB "Examinemos las Escrituras todos los días" que el
 // usuario baja de jw.org (es26 = 2026): se lee en el teléfono y se guarda ahí (IndexedDB, `meta.dailytexts`).
-// Con sesión también se copia a su cuenta (tabla privada `universe_meta`, `key = 'dailytexts'`) para que salga
-// en cualquier dispositivo donde entre; nunca va dentro de la app publicada ni en el repositorio.
+// Con sesión también se copia a su cuenta (jwCloud.js) para que salga en cualquier dispositivo donde entre;
+// nunca va dentro de la app publicada ni en el repositorio.
 // Cada día se guarda tal como queda al copiarlo de JW Library ("Jueves 1 de enero", el versículo con su
 // cita y el comentario), así el resto de la app (dailyVerse, dailyBody, el Texto diario) no cambia.
 import { useSyncExternalStore } from 'react'
@@ -58,43 +58,6 @@ export async function importDailyTexts(buffer) {
 export async function removeDailyTexts() {
   await delMeta('dailytexts')
   set(null)
-}
-
-// Junta los años de dos copias ({ years, days }); los días del EPUB no cambian, así que basta unirlos.
-export function mergeDailyTexts(a, b) {
-  return {
-    importedAt: Math.max(a?.importedAt ?? 0, b?.importedAt ?? 0) || Date.now(),
-    years: [...new Set([...(a?.years ?? []), ...(b?.years ?? [])])].sort(),
-    days: { ...(a?.days ?? {}), ...(b?.days ?? {}) },
-  }
-}
-
-const sameYears = (a, b) => (a ?? []).join() === (b ?? []).join()
-let syncedFor = null // `${userId}:${version}`: no volver a revisar si nada cambió
-
-// Con sesión: si la nube tiene un año que aquí falta, se baja; si aquí hay uno que la nube no tiene, se sube.
-// Primero solo se piden los años (poco); el texto completo solo cuando hace falta.
-export async function syncDailyTexts(client, userId) {
-  const mark = `${userId}:${version}`
-  if (syncedFor === mark) return
-  const local = (await getMeta('dailytexts')) ?? null
-  const head = await client.from('universe_meta').select('years:value->years').eq('user_id', userId).eq('key', 'dailytexts').maybeSingle()
-  if (head.error) throw head.error
-  const remoteYears = head.data?.years ?? []
-  const localYears = local?.years ?? []
-  let merged = local
-  if (remoteYears.some((y) => !localYears.includes(y))) {
-    const full = await client.from('universe_meta').select('value').eq('user_id', userId).eq('key', 'dailytexts').maybeSingle()
-    if (full.error) throw full.error
-    merged = mergeDailyTexts(local, full.data?.value)
-    await setMeta('dailytexts', merged)
-    set(merged.days, merged.years)
-  }
-  if (merged?.days && !sameYears(merged.years, remoteYears)) {
-    const { error } = await client.from('universe_meta').upsert({ user_id: userId, key: 'dailytexts', value: merged, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' })
-    if (error) throw error
-  }
-  syncedFor = `${userId}:${version}`
 }
 
 const DAY_FILE = /\.xhtml$/
@@ -165,5 +128,5 @@ function clean(html) {
     .trim()
 }
 
-// Solo para pruebas.
+// Para pruebas y para jwCloud.js (al bajar de la nube).
 export const _setDailyTexts = set

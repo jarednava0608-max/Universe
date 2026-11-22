@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { importWatchtower } from '../lib/watchtower.js'
 
 // La Atalaya de estudio de una vez: el usuario baja el número en EPUB desde jw.org y lo elige aquí.
-// Se lee y se guarda solo en este teléfono (no se sube a la nube). Con eso, cada La Atalaya ya trae
+// Se guarda en este teléfono y, con sesión, en la cuenta (jwCloud.js). Con eso, cada La Atalaya ya trae
 // el artículo de su semana sin copiarlo ni pegarlo.
 export default function WatchtowerImport({ toast, onDone, compact = false }) {
   const [busy, setBusy] = useState(false)
@@ -13,7 +13,7 @@ export default function WatchtowerImport({ toast, onDone, compact = false }) {
     setBusy(true)
     try {
       const done = await importWatchtower(await file.arrayBuffer())
-      toast?.(done ? `Listo: ${done.count} artículos de ${done.titulo} ya están en este teléfono.` : 'Ese archivo no parece La Atalaya (edición de estudio) en EPUB.')
+      toast?.(done ? `Listo: ${done.count} artículos de ${done.titulo} ya están guardados.` : 'Ese archivo no parece La Atalaya (edición de estudio) en EPUB.')
       if (done) onDone?.(done)
     } catch (err) {
       toast?.('No se pudo importar: ' + err.message)
@@ -32,7 +32,7 @@ export default function WatchtowerImport({ toast, onDone, compact = false }) {
   return (
     <div className="bh-goal dt-import">
       <p className="bh-goal-title">La Atalaya sin copiar ni pegar</p>
-      <p className="hint">Baja La Atalaya (edición de estudio) en EPUB desde jw.org y elige aquí el archivo. Cada número trae los artículos de varias semanas. Se guarda solo en este teléfono.</p>
+      <p className="hint">Baja La Atalaya (edición de estudio) en EPUB desde jw.org y elige aquí el archivo. Cada número trae los artículos de varias semanas. Si entraste a tu cuenta, sale también en tus otros dispositivos.</p>
       {button}
     </div>
   )

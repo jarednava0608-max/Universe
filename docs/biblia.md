@@ -23,9 +23,9 @@
 - `neighborChapter` (botones y deslizar, cruza libros). Sin capítulo → "Pegar el capítulo" (abre la hoja y vuelve al lector). Siempre visibles, lado a lado sobre los botones de capítulo: "En línea" (`refUrl`) y "JW Library" (`jwLibraryUrl`, jw.org/finder).
 
 ### EPUB (`nwt.js`)
-- La TNM **nunca** va al repositorio, la app publicada ni la nube.
+- La TNM **nunca** va al repositorio ni a la app publicada; sí a la cuenta del usuario (`jwCloud.js`, `universe_meta`).
 - En Leer la Biblia, "Elegir el archivo EPUB" (`nwt_S.epub` de jw.org): `1001061105.xhtml` … `1001061170`, `-splitN`, `chapterC_verseV`; párrafos `sb`, `sl`, `sz`; quita números, notas `*`, títulos de salmos `sw`, letras hebreas `ss`. Probado: 31 062 versículos, 1189 capítulos = `verseCounts.js`.
-- `fflate`; `meta.bible` solo en el teléfono (sin sync ni respaldo; en otro teléfono se elige de nuevo). Toda cita/rango/capítulo sin pegar (`findSavedVerse` `source: 'tnm'`, `savedChapterVerses`, `chapterSaved`); lo guardado a mano va primero.
+- `fflate`; `meta.bible` en el teléfono y, con sesión, en la cuenta por capítulos (`jwCloud.js`; sin respaldo JSON); en otro dispositivo baja sola. Toda cita/rango/capítulo sin pegar (`findSavedVerse` `source: 'tnm'`, `savedChapterVerses`, `chapterSaved`); lo guardado a mano va primero.
 
 ## Publicaciones (`pubs.js`)
 - `PUBLICATIONS` = `[título, símbolos, nombres cortos]` con cap./lección/pág./párr./vol. ("lff lección 12", "it-1 pág. 345"); título solo o nombre corto con mayúscula ("Perspicacia"); libro nuevo sin comillas → agregarlo ahí; títulos entre comillas; Atalaya/¡Despertemos! con número o símbolo ("w23.05 pág. 10").

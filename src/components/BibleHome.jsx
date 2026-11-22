@@ -79,8 +79,8 @@ export default function BibleHome({ backLabel = 'Biblioteca', leidos, plan, onSe
   )
 }
 
-// Toda la TNM de una vez: el usuario baja el EPUB de jw.org y lo elige aquí. Se lee y se guarda solo
-// en este teléfono (no se sube a la nube); en otro teléfono se vuelve a elegir el archivo.
+// Toda la TNM de una vez: el usuario baja el EPUB de jw.org y lo elige aquí. Se guarda
+// en este teléfono y, con sesión, en la cuenta (jwCloud.js) para los otros dispositivos.
 function BibleImport({ toast }) {
   const [busy, setBusy] = useState(false)
   async function pick(e) {
@@ -90,7 +90,7 @@ function BibleImport({ toast }) {
     setBusy(true)
     try {
       const done = await importBible(await file.arrayBuffer())
-      toast?.(done ? `Listo: la Biblia completa está en este teléfono (${done.verses.toLocaleString('es')} versículos).` : 'Ese archivo no parece la Traducción del Nuevo Mundo en EPUB.')
+      toast?.(done ? `Listo: la Biblia completa ya está guardada (${done.verses.toLocaleString('es')} versículos).` : 'Ese archivo no parece la Traducción del Nuevo Mundo en EPUB.')
     } catch (err) {
       toast?.('No se pudo importar: ' + err.message)
     } finally {
@@ -100,7 +100,7 @@ function BibleImport({ toast }) {
   return (
     <div className="bh-goal">
       <p className="bh-goal-title">Toda la Biblia sin pegar capítulos</p>
-      <p className="hint">Baja la Traducción del Nuevo Mundo en EPUB desde jw.org (la Biblia, botón de descargar, EPUB) y elige aquí el archivo. Se guarda solo en este teléfono.</p>
+      <p className="hint">Baja la Traducción del Nuevo Mundo en EPUB desde jw.org (la Biblia, botón de descargar, EPUB) y elige aquí el archivo. Si entraste a tu cuenta, sale también en tus otros dispositivos.</p>
       <label className={'primary as-btn' + (busy ? ' disabled' : '')}>
         {busy ? 'Leyendo la Biblia…' : 'Elegir el archivo EPUB'}
         {/* Sin `accept`: el iPhone deja gris el .epub si se filtra por tipo; el archivo se revisa al leerlo. */}

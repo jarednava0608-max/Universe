@@ -1,6 +1,6 @@
 // La Atalaya (edición de estudio) importada del EPUB que el usuario baja de jw.org (w_S_202608.epub):
-// cada número trae 4 o 5 artículos de estudio. Se lee en el teléfono y se guarda solo ahí (IndexedDB,
-// `meta.revistas`), igual que la Biblia (nwt.js) y los textos diarios; no va a la nube ni al repositorio.
+// cada número trae 4 o 5 artículos de estudio. Se lee en el teléfono y se guarda ahí (IndexedDB,
+// `meta.revistas`) y, con sesión, en su cuenta (jwCloud.js) para sus otros dispositivos; nunca en el repositorio.
 // Cada artículo se guarda como texto en el mismo formato que se pega de JW Library ("1. ¿Pregunta?",
 // "1 Párrafo…", "## Subtítulo", "## ¿Qué responderías?"), así `parseArticle` (atalaya.js) no cambia.
 import { useSyncExternalStore } from 'react'
@@ -262,5 +262,5 @@ function addDays(iso, n) {
   return d.toISOString().slice(0, 10)
 }
 
-// Solo para pruebas.
+// Para pruebas y para jwCloud.js (al bajar de la nube).
 export const _setWatchtower = set

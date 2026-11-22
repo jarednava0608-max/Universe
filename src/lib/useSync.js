@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { forgetUser, pendingCount, syncOnce } from './sync.js'
 import { isMemoryOnly } from './db.js'
-import { syncDailyTexts, useDailyTexts } from './dailytexts.js'
+import { syncJwFiles, useJwVersion } from './jwCloud.js'
 
 const isNetworkError = (e) => /load failed|failed to fetch|networkerror|network request failed|network connection was lost/i.test(e?.message || String(e))
 
@@ -20,7 +20,9 @@ export function useSync(store) {
   const runRef = useRef(null)
   const userId = session?.user?.id
   const { mergeRemote, ready, rev } = store
-  const dailyVersion = useDailyTexts()
+  const jwVersion = useJwVersion()
+  const jwRef = useRef(0)
+  jwRef.current = jwVersion
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -48,8 +50,8 @@ export function useSync(store) {
         setStatus((s) => ({ ...s, state: 'syncing' }))
         const { change, pulled } = await syncOnce(supabase, userId)
         if (pulled) mergeRemote(change)
-        // Textos diarios del EPUB: aparte, para que un fallo aquí no detenga lo demás.
-        await syncDailyTexts(supabase, userId).catch((e) => console.warn('Textos diarios en la nube:', e))
+        // Lo importado de los EPUB (Biblia, textos diarios, Atalaya, Guía): aparte, un fallo aquí no detiene lo demás.
+        await syncJwFiles(supabase, userId, jwRef.current).catch((e) => console.warn('EPUB en la nube:', e))
         setStatus({ state: 'ok', lastSync: Date.now(), pending: await pendingCount(), error: '' })
         setSettled(true)
       } while (again.current)
@@ -89,12 +91,12 @@ export function useSync(store) {
     return () => clearTimeout(t)
   }, [rev, userId, run])
 
-  // Al importar el EPUB del texto diario: subirlo a la cuenta.
+  // Al importar un EPUB (Biblia, textos diarios, Atalaya, Guía): subirlo a la cuenta.
   useEffect(() => {
-    if (!dailyVersion || !userId) return
+    if (!jwVersion || !userId) return
     const t = setTimeout(run, 1500)
     return () => clearTimeout(t)
-  }, [dailyVersion, userId, run])
+  }, [jwVersion, userId, run])
 
   // Al volver a la app o recuperar internet.
   useEffect(() => {
