@@ -24,6 +24,7 @@ export const KINDS = {
     fields: [
       { key: 'fecha', label: 'Fecha', type: 'date', default: today },
       { key: 'texto', label: 'Texto', type: 'text', hint: 'El versículo del día y su cita' },
+      { key: 'estudio', label: 'Lo que estudié', type: 'text' },
       { key: 'contexto', label: 'Contexto', type: 'text' },
       { key: 'jehova', label: 'Qué me dice de Jehová', type: 'text' },
       { key: 'principio', label: 'La lección', type: 'text' },
@@ -388,14 +389,35 @@ export function dailyVerse(texto) {
 export const METODO_URL = 'https://universe-tau-flax.vercel.app/metodo-aha.md'
 
 export function dailyStudyPrompt(fields) {
-  const texto = String(fields?.texto ?? '').trim()
+  const texto = dailySplit(fields?.texto).texto
   const fecha = formatDate(fields?.fecha)
   return [`Estudiemos el texto diario${fecha ? ` del ${fecha}` : ''} (skill estudio-texto-diario). El texto:`, '', texto].join('\n')
 }
 
-// Lo de hoy, hecho: tocaste Listo después de estudiarlo con Claude (fields.estudiado), o una entrada de
-// antes con la lección y qué hago hoy (el método de preguntas en la app, que el usuario cambió por su chat).
-export const dailyMinimum = (f = {}) => !!f.estudiado || ['principio', 'aplicacion'].every((k) => String(f[k] ?? '').trim())
+// Lo que estudiaste en tu chat (Gemini o Claude), pegado con "Pegar lo que estudié" (fields.estudio).
+// Las de octubre lo traen al final del texto, tras "━━━ ESTUDIO (método ¡Aha!) ━━━" (así lo guardaba la
+// skill): se separa para que no salga como parte del comentario.
+const STUDY_SEP = /\n[^\S\n]*━{3,}[^\S\n]*\n[^\S\n]*ESTUDIO\b[^\n]*\n[^\S\n]*━{3,}[^\n]*(\n|$)/
+export function dailySplit(texto) {
+  const s = String(texto ?? '')
+  const m = s.match(STUDY_SEP)
+  return m ? { texto: s.slice(0, m.index).trim(), estudio: s.slice(m.index + m[0].length).trim() } : { texto: s.trim(), estudio: '' }
+}
+export const dailyStudy = (f = {}) => String(f.estudio ?? '').trim() || dailySplit(f.texto).estudio
+
+// ¿Lo copiado es el texto del día (o lo de "Copiar para analizar") y no lo que estudiaste? Así no se guarda
+// el texto como estudio si se te olvidó copiar la respuesta del chat.
+const flat = (s) => foldText(s).replace(/\s+/g, ' ')
+export function sameAsDaily(copied, fields) {
+  const a = flat(copied)
+  const b = flat(dailySplit(fields?.texto).texto)
+  if (a.startsWith('estudiemos el texto diario')) return true
+  return !!b && a.length <= b.length + 80 && (a === b || a.includes(b.slice(0, 120)) || b.includes(a))
+}
+
+// Lo de hoy, hecho: tocaste Listo o pegaste lo que estudiaste en tu chat (fields.estudiado / estudio), o una
+// entrada de antes con la lección y qué hago hoy (el método de preguntas en la app, que el usuario cambió por su chat).
+export const dailyMinimum = (f = {}) => !!f.estudiado || !!String(f.estudio ?? '').trim() || ['principio', 'aplicacion'].every((k) => String(f[k] ?? '').trim())
 
 
 
@@ -428,7 +450,7 @@ export function dailyChapter(texto) {
 }
 
 // ¿Ya analizaste este texto diario? (algo más que pegar el texto).
-export const dailyAnalyzed = (f = {}) => !!f.estudiado || ['contexto', 'jehova', 'principio', 'relato', 'aplicacion', 'resumen', 'notas'].some((k) => String(f[k] ?? '').trim())
+export const dailyAnalyzed = (f = {}) => !!f.estudiado || ['estudio', 'contexto', 'jehova', 'principio', 'relato', 'aplicacion', 'resumen', 'notas'].some((k) => String(f[k] ?? '').trim())
 
 // El texto diario de esa fecha en wol.jw.org ("2026-10-04" → .../dt/r4/lp-s/2026/10/4).
 export function dailyTextUrl(fecha) {

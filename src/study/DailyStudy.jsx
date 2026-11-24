@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
-import { dailyVerse, dailyBody, dailyTextUrl, dailyTextAppUrl, dailyStudyPrompt, otherDayText } from './kinds.js'
+import { dailyVerse, dailyBody, dailyTextUrl, dailyTextAppUrl, dailyStudyPrompt, otherDayText, dailySplit, dailyStudy, sameAsDaily } from './kinds.js'
+import { renderNote } from '../lib/markdown.js'
 import { findAllRefs } from '../lib/verses.js'
 import { findRefs } from '../lib/bible.js'
 import { isLearning } from '../lib/verseSave.js'
@@ -12,14 +13,18 @@ import { dailyTextFor, hasDailyTexts, useDailyTexts } from '../lib/dailytexts.js
 
 const filled = (v) => !!String(v ?? '').trim()
 
-// El Texto diario: leerlo y estudiarlo en el chat con Claude ("Copiar para analizar" copia el texto; el método está en la skill estudio-texto-diario). El usuario cambió las preguntas de la app (Jehová, Lección,
-// Hoy, Recordar) por ese estudio guiado; "Listo" lo marca hecho (fields.estudiado). Se guarda sola.
+// El Texto diario: leerlo y estudiarlo en su chat (Gemini o Claude; "Copiar para analizar" copia el texto, el método
+// está en la skill estudio-texto-diario). El usuario cambió las preguntas de la app (Jehová, Lección, Hoy, Recordar)
+// por ese estudio guiado. "Pegar lo que estudié" guarda lo del chat (fields.estudio) y lo marca hecho, como "Listo"
+// (fields.estudiado). Se guarda sola.
 export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = [], toast, onSave, onLearn, onDelete, onClose }) {
   const [fields, setFields] = useState(() => structuredClone(entry.fields))
   const base = useRef(entry)
   const saved = useRef(JSON.stringify(entry.fields))
   const exists = useRef(!isNew)
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
+  // El cuadro para pegar o cambiar lo que estudiaste (si el iPhone no deja leer lo copiado, o al tocar Cambiar).
+  const [studyBox, setStudyBox] = useState(false)
   // Con el folleto del año importado, el texto de esa fecha se pone solo (también si cambias la fecha).
   useDailyTexts()
   const imported = dailyTextFor(fields.fecha)
@@ -67,10 +72,38 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
   async function copyForClaude() {
     try {
       await navigator.clipboard.writeText(dailyStudyPrompt(fields))
-      toast('Copiado. Pégalo en tu chat con Claude.')
+      toast('Copiado. Pégalo en tu chat.')
     } catch {
       toast('No se pudo copiar.')
     }
+  }
+  // Lo que estudiaron en el chat, de un toque (iOS pide permiso con "Pegar"); si no deja, sale el cuadro.
+  async function pasteStudy() {
+    let t = ''
+    try {
+      t = (await navigator.clipboard.readText()).trim()
+    } catch {
+      return setStudyBox(true)
+    }
+    if (!t) return toast('No hay nada copiado. Copia en tu chat lo que estudiaron.')
+    if (sameAsDaily(t, fields)) return toast('Eso es el texto del día. Copia en tu chat lo que estudiaron.')
+    const f = { ...fields, estudio: t, estudiado: true }
+    setFields(f)
+    await flush(f)
+    toast('Guardado lo que estudiaste.')
+  }
+  async function copyStudy() {
+    try {
+      await navigator.clipboard.writeText(study)
+      toast('Copiado lo que estudiaste.')
+    } catch {
+      toast('No se pudo copiar.')
+    }
+  }
+  // Cambiarlo: las de antes lo traen dentro del texto; se pasa a su campo para poder editarlo.
+  function editStudy() {
+    if (!filled(fields.estudio)) set({ estudio: study })
+    setStudyBox(true)
   }
   async function finish() {
     const f = { ...fields, estudiado: true }
@@ -79,9 +112,13 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
     toast('Lo de hoy, listo.')
     onClose()
   }
-  const verse = dailyVerse(fields.texto)
+  // Lo que estudiaste (en su campo o, en las de antes, al final del texto) y el texto sin eso.
+  const study = dailyStudy(fields)
+  const plain = dailySplit(fields.texto).texto
+  const studyHtml = useMemo(() => (study ? renderNote(study.replace(/^[^\S\n]*━{3,}[^\S\n]*$/gm, '\n---\n'), () => null) : ''), [study])
+  const verse = dailyVerse(plain)
   // El comentario: lo pegado sin la fecha ni el versículo de arriba.
-  const comment = dailyBody(fields.texto).replace(verse, '').trim()
+  const comment = dailyBody(plain).replace(verse, '').trim()
   // "Aprender este texto": el versículo entra a Repasar (el usuario elige; nada entra solo).
   const cita = findRefs(verse).at(-1) ?? ''
   const learning = !!cita && isLearning(entries, cita)
@@ -123,9 +160,25 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
                 {learning ? 'Ya estás aprendiendo este texto' : 'Aprender este texto'}
               </button>
             )}
+            {studyBox ? (
+              <label className="at-answer dt-study">
+                <span className="at-answer-label">Lo que estudié</span>
+                <AutoText value={fields.estudio ?? ''} placeholder="Mantén presionado aquí y toca Pegar" onChange={(v) => set({ estudio: v, estudiado: fields.estudiado || filled(v) })} minRows={4} />
+              </label>
+            ) : study && (
+              <section className="dt-study">
+                <h2 className="at-h">Lo que estudié</h2>
+                <div className="md" dangerouslySetInnerHTML={{ __html: studyHtml }} />
+                <div className="dt-links">
+                  <button className="dt-link" onClick={copyStudy}>Copiar</button>
+                  <button className="dt-link" onClick={editStudy}>Cambiar</button>
+                </div>
+              </section>
+            )}
             <div className="action-stack">
-              <button className="primary icon-left" onClick={copyForClaude}><Icon d={ICONS.pegar} size={18} /> Copiar para analizar</button>
-              <button className="secondary" onClick={finish}>{fields.estudiado ? 'Listo' : 'Ya lo estudié'}</button>
+              {!study && <button className="primary icon-left" onClick={copyForClaude}><Icon d={ICONS.pegar} size={18} /> Copiar para analizar</button>}
+              {!study && !studyBox && <button className="secondary" onClick={pasteStudy}>Pegar lo que estudié</button>}
+              <button className={study ? 'primary' : 'secondary'} onClick={finish}>{fields.estudiado || study ? 'Listo' : 'Ya lo estudié'}</button>
             </div>
           </>
         )}

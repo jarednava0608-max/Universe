@@ -156,39 +156,33 @@ Con eso queda estudiado todo el texto de hoy, el versículo y el comentario. ¿L
 
 ## 6. Guardarlo en Universe
 
-Se guarda TAL CUAL (no resumen): ganchos usados, preguntas, sus respuestas textuales ("Mi respuesta:") y tus respuestas/¡Aha!. Solo los ganchos que sí se usaron. Se agrega DEBAJO del texto original en el campo `texto` (sin borrar nada) y se marca `estudiado: true`:
+Se guarda TAL CUAL (no resumen): ganchos usados, preguntas, sus respuestas textuales ("Mi respuesta:") y tus respuestas/¡Aha!. Solo los ganchos que sí se usaron. Va en el campo `estudio` (el mismo que llena "Pegar lo que estudié" en la app; sale abajo del texto como "Lo que estudié"), sin tocar `texto`, y se marca `estudiado: true`:
 
 ```sql
 update universe_entries
-set fields = jsonb_set(fields, '{texto}', to_jsonb((fields->>'texto') || $$
+set fields = fields || jsonb_build_object('estudiado', true, 'estudio', $$PRIMER AHA — <cita>: <título del ejemplo>
 
-━━━━━━━━━━━━━━━━
-ESTUDIO (método ¡Aha!)
-━━━━━━━━━━━━━━━━
-
-PRIMER AHA — <cita>: <título del ejemplo>
-
-1. El Gancho
+**1. El Gancho**
 Pregunta: ...
 Mi respuesta: ...
 Respuesta: ...
 
-2. La Extracción
+**2. La Extracción**
 Pregunta: ...
 Mi respuesta: ...
 
-3. El Golpe Lógico (¡Aha!)
+**3. El Golpe Lógico (¡Aha!)**
 ...
 Pregunta: ...
 Mi respuesta: ...
 
-━━━━━━━━━━━━━━━━
+---
 
 SEGUNDO AHA — Comentario: <título>
-...$$)) || jsonb_build_object('estudiado', true),
+...$$),
 updated_at = (extract(epoch from now())*1000)::bigint
 where id = '<id de la entrada>'
-returning id, length(fields->>'texto') as largo;
+returning id, length(fields->>'estudio') as largo;
 ```
 
 - Usa `$$...$$` para el texto (asegúrate de que no contenga `$$`).

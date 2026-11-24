@@ -1414,6 +1414,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .dt-more + .dt-link { margin-top: -12px; }
 .dt-comment { margin: 0 0 4px; color: var(--text-body); font-size: 17px; line-height: 1.55; white-space: pre-wrap; }
 .dt-link { display: flex; align-items: center; min-height: 44px; color: var(--link); text-decoration: none; font-size: 15px; }
+/* Lo que estudiaste en tu chat, pegado debajo del texto. */
+.dt-study { display: block; margin: 24px 0 8px; }
+.dt-study .md { margin: 0 0 4px; }
 
 /* Campo con botón para borrarlo de un toque (×) */
 .input-wrap { position: relative; display: block; }

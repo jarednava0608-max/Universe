@@ -219,3 +219,29 @@ describe('otherDayText', () => {
     expect(otherDayText('Texto (Sal. 16:8).', TUE)).toBeNull()
   })
 })
+
+import { dailySplit, dailyStudy, sameAsDaily } from './kinds.js'
+describe('Lo que estudié (texto diario)', () => {
+  const texto = 'No calumnia con su lengua (Sal. 15:3).\n\nEl salmista dice que el que agrada a Jehová no habla mal de otros (Sal. 15:1). w25.03 20 párr. 1'
+  it('separa el estudio que la skill pegaba al final del texto', () => {
+    const viejo = `${texto}\n\n━━━━━━━━━━━━━━━━\nESTUDIO (método ¡Aha!)\n━━━━━━━━━━━━━━━━\n\nPRIMER AHA — Sal. 15:3: El chisme\n\n1. El Gancho`
+    expect(dailySplit(viejo)).toEqual({ texto, estudio: 'PRIMER AHA — Sal. 15:3: El chisme\n\n1. El Gancho' })
+    expect(dailyStudy({ texto: viejo })).toBe('PRIMER AHA — Sal. 15:3: El chisme\n\n1. El Gancho')
+    expect(dailySplit(texto)).toEqual({ texto, estudio: '' })
+  })
+  it('lo pegado en su campo gana', () => {
+    expect(dailyStudy({ texto, estudio: '  Mi estudio con Gemini ' })).toBe('Mi estudio con Gemini')
+    expect(dailyStudy({ texto })).toBe('')
+  })
+  it('no guarda el texto del día como estudio', () => {
+    expect(sameAsDaily(texto, { texto })).toBe(true)
+    expect(sameAsDaily(dailyStudyPrompt({ texto, fecha: '2026-11-24' }), { texto })).toBe(true)
+    expect(sameAsDaily('Sábado 24 de noviembre\n' + texto, { texto })).toBe(true)
+    expect(sameAsDaily('**1. El Gancho**\nImagínate que tu amigo te cuenta un chisme de otro hermano...\nMi respuesta: que no lo repito', { texto })).toBe(false)
+  })
+  it('pegarlo cuenta como estudiado', () => {
+    expect(dailyMinimum({ estudio: 'Lo que vimos' })).toBe(true)
+    expect(dailyAnalyzed({ estudio: 'Lo que vimos' })).toBe(true)
+    expect(dailyMinimum({ estudio: '  ' })).toBe(false)
+  })
+})
