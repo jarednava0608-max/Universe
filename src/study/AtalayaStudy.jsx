@@ -6,6 +6,7 @@ import { findAllRefs, openRef } from '../lib/verses.js'
 import { entryForClaude, formatDate } from './kinds.js'
 import { STEPS, parseArticle, articleTitle, atalayaTitle, answerOf, withAnswer, reviewAnswer, withReview, words, wordRefs, keyPhrases, firstUnanswered, paragraphUrl, meetingItems } from './atalaya.js'
 import MeetingMode from './MeetingMode.jsx'
+import { isNight } from './today.js'
 import JwLinks from './JwLinks.jsx'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
@@ -19,6 +20,7 @@ import WatchtowerImport from '../components/WatchtowerImport.jsx'
 // subrayando solo palabras clave, y al final el repaso. Se guarda sola y al volver
 // sigue en el paso y la pregunta donde te quedaste.
 export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting = false, entry, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToForm }) {
+  const [night] = useState(() => isNight()) // de noche, como lo demás de Estudio (styles.css)
   // Con La Atalaya importada (EPUB), el artículo de la semana de esa fecha se pone solo.
   const [fields, setFields] = useState(() => {
     const f = structuredClone(entry.fields)
@@ -134,7 +136,7 @@ export default function AtalayaStudy({ backLabel = 'Reuniones', startInMeeting =
   const canGo = (key) => key === 'articulo' || bloques.length > 0
 
   return (
-    <div className="overlay at-study">
+    <div className="overlay at-study reunion-study" data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-title">La Atalaya</span>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
+import { isNight } from './today.js'
 
 // Modo reunión: para tenerlo abierto en la reunión. Solo tus respuestas, en orden y en letra
 // grande, con la pregunta chica arriba para seguir el hilo. Arriba, fija, una fila con el número de
@@ -9,6 +10,7 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 // app al pasar a JW Library).
 // items: [{ key, jump, section?, sec?, label, question, answer, keys? }]
 export default function MeetingMode({ id, back = 'Volver', kicker, title, items, starred = [], onClose }) {
+  const [night] = useState(() => isNight()) // de noche, como lo demás de Estudio (styles.css)
   useEffect(() => {
     let lock = null
     const ask = async () => {
@@ -55,7 +57,7 @@ export default function MeetingMode({ id, back = 'Volver', kicker, title, items,
 
   let lastSection = ''
   return (
-    <div className="overlay mm">
+    <div className="overlay mm reunion-study" data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" onClick={onClose}><Icon d={ICONS.back} size={18} stroke={2} /> {back}</button>
         <span className="bar-title">Modo reunión</span>
