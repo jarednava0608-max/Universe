@@ -61,7 +61,7 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
   }
 
   return (
-    <section className="hoy">
+    <section className="hoy" data-night={night || undefined}>
       {/* Portada: un amanecer suave detrás de la fecha, como el ícono (el usuario la pidió). */}
       <div className="hoy-cover" data-night={night || undefined}>
         <Sunrise />
