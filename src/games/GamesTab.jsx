@@ -4,11 +4,13 @@ import { GAMES } from './registry.js'
 import { repasoRound, learnSources } from './repaso.js'
 import Repaso from './Repaso.jsx'
 import PageScroll from '../components/PageScroll.jsx'
+import { useNight } from '../study/TodayPlan.jsx'
 
 // Repasar (cuadro de Biblioteca; antes "Juegos", el id sigue siendo 'juegos'): 5 preguntas de los textos que el
 // usuario eligió aprender y, de vez en cuando, de La Atalaya (ver repaso.js). Abajo, Mis textos (Constancia está en Más).
 // Nada de juegos sueltos, racha ni logros (pedido del usuario).
 export default function GamesTab({ store, toast, onBack }) {
+  const night = useNight() // de 19:00 a 06:00, Repasar va de noche como Hoy, Pendientes y Biblioteca (styles.css)
   const [open, setOpen] = useState(null)
   const [repasando, setRepasando] = useState(false)
   const [practicando, setPracticando] = useState(false)
@@ -17,7 +19,7 @@ export default function GamesTab({ store, toast, onBack }) {
   const learning = learnSources(store.entries).length > 0
 
   return (
-    <div className="page">
+    <div className="page" data-night={night || undefined}>
       <PageScroll title="Repasar" back={onBack && { label: 'Biblioteca', onClick: onBack }}>
         {onBack && (
           <button className="back-link" onClick={onBack}>

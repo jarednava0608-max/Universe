@@ -2,10 +2,13 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { parseJsonLoose } from '../lib/importer.js'
+import { useNight } from '../study/TodayPlan.jsx'
 
 // Pantalla de un juego: barra con "volver" y título.
 // Como en iOS, deslizar desde el borde izquierdo hacia la derecha regresa.
 export function GameScreen({ title, onExit, right, back = 'Repasar', children }) {
+  // De noche también aquí: Constancia se abre desde Hoy y «Más», fuera de la pestaña Repasar (styles.css).
+  const night = useNight()
   const [dx, setDx] = useState(0)
   const drag = useRef(null)
   const onTouchStart = (e) => {
@@ -35,6 +38,7 @@ export function GameScreen({ title, onExit, right, back = 'Repasar', children })
   return (
     <div
       className="overlay game"
+      data-night={night || undefined}
       style={dx ? { transform: `translateX(${dx}px)`, transition: 'none', boxShadow: '-12px 0 30px rgba(0,0,0,0.35)' } : undefined}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
