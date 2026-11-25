@@ -1071,6 +1071,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
   --night-link: #9ea3bf; --night-press: #241e25; --night-amber: rgba(238, 176, 90, 0.45);
   --night-amber-on: rgba(238, 176, 90, 0.6); /* el mismo ámbar, un poco más lleno: lo marcado se ve (3:1) */
   --night-meta: rgba(230, 230, 230, 0.72); --night-meta-soft: #8a8fa6; /* metadatos: blanco roto atenuado y pizarra */
+  --night-underline: rgba(158, 163, 191, 0.45); /* subrayado sutil de citas y enlaces al leer */
 }
 :root:not([data-theme='light']) .hoy[data-night] .plan-next {
   background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line);
@@ -1367,6 +1368,27 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll :where(.lib-entries .in-map) { color: var(--text-3); opacity: 1; }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-search { background-color: var(--night-card); border-color: var(--night-line); color: var(--night-text); }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-search:focus { border-color: var(--night-amber-on); box-shadow: none; }
+/* La vista de lectura de noche (misma hora, solo en Negro; data-night al abrir el Texto diario, una nota o un nodo):
+   títulos en blanco roto; el texto corrido sigue en --text-body (#D1D1D6), un punto más apagado para no deslumbrar;
+   citas y enlaces en pizarra atenuada con subrayado sutil, sin ámbar; tarjetas, campos y botones en pizarra con borde
+   sutil. El ámbar suave, solo en lo activo: al tocar, el campo con el cursor, el formato prendido o la palomita
+   marcada. La barra de arriba y el día no cambian. */
+:root:not([data-theme='light']) :is(.at-study, .note-editor)[data-night] { --title: var(--night-text); --text: var(--night-text); color: var(--night-text); }
+:root:not([data-theme='light']) :is(.at-study, .note-editor)[data-night] :is(.ref-link, .dt-link, .rich a, .rich .ref-deco) {
+  color: var(--night-link); text-decoration-line: underline; text-decoration-color: var(--night-underline);
+  text-decoration-thickness: 1px; text-underline-offset: 3px;
+}
+:root:not([data-theme='light']) .at-study[data-night] .dt-more summary { color: var(--night-link); }
+:root:not([data-theme='light']) :is(.at-study, .note-editor)[data-night] :is(.secondary, .at-answer, .related-row, .sfield .input) { background-color: var(--night-card); border-color: var(--night-line); }
+:root:not([data-theme='light']) :is(.at-study, .note-editor)[data-night] .primary { background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line); }
+:root:not([data-theme='light']) :is(.at-study, .note-editor)[data-night] :is(.primary, .secondary, .related-row):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); transition-duration: 0s; }
+:root:not([data-theme='light']) :is(.at-study, .note-editor)[data-night] :is(.at-answer:focus-within, .sfield .input:focus) { border-color: var(--night-amber-on); box-shadow: none; }
+:root:not([data-theme='light']) .note-editor[data-night] .rich :is(blockquote, hr, td, th) { border-color: var(--night-line); }
+:root:not([data-theme='light']) .note-editor[data-night] .rich th { background-color: var(--night-card); }
+:root:not([data-theme='light']) .note-editor[data-night] .rich ul[data-type='taskList'] input[type='checkbox']:checked { background-color: var(--night-amber-on); border-color: transparent; }
+:root:not([data-theme='light']) .note-editor[data-night] .rich a.wl.ProseMirror-selectednode { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); }
+:root:not([data-theme='light']) .note-editor[data-night] .toolbar { background-color: var(--night-card); border-top-color: var(--night-line); }
+:root:not([data-theme='light']) .note-editor[data-night] .tb-btn.on { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); }
 /* Lectura de la semana: cada capítulo con su palomita. */
 .mw-reading { margin: 0 0 20px; }
 .mw-reading .at-label { margin-top: 4px; }
