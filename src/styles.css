@@ -1069,6 +1069,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) {
   --night-text: #e6e6e6; --night-card: #1a1a26; --night-line: rgba(158, 163, 210, 0.16);
   --night-link: #9ea3bf; --night-press: #241e25; --night-amber: rgba(238, 176, 90, 0.45);
+  --night-amber-on: rgba(238, 176, 90, 0.6); /* el mismo ámbar, un poco más lleno: lo marcado se ve (3:1) */
 }
 :root:not([data-theme='light']) .hoy[data-night] .plan-next {
   background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line);
@@ -1311,6 +1312,23 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .rutina-repetida { display: grid; gap: 4px; }
 /* De noche, como lo demás de Hoy (PR #20): tarjeta con el matiz pizarra. */
 :root:not([data-theme='light']) .hoy[data-night] .rutina-card { background-color: var(--night-card); box-shadow: inset 0 0 0 1px var(--night-line); }
+/* El resto de la rutina de noche, como lo demás de Hoy (PR #20–#23; solo en Negro): letra blanco roto, enlaces y el
+   gancho elegido en pizarra atenuada, y el ámbar suave solo en lo activo ("Hecha" marcada). */
+:root:not([data-theme='light']) .hoy[data-night] .rutina-card { --title: var(--night-text); --text: var(--night-text); }
+:root:not([data-theme='light']) :is(.hoy[data-night] .rutina-card, .rutina-editor[data-night]) :is(.rutina-link, .rutina-ganchos li.on b, .rutina-ganchos em) { color: var(--night-link); }
+:root:not([data-theme='light']) .hoy[data-night] .rutina-hecha.on { color: var(--night-text); }
+:root:not([data-theme='light']) .hoy[data-night] .rutina-hecha.on svg { color: var(--night-amber-on); }
+:root:not([data-theme='light']) .hoy[data-night] .rutina-hecha.on svg path { stroke: var(--night-text); }
+/* La hoja para pegarla o escribirla, de noche (data-night al abrirla): campos, área de pegar y botones sutiles, con
+   fondo pizarra y borde apenas visible, sin recuadros ni anillos brillantes que compitan con el Texto diario. Lo activo
+   (el campo con el cursor, la opción elegida, el botón al tocarlo) lleva el ámbar suave. */
+:root:not([data-theme='light']) .rutina-editor[data-night] { --title: var(--night-text); --text: var(--night-text); }
+:root:not([data-theme='light']) .rutina-editor[data-night] :is(.input, .secondary, .seg2) { background-color: var(--night-card); border-color: var(--night-line); }
+:root:not([data-theme='light']) .rutina-editor[data-night] .rutina-punto-form { border-color: var(--night-line); }
+:root:not([data-theme='light']) .rutina-editor[data-night] .input:focus { border-color: var(--night-amber-on); box-shadow: none; }
+:root:not([data-theme='light']) .rutina-editor[data-night] .seg2 button.on { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); }
+:root:not([data-theme='light']) .rutina-editor[data-night] .primary { background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line); }
+:root:not([data-theme='light']) .rutina-editor[data-night] :is(.primary, .secondary):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); transition-duration: 0s; }
 /* Lectura de la semana: cada capítulo con su palomita. */
 .mw-reading { margin: 0 0 20px; }
 .mw-reading .at-label { margin-top: 4px; }
