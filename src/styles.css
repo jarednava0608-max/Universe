@@ -1082,6 +1082,14 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
   /* Estudio de noche: los colores de sección de Entre semana con menos saturación y menos luz (≥ 4.5:1) */
   --night-mw-tesoros: #6a9ca5; --night-mw-maestros: #a88b58; --night-mw-vida: #b86b64;
 }
+/* Acento global de noche (aprobado por Gemini): de 19:00 a 06:00, solo en Negro y solo bajo [data-night], el acento y
+   los botones pasan de lavanda a ámbar dorado. Lo que ya tiene su regla de noche (pizarra, ámbar suave al tocar) sigue
+   igual; la barra de abajo, el mapa y lo que no tiene modo noche quedan fuera. --check se declara otra vez aquí porque
+   en :root se calcula con el acento de día (las palomitas de Pendientes). */
+:root:not([data-theme='light']) [data-night] {
+  --accent: #f0c975; --btn: #d8a348; --btn-press: #c28f38; --btn-ink: #14110b; --accent-soft: rgba(216, 163, 72, 0.15);
+  --check: var(--accent);
+}
 :root:not([data-theme='light']) .hoy[data-night] .plan-next {
   background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line);
   transition: background-color 0.15s, box-shadow 0.15s;
