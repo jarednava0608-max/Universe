@@ -170,3 +170,14 @@ export function looksLikeDailyText(text) {
   const t = String(text ?? '').trim()
   return t.length >= 20 && t.length <= 6000 && findRefs(t.slice(0, 600)).length > 0
 }
+
+// El versículo de hoy para la portada: el texto y, aparte, su cita.
+// "No calumnia con su lengua (Sal. 15:3)." → { text: 'No calumnia con su lengua.', cite: 'Sal. 15:3' }
+export function splitVerse(verse) {
+  const s = String(verse ?? '').trim()
+  const m = s.match(/^(.*?)\s*\(([^()]*\d[^()]*)\)\s*([.»”"]?)$/)
+  if (!m || !m[1].trim()) return { text: s, cite: '' }
+  const text = m[1].trim()
+  // El punto que iba después de la cita se queda con el texto (si no termina ya en signo).
+  return { text: m[3] === '.' && !/[.!?…»”"]$/.test(text) ? text + '.' : text, cite: m[2].trim() }
+}

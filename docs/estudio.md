@@ -2,7 +2,7 @@
 Apartados en `src/study/kinds.js` (`KINDS`; `notes: true` = editor tipo Notas): ahí se definen campos, título en lista, formato para Claude y resumen al mapa.
 
 ### Hoy (`src/study/TodayPlan.jsx`, lógica `src/study/today.js`, con pruebas)
-- `TodayPlan` en `StudyTab` con `view='hoy'`: día, fecha grande, Constancia (`plan-streak`), versículo de hoy si está (`hoy-verse`, letra de libro) y **un botón con lo que sigue** ("Empieza: Texto diario" / "Sigue: …" si ya empezado; `nextStep`). Sin `top-actions`, lista de pasos, contador ni momentos del día.
+- `TodayPlan` en `StudyTab` con `view='hoy'`: portada de amanecer (`hoy-cover`, ver `docs/estilo.md`) con día, fecha grande y Constancia (`plan-streak`); versículo de hoy si está (`hoy-verse`: grande, letra de libro, la cita aparte y tocable) y **un botón con lo que sigue** ("Empieza: Texto diario" / "Sigue: …" si ya empezado; `nextStep`). Sin `top-actions`, lista de pasos, contador ni momentos del día.
 - El botón pasa al siguiente paso pero **no lo abre solo**. Todo hecho: "Listo por hoy. Lo demás es cuando tú quieras." (`plan-done`) + "Tu frase de hoy" (`fields.resumen` del diario).
 - Pasos: Texto diario (`dailyAnalyzed`) → La Atalaya / Entre semana → Tu asignación → Lectura (solo con meta; vencida no sale). Repasar hoy y Reto del día no van aquí (Juegos).
   - Se prepara la reunión que sigue (tras el jueves, La Atalaya; tras el sábado, entre semana); la otra solo si ya empezada. La Atalaya desde 3 días antes ("El domingo · 8 de 20 respondidas"; abre la de esa semana o crea una), entre semana desde 2 (hecha con todo respondido). **Hecha por hoy si hoy ya le avanzaste** (`touchedToday`; "Hoy ya le avanzaste · 7 de 18").

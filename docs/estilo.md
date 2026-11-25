@@ -31,10 +31,15 @@ El usuario lo pidió para que todo se parezca a JW Library.
 - Los círculos para palomear con borde que se ve (3:1).
 - Las etiquetas ("Mi respuesta") en `--text-2`, más fuertes que el texto de ejemplo (`--text-3`).
 - Lo que se lee largo (artículos, Biblia, versículos) va en `--text-body`, no en blanco o negro puro (deslumbra menos); las palabras marcadas sí en `--title`.
+- En Negro (Como JW) `--text-body` es #d1d1d6, un poco más suave que los títulos (blanco): deslumbra menos de noche y marca la jerarquía (títulos > lectura > gris). Contraste ≥ 5.5:1 aun sobre el resaltado.
+- Oscuro por capas ya existe y se queda así (fondo #0b0b0b, tarjetas #262628 / #333336, barras #2b2b2d, bordes rgba(255,255,255,0.08)): cambiar los tonos quitaría el parecido con JW Library y las tarjetas sin borde. Lectura con interlineado 1.6-1.7; sin `max-width` en ch (en el iPhone cada renglón tiene unas 40 letras).
 - Todo lo que se toca mide ≥ 44 px aunque se vea más chico (márgenes negativos o un `::after` invisible para que no se mueva nada; las pestañas de abajo ocupan todo el alto y solo la pastilla lavanda es chica).
 - Párrafos y títulos con `text-wrap-style` (pretty / balance) para no dejar una palabra sola en el último renglón.
 
 ## Movimiento
 - Ícono (`public/icon.svg` y sus PNG): Amanecer, sol dorado sobre el horizonte con una constelación. Al abrir, la primera vez del día, el mismo amanecer animado (~1.5 s, en `index.html`, `universe-intro` en este teléfono); se quita al tocarlo y no sale con "Reducir movimiento". Pedido del usuario: una portada que dé ganas de abrir la app.
+- **Portada de Hoy** (pedida por el usuario): el mismo amanecer detrás de la fecha y Constancia (`hoy-cover`, `Sunrise` en `TodayPlan.jsx`). El cielo nace del fondo y la loma de enfrente es del color de la página: no es caja. Los colores cálidos solo van junto al horizonte (`--horizon`: 120 px, 96 px en pantallas bajitas) para que la letra guarde su contraste (medido, ≥ 4.5:1). Colores `--sky-*`, `--sun-*`, `--halo`, `--hill`, `--star` en negro y blanco. Fija, sin animación.
+- **Versículo de Hoy**: letra de libro a 28 px (22 px si pasa de 140 letras); la cita abajo, en azul y tocable (`splitVerse` en `today.js`).
+- **Al tocar** (micro-interacciones): la respuesta es inmediata y al soltar vuelve en 150 ms, como en iOS. Lo que se toca sin fondo propio (Atrás, íconos de las barras, Constancia, Más, citas, enlaces) se atenúa a 0.55; tarjetas y botones con fondo siguen con la suya. Sin rebotes ni escalas nuevas. Al agregar un botón de solo texto, sumarlo a esa lista en `styles.css`.
 - Con "Reducir movimiento" del iPhone nada se sacude ni se desliza solo (las pantallas aparecen con un fundido) y el deslizar desde la orilla sigue funcionando.
 - En los juegos, después de contestar, "Siguiente" queda siempre en el mismo lugar abajo.
