@@ -7,7 +7,7 @@ import { KINDS, KIND_ORDER, partLabel, partMinutes, clock, makeEntry, entrySortK
 import { answeredCount } from './atalaya.js'
 import { midweekCount } from './midweek.js'
 import { readMeetings } from './meetings.js'
-import { ASSIGNMENT_FROM, nextDay } from './today.js'
+import { ASSIGNMENT_FROM, nextDay, isNight } from './today.js'
 import BibleHome from '../components/BibleHome.jsx'
 import TodayPlan, { MeetingDaysRow, useNight } from './TodayPlan.jsx'
 import DailyTextsImport from '../components/DailyTextsImport.jsx'
@@ -458,6 +458,7 @@ function NodeNote({ backLabel = 'Biblioteca', node, nodes, toast, onSave, onClos
   const [version, setVersion] = useState(0)
   const [slot, setSlot] = useState(null)
   const [editing, setEditing] = useState(false)
+  const [night] = useState(() => isNight()) // de noche, lectura más suave (styles.css)
   const [peek, setPeek] = useState(null)
   const box = useVisibleBox()
   const editor = useRef()
@@ -507,7 +508,7 @@ function NodeNote({ backLabel = 'Biblioteca', node, nodes, toast, onSave, onClos
   }
 
   return (
-    <div className={'overlay note-editor' + (editing ? ' editing' : '')} style={box.style}>
+    <div className={'overlay note-editor' + (editing ? ' editing' : '')} style={box.style} data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-spacer" />
@@ -708,6 +709,7 @@ function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, 
   const [proposal, setProposal] = useState(null)
   const [slot, setSlot] = useState(null) // lugar de la barra de formato
   const [editing, setEditing] = useState(false)
+  const [night] = useState(() => isNight()) // de noche, lectura más suave (styles.css)
   const box = useVisibleBox()
   const editor = useRef()
   const saved = useRef({ titulo: entry.fields.titulo ?? '', html: initialHtml, exists: !isNew })
@@ -853,7 +855,7 @@ function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, 
   const linked = entry.mapNodeId && nodes.find((n) => n.id === entry.mapNodeId)
 
   return (
-    <div className={'overlay note-editor' + (editing ? ' editing' : '')} style={box.style}>
+    <div className={'overlay note-editor' + (editing ? ' editing' : '')} style={box.style} data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-spacer" />

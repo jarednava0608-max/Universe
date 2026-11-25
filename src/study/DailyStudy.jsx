@@ -9,6 +9,7 @@ import { splitRefs } from './midweek.js'
 import RefLink from '../components/RefLink.jsx'
 import DailyTextsImport from '../components/DailyTextsImport.jsx'
 import { dailyTextFor, hasDailyTexts, useDailyTexts } from '../lib/dailytexts.js'
+import { isNight } from './today.js'
 
 const filled = (v) => !!String(v ?? '').trim()
 
@@ -20,6 +21,7 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
   const saved = useRef(JSON.stringify(entry.fields))
   const exists = useRef(!isNew)
   const set = (patch) => setFields((f) => ({ ...f, ...patch }))
+  const [night] = useState(() => isNight()) // de noche, lectura más suave (styles.css)
   // Con el folleto del año importado, el texto de esa fecha se pone solo (también si cambias la fecha).
   useDailyTexts()
   const imported = dailyTextFor(fields.fecha)
@@ -89,7 +91,7 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
   const dateLabel = fy ? new Date(fy, fm - 1, fd).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '').replace(/^./, (c) => c.toUpperCase()) : ''
 
   return (
-    <div className="overlay at-study">
+    <div className="overlay at-study" data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-title">Texto diario</span>
