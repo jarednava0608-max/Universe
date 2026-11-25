@@ -1062,6 +1062,12 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
    se lee como metadato tranquilo y no compite con el contenido. */
 :root:not([data-theme='light']) .hoy-date { color: var(--cover-date); }
 :root:not([data-theme='light']) .hoy-cover[data-night] .hoy-date { opacity: 0.85; }
+/* «Constancia 30 días» de noche (solo en Negro): sigue como texto sobre la portada, sin fondo ni borde que tape la
+   ilustración. «Constancia» y la flecha un escalón abajo (--night-dim), los días en blanco roto; sin lavanda ni ámbar
+   (es un enlace: al tocarlo se atenúa como los demás). */
+:root:not([data-theme='light']) .hoy-cover[data-night] .plan-streak,
+:root:not([data-theme='light']) .hoy-cover[data-night] .plan-streak svg { color: var(--night-dim); }
+:root:not([data-theme='light']) .hoy-cover[data-night] .plan-streak span { color: var(--night-text); }
 /* Hoy de noche, el resto de la vista (19:00 a 06:00; data-night en .hoy). Solo en Negro: lo secundario se
    atenúa con un matiz pizarra muy sutil que amarra con el cielo de la portada, la letra blanca pasa a blanco
    roto y el ámbar del sol queda solo para el botón al tocarlo. La portada y el texto diario (versículo, tu plan,
