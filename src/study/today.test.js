@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nextDay, todayPlan, looksLikeDailyText, splitVerse } from './today.js'
+import { nextDay, todayPlan, looksLikeDailyText, splitVerse, isNight } from './today.js'
 
 // Lunes 5 de octubre de 2026. Reuniones: miércoles (3) y domingo (0).
 const MON = new Date(2026, 9, 5, 9, 0)
@@ -192,5 +192,16 @@ describe('Hoy: el versículo en la portada', () => {
     expect(splitVerse('Un texto sin cita')).toEqual({ text: 'Un texto sin cita', cite: '' })
     expect(splitVerse('(Sal. 1:1).')).toEqual({ text: '(Sal. 1:1).', cite: '' })
     expect(splitVerse('')).toEqual({ text: '', cite: '' })
+  })
+})
+
+describe('Hoy: portada de noche', () => {
+  it('es de noche de 19:00 a 05:59, hora del teléfono', () => {
+    expect(isNight(new Date(2026, 10, 24, 18, 59))).toBe(false)
+    expect(isNight(new Date(2026, 10, 24, 19, 0))).toBe(true)
+    expect(isNight(new Date(2026, 10, 25, 0, 30))).toBe(true)
+    expect(isNight(new Date(2026, 10, 25, 5, 59))).toBe(true)
+    expect(isNight(new Date(2026, 10, 25, 6, 0))).toBe(false)
+    expect(isNight(new Date(2026, 10, 25, 12, 0))).toBe(false)
   })
 })

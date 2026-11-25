@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { DAYS, nextStep, todayPlan, looksLikeDailyText, yesterdayLesson, splitVerse } from './today.js'
+import { DAYS, nextStep, todayPlan, looksLikeDailyText, yesterdayLesson, splitVerse, isNight } from './today.js'
 import { Refs } from './DailyStudy.jsx'
 import { openRef } from '../lib/verses.js'
 import { otherDayText, dailyTextAppUrl, today as todayIso } from './kinds.js'
@@ -31,6 +31,7 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
   const reunion = items.find((x) => x.meetingToday && x.entry)
   const done = items.filter((x) => x.done).length
   const now = new Date()
+  const night = useNight()
   const weekday = cap(now.toLocaleDateString('es', { weekday: 'long' }))
   const date = now.toLocaleDateString('es', { day: 'numeric', month: 'long' })
   const act = (it) => (it.key === 'lectura' ? (it.ref ? openRef(it.ref) : onBible()) : it.entry ? onOpenEntry(it.entry) : onCreate(it.create))
@@ -62,7 +63,7 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
   return (
     <section className="hoy">
       {/* Portada: un amanecer suave detrás de la fecha, como el ícono (el usuario la pidió). */}
-      <div className="hoy-cover">
+      <div className="hoy-cover" data-night={night || undefined}>
         <Sunrise />
         <div className="hoy-head">
           <p className="hoy-weekday">{weekday}</p>
@@ -129,13 +130,26 @@ function Sunrise() {
           <radialGradient id="hoy-halo"><stop offset="0" className="hoy-halo-a" /><stop offset="1" className="hoy-halo-b" /></radialGradient>
           <radialGradient id="hoy-sun"><stop offset="0" className="hoy-sun-a" /><stop offset=".55" className="hoy-sun-b" /><stop offset="1" className="hoy-sun-c" /></radialGradient>
         </defs>
-        <ellipse cx="195" cy="134" rx="175" ry="80" fill="url(#hoy-halo)" />
-        <circle cx="195" cy="124" r="44" fill="url(#hoy-sun)" />
+        <ellipse className="hoy-glow" cx="195" cy="134" rx="175" ry="80" fill="url(#hoy-halo)" />
+        <circle className="hoy-sun-disc" cx="195" cy="124" r="44" fill="url(#hoy-sun)" />
         <path className="hoy-hill" d="M0 120C70 100 140 112 195 118C260 125 320 100 390 110V150H0Z" />
         <path className="hoy-ground" d="M0 136C110 124 250 146 390 130V150H0Z" />
       </svg>
     </div>
   )
+}
+
+// De 19:00 a 06:00 la portada va de noche (data-night). Cambia sola si la app sigue abierta a esa hora
+// o vuelve del fondo; los colores de noche están junto a .hoy-cover en styles.css.
+function useNight() {
+  const [night, setNight] = useState(() => isNight())
+  useEffect(() => {
+    const check = () => setNight(isNight())
+    const t = setInterval(check, 60_000)
+    document.addEventListener('visibilitychange', check)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', check) }
+  }, [])
+  return night
 }
 
 // El versículo de hoy, grande y con letra de libro; la cita aparte, en azul y tocable (abre su hoja).

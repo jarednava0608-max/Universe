@@ -1040,6 +1040,24 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .hoy-hill { fill: var(--hill); }
 .hoy-ground { fill: var(--bg); }
 .hoy-cover .plan-streak { margin: 4px 0 -12px; }
+/* Portada de noche (19:00 a 06:00, hora del teléfono; data-night en TodayPlan): la misma escena, más oscura.
+   Cielo más profundo, sol más bajo y tenue, halo y brillo del horizonte más suaves, estrellas un poco más
+   visibles. En Blanco, --sky-1 no cambia para que la letra de arriba guarde su contraste. */
+:root:not([data-theme='light']) .hoy-cover[data-night] {
+  --sky-1: #100b21; --sky-2: #1d1645; --sky-3: #43294f; --sky-4: #7d5243;
+  --sun-a: #ffe6b8; --sun-b: #eeb05a; --sun-c: #d4883e; --halo: rgba(255, 176, 90, 0.2);
+  --hill: #0d091c;
+}
+:root[data-theme='light'] .hoy-cover[data-night] {
+  --sky-2: #ddd3f5; --sky-3: #ebc9d2; --sky-4: #f0c393;
+  --sun-a: #fff3dc; --sun-b: #f3c56d; --sun-c: #e3a04c; --halo: rgba(240, 170, 90, 0.3);
+  --hill: #cfc5ee; --star: #8a78d6;
+}
+.hoy-cover[data-night] :is(.hoy-sun-disc, .hoy-glow) { transform: translateY(14px); }
+.hoy-cover[data-night] .hoy-sun-disc { opacity: 0.85; }
+.hoy-cover[data-night] .hoy-stars path { opacity: 0.55; }
+.hoy-cover[data-night] .hoy-stars circle { opacity: 1; }
+.hoy-cover[data-night] .hoy-stars .far { opacity: 0.75; }
 /* El versículo de hoy: grande, con letra de libro; la cita abajo, en azul (tocable, 44 px). */
 .hoy-verse { display: grid; gap: 8px; margin: 0 0 8px; }
 .hoy-verse-text { margin: 0; font-family: var(--font-book, inherit); font-size: 28px; line-height: 1.32; color: var(--text-body); text-wrap: pretty; hanging-punctuation: first; }
