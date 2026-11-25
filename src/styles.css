@@ -1079,6 +1079,15 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .hoy[data-night] .plan-setup { border-top-color: var(--night-line); }
 :root:not([data-theme='light']) .hoy[data-night] .plan-setup .input { background-color: var(--night-card); border-color: var(--night-line); color: var(--night-text); }
 :root:not([data-theme='light']) .page:has(> .page-scroll .hoy[data-night]) > .page-bar span { color: var(--night-text); }
+/* Pendientes de noche (19:00 a 06:00; data-night en la pestaña), igual que Hoy de noche. Solo en Negro: tarjetas
+   con el mismo matiz pizarra, texto de las tareas en blanco roto y el encabezado «Pendientes» al 80 % para que las
+   tareas lleven la jerarquía. Las hechas siguen en gris; checkboxes, hojas y el día no cambian. */
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :is(.entry-list, .fold-row.alone) { background-color: var(--night-card); border-color: var(--night-line); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .swipe-front { background-color: var(--night-card); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .entry-list li + li .entry-row::before { background: var(--night-line); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :is(.entry-row:not(.done) .entry-title, .task-now-title) { color: var(--night-text); }
+:root:not([data-theme='light']) .page[data-night] > .page-bar span,
+:root:not([data-theme='light']) .page[data-night] > .page-scroll > .page-title { color: var(--night-text); opacity: 0.8; }
 /* El versículo de hoy: grande, con letra de libro; la cita abajo, en azul (tocable, 44 px). */
 .hoy-verse { display: grid; gap: 8px; margin: 0 0 8px; }
 .hoy-verse-text { margin: 0; font-family: var(--font-book, inherit); font-size: 28px; line-height: 1.32; color: var(--text-body); text-wrap: pretty; hanging-punctuation: first; }

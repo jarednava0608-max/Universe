@@ -10,6 +10,7 @@ import {
   nextOccurrence, reminderLabel, splitLocal, timeLabel, todayItems, toggleHabitDay,
 } from './tasks.js'
 import { deviceHasPush, enableDevicePush, pushState, testPush } from '../lib/push.js'
+import { useNight } from '../study/TodayPlan.jsx'
 
 // La tecla "Listo" del teclado del iPhone cierra el teclado, para ver la fecha, el aviso y "Guardar".
 const doneKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() } }
@@ -41,6 +42,8 @@ function useNow() {
 
 export default function TasksTab({ store, toast }) {
   const now = useNow()
+  // De 19:00 a 06:00, igual que Hoy: tarjetas y letra de noche (estilos junto a Hoy de noche en styles.css).
+  const night = useNight()
   const entries = store.entries
   const [category, setCategory] = useState(null)
   const [query, setQuery] = useState('')
@@ -80,7 +83,7 @@ export default function TasksTab({ store, toast }) {
   const newTask = () => setEditing({ entry: makeTask({ dueAt: nextHour(now), category: category ?? 'Personal' }), isNew: true })
 
   return (
-    <div className="page">
+    <div className="page" data-night={night || undefined}>
       <PageScroll title="Pendientes">
         <h1 className="page-title">Pendientes</h1>
         {/* Solo lo de hoy: lo que sigue en grande y el resto del día abajo (al usuario lo abrumaba la lista entera). */}
