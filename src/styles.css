@@ -1370,7 +1370,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-search { background-color: var(--night-card); border-color: var(--night-line); color: var(--night-text); }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-search:focus { border-color: var(--night-amber-on); box-shadow: none; }
 /* La vista de lectura de noche (misma hora, solo en Negro; data-night al abrir el Texto diario, una nota o un nodo):
-   títulos en blanco roto; el texto corrido del Texto diario sigue en --text-body (#D1D1D6; el de las notas, abajo);
+   títulos en blanco roto; el versículo del Texto diario sigue en --text-body (#D1D1D6; el comentario y las notas, abajo);
    citas y enlaces en pizarra atenuada con subrayado sutil, sin ámbar; tarjetas, campos y botones en pizarra con borde
    sutil. El ámbar suave, solo en lo activo: al tocar, el campo con el cursor, el formato prendido o la palomita
    marcada. La barra de arriba y el día no cambian. */
@@ -1424,6 +1424,12 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .note-editor[data-night] { --text-body: var(--night-body); }
 :root:not([data-theme='light']) .note-editor[data-night] .rich mark { color: var(--night-text) !important; }
 :root:not([data-theme='light']) .note-editor[data-night] :is(.note-date, .related-title, .related-kind) { color: var(--night-dim); }
+/* El Texto diario de noche (en Hoy y en su vista), como Notas y el detalle de «Más»: los versículos siguen en
+   --text-body (#D1D1D6), un punto arriba; el cuerpo (el comentario y «Tu plan de hoy») baja a --night-body (#B8BCC2),
+   y las frases en negritas («Tu frase de hoy», lo que te enseñó ayer) pasan de blanco puro a blanco roto. */
+:root:not([data-theme='light']) .at-study[data-night] .dt-comment,
+:root:not([data-theme='light']) .hoy[data-night] .hoy-plan { color: var(--night-body); }
+:root:not([data-theme='light']) .hoy[data-night] :is(.hoy-frase, .hoy-ayer p) { color: var(--night-text); }
 /* Lectura de la semana: cada capítulo con su palomita. */
 .mw-reading { margin: 0 0 20px; }
 .mw-reading .at-label { margin-top: 4px; }
