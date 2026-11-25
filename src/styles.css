@@ -1101,6 +1101,19 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
   :root:not([data-theme='light']) .page[data-night] > .page-scroll .task-now .primary:hover { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); }
 }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .section-label:not(.late) { color: var(--night-text); opacity: 0.6; }
+/* Biblioteca de noche (misma hora, solo en Negro; data-night en su pantalla principal), igual que Hoy y Pendientes de
+   noche: los 4 cuadros y «Seguir donde te quedaste» en pizarra con borde sutil y letra blanco roto; íconos, «Más» y
+   «Cambiar» en pizarra atenuada (sin lavanda); las etiquetas secundarias en gris, nunca en ámbar. El ámbar suave, solo
+   al tocar un cuadro, la tarjeta o un renglón. La lista «Más», sus títulos y el de la barra ya van como Pendientes. */
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :is(.lib-tile, .continue-card, .lib-list .entry-row) { transition: background-color 0.15s, box-shadow 0.15s; }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :is(.lib-tile, .continue-card) { background-color: var(--night-card); border-color: transparent; box-shadow: inset 0 0 0 1px var(--night-line); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :is(.lib-tile, .continue-card, .lib-list .entry-row):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); filter: none; transition-duration: 0s; }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :is(.lib-tile span, .continue-title) { color: var(--night-text); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :is(.lib-tile, .lib-grid ~ .lib-more, .lib-meetings .plan-change) { color: var(--night-link); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-list .kind-icon { color: var(--night-link); background-color: var(--night-line); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .continue-label { color: var(--text-3); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .plan-setup { border-top-color: var(--night-line); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .plan-setup .input { background-color: var(--night-card); border-color: var(--night-line); color: var(--night-text); }
 /* El versículo de hoy: grande, con letra de libro; la cita abajo, en azul (tocable, 44 px). */
 .hoy-verse { display: grid; gap: 8px; margin: 0 0 8px; }
 .hoy-verse-text { margin: 0; font-family: var(--font-book, inherit); font-size: 28px; line-height: 1.32; color: var(--text-body); text-wrap: pretty; hanging-punctuation: first; }
