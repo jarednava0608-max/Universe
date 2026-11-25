@@ -1001,8 +1001,50 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .hoy-head { display: grid; gap: 4px; }
 .hoy-weekday { margin: 0; font-size: 17px; color: var(--text-2); }
 .hoy-date { margin: 0; font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--title); text-wrap: balance; }
-.hoy .plan-streak { margin: -8px 0 0; }
-.hoy-verse { margin: 8px 0; font-family: var(--font-book, inherit); font-size: 22px; line-height: 1.45; color: var(--text-body); text-wrap: pretty; }
+/* Portada de Hoy: un amanecer suave detrás de la fecha, con los colores del ícono. El cielo nace del fondo
+   arriba y la loma de enfrente es del color de la página: no es una caja. La fecha y Constancia quedan en
+   la parte oscura (o clara) del cielo; los colores cálidos solo van junto al horizonte (--horizon). */
+:root {
+  --sky-1: #161029; --sky-2: #2e2163; --sky-3: #7e4472; --sky-4: #d0855a;
+  --sun-a: #fff5d6; --sun-b: #ffd36b; --sun-c: #ffb84a; --halo: rgba(255, 196, 90, 0.42);
+  --hill: #140f2b; --star: #ffffff;
+}
+:root[data-theme='light'] {
+  --sky-1: #f3effd; --sky-2: #e8defa; --sky-3: #fbd8cc; --sky-4: #ffd29a;
+  --sun-a: #fffaf0; --sun-b: #ffd877; --sun-c: #ffc04f; --halo: rgba(255, 196, 90, 0.55);
+  --hill: #d9d0f2; --star: #9f8fe0;
+}
+.hoy { --pull: calc(var(--sat) + 44px); --horizon: 120px; }
+:root[data-style='jw'] .hoy { --pull: 44px; }
+.hoy-cover {
+  position: relative; display: grid; gap: 4px;
+  margin: calc(-1 * var(--pull)) calc(-20px - var(--sar)) 0 calc(-20px - var(--sal));
+  padding: var(--pull) calc(20px + var(--sar)) var(--horizon) calc(20px + var(--sal));
+  background: linear-gradient(var(--bg), var(--sky-1) calc(100% - var(--horizon)), var(--sky-2) calc(100% - 72px), var(--sky-3) calc(100% - 36px), var(--sky-4));
+}
+.hoy-cover > :not(.hoy-sky) { position: relative; }
+.hoy-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.hoy-stars { position: absolute; top: calc(var(--pull) - 32px); right: calc(20px + var(--sar)); width: 140px; height: 48px; fill: var(--star); stroke: var(--star); }
+.hoy-stars path { fill: none; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.4; }
+.hoy-stars circle { stroke: none; opacity: 0.85; }
+.hoy-stars .far { opacity: 0.5; }
+.hoy-horizon { position: absolute; left: 0; bottom: 0; display: block; width: 100%; height: calc(var(--horizon) + 30px); }
+/* Pantallas bajitas (iPhone SE, Safari con barras): horizonte más corto para que el botón quepa. */
+@media (max-height: 700px) { .hoy { --horizon: 96px; } }
+.hoy-halo-a { stop-color: var(--halo); }
+.hoy-halo-b { stop-color: var(--halo); stop-opacity: 0; }
+.hoy-sun-a { stop-color: var(--sun-a); }
+.hoy-sun-b { stop-color: var(--sun-b); }
+.hoy-sun-c { stop-color: var(--sun-c); }
+.hoy-hill { fill: var(--hill); }
+.hoy-ground { fill: var(--bg); }
+.hoy-cover .plan-streak { margin: 4px 0 -12px; }
+/* El versículo de hoy: grande, con letra de libro; la cita abajo, en azul (tocable, 44 px). */
+.hoy-verse { display: grid; gap: 8px; margin: 0 0 8px; }
+.hoy-verse-text { margin: 0; font-family: var(--font-book, inherit); font-size: 28px; line-height: 1.32; color: var(--text-body); text-wrap: pretty; hanging-punctuation: first; }
+.hoy-verse.long .hoy-verse-text { font-size: 22px; line-height: 1.45; }
+.hoy-verse-cite { margin: 0; font-family: var(--font-book, inherit); font-size: 17px; }
+.hoy-verse-cite .ref-link { display: inline-flex; align-items: center; min-height: var(--tap); margin: -12px 0; }
 .hoy .plan-next { margin-top: 8px; }
 .hoy .plan-setup { margin-top: 8px; }
 .hoy-frase { display: grid; gap: 4px; margin: 8px 0 0; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--title); text-wrap: balance; }

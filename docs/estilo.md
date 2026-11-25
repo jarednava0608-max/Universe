@@ -36,5 +36,7 @@ El usuario lo pidió para que todo se parezca a JW Library.
 
 ## Movimiento
 - Ícono (`public/icon.svg` y sus PNG): Amanecer, sol dorado sobre el horizonte con una constelación. Al abrir, la primera vez del día, el mismo amanecer animado (~1.5 s, en `index.html`, `universe-intro` en este teléfono); se quita al tocarlo y no sale con "Reducir movimiento". Pedido del usuario: una portada que dé ganas de abrir la app.
+- **Portada de Hoy** (pedida por el usuario): el mismo amanecer detrás de la fecha y Constancia (`hoy-cover`, `Sunrise` en `TodayPlan.jsx`). El cielo nace del fondo y la loma de enfrente es del color de la página: no es caja. Los colores cálidos solo van junto al horizonte (`--horizon`: 120 px, 96 px en pantallas bajitas) para que la letra guarde su contraste (medido, ≥ 4.5:1). Colores `--sky-*`, `--sun-*`, `--halo`, `--hill`, `--star` en negro y blanco. Fija, sin animación.
+- **Versículo de Hoy**: letra de libro a 28 px (22 px si pasa de 140 letras); la cita abajo, en azul y tocable (`splitVerse` en `today.js`).
 - Con "Reducir movimiento" del iPhone nada se sacude ni se desliza solo (las pantallas aparecen con un fundido) y el deslizar desde la orilla sigue funcionando.
 - En los juegos, después de contestar, "Siguiente" queda siempre en el mismo lugar abajo.

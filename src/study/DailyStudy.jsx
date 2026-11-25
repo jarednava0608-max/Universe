@@ -152,7 +152,7 @@ export default function DailyStudy({ backLabel = 'Hoy', entry, isNew, entries = 
 }
 
 // El texto con sus citas tocables ("Lea Isaías 41:10"): abren su hoja de Mi Biblia, como en las reuniones.
-function Refs({ text }) {
+export function Refs({ text }) {
   const refs = findAllRefs(text)
   if (!refs.length) return text
   return splitRefs(text, refs).map((x, i) => (x.ref ? <RefLink key={i} refText={x.text} /> : x.text))

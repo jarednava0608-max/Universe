@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
-import { DAYS, nextStep, todayPlan, looksLikeDailyText, yesterdayLesson } from './today.js'
+import { DAYS, nextStep, todayPlan, looksLikeDailyText, yesterdayLesson, splitVerse } from './today.js'
+import { Refs } from './DailyStudy.jsx'
 import { openRef } from '../lib/verses.js'
 import { otherDayText, dailyTextAppUrl, today as todayIso } from './kinds.js'
 import { dailyTextFor, useDailyTexts } from '../lib/dailytexts.js'
@@ -60,18 +61,22 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
 
   return (
     <section className="hoy">
-      <div className="hoy-head">
-        <p className="hoy-weekday">{weekday}</p>
-        <h1 className="hoy-date">{date}</h1>
+      {/* Portada: un amanecer suave detrás de la fecha, como el ícono (el usuario la pidió). */}
+      <div className="hoy-cover">
+        <Sunrise />
+        <div className="hoy-head">
+          <p className="hoy-weekday">{weekday}</p>
+          <h1 className="hoy-date">{date}</h1>
+        </div>
+        {streak && (
+          // Constancia en un renglón bajo la fecha (el usuario la quiere mero enfrente).
+          <button className="plan-streak" onClick={streak.onClick}>
+            Constancia <span>{streak.label}</span>
+            <Icon d={ICONS.chev} size={14} stroke={2} />
+          </button>
+        )}
       </div>
-      {streak && (
-        // Constancia en un renglón bajo la fecha (el usuario la quiere mero enfrente).
-        <button className="plan-streak" onClick={streak.onClick}>
-          Constancia <span>{streak.label}</span>
-          <Icon d={ICONS.chev} size={14} stroke={2} />
-        </button>
-      )}
-      {diario.verse && <p className="hoy-verse">{diario.verse}</p>}
+      {diario.verse && <Verse verse={diario.verse} />}
       {planHoy && <p className="hoy-plan"><span>Tu plan de hoy</span>{planHoy}</p>}
       {next && (
         <button className="primary plan-next" onClick={doNext}>
@@ -105,6 +110,42 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
       )}
       {setup && <MeetingDays value={meetings} onChange={setMeetings} />}
     </section>
+  )
+}
+
+// El amanecer de la portada (el mismo del ícono): la constelación arriba a la derecha y el sol saliendo
+// detrás de una loma. El cielo es el fondo de .hoy-cover; la loma de enfrente es del color de la página,
+// así la portada no es una caja: se funde con el fondo. Colores en styles.css (--sky-*, --sun-*).
+function Sunrise() {
+  return (
+    <div className="hoy-sky" aria-hidden="true">
+      <svg className="hoy-stars" viewBox="0 0 140 48">
+        <path d="M10 34 48 16 86 30 130 12" />
+        <circle cx="10" cy="34" r="2.2" /><circle cx="48" cy="16" r="3" /><circle cx="86" cy="30" r="2.2" /><circle cx="130" cy="12" r="3" />
+        <circle className="far" cx="26" cy="6" r="1" /><circle className="far" cx="112" cy="42" r="1" />
+      </svg>
+      <svg className="hoy-horizon" viewBox="0 0 390 150" preserveAspectRatio="xMidYMax slice">
+        <defs>
+          <radialGradient id="hoy-halo"><stop offset="0" className="hoy-halo-a" /><stop offset="1" className="hoy-halo-b" /></radialGradient>
+          <radialGradient id="hoy-sun"><stop offset="0" className="hoy-sun-a" /><stop offset=".55" className="hoy-sun-b" /><stop offset="1" className="hoy-sun-c" /></radialGradient>
+        </defs>
+        <ellipse cx="195" cy="134" rx="175" ry="80" fill="url(#hoy-halo)" />
+        <circle cx="195" cy="124" r="44" fill="url(#hoy-sun)" />
+        <path className="hoy-hill" d="M0 120C70 100 140 112 195 118C260 125 320 100 390 110V150H0Z" />
+        <path className="hoy-ground" d="M0 136C110 124 250 146 390 130V150H0Z" />
+      </svg>
+    </div>
+  )
+}
+
+// El versículo de hoy, grande y con letra de libro; la cita aparte, en azul y tocable (abre su hoja).
+function Verse({ verse }) {
+  const { text, cite } = splitVerse(verse)
+  return (
+    <div className={'hoy-verse' + (text.length > 140 ? ' long' : '')}>
+      <p className="hoy-verse-text">{text}</p>
+      {cite && <p className="hoy-verse-cite"><Refs text={cite} /></p>}
+    </div>
   )
 }
 

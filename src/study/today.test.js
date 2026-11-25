@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nextDay, todayPlan, looksLikeDailyText } from './today.js'
+import { nextDay, todayPlan, looksLikeDailyText, splitVerse } from './today.js'
 
 // Lunes 5 de octubre de 2026. Reuniones: miércoles (3) y domingo (0).
 const MON = new Date(2026, 9, 5, 9, 0)
@@ -178,5 +178,19 @@ describe('Hoy: lo de ayer', () => {
     expect(yesterdayLesson([ayer], MON)).toEqual({ verse: 'Jehová es mi pastor (Sal. 23:1).', lesson: 'Jehová me guía.' })
     expect(yesterdayLesson([{ ...ayer, fields: { ...ayer.fields, principio: '' } }], MON)).toBeNull()
     expect(yesterdayLesson([], MON)).toBeNull()
+  })
+})
+
+describe('Hoy: el versículo en la portada', () => {
+  it('separa el texto de su cita', () => {
+    expect(splitVerse('No calumnia con su lengua (Sal. 15:3).')).toEqual({ text: 'No calumnia con su lengua.', cite: 'Sal. 15:3' })
+    expect(splitVerse('¿Quién es como Jehová? (Sal. 113:5).')).toEqual({ text: '¿Quién es como Jehová?', cite: 'Sal. 113:5' })
+    expect(splitVerse('“Sean felices” (Rom. 12:12; Col. 3:23)')).toEqual({ text: '“Sean felices”', cite: 'Rom. 12:12; Col. 3:23' })
+  })
+
+  it('sin cita al final, todo es texto', () => {
+    expect(splitVerse('Un texto sin cita')).toEqual({ text: 'Un texto sin cita', cite: '' })
+    expect(splitVerse('(Sal. 1:1).')).toEqual({ text: '(Sal. 1:1).', cite: '' })
+    expect(splitVerse('')).toEqual({ text: '', cite: '' })
   })
 })
