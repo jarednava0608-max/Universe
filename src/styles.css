@@ -1072,6 +1072,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
   --night-amber-on: rgba(238, 176, 90, 0.6); /* el mismo ámbar, un poco más lleno: lo marcado se ve (3:1) */
   --night-meta: rgba(230, 230, 230, 0.72); --night-meta-soft: #8a8fa6; /* metadatos: blanco roto atenuado y pizarra */
   --night-underline: rgba(158, 163, 191, 0.45); /* subrayado sutil de citas y enlaces al leer */
+  --night-body: #b8bcc2; --night-dim: #858a94; /* detalle de «Más»: texto corrido gris frío y fechas/etiquetas un escalón abajo */
 }
 :root:not([data-theme='light']) .hoy[data-night] .plan-next {
   background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line);
@@ -1389,6 +1390,33 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .note-editor[data-night] .rich a.wl.ProseMirror-selectednode { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); }
 :root:not([data-theme='light']) .note-editor[data-night] .toolbar { background-color: var(--night-card); border-top-color: var(--night-line); }
 :root:not([data-theme='light']) .note-editor[data-night] .tb-btn.on { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); }
+/* Las vistas de detalle de «Más» de noche (misma hora, solo en Negro; data-night al abrirlas): el historial de la
+   Rutina bíblica y la hoja de Mis asignaciones, Ideas y Preparar estudios. Títulos en blanco roto; texto corrido en
+   gris frío (--night-body), con interlineado 1.6 en el historial; fechas, etiquetas y datos un escalón abajo
+   (--night-dim); tarjetas, campos y botones en pizarra con borde sutil; citas y enlaces en pizarra con subrayado
+   sutil. El ámbar suave, solo en lo activo: al tocar, el campo con el cursor, la opción elegida y «Hecha» marcada. */
+:root:not([data-theme='light']) :is(.rutina-view, .entry-editor)[data-night] { --title: var(--night-text); --text: var(--night-text); color: var(--night-text); }
+:root:not([data-theme='light']) .rutina-view[data-night] :is(.rutina-p, .rutina-cierre dd, .rutina-ganchos li) { line-height: 1.6; }
+:root:not([data-theme='light']) .rutina-view[data-night] :is(.rutina-p, .rutina-cierre dd, .rutina-ganchos li.on) { color: var(--night-body); }
+:root:not([data-theme='light']) .rutina-view[data-night] :is(.rutina-fecha, .rutina-detail h3, .rutina-cierre dt, .rutina-ganchos li:not(.on), .rutina-ganchos b) { color: var(--night-dim); }
+:root:not([data-theme='light']) .rutina-view[data-night] .rutina-mapa > li::marker { color: var(--night-dim); }
+:root:not([data-theme='light']) .rutina-view[data-night] :is(.rutina-ganchos li.on b, .rutina-ganchos em) { color: var(--night-link); }
+:root:not([data-theme='light']) .rutina-view[data-night] .rutina-hecha.on svg { color: var(--night-amber-on); }
+:root:not([data-theme='light']) .rutina-view[data-night] .rutina-hecha.on svg path { stroke: var(--night-text); }
+:root:not([data-theme='light']) :is(.rutina-view, .entry-editor)[data-night] :is(.ref-link, .link-note) {
+  color: var(--night-link); opacity: 1; text-decoration-line: underline; text-decoration-color: var(--night-underline);
+  text-decoration-thickness: 1px; text-underline-offset: 3px;
+}
+:root:not([data-theme='light']) .entry-editor[data-night] :is(.input, .seg2, .secondary, .ref-chip) { background-color: var(--night-card); border-color: var(--night-line); }
+:root:not([data-theme='light']) .entry-editor[data-night] .input { color: var(--night-body); }
+:root:not([data-theme='light']) .entry-editor[data-night] .input:focus { border-color: var(--night-amber-on); box-shadow: none; }
+:root:not([data-theme='light']) .entry-editor[data-night] .ref-chip { color: var(--night-link); }
+:root:not([data-theme='light']) .entry-editor[data-night] :is(.sfield-label, .practice-state, .practice-log) { color: var(--night-dim); }
+:root:not([data-theme='light']) .entry-editor[data-night] .seg2 button.on { background-color: var(--night-press); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-amber); }
+:root:not([data-theme='light']) .entry-editor[data-night] .primary { background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line); }
+:root:not([data-theme='light']) .entry-editor[data-night] :is(.primary, .secondary, .ref-chip):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); transition-duration: 0s; }
+:root:not([data-theme='light']) .entry-editor[data-night] .progress { background-color: var(--night-line); }
+:root:not([data-theme='light']) .entry-editor[data-night] .progress span { background-color: var(--night-link); }
 /* Lectura de la semana: cada capítulo con su palomita. */
 .mw-reading { margin: 0 0 20px; }
 .mw-reading .at-label { margin-top: 4px; }
