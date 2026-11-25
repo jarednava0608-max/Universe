@@ -1088,6 +1088,18 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll :is(.entry-row:not(.done) .entry-title, .task-now-title) { color: var(--night-text); }
 :root:not([data-theme='light']) .page[data-night] > .page-bar span,
 :root:not([data-theme='light']) .page[data-night] > .page-scroll > .page-title { color: var(--night-text); opacity: 0.8; }
+/* El botón «Hecho» de noche, como el de Hoy de noche: sin lavanda, tarjeta pizarra con borde sutil (se sigue viendo
+   que se toca) y letra blanco roto; el ámbar suave solo al tocarlo (o al pasar el puntero, donde lo hay). Los títulos
+   de sección en blanco roto al 60 %, para que no compitan con las tareas («Atrasados» sigue en rojo). */
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .task-now .primary {
+  background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line);
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .task-now .primary:active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); transition-duration: 0s; }
+@media (hover: hover) {
+  :root:not([data-theme='light']) .page[data-night] > .page-scroll .task-now .primary:hover { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); }
+}
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .section-label:not(.late) { color: var(--night-text); opacity: 0.6; }
 /* El versículo de hoy: grande, con letra de libro; la cita abajo, en azul (tocable, 44 px). */
 .hoy-verse { display: grid; gap: 8px; margin: 0 0 8px; }
 .hoy-verse-text { margin: 0; font-family: var(--font-book, inherit); font-size: 28px; line-height: 1.32; color: var(--text-body); text-wrap: pretty; hanging-punctuation: first; }
