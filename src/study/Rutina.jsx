@@ -3,6 +3,7 @@ import Icon, { ICONS } from '../components/Icon.jsx'
 import AutoText from '../components/AutoText.jsx'
 import { Refs } from './DailyStudy.jsx'
 import { formatDate } from './kinds.js'
+import { isNight } from './today.js'
 import { LETRAS, RUTINA_FORMAT, emptyRutina, findRutina, lastOracion, parseRutina, tidyRutina, validateRutina } from './rutina.js'
 
 // La rutina bíblica de la mañana (lógica en rutina.js). Pedida por Jared: acompaña al Texto diario en Hoy.
@@ -141,6 +142,7 @@ export function RutinaEditor({ mode: startMode, entry, initialText = '', today, 
   const [step, setStep] = useState('editar') // 'editar' | 'vista' | 'repetida'
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [night] = useState(() => isNight()) // de noche, campos sutiles (styles.css, junto a la tarjeta)
   const body = useRef(null)
 
   const fail = (msg) => {
@@ -202,7 +204,7 @@ export function RutinaEditor({ mode: startMode, entry, initialText = '', today, 
   const setCierre = (patch) => setDraft((d) => ({ ...d, cierre: { ...d.cierre, ...patch } }))
 
   return (
-    <div className="overlay rutina-editor">
+    <div className="overlay rutina-editor" data-night={night || undefined}>
       <header className="bar">
         {step === 'editar'
           ? <button className="bar-btn" onClick={onClose}>Cerrar</button>
