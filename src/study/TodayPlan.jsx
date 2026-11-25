@@ -3,6 +3,7 @@ import { useMeetings } from './meetings.js'
 import Icon, { ICONS } from '../components/Icon.jsx'
 import { DAYS, nextStep, todayPlan, looksLikeDailyText, yesterdayLesson, splitVerse, isNight } from './today.js'
 import { Refs } from './DailyStudy.jsx'
+import { RutinaCard } from './Rutina.jsx'
 import { openRef } from '../lib/verses.js'
 import { otherDayText, dailyTextAppUrl, today as todayIso } from './kinds.js'
 import { dailyTextFor, useDailyTexts } from '../lib/dailytexts.js'
@@ -13,7 +14,7 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1)
 // con lo que sigue (ver today.js); al terminarlo, el botón pasa al siguiente paso. Sin lista, sin contador
 // y sin abrir solo lo que sigue: al usuario lo abrumaba sentir que la app siempre le pedía más. Cuando ya
 // está lo de hoy, lo dice y ya. Todo lo demás vive en Biblioteca.
-export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOpenEntry, onOpenMeeting, onCreate, onPasteDaily, toast }) {
+export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOpenEntry, onOpenMeeting, onCreate, onPasteDaily, rutina, onRutina, onToggleRutina, toast }) {
   const [meetings, setMeetings] = useMeetings()
   useDailyTexts()
   // Con el folleto del año importado, el texto de hoy ya está: no hay que copiarlo ni pegarlo.
@@ -101,6 +102,17 @@ export default function TodayPlan({ streak, entries, leidos, plan, onBible, onOp
           {/* Para cerrar el día: la frase que escribiste en el Texto diario (Recordar). */}
           {frase && <p className="hoy-frase"><span>Tu frase de hoy</span>{frase}</p>}
         </>
+      )}
+      {/* La rutina bíblica de la mañana (su chat de Gemini) acompaña al Texto diario, no lo cambia: se pega o se
+          escribe, y queda la acción con su disparador a la vista y los 3 pasos plegables (pedido de Jared). */}
+      {onRutina && (
+        <RutinaCard
+          entry={rutina}
+          onPaste={() => onRutina('pegar')}
+          onWrite={() => onRutina('escribir')}
+          onEdit={() => onRutina('escribir', rutina)}
+          onToggle={() => onToggleRutina(rutina)}
+        />
       )}
       {reunion && (
         <button className="hoy-meeting" onClick={() => onOpenMeeting(reunion.entry)}>
