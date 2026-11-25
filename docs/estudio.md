@@ -25,6 +25,37 @@ Apartados en `src/study/kinds.js` (`KINDS`; `notes: true` = editor tipo Notas): 
   - Hecho (`dailyMinimum`, `dailyAnalyzed`): `estudiado`, o en entradas viejas lección + qué hago hoy (sus campos se conservan; Repasar hoy sigue usando `principio` de las viejas). Guarda sola.
 - Lista: fecha como hoja de calendario, título = versículo con cita (`dailyVerse`, cursiva serifa), resumen; si no: "Falta estudiarlo". `dailyBody` salta el renglón de fecha copiado.
 
+### Rutina bíblica (`src/study/rutina.js`, vista en `src/study/Rutina.jsx`, con pruebas)
+Pedida por Jared: su rutina de 15 minutos de cada mañana en su chat de Gemini «rutina bíblica» (1. oración y recuerdo activo con sus palabras, 2. mapa de 3 puntos con ganchos cotidianos A/B/C y uno elegido, 3. cierre con 1 acción para hoy y su disparador). **Acompaña al Texto diario, no lo sustituye** (no toca su lógica ni Constancia). Sin IA en la app: el bloque que entrega Gemini se lee con código local.
+- **Entidad** (`kind: 'rutina'`, en `KINDS` y `KIND_ORDER`): **una por fecha**, id `rutina-AAAA-MM-DD` (la fecha es la clave; no se duplica). Entrada como las demás: IndexedDB, nube y respaldo. `fields: { fecha, cita, tema, recuerdo, puntos: [{ titulo, ganchos: { A, B, C }, elegido }] ×3, cierre: { accion, disparador, opcion?, hecha }, oracion }`.
+- **Regla de Jared**: la oración va **siempre fija** al cierre (`oracion`, texto libre), nunca como opción. La acción y las opciones A, B y C del cierre son acciones concretas, **nunca orar** (`isPrayer`; si lo es, no se guarda y se dice por qué).
+- **Hoy**: tarjeta "Rutina bíblica de hoy" debajo del Texto diario (`RutinaCard`; no entra en los pasos de `todayPlan`). Sin rutina: "Pegar rutina de hoy" (lee lo copiado con el mismo toque) y "Guardar rutina de hoy" (la escribe en la hoja). Con rutina: cita y tema, la acción con su disparador y "Hecha" (se guarda en `cierre.hecha`), los 3 pasos plegables y "Cambiar". De noche, con el matiz pizarra de Hoy.
+- **Hoja** (`RutinaEditor`, como "Pegar conocimiento"): "Pegar de Gemini" (cuadro, "Pegar del portapapeles", "Copiar formato para Gemini") o "Escribirla" (fecha, texto o cita, tema, recuerdo activo, 3 puntos con ganchos A/B/C y el elegido, acción, disparador y oración fija, que se llena con la de la última rutina) → "Revisar" → vista previa → "Guardar". Validación (`validateRutina`, igual para lo pegado y lo escrito): 3 puntos con título, 1 gancho elegido por punto y no vacío, 1 acción con disparador, oración fija. Si falta algo o el JSON está roto, dice qué y **no guarda nada a medias**. Si ya hay rutina de esa fecha: "Reemplazar la que ya está" o "Conservar la que ya está".
+- **Historial**: Biblioteca → Más → "Rutina bíblica" (primero de la lista): por fecha (hoja de calendario), buscable ("Buscar en rutinas" y "Buscar en todo"); se abre para repasarla (`RutinaView`, "Hecha" y "Cambiar"); deslizar elimina con Deshacer.
+- **El bloque de Gemini** (`parseRutina`): Jared ajusta una vez la instrucción de su chat «rutina bíblica» con este texto (también lo copia el botón "Copiar formato para Gemini", `RUTINA_FORMAT`):
+
+> Al terminar la rutina, escribe primero la rutina completa en texto normal. Al final, en un bloque aparte, escribe SOLO este JSON (sin comentarios) con lo que elegí:
+>
+> ```json
+> {
+>   "fecha": "AAAA-MM-DD",
+>   "texto": "Cita base, por ejemplo Salmo 83:18",
+>   "tema": "Tema del día",
+>   "recuerdo_activo": "Lo que expliqué con mis palabras",
+>   "mapa": [
+>     { "titulo": "Punto 1", "ganchos": { "A": "…", "B": "…", "C": "…" }, "gancho_elegido": "A" },
+>     { "titulo": "Punto 2", "ganchos": { "A": "…", "B": "…", "C": "…" }, "gancho_elegido": "A" },
+>     { "titulo": "Punto 3", "ganchos": { "A": "…", "B": "…", "C": "…" }, "gancho_elegido": "A" }
+>   ],
+>   "cierre": { "opcion": "A", "accion": "La acción concreta de hoy", "disparador": "Cuándo la voy a hacer" },
+>   "oracion_fija": "La oración fija del cierre"
+> }
+> ```
+>
+> Las opciones A, B y C del cierre son acciones concretas, nunca orar; la oración va siempre aparte, en "oracion_fija".
+
+  Se pega todo lo copiado: la app toma el bloque de ```json … ``` o del primer { al último }. Aguanta nombres con acentos o mayúsculas ("Recuerdo activo", "Oración fija"), ganchos en lista, la letra como "Gancho B", comillas tipográficas y una coma de más. Sin `fecha`, la de hoy. Si viene la opción elegida del cierre con sus `opciones`, la acción es la elegida.
+
 ### Reuniones (comunes)
 - Campos: tipo (La Atalaya / entre semana), fecha, título, artículo completo, respuestas, idea principal, cómo lo aplico, notas. Lista: fecha como hoja (`meetingDay`), título, tipo, avance (`answeredCount` / `midweekCount`) y "· Vas a comentar".
 - Sin texto, primer botón "Pegar el artículo copiado" / "Pegar la semana copiada"; si trae preguntas/partes, pasa solo al Vistazo / portada.

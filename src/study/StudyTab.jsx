@@ -29,6 +29,8 @@ import AtalayaStudy from './AtalayaStudy.jsx'
 import MidweekStudy from './MidweekStudy.jsx'
 import DailyStudy from './DailyStudy.jsx'
 import PasteFields from './PasteFields.jsx'
+import { RUTINA, findRutina, makeRutina, rutinaText } from './rutina.js'
+import { RutinaEditor, RutinaView } from './Rutina.jsx'
 import { addDays, constanciaDays } from '../games/progress.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
@@ -47,6 +49,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
   const [bibleOpen, setBibleOpen] = useState(false)
   const [revisitasOpen, setRevisitasOpen] = useState(false)
+  const [rutinaEdit, setRutinaEdit] = useState(null) // { mode: 'pegar' | 'escribir', entry?, text }: la hoja de la rutina bíblica
   const [more, setMore] = useState(() => { try { return localStorage.getItem('universe-lib-more') === '1' } catch { return false } })
   useEffect(() => { try { localStorage.setItem('universe-lib-more', more ? '1' : '0') } catch {} }, [more])
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
@@ -56,6 +59,22 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const backLabel = view === 'hoy' ? 'Hoy' : section === 'nodos' ? 'Tus nodos' : section ? KINDS[section].label : 'Biblioteca'
   // Entrada borrada deslizando, con "Deshacer".
   const undoDel = useUndoDelete((e) => onDeleteEntry(e.id), (e) => onSaveEntry(e))
+  // Rutina bíblica: "Pegar rutina de hoy" lee lo copiado con el mismo toque (iOS pide permiso con "Pegar").
+  async function openRutina(mode, entry = null) {
+    let text = ''
+    if (mode === 'pegar') {
+      try { text = await navigator.clipboard.readText() } catch { /* sin permiso: se pega a mano en la hoja */ }
+    }
+    setRutinaEdit({ mode, entry, text })
+  }
+  const toggleRutina = (e) => onSaveEntry({ ...e, fields: { ...e.fields, cierre: { ...e.fields.cierre, hecha: !e.fields.cierre?.hecha } } })
+  async function saveRutina(fields, prev) {
+    await onSaveEntry(makeRutina(fields, prev))
+    toast(prev && prev.id !== rutinaEdit?.entry?.id ? 'Rutina reemplazada.' : 'Rutina guardada.')
+    setRutinaEdit(null)
+  }
+  // El + de una lista: la rutina se pega o se escribe en su hoja; lo demás abre su editor.
+  const addEntry = (kind) => (kind === RUTINA ? openRutina('pegar') : setEditing({ entry: newEntry(kind), isNew: true }))
 
   const byKind = useMemo(() => {
     const m = Object.fromEntries(KIND_ORDER.map((k) => [k, []]))
@@ -74,7 +93,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const todayEntry = byKind.diario.find((e) => e.fields.fecha === today())
   const inToday = (e) => {
     const f = String(e?.fields?.fecha ?? '')
-    return !!e && (e.id === todayEntry?.id || (e.kind === 'reunion' && f >= today()) || (e.kind === 'asignacion' && f >= today() && f <= addDays(today(), ASSIGNMENT_FROM)))
+    return !!e && (e.id === todayEntry?.id || (e.kind === 'reunion' && f >= today()) || (e.kind === 'asignacion' && f >= today() && f <= addDays(today(), ASSIGNMENT_FROM)) || (e.kind === RUTINA && f === today()))
   }
   const last = recent[0] && !inToday(recent[0].entry) && Date.now() - recent[0].at < 7 * 864e5 ? recent[0] : null
 
@@ -102,6 +121,9 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
               if (!quiet) toast('Texto de hoy guardado. Léelo despacio.')
               setEditing({ entry: saved ?? e, isNew: false })
             }}
+            rutina={findRutina(entries, today())}
+            onRutina={openRutina}
+            onToggleRutina={toggleRutina}
             toast={toast}
           />
         </PageScroll>
@@ -196,7 +218,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           title={KINDS[section].label}
           back={{ label: 'Biblioteca', onClick: () => { setSection(null); setQuery('') } }}
           action={(
-            <button className="bar-btn page-bar-add" aria-label="Nueva entrada" onClick={() => setEditing({ entry: newEntry(section), isNew: true })}>
+            <button className="bar-btn page-bar-add" aria-label="Nueva entrada" onClick={() => addEntry(section)}>
               <Icon d={ICONS.plus} size={22} stroke={2} />
             </button>
           )}
@@ -206,7 +228,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           </button>
           <div className="page-head">
             <h1 className="page-title">{KINDS[section].label}</h1>
-            <button className="round-btn" aria-label="Nueva entrada" onClick={() => setEditing({ entry: newEntry(section), isNew: true })}>
+            <button className="round-btn" aria-label="Nueva entrada" onClick={() => addEntry(section)}>
               <Icon d={ICONS.plus} size={20} stroke={2} />
             </button>
           </div>
@@ -222,18 +244,23 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           {section === 'reunion' && (hasGuia()
             ? <p className="hint dt-imported">La Guía de actividades de {guiaRange()} está en este teléfono: el programa de cada semana sale solo.</p>
             : <GuiaImport toast={toast} />)}
-          {KINDS[section].notes && byKind[section].length > 0 && (
-            <input className="input note-search" type="search" placeholder="Buscar en notas" value={query} onChange={(e) => setQuery(e.target.value)} />
+          {(KINDS[section].notes || section === RUTINA) && byKind[section].length > 0 && (
+            <input className="input note-search" type="search" placeholder={section === RUTINA ? 'Buscar en rutinas' : 'Buscar en notas'} value={query} onChange={(e) => setQuery(e.target.value)} />
           )}
-          {undoDel.pending?.kind === section && <UndoBar text={KINDS[section].notes ? 'Nota eliminada' : 'Entrada eliminada'} onUndo={undoDel.undo} />}
+          {undoDel.pending?.kind === section && <UndoBar text={KINDS[section].notes ? 'Nota eliminada' : section === RUTINA ? 'Rutina eliminada' : 'Entrada eliminada'} onUndo={undoDel.undo} />}
           {byKind[section].length ? (
-            <EntryList items={KINDS[section].notes ? filterNotes(byKind[section], query) : byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={undoDel.remove} />
+            <EntryList items={KINDS[section].notes ? filterNotes(byKind[section], query) : section === RUTINA ? filterRutinas(byKind[section], query) : byKind[section]} onOpen={(e) => setEditing({ entry: e, isNew: false })} onDelete={undoDel.remove} />
           ) : (
             <div className="empty-state">
               <span className={'empty-icon kind-icon k-' + section}><Icon d={KINDS[section].icon} size={26} /></span>
               <p className="empty-title">{KINDS[section].desc}</p>
               {/* Botones que dicen qué vas a hacer (no "Nueva entrada"). */}
-              {(EMPTY_ACTIONS[section] ?? [['Empezar', null]]).map(([label, fields], i) => {
+              {section === RUTINA ? (
+                <>
+                  <button className="primary" onClick={() => openRutina('pegar')}>Pegar rutina de hoy</button>
+                  <button className="secondary" onClick={() => openRutina('escribir')}>Guardar rutina de hoy</button>
+                </>
+              ) : (EMPTY_ACTIONS[section] ?? [['Empezar', null]]).map(([label, fields], i) => {
                 const e = newEntry(section)
                 return <button key={label} className={i ? 'secondary' : 'primary'} onClick={() => setEditing({ entry: fields ? { ...e, fields: { ...e.fields, ...fields() } } : e, isNew: true })}>{label}</button>
               })}
@@ -365,7 +392,18 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
         />
       )}
 
-      {editing && !KINDS[editing.entry.kind].notes && editing.entry.kind !== 'reunion' && editing.entry.kind !== 'diario' && (
+      {editing && editing.entry.kind === RUTINA && (
+        <RutinaView
+          backLabel={backLabel}
+          key={editing.entry.id}
+          entry={entries.find((x) => x.id === editing.entry.id) ?? editing.entry}
+          onClose={() => setEditing(null)}
+          onEdit={(e) => openRutina('escribir', e)}
+          onToggle={toggleRutina}
+        />
+      )}
+
+      {editing && !KINDS[editing.entry.kind].notes && editing.entry.kind !== 'reunion' && editing.entry.kind !== 'diario' && editing.entry.kind !== RUTINA && (
         <EntryEditor
           key={editing.entry.id}
           entry={editing.entry}
@@ -391,6 +429,19 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
             setEditing(null)
           }}
           onOpenNode={onOpenNode}
+        />
+      )}
+
+      {rutinaEdit && (
+        <RutinaEditor
+          mode={rutinaEdit.mode}
+          entry={rutinaEdit.entry}
+          initialText={rutinaEdit.text}
+          today={today()}
+          entries={entries}
+          onSave={saveRutina}
+          onClose={() => setRutinaEdit(null)}
+          toast={toast}
         />
       )}
     </div>
@@ -500,7 +551,7 @@ function EntryList({ items, onOpen, onDelete }) {
     <ul className="entry-list">
       {items.map((e) => {
         const def = KINDS[e.kind]
-        const day = e.kind === 'reunion' || e.kind === 'diario' || e.kind === 'asignacion' ? meetingDay(e.fields.fecha) : null
+        const day = e.kind === 'reunion' || e.kind === 'diario' || e.kind === 'asignacion' || e.kind === RUTINA ? meetingDay(e.fields.fecha) : null
         const diario = day && e.kind === 'diario'
         // La fecha ya va en su hoja de calendario: abajo el tipo de reunión o el texto de ese día.
         // En Texto diario el título es el texto bíblico de ese día y abajo el resumen.
@@ -511,6 +562,7 @@ function EntryList({ items, onOpen, onDelete }) {
         const progress = isAtalaya(e) && String(e.fields.articulo ?? '').trim() ? answeredCount(e.fields) : null
         const sub = !day ? def.subtitle(e)
           : e.kind === 'asignacion' ? assignmentSub(e.fields)
+          : e.kind === RUTINA ? def.subtitle(e)
           : diario ? (verse ? e.fields.resumen || (pending ? 'Falta estudiarlo' : '') : 'Sin texto todavía')
           : e.fields.tipo === 'entresemana' ? midweekSub(e.fields)
           : progress?.total ? `La Atalaya · ${progress.done === progress.total ? 'Lista para la reunión' : `${progress.done} de ${progress.total} respondidas`}` : 'La Atalaya'
@@ -580,7 +632,8 @@ function midweekSub(f) {
 
 // Biblioteca: Texto diario y Reuniones van en los cuadros grandes; los demás apartados, en "Más".
 const CONSTANCIA_ICON = 'M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83'
-const LIB_MORE = ['asignacion', 'reflexion', 'idea', 'estudio'].concat(KIND_ORDER.filter((k) => !['diario', 'reunion', 'asignacion', 'reflexion', 'idea', 'estudio'].includes(k)))
+const LIB_FIRST = [RUTINA, 'asignacion', 'reflexion', 'idea', 'estudio']
+const LIB_MORE = LIB_FIRST.concat(KIND_ORDER.filter((k) => !['diario', 'reunion', ...LIB_FIRST].includes(k)))
 
 function LibTile({ icon, label, onClick }) {
   return (
@@ -601,6 +654,12 @@ function KindRow({ kind, onOpen }) {
       </button>
     </li>
   )
+}
+
+// Historial de rutinas: busca en todo su texto (recuerdo, puntos, ganchos, acción, disparador, oración).
+function filterRutinas(list, query) {
+  const q = normKey(query)
+  return q ? list.filter((e) => normKey(rutinaText(e.fields)).includes(q)) : list
 }
 
 function filterNotes(list, query) {

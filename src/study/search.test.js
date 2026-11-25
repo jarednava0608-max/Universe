@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { searchAll, snippet } from './search.js'
+import { makeRutina, emptyRutina } from './rutina.js'
 
 const nodes = [
   { id: 'v', title: 'Valor', note: 'Ebed-melec mostró **valor** al hablar con el rey. [[Jeremías 38:7-9]]', updatedAt: 1 },
@@ -36,5 +37,14 @@ describe('buscar en todo', () => {
     expect(s.match).toBe('valor')
     expect(s.before.startsWith('…')).toBe(true)
     expect(s.after.endsWith('…')).toBe(true)
+  })
+})
+
+describe('Buscar en todo: la rutina bíblica', () => {
+  it('encuentra una rutina por lo que dice uno de sus ganchos y la marca como Rutina', () => {
+    const f = { ...emptyRutina('2026-11-25', 'Pedirle a Jehová fuerzas.'), cita: 'Salmo 83:18', tema: 'Elegidos como testigos de Jehová', recuerdo: 'Me escogió como su testigo.' }
+    f.puntos[2] = { titulo: 'Defender su nombre con orgullo', ganchos: { A: 'Defender a tu mamá en la cena cuando sueltan un chisme falso sobre ella.', B: '', C: '' }, elegido: 'A' }
+    const [r] = searchAll('chisme falso', { entries: [makeRutina(f)] })
+    expect(r).toMatchObject({ type: 'entry', id: 'rutina-2026-11-25', sub: 'Rutina', title: 'Elegidos como testigos de Jehová' })
   })
 })

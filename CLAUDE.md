@@ -3,7 +3,7 @@
 App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari / PWA de inicio), en español. **Vercel** (proyecto `universe`) despliega solo con cada push.
 
 **3 pestañas** (más lo abrumaban; ver `DECISIONES.md`):
-- **Hoy** (abre aquí): portada de amanecer con la fecha, versículo grande y un botón con lo que sigue; sin botones arriba. Solo lo esencial y terminable (texto diario, reunión que sigue, asignación, lectura si tiene meta). Sin juegos, contadores, avisos que pidan cosas ni abrir sola lo siguiente. No agregar pasos.
+- **Hoy** (abre aquí): portada de amanecer con la fecha, versículo grande, un botón con lo que sigue y la tarjeta "Rutina bíblica de hoy" (pedida por Jared, acompaña al Texto diario); sin botones arriba. Solo lo esencial y terminable (texto diario, reunión que sigue, asignación, lectura si tiene meta). Sin juegos, contadores, avisos que pidan cosas ni abrir sola lo siguiente. No agregar pasos.
 - **Biblioteca** (id `estudio`): 4 cuadros grandes sin números (Leer la Biblia, Texto diario, Reuniones, Repasar); lo demás en "Más" (apartados de Estudio, **Mapa**, Constancia). Con Mapa o Repasar abiertos se marca Biblioteca. Repasar (antes Juegos; id `juegos`) es solo eso: los textos de la Biblia que el usuario elige con "Aprenderlo" y, de vez en cuando, La Atalaya (todo de jw.org); sin juegos sueltos.
 - **Pendientes**: la app Centro (tareas con avisos, hábitos).
 
@@ -23,7 +23,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 ## Detalle por área (leer solo lo necesario)
 - `docs/estilo.md`: leer antes de tocar estilos, CSS o interfaz.
 - `docs/mapa.md`: Mapa, menú, Por escarbar.
-- `docs/estudio.md`: Hoy y apartados de Estudio, Buscar en todo.
+- `docs/estudio.md`: Hoy y apartados de Estudio, Rutina bíblica (y el bloque de Gemini), Buscar en todo.
 - `public/metodo-aha.md`: Método Aha (respaldo de las skills `estudio-texto-diario` y `reunion-entre-semana` en `.claude/skills`) y los ejemplos modelo; publicado en https://universe-tau-flax.vercel.app/metodo-aha.md para que lo lean los chats.
 - `docs/juegos.md`: Juegos, repaso, avisos de Constancia.
 - `docs/biblia.md`: citas tocables, Mi Biblia, lector, Publicaciones.
@@ -50,7 +50,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 ```js
 Node  = { id, title, note /* markdown */, type, origin, sources, galaxy /* 'english'|'escuela'|'espiritual' */, createdAt, updatedAt }
 Edge  = { id, source, target, rel /* MAYÚSCULAS */, createdAt, updatedAt }
-Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'idea' | 'asignacion' | 'trivia'|'memoria'|'progreso' | 'biblia' | 'pendiente'|'habito'|'ajustes' /* Pendientes */, fields: { ... }, mapNodeId?, createdAt, updatedAt }
+Entry = { id, kind: 'diario'|'reunion'|'estudio'|'reflexion' /* Notas */ | 'idea' | 'asignacion' | 'trivia'|'memoria'|'progreso' | 'biblia' | 'rutina' /* rutina-AAAA-MM-DD */ | 'pendiente'|'habito'|'ajustes' /* Pendientes */, fields: { ... }, mapNodeId?, createdAt, updatedAt }
 ```
 - Títulos de nodos únicos (sin distinguir mayúsculas ni acentos).
 

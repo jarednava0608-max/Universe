@@ -7,6 +7,7 @@ import { highlightArticle, atalayaTitle } from './atalaya.js'
 import { midweekForClaude, midweekNode } from './midweek.js'
 import { CHARACTERS } from '../games/memoria/characters.js'
 import { EXTRA_PEOPLE } from './people.js'
+import { RUTINA, rutinaTitle, rutinaSub } from './rutina.js'
 
 export const today = () => {
   const d = new Date()
@@ -175,12 +176,31 @@ KINDS.asignacion = {
   toNode: (f) => ({ title: f.titulo || partLabel(f.parte), idea: f.bosquejo }),
 }
 
+// Rutina bíblica de la mañana (src/study/rutina.js, vista en Rutina.jsx): una por fecha, con su propia vista y
+// sus pasos (recuerdo activo, mapa con ganchos y cierre); no va al mapa. `fields` solo nombra lo de arriba.
+KINDS[RUTINA] = {
+  label: 'Rutina bíblica',
+  short: 'Rutina',
+  desc: 'Tu rutina de la mañana: recuerdo activo, mapa con ganchos y la acción de hoy',
+  icon: 'M12 3v3M4.6 7.6l2.1 2.1M19.4 7.6l-2.1 2.1M2 16h3M19 16h3M7 16a5 5 0 0 1 10 0M2 20h20',
+  noMap: true,
+  fields: [
+    { key: 'fecha', label: 'Fecha', type: 'date', default: today },
+    { key: 'cita', label: 'Texto o cita base', type: 'line' },
+    { key: 'tema', label: 'Tema', type: 'line' },
+    { key: 'recuerdo', label: 'Recuerdo activo', type: 'text' },
+    { key: 'oracion', label: 'Oración fija', type: 'text' },
+  ],
+  title: (e) => rutinaTitle(e.fields),
+  subtitle: (e) => rutinaSub(e.fields),
+}
+
 // Prácticas guardadas con el cronómetro: fields.ensayos = [{ t, secs }].
 export const practicedOn = (f = {}, day) => (f.ensayos ?? []).filter((x) => x?.t && isoOf(new Date(x.t)) === day)
 const isoOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 export const clock = (secs) => `${Math.floor(Math.abs(secs) / 60)}:${String(Math.floor(Math.abs(secs) % 60)).padStart(2, '0')}`
 
-export const KIND_ORDER = ['diario', 'reunion', 'estudio', 'reflexion', 'idea', 'asignacion']
+export const KIND_ORDER = ['diario', 'reunion', 'estudio', 'reflexion', 'idea', 'asignacion', RUTINA]
 
 export function makeEntry(kind) {
   const def = KINDS[kind]
