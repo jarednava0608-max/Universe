@@ -487,7 +487,7 @@ export default function App() {
 
       {tab !== 'mapa' && tab !== 'hoy' && (
         // En Hoy no hay botones arriba: solo lo de hoy.
-        <div className={'top-actions' + (tab === 'estudio' && !studyHome ? ' in-list' : '')}>
+        <div className={'top-actions' + (tab === 'estudio' ? ' estudio' : '') + (tab === 'estudio' && !studyHome ? ' in-list' : '')}>
           {tab === 'estudio' && studyHome && (
             <button className="account-btn" aria-label="Buscar en todo" onClick={() => setSearchOpen(true)}>
               <Icon d={ICONS.buscar} size={19} />

@@ -14,12 +14,13 @@ import { guiaFor, hasGuia, useGuia } from '../lib/guia.js'
 import ConceptsStep from './ConceptsStep.jsx'
 import StarButton from '../components/StarButton.jsx'
 import { useMeetings } from './meetings.js'
-import { DAYS } from './today.js'
+import { DAYS, isNight } from './today.js'
 
 // La reunión de entre semana por pasos, como La Atalaya: se pega el programa de la Guía de
 // actividades, luego cada parte con sus preguntas para contestar (o notas, si no tiene) y al
 // final cómo lo aplico y, si quieres, tus respuestas pasan al mapa. Se guarda sola y al volver sigue en la parte donde te quedaste.
 export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting = false, entry, entries = [], leidos, onToggleRead, isNew, toast, onSave, onDelete, onClose, nodes, onToMap, onOpenNode, onSwitchToAtalaya }) {
+  const [night] = useState(() => isNight()) // de noche, como lo demás de Estudio (styles.css)
   // Con la Guía de actividades importada (EPUB), el programa de la semana de esa fecha se pone solo.
   const [fields, setFields] = useState(() => withGuia(structuredClone(entry.fields)))
   const prog = useMemo(() => parseProgram(fields.programa), [fields.programa])
@@ -139,7 +140,7 @@ export default function MidweekStudy({ backLabel = 'Reuniones', startInMeeting =
   const pt = partes[idx]
 
   return (
-    <div className="overlay at-study">
+    <div className="overlay at-study reunion-study" data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" onClick={close}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-title">Entre semana</span>
