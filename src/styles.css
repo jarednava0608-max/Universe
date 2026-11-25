@@ -1008,7 +1008,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root {
   --sky-1: #161029; --sky-2: #2e2163; --sky-3: #7e4472; --sky-4: #d0855a;
   --sun-a: #fff5d6; --sun-b: #ffd36b; --sun-c: #ffb84a; --halo: rgba(255, 196, 90, 0.42);
-  --hill: #140f2b; --star: #ffffff;
+  --hill: #140f2b; --star: #ffffff; --cover-date: #e6e6e6;
 }
 :root[data-theme='light'] {
   --sky-1: #f3effd; --sky-2: #e8defa; --sky-3: #fbd8cc; --sky-4: #ffd29a;
@@ -1058,6 +1058,10 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .hoy-cover[data-night] .hoy-stars path { opacity: 0.55; }
 .hoy-cover[data-night] .hoy-stars circle { opacity: 1; }
 .hoy-cover[data-night] .hoy-stars .far { opacity: 0.75; }
+/* La fecha de la portada en blanco roto (en Negro; en Blanco sigue negra). De noche, además, al 85 %:
+   se lee como metadato tranquilo y no compite con el contenido. */
+:root:not([data-theme='light']) .hoy-date { color: var(--cover-date); }
+:root:not([data-theme='light']) .hoy-cover[data-night] .hoy-date { opacity: 0.85; }
 /* Hoy de noche, el resto de la vista (19:00 a 06:00; data-night en .hoy). Solo en Negro: lo secundario se
    atenúa con un matiz pizarra muy sutil que amarra con el cielo de la portada, la letra blanca pasa a blanco
    roto y el ámbar del sol queda solo para el botón al tocarlo. La portada y el texto diario (versículo, tu plan,
