@@ -30,6 +30,7 @@ El usuario lo pidió para que todo se parezca a JW Library.
 - El gris más tenue (`--text-3`) es #8e8e93 en negro y #6a6a6f en blanco (Como JW), nunca más claro (también sobre tarjetas y barras: las pestañas de abajo van en `--text-2`).
 - Los círculos para palomear con borde que se ve (3:1).
 - Las etiquetas ("Mi respuesta") en `--text-2`, más fuertes que el texto de ejemplo (`--text-3`).
+- Metadatos de las tarjetas de Biblioteca (fecha, contadores, etiquetas): dos tonos cercanos, sin aplanarlos. Fecha y contadores en `--meta` (`--text-2`); etiquetas (qué es, qué falta, «en el mapa») en `--meta-soft` (`--text-3`), un poco más apagadas. Todas a 4 px del título. De noche (solo Negro): blanco roto atenuado (`--night-meta`) y pizarra (`--night-meta-soft`), sin ámbar ni lavanda.
 - Lo que se lee largo (artículos, Biblia, versículos) va en `--text-body`, no en blanco o negro puro (deslumbra menos); las palabras marcadas sí en `--title`.
 - En Negro (Como JW) `--text-body` es #d1d1d6, un poco más suave que los títulos (blanco): deslumbra menos de noche y marca la jerarquía (títulos > lectura > gris). Contraste ≥ 5.5:1 aun sobre el resaltado.
 - Oscuro por capas ya existe y se queda así (fondo #0b0b0b, tarjetas #262628 / #333336, barras #2b2b2d, bordes rgba(255,255,255,0.08)): cambiar los tonos quitaría el parecido con JW Library y las tarjetas sin borde. Lectura con interlineado 1.6-1.7; sin `max-width` en ch (en el iPhone cada renglón tiene unas 40 letras).

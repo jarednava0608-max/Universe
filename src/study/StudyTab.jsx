@@ -195,7 +195,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
             <Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca
           </button>
           <h1 className="page-title">Tus nodos</h1>
-          <ul className="entry-list">
+          <ul className="entry-list lib-entries">
             {allNodes.map((n) => {
               const def = firstSentence(definitionText(n.note))
               return (
@@ -549,7 +549,7 @@ function meetingDay(iso) {
 
 function EntryList({ items, onOpen, onDelete }) {
   return (
-    <ul className="entry-list">
+    <ul className="entry-list lib-entries">
       {items.map((e) => {
         const def = KINDS[e.kind]
         const day = e.kind === 'reunion' || e.kind === 'diario' || e.kind === 'asignacion' || e.kind === RUTINA ? meetingDay(e.fields.fecha) : null
