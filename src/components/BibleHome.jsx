@@ -4,11 +4,13 @@ import { BOOKS } from '../lib/bible.js'
 import { chapterSaved, openRef } from '../lib/verses.js'
 import { hasBible, importBible, useBible } from '../lib/nwt.js'
 import { BOOK_ABBR, TOTAL_CHAPTERS, PLAN_LENGTHS, bookRead, chaptersOf, hasPlan, isRead, lastRead, makePlan, readCount, readingToday } from '../lib/reading.js'
+import { isNight } from '../study/today.js'
 
 // Leer toda la Biblia, como la pestaña "Libros" de JW Library: los 66 libros en cuadros (más
 // claros mientras más llevas leído), y al tocar uno, sus capítulos con los leídos marcados.
 // Un capítulo se abre en el lector de pantalla completa.
 export default function BibleHome({ backLabel = 'Biblioteca', leidos, plan, onSetPlan, entries, toast, onClose }) {
+  const [night] = useState(() => isNight()) // de noche, lectura más suave (styles.css)
   const [book, setBook] = useState(null)
   useBible()
   const full = hasBible()
@@ -32,7 +34,7 @@ export default function BibleHome({ backLabel = 'Biblioteca', leidos, plan, onSe
   )
 
   return (
-    <div className="overlay bible-home">
+    <div className="overlay bible-home" data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" data-inner={book ? '1' : undefined} onClick={() => (book ? setBook(null) : onClose())}>
           <Icon d={ICONS.back} size={18} stroke={2} /> {book ? 'Libros' : backLabel}
