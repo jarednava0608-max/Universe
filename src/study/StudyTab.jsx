@@ -50,7 +50,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const [bibleOpen, setBibleOpen] = useState(false)
   const [revisitasOpen, setRevisitasOpen] = useState(false)
   const [rutinaEdit, setRutinaEdit] = useState(null) // { mode: 'pegar' | 'escribir', entry?, text }: la hoja de la rutina bíblica
-  const night = useNight() // de 19:00 a 06:00, la pantalla principal de Biblioteca va de noche (styles.css)
+  const night = useNight() // de 19:00 a 06:00, Biblioteca (su pantalla principal y las listas de cada apartado) va de noche (styles.css)
   const [more, setMore] = useState(() => { try { return localStorage.getItem('universe-lib-more') === '1' } catch { return false } })
   useEffect(() => { try { localStorage.setItem('universe-lib-more', more ? '1' : '0') } catch {} }, [more])
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
@@ -99,7 +99,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const last = recent[0] && !inToday(recent[0].entry) && Date.now() - recent[0].at < 7 * 864e5 ? recent[0] : null
 
   return (
-    <div className="page" data-night={(view !== 'hoy' && !section && night) || undefined}>
+    <div className="page" data-night={(view !== 'hoy' && night) || undefined}>
       {view === 'hoy' ? (
         // Pestaña Hoy: solo lo de hoy, en una pantalla tranquila.
         <PageScroll title="Hoy">
@@ -246,7 +246,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
             ? <p className="hint dt-imported">La Guía de actividades de {guiaRange()} está en este teléfono: el programa de cada semana sale solo.</p>
             : <GuiaImport toast={toast} />)}
           {(KINDS[section].notes || section === RUTINA) && byKind[section].length > 0 && (
-            <input className="input note-search" type="search" placeholder={section === RUTINA ? 'Buscar en rutinas' : 'Buscar en notas'} value={query} onChange={(e) => setQuery(e.target.value)} />
+            <input className="input note-search lib-search" type="search" placeholder={section === RUTINA ? 'Buscar en rutinas' : 'Buscar en notas'} value={query} onChange={(e) => setQuery(e.target.value)} />
           )}
           {undoDel.pending?.kind === section && <UndoBar text={KINDS[section].notes ? 'Nota eliminada' : section === RUTINA ? 'Rutina eliminada' : 'Entrada eliminada'} onUndo={undoDel.undo} />}
           {byKind[section].length ? (

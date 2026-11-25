@@ -1354,6 +1354,19 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .rutina-editor[data-night] .seg2 button.on { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); }
 :root:not([data-theme='light']) .rutina-editor[data-night] .primary { background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line); }
 :root:not([data-theme='light']) .rutina-editor[data-night] :is(.primary, .secondary):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); transition-duration: 0s; }
+/* Las listas de cada apartado de Biblioteca de noche (misma hora, solo en Negro; data-night en toda la pestaña): la
+   lista, sus títulos, separadores y el título de la barra ya van como Pendientes de noche (pizarra, borde sutil, blanco
+   roto). Aquí lo propio de estas listas: la hoja del calendario y el buscador en pizarra; el mes y «en el mapa» en gris,
+   sin lavanda ni dorado (con poca especificidad, para que el tono de los metadatos mande), y el ámbar suave solo al
+   tocar un renglón o con el cursor en el buscador. */
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-entries .entry-row { transition: background-color 0.15s, box-shadow 0.15s; }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-entries .entry-row:active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); filter: none; transition-duration: 0s; }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-entries .meeting-date { background-color: var(--night-line); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-entries .meeting-date b { color: var(--night-text); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :where(.lib-entries .meeting-date span) { color: var(--text-2); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :where(.lib-entries .in-map) { color: var(--text-3); opacity: 1; }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-search { background-color: var(--night-card); border-color: var(--night-line); color: var(--night-text); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-search:focus { border-color: var(--night-amber-on); box-shadow: none; }
 /* Lectura de la semana: cada capítulo con su palomita. */
 .mw-reading { margin: 0 0 20px; }
 .mw-reading .at-label { margin-top: 4px; }
