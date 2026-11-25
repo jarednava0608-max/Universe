@@ -141,7 +141,7 @@ function Sunrise() {
 
 // De 19:00 a 06:00 la portada va de noche (data-night). Cambia sola si la app sigue abierta a esa hora
 // o vuelve del fondo; los colores de noche están junto a .hoy-cover en styles.css.
-function useNight() {
+export function useNight() {
   const [night, setNight] = useState(() => isNight())
   useEffect(() => {
     const check = () => setNight(isNight())
