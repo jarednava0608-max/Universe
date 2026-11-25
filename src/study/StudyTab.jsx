@@ -980,9 +980,10 @@ function EntryEditor({ entry, isNew, nodes, toast, onCancel, onSave, onSaveQuiet
   const draft = () => ({ ...entry, fields })
   const cancel = () => (JSON.stringify(fields) === saved.current || confirm('¿Salir sin guardar? Se pierde lo que cambiaste.')) && onCancel()
   const linked = entry.mapNodeId && nodes.find((n) => n.id === entry.mapNodeId)
+  const [night] = useState(() => isNight()) // de noche, como las demás vistas de Biblioteca (styles.css)
 
   return (
-    <div className="overlay">
+    <div className="overlay entry-editor" data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn" onClick={cancel}>Cancelar</button>
         <span className="bar-title">{def.short}</span>

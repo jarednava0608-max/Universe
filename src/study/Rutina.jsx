@@ -117,8 +117,9 @@ export function RutinaCard({ entry, onPaste, onWrite, onEdit, onToggle }) {
 // Historial (Biblioteca → Más → Rutina bíblica): una rutina pasada, para repasarla.
 export function RutinaView({ entry, backLabel, onClose, onEdit, onToggle }) {
   const f = entry.fields
+  const [night] = useState(() => isNight()) // de noche, lectura más suave (styles.css)
   return (
-    <div className="overlay">
+    <div className="overlay rutina-view" data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" onClick={onClose}><Icon d={ICONS.back} size={18} stroke={2} /> {backLabel}</button>
         <span className="bar-title">Rutina bíblica</span>
