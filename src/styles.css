@@ -117,7 +117,8 @@
   --line-strong: rgba(255, 255, 255, 0.14);
   --text: #f2f2f7;
   --title: #ffffff;
-  --text-body: #e5e5ea;
+  /* Lectura larga un poco más suave que los títulos: deslumbra menos de noche y marca la jerarquía. */
+  --text-body: #d1d1d6;
   --text-2: #aeaeb2;
   --text-3: #8e8e93;
   --accent: #b9a8f4;
@@ -1572,6 +1573,20 @@ input[type='time'].input { min-height: var(--tap); }
 .plan-streak { justify-self: start; display: inline-flex; align-items: center; gap: 4px; min-height: var(--tap); margin: -12px 0 -4px; font-size: 15px; color: var(--text-3); }
 .plan-streak span { font-weight: 600; color: var(--accent, var(--text)); }
 .plan-streak svg { color: var(--text-3); }
+
+/* Micro-interacciones: al tocar, la respuesta es inmediata; al soltar, vuelve en 150 ms (como en iOS).
+   Lo que se toca y no tenía respuesta (texto, íconos, enlaces) se atenúa; tarjetas y botones con fondo
+   siguen con la suya. Sin rebotes ni escalas nuevas; "Reducir movimiento" lo deja instantáneo. */
+:is(button, a, summary) { transition: opacity 0.15s, background-color 0.15s, filter 0.15s; }
+:is(button, a, summary):active { transition-duration: 0s; }
+:is(.bar-btn, .page-bar-add, .icon-btn, .more-btn, .sheet-close, .input-clear, .pass-toggle, .back-link, .link-btn,
+  .link-danger, .link-note, .plan-change, .plan-streak, .hoy-meeting, .hoy-jwl, .hoy-ayer summary, .lib-more, .add-row,
+  .star-btn, .cx-remove, .para-del, .voice-btn, .voice-row, .tidy-btn, .mw-edit, .rv-text-btn, .at-jw, .at-listen,
+  .at-step, .fold-row, .dt-link, .dt-more summary, .undo-bar button, .ref-link, .task-main, .task-now-title,
+  .delete-btn, .bh-goal-ch, .reader-read):active { opacity: 0.55; }
+/* Los que ya tenían su propia transición también vuelven en 150 ms. */
+:is(.kind-card, .game-card) { transition: transform 0.15s var(--ease), filter 0.15s; }
+.galaxies button { transition: background 0.2s, color 0.2s, opacity 0.15s; }
 
 /* Pantallas con "‹ Atrás": entran desde la derecha, como en el iPhone (la salida y el deslizar
    desde la orilla están en src/lib/navGesture.js). Las hojas (pegar, cuenta, elegir) siguen
