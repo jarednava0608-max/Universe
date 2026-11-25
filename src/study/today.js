@@ -171,6 +171,9 @@ export function looksLikeDailyText(text) {
   return t.length >= 20 && t.length <= 6000 && findRefs(t.slice(0, 600)).length > 0
 }
 
+// De noche (de 19:00 a 05:59, hora del teléfono) la portada de Hoy va en su variante nocturna.
+export const isNight = (d = new Date()) => d.getHours() >= 19 || d.getHours() < 6
+
 // El versículo de hoy para la portada: el texto y, aparte, su cita.
 // "No calumnia con su lengua (Sal. 15:3)." → { text: 'No calumnia con su lengua.', cite: 'Sal. 15:3' }
 export function splitVerse(verse) {
