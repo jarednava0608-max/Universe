@@ -1058,6 +1058,23 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .hoy-cover[data-night] .hoy-stars path { opacity: 0.55; }
 .hoy-cover[data-night] .hoy-stars circle { opacity: 1; }
 .hoy-cover[data-night] .hoy-stars .far { opacity: 0.75; }
+/* Hoy de noche, el resto de la vista (19:00 a 06:00; data-night en .hoy). Solo en Negro: lo secundario se
+   atenúa con un matiz pizarra muy sutil que amarra con el cielo de la portada, la letra blanca pasa a blanco
+   roto y el ámbar del sol queda solo para el botón al tocarlo. La portada y el texto diario (versículo, tu plan,
+   tu frase, ayer) no cambian. */
+:root:not([data-theme='light']) {
+  --night-text: #e6e6e6; --night-card: #1a1a26; --night-line: rgba(158, 163, 210, 0.16);
+  --night-link: #9ea3bf; --night-press: #241e25; --night-amber: rgba(238, 176, 90, 0.45);
+}
+:root:not([data-theme='light']) .hoy[data-night] .plan-next {
+  background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line);
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+:root:not([data-theme='light']) .hoy[data-night] .plan-next:active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); transition-duration: 0s; }
+:root:not([data-theme='light']) .hoy[data-night] :is(.hoy-jwl, .hoy-meeting b, .hoy-meeting svg) { color: var(--night-link); }
+:root:not([data-theme='light']) .hoy[data-night] .plan-setup { border-top-color: var(--night-line); }
+:root:not([data-theme='light']) .hoy[data-night] .plan-setup .input { background-color: var(--night-card); border-color: var(--night-line); color: var(--night-text); }
+:root:not([data-theme='light']) .page:has(> .page-scroll .hoy[data-night]) > .page-bar span { color: var(--night-text); }
 /* El versículo de hoy: grande, con letra de libro; la cita abajo, en azul (tocable, 44 px). */
 .hoy-verse { display: grid; gap: 8px; margin: 0 0 8px; }
 .hoy-verse-text { margin: 0; font-family: var(--font-book, inherit); font-size: 28px; line-height: 1.32; color: var(--text-body); text-wrap: pretty; hanging-punctuation: first; }
