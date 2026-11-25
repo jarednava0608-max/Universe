@@ -9,7 +9,7 @@ import { midweekCount } from './midweek.js'
 import { readMeetings } from './meetings.js'
 import { ASSIGNMENT_FROM, nextDay } from './today.js'
 import BibleHome from '../components/BibleHome.jsx'
-import TodayPlan, { MeetingDaysRow } from './TodayPlan.jsx'
+import TodayPlan, { MeetingDaysRow, useNight } from './TodayPlan.jsx'
 import DailyTextsImport from '../components/DailyTextsImport.jsx'
 import { hasDailyTexts, dailyTextYears, useDailyTexts } from '../lib/dailytexts.js'
 import WatchtowerImport from '../components/WatchtowerImport.jsx'
@@ -50,6 +50,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const [bibleOpen, setBibleOpen] = useState(false)
   const [revisitasOpen, setRevisitasOpen] = useState(false)
   const [rutinaEdit, setRutinaEdit] = useState(null) // { mode: 'pegar' | 'escribir', entry?, text }: la hoja de la rutina bíblica
+  const night = useNight() // de 19:00 a 06:00, la pantalla principal de Biblioteca va de noche (styles.css)
   const [more, setMore] = useState(() => { try { return localStorage.getItem('universe-lib-more') === '1' } catch { return false } })
   useEffect(() => { try { localStorage.setItem('universe-lib-more', more ? '1' : '0') } catch {} }, [more])
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
@@ -98,7 +99,7 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const last = recent[0] && !inToday(recent[0].entry) && Date.now() - recent[0].at < 7 * 864e5 ? recent[0] : null
 
   return (
-    <div className="page">
+    <div className="page" data-night={(view !== 'hoy' && !section && night) || undefined}>
       {view === 'hoy' ? (
         // Pestaña Hoy: solo lo de hoy, en una pantalla tranquila.
         <PageScroll title="Hoy">
