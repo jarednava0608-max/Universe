@@ -6,6 +6,7 @@ import { savedChapterVerses, neighborChapter, chapterSaved, jwLibraryUrl } from 
 import { canSpeak, useSpeech } from '../lib/speech.js'
 import VoiceSheet from './VoiceSheet.jsx'
 import { useBible } from '../lib/nwt.js'
+import { isNight } from '../study/today.js'
 
 const nameOf = (book, chapter) => `${BOOKS[book - 1]} ${chapter}`
 
@@ -15,6 +16,7 @@ const nameOf = (book, chapter) => `${BOOKS[book - 1]} ${chapter}`
 // Si el capítulo no está guardado completo, se ofrece pegarlo (abre la hoja de Mi Biblia). Siempre a la vista:
 // el capítulo en wol.jw.org (En línea) y en la app JW Library.
 export default function ChapterReader({ book, chapter, verse, entries, read, onToggleRead, onGo, onPaste, onClose }) {
+  const [night] = useState(() => isNight()) // de noche, lectura más suave (styles.css)
   const bible = useBible()
   const verses = useMemo(() => savedChapterVerses(entries, book, chapter), [entries, book, chapter, bible])
   const { saved, expected } = chapterSaved(entries, nameOf(book, chapter))
@@ -57,7 +59,7 @@ export default function ChapterReader({ book, chapter, verse, entries, read, onT
   const listen = () => (speech.speaking ? speech.stop() : speech.start(verses.map((x) => x.texto), Math.max(0, verses.findIndex((x) => x.v === verse))))
 
   return (
-    <div className="overlay reader">
+    <div className="overlay reader" data-night={night || undefined}>
       <header className="bar">
         <button className="bar-btn back" onClick={onClose}><Icon d={ICONS.back} size={18} stroke={2} /> Atrás</button>
         <span className="bar-title reader-title">

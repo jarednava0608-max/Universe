@@ -1081,6 +1081,9 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
   --night-body: #b8bcc2; --night-dim: #858a94; /* detalle de «Más»: texto corrido gris frío y fechas/etiquetas un escalón abajo */
   /* Estudio de noche: los colores de sección de Entre semana con menos saturación y menos luz (≥ 4.5:1) */
   --night-mw-tesoros: #6a9ca5; --night-mw-maestros: #a88b58; --night-mw-vida: #b86b64;
+  /* Leer la Biblia de noche (ajuste de Gemini): el texto bíblico en gris cálido, que cansa menos en lectura larga y no
+     choca con el ámbar, y los números de versículo un escalón abajo de los metadatos (#6C6E73 daba 3.9:1; este, 4.7:1) */
+  --night-read: #c4c1b9; --night-verse: #7a7c81;
 }
 /* Acento global de noche (aprobado por Gemini): de 19:00 a 06:00, solo en Negro y solo bajo [data-night], el acento y
    los botones pasan de lavanda a ámbar dorado. Lo que ya tiene su regla de noche (pizarra, ámbar suave al tocar) sigue
@@ -1498,6 +1501,41 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .reunion-study[data-night] :is(.mw-row, .at-missing button, .entry-row, .ref-chip, .seg2 button):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); filter: none; transition-duration: 0s; }
 /* Los íconos de arriba de Biblioteca (buscar, sol o luna, nube) de noche, en pizarra atenuada (sin lavanda). */
 :root:not([data-theme='light']):has(.page[data-night]) .top-actions.estudio .account-btn { color: var(--night-link); }
+/* Leer la Biblia de noche (misma hora, solo en Negro; data-night en su portada y en el lector), con los ajustes de
+   Gemini para leer largo: el texto bíblico en gris cálido (--night-read, #C4C1B9) con interlineado 1.72; los números de
+   versículo y del capítulo un escalón abajo de los metadatos (--night-verse); títulos en blanco roto; conteos, avisos y
+   lo ya leído en --night-dim. Libros, capítulos y avance leídos en pizarra atenuada, sin lavanda; el ámbar suave solo
+   en lo activo: donde te quedaste, el capítulo que sigue, la opción elegida y al tocar (los botones de la barra y los
+   principales siguen el acento de noche). La barra y el día no cambian. */
+:root:not([data-theme='light']) :is(.bible-home, .reader)[data-night] { color: var(--night-text); }
+:root:not([data-theme='light']) :is(.bible-home, .reader)[data-night] > .editor-body {
+  --title: var(--night-text); --text: var(--night-text); --text-body: var(--night-read);
+  --text-2: var(--night-dim); --text-3: var(--night-dim); --link: var(--night-link); --verse-num: var(--night-verse);
+  --surface: var(--night-card); --line: var(--night-line); --line-strong: var(--night-line);
+}
+:root:not([data-theme='light']) .reader[data-night] .reader-body .bible-text { line-height: 1.72; }
+/* El versículo al que llegaste y el que se está leyendo en voz alta, con un fondo pizarra tenue; ahí el número sube a
+   --night-dim para no bajar de 4.5:1. */
+:root:not([data-theme='light']) .reader[data-night] .bible-verse.target { background: color-mix(in srgb, var(--night-link) 10%, transparent); }
+:root:not([data-theme='light']) .reader[data-night] .bible-verse.speaking { background: color-mix(in srgb, var(--night-link) 14%, transparent); }
+:root:not([data-theme='light']) .reader[data-night] .bible-verse:is(.target, .speaking) :is(.bible-v, .bible-chap) { color: var(--night-dim); }
+:root:not([data-theme='light']) .reader[data-night] .reader-read { background-color: var(--night-card); border-color: var(--night-line); }
+:root:not([data-theme='light']) .reader[data-night] .reader-read.on { color: var(--night-link); }
+:root:not([data-theme='light']) .reader[data-night] .reader-read.on .plan-check { background-color: var(--night-line); border-color: transparent; color: var(--night-link); }
+/* La portada: avance, libros y capítulos leídos en pizarra (más leído, más claro); la meta en tarjeta pizarra. */
+:root:not([data-theme='light']) .bible-home[data-night] .progress { background-color: var(--night-line); }
+:root:not([data-theme='light']) .bible-home[data-night] .progress span { background-color: var(--night-link); }
+:root:not([data-theme='light']) .bible-home[data-night] .bh-book { background: var(--night-card); color: var(--night-text); }
+:root:not([data-theme='light']) .bible-home[data-night] .bh-book.lv1 { background: color-mix(in srgb, var(--night-link) 18%, var(--night-card)); }
+:root:not([data-theme='light']) .bible-home[data-night] .bh-book.lv2 { background: color-mix(in srgb, var(--night-link) 32%, var(--night-card)); }
+:root:not([data-theme='light']) .bible-home[data-night] .bh-book.lv3 { background: color-mix(in srgb, var(--night-link) 50%, var(--night-card)); color: var(--night-text); }
+:root:not([data-theme='light']) .bible-home[data-night] .bh-ch.read { background: color-mix(in srgb, var(--night-link) 32%, var(--night-card)); border-color: transparent; color: var(--night-text); }
+:root:not([data-theme='light']) .bible-home[data-night] .bh-ch.last { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--night-amber-on); }
+:root:not([data-theme='light']) .bible-home[data-night] .bh-goal { background-color: var(--night-card); }
+:root:not([data-theme='light']) .bible-home[data-night] .bh-goal-ch.next { background-color: var(--night-press); border-color: var(--night-amber-on); color: var(--night-text); }
+:root:not([data-theme='light']) .bible-home[data-night] .plan-change { color: var(--night-link); }
+:root:not([data-theme='light']) .bible-home[data-night] .seg2 button.on { background-color: var(--night-press); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-amber); }
+:root:not([data-theme='light']) :is(.bible-home, .reader)[data-night] :is(.bh-book, .bh-ch, .bh-goal-ch, .secondary, .reader-read, .seg2 button):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); filter: none; transition-duration: 0s; }
 /* Lectura de la semana: cada capítulo con su palomita. */
 .mw-reading { margin: 0 0 20px; }
 .mw-reading .at-label { margin-top: 4px; }
