@@ -31,7 +31,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 - `docs/pendientes.md`: Pendientes, hábitos, avisos, entrada ChatGPT/Claude.
 
 ## Guardado
-- Local primero: IndexedDB (`db.js`: `nodes`, `edges`, `entries`, `meta`), `storage.persist()`, sin conexión.
+- Local primero: IndexedDB (`db.js`: `nodes`, `edges`, `entries`, `meta`), `storage.persist()`, sin conexión. Toda operación pasa por `run()`: si el navegador cerró la conexión (Safari en iPhone, p. ej. al volver del fondo: "The database connection is closing"), abre otra y reintenta una vez (`db.test.js`).
 - Supabase ("Memoria Bíblica", `jikonxuznepdyhcjyysh`): `universe_nodes`, `universe_edges`, `universe_entries` (`fields` jsonb), RLS por `user_id`. Correo + contraseña en "Cuenta y nube"; sin sesión todo queda local; al entrar se sube lo local.
 - Avisos: `universe_push` (llaves), `universe_push_log` (evita repetidos); funciones `constancia-push` y `pendientes-push` (pg_cron); entrada de ChatGPT con `pendientes-intake` (clave en `universe_intake`); SQL en `supabase/pendientes.sql`. Detalle en `docs/juegos.md` y `docs/pendientes.md`.
 - **Lo de los EPUB de jw.org** (Biblia `meta.bible`/`nwt.js`, textos diarios `meta.dailytexts`/`dailytexts.js`, La Atalaya de estudio `meta.revistas`/`watchtower.js`, Guía de actividades `meta.guias`/`guia.js`): **nunca al repo** ni dentro de la app publicada. Sí a la cuenta del usuario (pedido por él) en la tabla privada `universe_meta` (RLS; `supabase/universe_meta.sql`) con `jwCloud.js`: una fila por parte (`bible/1:1`, `dailytexts/2026-11-22`…) y otra con lo demás (`bible`); primero se piden solo los nombres y se baja/sube lo que falte. El programa de cada reunión va en su entrada, como si se hubiera pegado.

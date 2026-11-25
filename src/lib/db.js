@@ -6,32 +6,80 @@ import { openDB } from 'idb'
 const DB_NAME = 'universe'
 const DB_VERSION = 2
 
-let dbPromise
+// La conexión en uso ({ promise }): se abre una vez y se reutiliza. Si el navegador la cierra por su cuenta
+// (Safari en iPhone lo hace, p. ej. al volver la app del fondo), se olvida y la siguiente operación abre otra.
+let current = null
 let memoryOnly = false
-function db() {
-  if (!dbPromise) {
-    dbPromise = (async () => {
-      try {
-        return await openDB(DB_NAME, DB_VERSION, {
-          upgrade(d, oldVersion) {
-            if (oldVersion < 1) {
-              d.createObjectStore('nodes', { keyPath: 'id' })
-              d.createObjectStore('edges', { keyPath: 'id' })
-              d.createObjectStore('meta')
-            }
-            // v2: entradas de la pestaña Estudio (texto diario, reuniones, estudios, reflexiones).
-            if (oldVersion < 2) d.createObjectStore('entries', { keyPath: 'id' })
-          },
-        })
-      } catch {
-        // Navegadores dentro de otras apps (Muse…) o ventanas privadas pueden no dejar usar IndexedDB.
-        // Se sigue en memoria: con sesión, todo se baja de la nube y lo que cambies se sube.
-        memoryOnly = true
-        return memoryDB()
-      }
-    })()
+let opened = false // ya hubo conexión: si luego no se puede reabrir, se avisa (nunca se pasa en silencio a memoria)
+
+function connection() {
+  if (!current) {
+    const c = {}
+    c.promise = open(c)
+    c.promise.catch(() => forget(c)) // no se pudo reabrir: la próxima operación lo intenta de nuevo
+    current = c
   }
-  return dbPromise
+  return current
+}
+const db = () => connection().promise
+
+// Olvida esa conexión si sigue siendo la que se usa.
+function forget(c) {
+  if (current === c) current = null
+}
+
+async function open(c) {
+  try {
+    const conn = await openDB(DB_NAME, DB_VERSION, {
+      upgrade(d, oldVersion) {
+        if (oldVersion < 1) {
+          d.createObjectStore('nodes', { keyPath: 'id' })
+          d.createObjectStore('edges', { keyPath: 'id' })
+          d.createObjectStore('meta')
+        }
+        // v2: entradas de la pestaña Estudio (texto diario, reuniones, estudios, reflexiones).
+        if (oldVersion < 2) d.createObjectStore('entries', { keyPath: 'id' })
+      },
+      // El navegador la cerró por su cuenta (aviso «close»).
+      terminated() {
+        forget(c)
+      },
+      // Otra pestaña o una versión nueva de la app pide actualizar la base: se suelta para no bloquearla.
+      blocking(_version, _nueva, e) {
+        forget(c)
+        e.target.close()
+      },
+    })
+    opened = true
+    return conn
+  } catch (e) {
+    if (opened) throw e
+    // Navegadores dentro de otras apps (Muse…) o ventanas privadas pueden no dejar usar IndexedDB.
+    // Se sigue en memoria: con sesión, todo se baja de la nube y lo que cambies se sube.
+    memoryOnly = true
+    return memoryDB()
+  }
+}
+
+// Señales de que el navegador cerró la conexión: no deja crear la transacción ("The database connection is
+// closing", InvalidStateError) o la cancela ("Connection to Indexed Database server lost", UnknownError, en Safari;
+// AbortError en el cierre forzado de la especificación).
+const CLOSED = new Set(['InvalidStateError', 'UnknownError', 'AbortError'])
+
+// Toda operación pasa por aquí. Si la conexión resultó cerrada (sin aviso, o el aviso aún no llega), se olvida,
+// se abre otra y se intenta una vez más. Cada operación es una sola transacción (o se guardó todo o nada), así
+// que repetirla no duplica nada.
+async function run(fn) {
+  const c = connection()
+  const d = await c.promise
+  try {
+    return await fn(d)
+  } catch (e) {
+    if (memoryOnly || !CLOSED.has(e?.name)) throw e
+    forget(c)
+    d.close()
+    return fn(await db())
+  }
 }
 
 // true si este navegador no guarda nada (se usa la memoria mientras la app esté abierta).
@@ -69,13 +117,14 @@ export function memoryDB() {
 }
 
 export async function loadAll() {
-  const d = await db()
-  const [nodes, edges, entries] = await Promise.all([d.getAll('nodes'), d.getAll('edges'), d.getAll('entries')])
-  return { nodes, edges, entries }
+  return run(async (d) => {
+    const [nodes, edges, entries] = await Promise.all([d.getAll('nodes'), d.getAll('edges'), d.getAll('entries')])
+    return { nodes, edges, entries }
+  })
 }
 
 export async function get(kind, id) {
-  return (await db()).get(kind, id)
+  return run((d) => d.get(kind, id))
 }
 
 // Outbox: { nodes: { [id]: { t, del, v } }, edges: {...}, entries: {...} }
@@ -87,9 +136,12 @@ const ver = () => Date.now() + Math.random()
 
 // Aplica cambios en una sola transacción: o se guarda todo o nada.
 // track=false se usa para cambios que vienen de la nube (no hay que volver a subirlos).
-export async function commit(change, { track = true } = {}) {
+export async function commit(change, opts) {
+  return run((d) => write(d, change, opts))
+}
+
+async function write(d, change, { track = true } = {}) {
   const { putNodes = [], putEdges = [], delNodes = [], delEdges = [], putEntries = [], delEntries = [], clear = false } = change
-  const d = await db()
   const tx = d.transaction(['nodes', 'edges', 'entries', 'meta'], 'readwrite')
   const ns = tx.objectStore('nodes')
   const es = tx.objectStore('edges')
@@ -140,47 +192,50 @@ export async function getOutbox() {
 
 // Quita del outbox lo que ya se subió (solo si no cambió mientras tanto).
 export async function ackOutbox(kind, entries) {
-  const d = await db()
-  const tx = d.transaction('meta', 'readwrite')
-  const ob = readOutbox(await tx.store.get('outbox'))
-  for (const [id, ent] of entries) if (ob[kind][id]?.v === ent.v) delete ob[kind][id]
-  tx.store.put(ob, 'outbox')
-  await tx.done
+  return run(async (d) => {
+    const tx = d.transaction('meta', 'readwrite')
+    const ob = readOutbox(await tx.store.get('outbox'))
+    for (const [id, ent] of entries) if (ob[kind][id]?.v === ent.v) delete ob[kind][id]
+    tx.store.put(ob, 'outbox')
+    await tx.done
+  })
 }
 
 // entries: [id, ent] tal como se leyeron; si mientras tanto cambió (otra versión), se queda para subirse.
 export async function dropOutbox(kind, entries) {
   if (!entries.length) return
-  const d = await db()
-  const tx = d.transaction('meta', 'readwrite')
-  const ob = readOutbox(await tx.store.get('outbox'))
-  for (const [id, ent] of entries) if (ob[kind][id]?.v === ent.v) delete ob[kind][id]
-  tx.store.put(ob, 'outbox')
-  await tx.done
+  return run(async (d) => {
+    const tx = d.transaction('meta', 'readwrite')
+    const ob = readOutbox(await tx.store.get('outbox'))
+    for (const [id, ent] of entries) if (ob[kind][id]?.v === ent.v) delete ob[kind][id]
+    tx.store.put(ob, 'outbox')
+    await tx.done
+  })
 }
 
 // Marca todo lo local como pendiente de subir (primera vez que se vincula una cuenta).
 export async function markAllDirty() {
-  const d = await db()
-  const tx = d.transaction(['nodes', 'edges', 'entries', 'meta'], 'readwrite')
-  const ob = readOutbox(await tx.objectStore('meta').get('outbox'))
-  for (const n of await tx.objectStore('nodes').getAll()) ob.nodes[n.id] ??= { t: n.updatedAt ?? 0, del: false, v: ver() }
-  for (const e of await tx.objectStore('edges').getAll()) ob.edges[e.id] ??= { t: e.updatedAt ?? e.createdAt ?? 0, del: false, v: ver() }
-  for (const e of await tx.objectStore('entries').getAll()) ob.entries[e.id] ??= { t: e.updatedAt ?? 0, del: false, v: ver() }
-  tx.objectStore('meta').put(ob, 'outbox')
-  await tx.done
+  return run(async (d) => {
+    const tx = d.transaction(['nodes', 'edges', 'entries', 'meta'], 'readwrite')
+    const ob = readOutbox(await tx.objectStore('meta').get('outbox'))
+    for (const n of await tx.objectStore('nodes').getAll()) ob.nodes[n.id] ??= { t: n.updatedAt ?? 0, del: false, v: ver() }
+    for (const e of await tx.objectStore('edges').getAll()) ob.edges[e.id] ??= { t: e.updatedAt ?? e.createdAt ?? 0, del: false, v: ver() }
+    for (const e of await tx.objectStore('entries').getAll()) ob.entries[e.id] ??= { t: e.updatedAt ?? 0, del: false, v: ver() }
+    tx.objectStore('meta').put(ob, 'outbox')
+    await tx.done
+  })
 }
 
 export async function getMeta(key) {
-  return (await db()).get('meta', key)
+  return run((d) => d.get('meta', key))
 }
 
 export async function setMeta(key, value) {
-  return (await db()).put('meta', value, key)
+  return run((d) => d.put('meta', value, key))
 }
 
 export async function delMeta(key) {
-  return (await db()).delete('meta', key)
+  return run((d) => d.delete('meta', key))
 }
 
 // Pide al navegador que no borre los datos cuando le falte espacio.
