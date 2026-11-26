@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { geocodeUrl, isRevisita, revisitaInfo, searchText } from './revisitas.js'
+import { isRevisita, mapsUrl, revisitaInfo } from './revisitas.js'
 
 const md = `## La persona
 - **Nombre:**
@@ -46,15 +46,15 @@ describe('revisitas', () => {
     expect(i).toMatchObject({ name: 'Irma', address: 'Helen Keller 113', lastVisit: '10 oct 2026', said: '', next: ['Volver pronto'], lugar: { lat: 20.1, lng: -100.2 } })
   })
 
-  it('limpia la dirección para buscarla', () => {
-    expect(searchText('calle Marie Curie, a 7 casas de la esquina con Sendero')).toBe('calle Marie Curie')
-    expect(searchText('número 108, entre Marie Curie y Edison')).toBe('108')
-    expect(searchText('Helen Keller 113')).toBe('Helen Keller 113')
+  it('con lugar válido abre Apple Maps con su pin y su nombre', () => {
+    const e = note('Revisita: Irma', 'Nombre: Irma López\nDirección: Helen Keller 113', { lugar: { lat: 25.767, lng: -100.2597 } })
+    expect(mapsUrl(e)).toBe('https://maps.apple.com/?ll=25.767,-100.2597&q=Irma%20L%C3%B3pez')
   })
 
-  it('busca cerca de las revisitas ya puestas', () => {
-    const u = new URL(geocodeUrl('Helen Keller 113', [{ lat: 20, lng: -100 }]))
-    expect(u.searchParams.get('q')).toBe('Helen Keller 113')
-    expect(u.searchParams.get('viewbox')).toBe('-100.1,20.1,-99.9,19.9')
+  it('sin lugar válido no da enlace', () => {
+    expect(mapsUrl(note('Revisita: Irma', 'Dirección: Helen Keller 113'))).toBe(null)
+    expect(mapsUrl(note('Revisita: Irma', '', { lugar: { lat: '25.7', lng: -100.2 } }))).toBe(null)
+    expect(mapsUrl(note('Revisita: Irma', '', { lugar: { lat: NaN, lng: -100.2 } }))).toBe(null)
+    expect(mapsUrl(note('Revisita: Irma', '', { lugar: { lat: 125.7, lng: -100.2 } }))).toBe(null)
   })
 })
