@@ -1993,3 +1993,14 @@ input[type='time'].input { min-height: var(--tap); }
    enlace y con el ícono apagado. */
 a.entry-row { text-decoration: none; }
 .entry-row.rv-off .kind-icon { opacity: 0.4; }
+/* «Estoy aquí» en una nota de revisita (debajo del título): guarda el lugar con el GPS del teléfono, sin mapa. */
+.rv-place { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+.rv-here {
+  display: inline-flex; align-items: center; gap: 4px; min-height: var(--tap); padding: 0 12px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 15px; font-weight: 500;
+}
+.rv-here:active { background: var(--surface-2); }
+.rv-place-state { font-size: 13px; color: var(--text-2); }
+:root:not([data-theme='light']) .note-editor[data-night] .rv-here { background-color: var(--night-card); border-color: var(--night-line); color: var(--night-text); }
+:root:not([data-theme='light']) .note-editor[data-night] .rv-here:active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); transition-duration: 0s; }
+:root:not([data-theme='light']) .note-editor[data-night] .rv-place-state { color: var(--night-dim); }

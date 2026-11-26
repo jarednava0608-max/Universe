@@ -65,7 +65,7 @@ Cuando el usuario dicta una revisita, se guarda como Nota (`kind: 'reflexion'`) 
 ## Próxima visita
 - [ ] Volver pronto · - [ ] Contestar la pregunta pendiente con un texto · - [ ] Ofrecerle el curso de la Biblia
 ```
-**Revisitas** (Biblioteca → Más; sección `revisitas` en `StudyTab.jsx`, `revisitas.js` con pruebas): un punto por nota "Revisita: …", con nombre y dirección leídos del texto (Markdown o plano). Si tiene `fields.lugar` `{ lat, lng }` válido (sin tablas nuevas), tocarla abre Apple Maps con su pin (`mapsUrl`: `https://maps.apple.com/?ll=lat,lng&q=Nombre`); si no, va sin enlace. Sin mapa ni OpenStreetMap (PR #8 de Jared); los lugares ya guardados se conservan.
+**Revisitas** (Biblioteca → Más; sección `revisitas` en `StudyTab.jsx`, `revisitas.js` con pruebas): un punto por nota "Revisita: …", con nombre y dirección leídos del texto (Markdown o plano). Si tiene `fields.lugar` `{ lat, lng }` válido (sin tablas nuevas), tocarla abre Apple Maps con su pin (`mapsUrl`: `https://maps.apple.com/?ll=lat,lng&q=Nombre`); si no, va sin enlace. En la nota de la revisita, «Estoy aquí» (debajo del título, `RevisitaPlace.jsx`) guarda el lugar con el GPS del teléfono (`currentPlace`, `saveHere`); sin permiso o sin GPS, avisa y queda sin lugar. Sin mapa ni OpenStreetMap (PR #8 de Jared); los lugares ya guardados se conservan.
 
 ## Pegar conocimiento (mapa)
 `{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`; si el nodo existe se le añade. Respaldo (`app: "universe"`) puede reemplazar todo. Siempre vista previa y confirmación.

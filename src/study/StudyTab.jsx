@@ -31,7 +31,8 @@ import DailyStudy from './DailyStudy.jsx'
 import PasteFields from './PasteFields.jsx'
 import { RUTINA, findRutina, makeRutina, rutinaText } from './rutina.js'
 import { RutinaEditor, RutinaView } from './Rutina.jsx'
-import { isRevisita, mapsUrl, revisitaInfo } from './revisitas.js'
+import { isRevisita, mapsUrl, revisitaInfo, saveHere, validPlace } from './revisitas.js'
+import RevisitaPlace from './RevisitaPlace.jsx'
 import { addDays, constanciaDays } from '../games/progress.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
@@ -746,6 +747,11 @@ function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, 
   const tituloRef = useRef(titulo)
   tituloRef.current = titulo
   const [relatedText, setRelatedText] = useState(() => `${entry.fields.titulo ?? ''}\n${noteBody(entry.fields)}`)
+  // Revisitas: el lugar de «Estoy aquí». Va en un ref para que todo guardado posterior lo lleve (la nota se arma
+  // desde `entry`, que no cambia mientras está abierta).
+  const lugarRef = useRef(entry.fields.lugar)
+  const [lugar, setLugar] = useState(() => validPlace(entry.fields.lugar))
+  const [locating, setLocating] = useState(false)
 
   const read = () => {
     const ed = editor.current
@@ -753,7 +759,31 @@ function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, 
     return { titulo: tituloRef.current, html: ed.getHTML(), texto: ed.getText({ blockSeparator: '\n' }) }
   }
   const isEmpty = (c) => !c.titulo.trim() && !c.texto.trim() && !/<(table|hr)/.test(c.html)
-  const draft = (c = read()) => ({ ...entry, fields: { ...entry.fields, titulo: c.titulo, texto: c.texto, html: c.html, preguntas: '' } })
+  const draft = (c = read()) => ({ ...entry, fields: { ...entry.fields, titulo: c.titulo, texto: c.texto, html: c.html, preguntas: '', ...(lugarRef.current ? { lugar: lugarRef.current } : {}) } })
+
+  // «Estoy aquí» (revisitas): guarda el lugar del teléfono en `fields.lugar`; sin permiso o sin GPS, solo avisa.
+  async function here() {
+    setLocating(true)
+    try {
+      await saveHere({
+        build: () => {
+          const cur = read()
+          saved.current = { titulo: cur.titulo, html: cur.html, exists: true }
+          return draft(cur)
+        },
+        save: async (next) => {
+          lugarRef.current = next.fields.lugar
+          setLugar(next.fields.lugar)
+          await onSave(next)
+        },
+      })
+      toast('Lugar guardado.')
+    } catch (e) {
+      toast(e.message)
+    } finally {
+      setLocating(false)
+    }
+  }
 
   async function flush() {
     const cur = read()
@@ -914,6 +944,7 @@ function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, 
           onChange={setTitulo}
           onEnter={() => editor.current?.commands.focus('start')}
         />
+        {isRevisita({ kind: entry.kind, fields: { titulo } }) && <RevisitaPlace lugar={lugar} busy={locating} onHere={here} />}
         <Suspense fallback={<div className="rich-loading" />}>
           <RichNote html={initialHtml} onChange={() => setVersion((v) => v + 1)} editorRef={editor} nodes={nodes} onOpenNode={openByTitle} toolbarSlot={slot} onEditing={setEditing} />
         </Suspense>
