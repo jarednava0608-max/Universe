@@ -1499,8 +1499,11 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .reunion-study[data-night] .seg2 button.on { background-color: var(--night-press); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-amber); }
 :root:not([data-theme='light']) .reunion-study[data-night] .input:focus { border-color: var(--night-amber-on); box-shadow: none; }
 :root:not([data-theme='light']) .reunion-study[data-night] :is(.mw-row, .at-missing button, .entry-row, .ref-chip, .seg2 button):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); filter: none; transition-duration: 0s; }
-/* Los íconos de arriba de Biblioteca (buscar, sol o luna, nube) de noche, en pizarra atenuada (sin lavanda). */
-:root:not([data-theme='light']):has(.page[data-night]) .top-actions.estudio .account-btn { color: var(--night-link); }
+/* Los íconos de arriba (buscar en Biblioteca, sol o luna, nube) de noche, en Biblioteca, Pendientes y Repasar: en pizarra
+   atenuada (sin lavanda); al tocarlos solo bajan de opacidad, como de día. El punto de la nube conserva su color (dice si
+   está sincronizado, sincronizando, sin conexión o con error); de noche solo pierde el halo del verde. */
+:root:not([data-theme='light']):has(.page[data-night]) .top-actions .account-btn { color: var(--night-link); }
+:root:not([data-theme='light']):has(.page[data-night]) .top-actions .sync-dot.ok { box-shadow: none; }
 /* Leer la Biblia de noche (misma hora, solo en Negro; data-night en su portada y en el lector), con los ajustes de
    Gemini para leer largo: el texto bíblico en gris cálido (--night-read, #C4C1B9) con interlineado 1.72; los números de
    versículo y del capítulo un escalón abajo de los metadatos (--night-verse); títulos en blanco roto; conteos, avisos y
