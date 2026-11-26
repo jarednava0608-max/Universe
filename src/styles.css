@@ -1092,6 +1092,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) [data-night] {
   --accent: #f0c975; --btn: #d8a348; --btn-press: #c28f38; --btn-ink: #14110b; --accent-soft: rgba(216, 163, 72, 0.15);
   --check: var(--accent);
+  --gold-text: #f0c975; /* el dorado de texto: «Nuevo récord» (logro) en ámbar, no en lavanda; el mes del calendario, en pizarra (abajo) */
 }
 :root:not([data-theme='light']) .hoy[data-night] .plan-next {
   background-color: var(--night-card); color: var(--night-text); box-shadow: inset 0 0 0 1px var(--night-line);
@@ -1171,7 +1172,7 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 .lib-entries .entry-main { gap: 4px; }
 .lib-entries .entry-sub { color: var(--meta); }
 .lib-entries .entry-sub.pending { color: var(--meta-soft); }
-:root:not([data-theme='light']) .page[data-night] .lib-entries .meeting-date span { color: var(--meta); }
+:root:not([data-theme='light']) .page[data-night] .lib-entries .meeting-date span { color: var(--night-link); } /* el mes: metadato pasivo que se repite, en pizarra (ni ámbar ni lavanda) */
 :root:not([data-theme='light']) .page[data-night] .lib-entries .in-map { color: var(--meta-soft); opacity: 1; }
 .node-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--graph-node); }
 .node-dot.root { background: #f5d27a; box-shadow: 0 0 8px rgba(245, 210, 122, 0.5); }
@@ -1377,14 +1378,14 @@ body:has(.overlay.game) .toast { top: calc(var(--sat) + 64px); bottom: auto; }
 :root:not([data-theme='light']) .rutina-editor[data-night] :is(.primary, .secondary):active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); transition-duration: 0s; }
 /* Las listas de cada apartado de Biblioteca de noche (misma hora, solo en Negro; data-night en toda la pestaña): la
    lista, sus títulos, separadores y el título de la barra ya van como Pendientes de noche (pizarra, borde sutil, blanco
-   roto). Aquí lo propio de estas listas: la hoja del calendario y el buscador en pizarra; el mes y «en el mapa» en gris,
-   sin lavanda ni dorado (con poca especificidad, para que el tono de los metadatos mande), y el ámbar suave solo al
+   roto). Aquí lo propio de estas listas: la hoja del calendario y el buscador en pizarra; el mes también en pizarra
+   y «en el mapa» en gris, sin lavanda ni dorado (con poca especificidad, para que el tono de los metadatos mande), y el ámbar suave solo al
    tocar un renglón o con el cursor en el buscador. */
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-entries .entry-row { transition: background-color 0.15s, box-shadow 0.15s; }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-entries .entry-row:active { background-color: var(--night-press); box-shadow: inset 0 0 0 1px var(--night-amber); filter: none; transition-duration: 0s; }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-entries .meeting-date { background-color: var(--night-line); }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-entries .meeting-date b { color: var(--night-text); }
-:root:not([data-theme='light']) .page[data-night] > .page-scroll :where(.lib-entries .meeting-date span) { color: var(--text-2); }
+:root:not([data-theme='light']) .page[data-night] > .page-scroll :where(.lib-entries .meeting-date span) { color: var(--night-link); }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll :where(.lib-entries .in-map) { color: var(--text-3); opacity: 1; }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-search { background-color: var(--night-card); border-color: var(--night-line); color: var(--night-text); }
 :root:not([data-theme='light']) .page[data-night] > .page-scroll .lib-search:focus { border-color: var(--night-amber-on); box-shadow: none; }
