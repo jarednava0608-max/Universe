@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { geocodeUrl, isRevisita, revisitaInfo, searchText } from './revisitas.js'
+import { describe, expect, it, vi } from 'vitest'
+import { currentPlace, isRevisita, mapsUrl, revisitaInfo, saveHere, withPlace } from './revisitas.js'
 
 const md = `## La persona
 - **Nombre:**
@@ -46,15 +46,51 @@ describe('revisitas', () => {
     expect(i).toMatchObject({ name: 'Irma', address: 'Helen Keller 113', lastVisit: '10 oct 2026', said: '', next: ['Volver pronto'], lugar: { lat: 20.1, lng: -100.2 } })
   })
 
-  it('limpia la dirección para buscarla', () => {
-    expect(searchText('calle Marie Curie, a 7 casas de la esquina con Sendero')).toBe('calle Marie Curie')
-    expect(searchText('número 108, entre Marie Curie y Edison')).toBe('108')
-    expect(searchText('Helen Keller 113')).toBe('Helen Keller 113')
+  it('con lugar válido abre Apple Maps con su pin y su nombre', () => {
+    const e = note('Revisita: Irma', 'Nombre: Irma López\nDirección: Helen Keller 113', { lugar: { lat: 25.767, lng: -100.2597 } })
+    expect(mapsUrl(e)).toBe('https://maps.apple.com/?ll=25.767,-100.2597&q=Irma%20L%C3%B3pez')
   })
 
-  it('busca cerca de las revisitas ya puestas', () => {
-    const u = new URL(geocodeUrl('Helen Keller 113', [{ lat: 20, lng: -100 }]))
-    expect(u.searchParams.get('q')).toBe('Helen Keller 113')
-    expect(u.searchParams.get('viewbox')).toBe('-100.1,20.1,-99.9,19.9')
+  it('sin lugar válido no da enlace', () => {
+    expect(mapsUrl(note('Revisita: Irma', 'Dirección: Helen Keller 113'))).toBe(null)
+    expect(mapsUrl(note('Revisita: Irma', '', { lugar: { lat: '25.7', lng: -100.2 } }))).toBe(null)
+    expect(mapsUrl(note('Revisita: Irma', '', { lugar: { lat: NaN, lng: -100.2 } }))).toBe(null)
+    expect(mapsUrl(note('Revisita: Irma', '', { lugar: { lat: 125.7, lng: -100.2 } }))).toBe(null)
+  })
+
+  // «Estoy aquí»: un GPS de mentira que responde con un lugar o con un error (1 = sin permiso).
+  const gps = (r) => ({ getCurrentPosition: (ok, fail) => (r.code ? fail({ code: r.code }) : ok({ coords: { latitude: r.lat, longitude: r.lng } })) })
+
+  it('«Estoy aquí» toma el lugar del teléfono', async () => {
+    await expect(currentPlace(gps({ lat: 25.767, lng: -100.2597 }))).resolves.toEqual({ lat: 25.767, lng: -100.2597 })
+  })
+
+  it('sin permiso, sin GPS o sin respuesta: un mensaje corto y sin lugar', async () => {
+    await expect(currentPlace(gps({ code: 1 }))).rejects.toThrow('Sin permiso de ubicación; queda sin lugar.')
+    await expect(currentPlace(gps({ code: 2 }))).rejects.toThrow('No se pudo saber dónde estás; queda sin lugar.')
+    await expect(currentPlace(gps({ code: 3 }))).rejects.toThrow('No se pudo saber dónde estás; queda sin lugar.')
+    await expect(currentPlace(undefined)).rejects.toThrow('Este teléfono no da su ubicación; queda sin lugar.')
+    await expect(currentPlace(gps({ lat: NaN, lng: -100 }))).rejects.toThrow('No se pudo saber dónde estás')
+  })
+
+  it('guarda el lugar en fields.lugar sin tocar lo demás', () => {
+    const e = note('Revisita: Irma', 'Dirección: Helen Keller 113', { html: '<p>x</p>' })
+    const out = withPlace(e, { lat: 25.767, lng: -100.2597 })
+    expect(out.fields).toEqual({ titulo: 'Revisita: Irma', texto: 'Dirección: Helen Keller 113', html: '<p>x</p>', lugar: { lat: 25.767, lng: -100.2597 } })
+    expect(e.fields.lugar).toBeUndefined() // la nota de antes no se modifica
+    expect(mapsUrl(out)).toBe('https://maps.apple.com/?ll=25.767,-100.2597&q=Irma')
+  })
+
+  it('el botón guarda la nota con el lugar; si no hay lugar, no guarda', async () => {
+    const save = vi.fn(async () => {})
+    const build = vi.fn(() => note('Revisita: Irma', 'Lo último que escribí'))
+    await expect(saveHere({ geo: gps({ lat: 25.767, lng: -100.2597 }), build, save })).resolves.toEqual({ lat: 25.767, lng: -100.2597 })
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(save.mock.calls[0][0].fields).toMatchObject({ texto: 'Lo último que escribí', lugar: { lat: 25.767, lng: -100.2597 } })
+
+    save.mockClear(); build.mockClear()
+    await expect(saveHere({ geo: gps({ code: 1 }), build, save })).rejects.toThrow('Sin permiso de ubicación')
+    expect(build).not.toHaveBeenCalled()
+    expect(save).not.toHaveBeenCalled()
   })
 })

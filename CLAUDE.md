@@ -8,7 +8,7 @@ App personal de estudio bíblico (Testigo de Jehová), **solo iPhone** (Safari /
 - **Pendientes**: la app Centro (tareas con avisos, hábitos).
 
 ## Regla de oro
-**Nada de servicios de paga ni IA en la app.** El usuario analiza en su chat con Claude y pega JSON; lo "inteligente" es código local. Único servicio externo: Supabase gratis (excepción pedida: OpenStreetMap gratis solo en Revisitas en el mapa).
+**Nada de servicios de paga ni IA en la app.** El usuario analiza en su chat con Claude y pega JSON; lo "inteligente" es código local. Único servicio externo: Supabase gratis.
 
 ## Principios (no romper)
 - **Estilo**: todo en `docs/estilo.md` (Negro/Blanco, "Como JW" por defecto). Colores solo como variables de `src/styles.css`; Jehová, único nodo dorado.
@@ -65,7 +65,7 @@ Cuando el usuario dicta una revisita, se guarda como Nota (`kind: 'reflexion'`) 
 ## Próxima visita
 - [ ] Volver pronto · - [ ] Contestar la pregunta pendiente con un texto · - [ ] Ofrecerle el curso de la Biblia
 ```
-**Revisitas en el mapa** (Biblioteca → Más; `src/study/RevisitasMap.jsx`, `revisitas.js` con pruebas): un punto por nota "Revisita: …" con `fields.lugar` `{ lat, lng }` (sin tablas nuevas). Nombre, dirección, última visita y lo que sigue se leen del texto (Markdown o plano). Ubicar: buscar la dirección (Nominatim), "Estoy aquí" o tocar el mapa. Leaflet + teselas de OpenStreetMap, gratis y sin cuenta.
+**Revisitas** (Biblioteca → Más; sección `revisitas` en `StudyTab.jsx`, `revisitas.js` con pruebas): un punto por nota "Revisita: …", con nombre y dirección leídos del texto (Markdown o plano). Si tiene `fields.lugar` `{ lat, lng }` válido (sin tablas nuevas), tocarla abre Apple Maps con su pin (`mapsUrl`: `https://maps.apple.com/?ll=lat,lng&q=Nombre`); si no, va sin enlace. En la nota de la revisita, «Estoy aquí» (debajo del título, `RevisitaPlace.jsx`) guarda el lugar con el GPS del teléfono (`currentPlace`, `saveHere`); sin permiso o sin GPS, avisa y queda sin lugar. Sin mapa ni OpenStreetMap (PR #8 de Jared); los lugares ya guardados se conservan.
 
 ## Pegar conocimiento (mapa)
 `{ "nodes": [{ title, note }], "edges": [{ from, to, rel }] }`; si el nodo existe se le añade. Respaldo (`app: "universe"`) puede reemplazar todo. Siempre vista previa y confirmación.

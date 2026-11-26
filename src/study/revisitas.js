@@ -1,6 +1,6 @@
-// Revisitas en el mapa: son Notas tituladas "Revisita: Nombre" (formato en CLAUDE.md). De su texto
-// se saca nombre, dirección, última visita y lo que sigue; el lugar se guarda en `fields.lugar`
-// ({ lat, lng }), así viaja a la nube con la nota sin tablas nuevas.
+// Revisitas: son Notas tituladas "Revisita: Nombre" (formato en CLAUDE.md). De su texto se saca nombre,
+// dirección, última visita y lo que sigue; el lugar está en `fields.lugar` ({ lat, lng }), así viaja a la
+// nube con la nota sin tablas nuevas. En Biblioteca → Revisitas, la que tiene lugar abre Apple Maps.
 
 export const isRevisita = (e) => e?.kind === 'reflexion' && !e.deleted && /^\s*revisita\b/i.test(e.fields?.titulo ?? '')
 
@@ -38,32 +38,38 @@ export function revisitaInfo(entry) {
 
 export const validPlace = (p) => (p && Number.isFinite(p.lat) && Number.isFinite(p.lng) ? { lat: p.lat, lng: p.lng } : null)
 
-// Lo que se busca en el mapa: la dirección sin "a 7 casas de la esquina…" (eso no lo entiende el buscador).
-export function searchText(address) {
-  return String(address ?? '')
-    .split(/,|\s+a\s+\d+\s+casas?\b|\s+frente\s+a\b|\s+junto\s+a\b|\s+cerca\s+de\b/i)[0]
-    .replace(/^\s*(?:número|num\.?|no\.?)\s+/i, '')
-    .trim()
+// Apple Maps con el pin de la revisita y su nombre como etiqueta. Solo con un lugar válido; si no, null y
+// la fila va sin enlace (nunca un enlace roto).
+export function mapsUrl(entry) {
+  const { name, lugar } = revisitaInfo(entry)
+  if (!lugar || Math.abs(lugar.lat) > 90 || Math.abs(lugar.lng) > 180) return null
+  return `https://maps.apple.com/?ll=${lugar.lat},${lugar.lng}&q=${encodeURIComponent(name)}`
 }
 
-// Buscador gratuito de OpenStreetMap (Nominatim). Cerca de las revisitas ya puestas, si hay.
-export function geocodeUrl(q, near = []) {
-  const p = new URLSearchParams({ format: 'jsonv2', limit: '5', 'accept-language': 'es', q })
-  if (near.length) {
-    const lats = near.map((x) => x.lat)
-    const lngs = near.map((x) => x.lng)
-    const pad = 0.1
-    p.set('viewbox', [Math.min(...lngs) - pad, Math.max(...lats) + pad, Math.max(...lngs) + pad, Math.min(...lats) - pad].join(','))
-  }
-  return 'https://nominatim.openstreetmap.org/search?' + p
+// «Estoy aquí»: la ubicación del teléfono (GPS) como lugar { lat, lng }. Si no hay permiso, no hay GPS o no
+// responde, rechaza con un mensaje corto y la revisita queda sin lugar.
+export function currentPlace(geo = globalThis.navigator?.geolocation) {
+  return new Promise((resolve, reject) => {
+    if (!geo?.getCurrentPosition) return reject(new Error('Este teléfono no da su ubicación; queda sin lugar.'))
+    geo.getCurrentPosition(
+      (p) => {
+        const place = validPlace({ lat: p?.coords?.latitude, lng: p?.coords?.longitude })
+        if (place) resolve(place)
+        else reject(new Error('No se pudo saber dónde estás; queda sin lugar.'))
+      },
+      (err) => reject(new Error(err?.code === 1 ? 'Sin permiso de ubicación; queda sin lugar.' : 'No se pudo saber dónde estás; queda sin lugar.')),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    )
+  })
 }
 
-export async function geocode(q, near) {
-  const res = await fetch(geocodeUrl(q, near))
-  if (!res.ok) throw new Error('No se pudo buscar.')
-  const list = await res.json()
-  return list.map((r) => ({ lat: Number(r.lat), lng: Number(r.lon), label: r.display_name }))
-}
+// La nota con su lugar, en la misma estructura de siempre (`fields.lugar` { lat, lng }); lo demás queda igual.
+export const withPlace = (entry, place) => ({ ...entry, fields: { ...entry.fields, lugar: { lat: place.lat, lng: place.lng } } })
 
-// "Cómo llegar": abre Apple Maps (la app es solo para iPhone) con la ruta al punto.
-export const directionsUrl = ({ lat, lng }) => `maps://?daddr=${lat},${lng}`
+// El botón «Estoy aquí»: primero pide el lugar y, ya con él, arma la nota (`build`, con lo último escrito) y la
+// guarda (`save`). Si no hay lugar, no guarda nada y rechaza con el mensaje para mostrar.
+export async function saveHere({ geo, build, save }) {
+  const place = await currentPlace(geo)
+  await save(withPlace(build(), place))
+  return place
+}

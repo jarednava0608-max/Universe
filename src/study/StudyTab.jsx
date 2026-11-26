@@ -31,16 +31,16 @@ import DailyStudy from './DailyStudy.jsx'
 import PasteFields from './PasteFields.jsx'
 import { RUTINA, findRutina, makeRutina, rutinaText } from './rutina.js'
 import { RutinaEditor, RutinaView } from './Rutina.jsx'
+import { isRevisita, mapsUrl, revisitaInfo, saveHere, validPlace } from './revisitas.js'
+import RevisitaPlace from './RevisitaPlace.jsx'
 import { addDays, constanciaDays } from '../games/progress.js'
 // El editor con formato se carga aparte para que la app abra rápido (main.jsx lo precarga).
 const RichNote = lazy(() => import('./RichNote.jsx'))
-// El mapa de revisitas (Leaflet) también aparte: solo se baja al abrirlo.
-const RevisitasMap = lazy(() => import('./RevisitasMap.jsx'))
 
 // Pestañas Hoy y Biblioteca (`view`): Hoy es solo lo de hoy; Biblioteca, los apartados con sus listas,
 // Leer la Biblia, el Mapa y los Juegos. Los editores se abren encima desde las dos.
 export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, entries, nodes, onSaveEntry, onLearn, onDeleteEntry, onProposeToMap, onConceptsToMap, onOpenNode, onSaveNode, toast, constancia, onConstancia, leidos, readingPlan, onSetPlan, onToggleRead, searchOpen, onCloseSearch, onHome }) {
-  const [section, setSection] = useState(null) // kind abierto (o 'nodos')
+  const [section, setSection] = useState(null) // kind abierto (o 'nodos', 'revisitas')
   useDailyTexts()
   useWatchtower()
   useGuia()
@@ -48,16 +48,20 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
   const [query, setQuery] = useState('')
   const [peekNode, setPeekNode] = useState(null) // nodo abierto desde "Tus nodos"
   const [bibleOpen, setBibleOpen] = useState(false)
-  const [revisitasOpen, setRevisitasOpen] = useState(false)
   const [rutinaEdit, setRutinaEdit] = useState(null) // { mode: 'pegar' | 'escribir', entry?, text }: la hoja de la rutina bíblica
   const night = useNight() // de 19:00 a 06:00, Biblioteca (su pantalla principal y las listas de cada apartado) va de noche (styles.css)
   const [more, setMore] = useState(() => { try { return localStorage.getItem('universe-lib-more') === '1' } catch { return false } })
   useEffect(() => { try { localStorage.setItem('universe-lib-more', more ? '1' : '0') } catch {} }, [more])
   // Todos los nodos del mapa: Jehová primero y luego por orden alfabético.
   const allNodes = useMemo(() => [...nodes].sort((a, b) => (a.id === ROOT_ID ? -1 : b.id === ROOT_ID ? 1 : a.title.localeCompare(b.title, 'es'))), [nodes])
+  // Revisitas: un punto por nota "Revisita: …", por nombre; la que tiene lugar trae su enlace a Apple Maps.
+  const revisitas = useMemo(
+    () => entries.filter(isRevisita).map((entry) => ({ entry, ...revisitaInfo(entry), url: mapsUrl(entry) })).sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [entries],
+  )
   useEffect(() => { onHome?.(!section) }, [section]) // eslint-disable-line react-hooks/exhaustive-deps
   // "‹ Atrás" dice a dónde regresas: a Hoy, a la lista abierta o a Biblioteca.
-  const backLabel = view === 'hoy' ? 'Hoy' : section === 'nodos' ? 'Tus nodos' : section ? KINDS[section].label : 'Biblioteca'
+  const backLabel = view === 'hoy' ? 'Hoy' : section === 'nodos' ? 'Tus nodos' : section === 'revisitas' ? 'Revisitas' : section ? KINDS[section].label : 'Biblioteca'
   // Entrada borrada deslizando, con "Deshacer".
   const undoDel = useUndoDelete((e) => onDeleteEntry(e.id), (e) => onSaveEntry(e))
   // Rutina bíblica: "Pegar rutina de hoy" lee lo copiado con el mismo toque (iOS pide permiso con "Pegar").
@@ -163,9 +167,9 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
                   </button>
                 </li>
                 <li>
-                  <button className="entry-row" onClick={() => setRevisitasOpen(true)}>
+                  <button className="entry-row" onClick={() => setSection('revisitas')}>
                     <span className="kind-icon k-mapa"><Icon d={ICONS.lugar} size={18} /></span>
-                    <span className="entry-main"><span className="entry-title">Revisitas en el mapa</span></span>
+                    <span className="entry-main"><span className="entry-title">Revisitas</span></span>
                     <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>
                   </button>
                 </li>
@@ -212,6 +216,40 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
               )
             })}
           </ul>
+        </PageScroll>
+      ) : section === 'revisitas' ? (
+        // Revisitas (antes un mapa): un punto por revisita. Con lugar guardado, tocarla abre Apple Maps con su pin y
+        // su nombre; sin lugar, va sin enlace.
+        <PageScroll key="revisitas" title="Revisitas" back={{ label: 'Biblioteca', onClick: () => setSection(null) }}>
+          <button className="back-link" onClick={() => setSection(null)}>
+            <Icon d={ICONS.back} size={18} stroke={2} /> Biblioteca
+          </button>
+          <h1 className="page-title">Revisitas</h1>
+          {revisitas.length ? (
+            <ul className="entry-list lib-entries">
+              {revisitas.map(({ entry, name, address, url }) => {
+                const body = (
+                  <>
+                    <span className="kind-icon k-mapa"><Icon d={ICONS.lugar} size={18} /></span>
+                    <span className="entry-main">
+                      <span className="entry-title">{name}</span>
+                      <span className="entry-sub">{url ? address || 'Abrir en Mapas' : 'Sin lugar guardado'}</span>
+                    </span>
+                    {url && <span className="chev"><Icon d={ICONS.chev} size={16} stroke={2} /></span>}
+                  </>
+                )
+                return (
+                  <li key={entry.id}>
+                    {url
+                      ? <a className="entry-row" href={url} target="_blank" rel="noopener noreferrer" aria-label={`${name}: abrir en Mapas`}>{body}</a>
+                      : <div className="entry-row rv-off" aria-disabled="true">{body}</div>}
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="hint">Aún no hay revisitas. Dicta una y se guarda en Notas como "Revisita: Nombre"; luego aparece aquí.</p>
+          )}
         </PageScroll>
       ) : (
         <PageScroll
@@ -290,13 +328,6 @@ export default function StudyTab({ view = 'biblioteca', onOpenMap, onOpenGames, 
           onClose={() => setPeekNode(null)}
           onOpenMap={(id) => { setPeekNode(null); onOpenNode(id) }}
         />
-      )}
-
-      {/* Antes que los editores: "Abrir nota" la abre encima del mapa. */}
-      {revisitasOpen && (
-        <Suspense fallback={null}>
-          <RevisitasMap backLabel={backLabel} entries={entries} onSaveEntry={onSaveEntry} onOpenEntry={(e) => setEditing({ entry: e, isNew: false })} onClose={() => setRevisitasOpen(false)} toast={toast} />
-        </Suspense>
       )}
 
       {editing && KINDS[editing.entry.kind].notes && (
@@ -716,6 +747,11 @@ function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, 
   const tituloRef = useRef(titulo)
   tituloRef.current = titulo
   const [relatedText, setRelatedText] = useState(() => `${entry.fields.titulo ?? ''}\n${noteBody(entry.fields)}`)
+  // Revisitas: el lugar de «Estoy aquí». Va en un ref para que todo guardado posterior lo lleve (la nota se arma
+  // desde `entry`, que no cambia mientras está abierta).
+  const lugarRef = useRef(entry.fields.lugar)
+  const [lugar, setLugar] = useState(() => validPlace(entry.fields.lugar))
+  const [locating, setLocating] = useState(false)
 
   const read = () => {
     const ed = editor.current
@@ -723,7 +759,31 @@ function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, 
     return { titulo: tituloRef.current, html: ed.getHTML(), texto: ed.getText({ blockSeparator: '\n' }) }
   }
   const isEmpty = (c) => !c.titulo.trim() && !c.texto.trim() && !/<(table|hr)/.test(c.html)
-  const draft = (c = read()) => ({ ...entry, fields: { ...entry.fields, titulo: c.titulo, texto: c.texto, html: c.html, preguntas: '' } })
+  const draft = (c = read()) => ({ ...entry, fields: { ...entry.fields, titulo: c.titulo, texto: c.texto, html: c.html, preguntas: '', ...(lugarRef.current ? { lugar: lugarRef.current } : {}) } })
+
+  // «Estoy aquí» (revisitas): guarda el lugar del teléfono en `fields.lugar`; sin permiso o sin GPS, solo avisa.
+  async function here() {
+    setLocating(true)
+    try {
+      await saveHere({
+        build: () => {
+          const cur = read()
+          saved.current = { titulo: cur.titulo, html: cur.html, exists: true }
+          return draft(cur)
+        },
+        save: async (next) => {
+          lugarRef.current = next.fields.lugar
+          setLugar(next.fields.lugar)
+          await onSave(next)
+        },
+      })
+      toast('Lugar guardado.')
+    } catch (e) {
+      toast(e.message)
+    } finally {
+      setLocating(false)
+    }
+  }
 
   async function flush() {
     const cur = read()
@@ -884,6 +944,7 @@ function NoteEditor({ backLabel = 'Notas', entry, isNew, nodes, entries, toast, 
           onChange={setTitulo}
           onEnter={() => editor.current?.commands.focus('start')}
         />
+        {isRevisita({ kind: entry.kind, fields: { titulo } }) && <RevisitaPlace lugar={lugar} busy={locating} onHere={here} />}
         <Suspense fallback={<div className="rich-loading" />}>
           <RichNote html={initialHtml} onChange={() => setVersion((v) => v + 1)} editorRef={editor} nodes={nodes} onOpenNode={openByTitle} toolbarSlot={slot} onEditing={setEditing} />
         </Suspense>
